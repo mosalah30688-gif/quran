@@ -1351,6 +1351,105 @@
     showView('reader');
   });
 
+  // ---------- مشاركة الآية كصورة ----------
+  const IMG_W = 1080, IMG_H = 1350;
+  let imgBlob = null, imgUrl = null, imgName = 'ayah.png';
+  let imgFont = null;
+  function loadImgFont() {
+    if (!imgFont) {
+      const f = new FontFace('AmiriQuranImg', 'url(fonts/AmiriQuran-arabic.woff2)');
+      imgFont = f.load().then((ff) => { document.fonts.add(ff); return ff; }).catch(() => null);
+    }
+    return imgFont;
+  }
+  const plainAyah = (html) => clean(String(html || '').replace(/<[^>]+>/g, '')).replace(/[\u06DD\u06DE]\s*[\u0660-\u0669\u06F0-\u06F9\d]*/g, '').replace(/\s+/g, ' ').trim();
+
+  // يرسم البطاقة: النص في المنتصف بالحجم الذي يتسع داخل الإطار، والسورة ورقم الآية في الأعلى والأسفل
+  function drawAyahCard(text, surahLabel, ayahNo, hasFont) {
+    const cv = document.createElement('canvas');
+    cv.width = IMG_W; cv.height = IMG_H;
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#fbf7ec';
+    ctx.fillRect(0, 0, IMG_W, IMG_H);
+    ctx.strokeStyle = '#b8924a'; ctx.lineWidth = 6;
+    ctx.strokeRect(36, 36, IMG_W - 72, IMG_H - 72);
+    ctx.lineWidth = 2;
+    ctx.strokeRect(56, 56, IMG_W - 112, IMG_H - 112);
+
+    const family = hasFont ? '"AmiriQuranImg", serif' : 'serif';
+    const maxW = IMG_W - 240;
+    const maxH = 860;
+    let size = 96, lines = [];
+    ctx.direction = 'rtl';
+    for (; size >= 40; size -= 4) {
+      ctx.font = size + 'px ' + family;
+      lines = []; let cur = '';
+      text.split(' ').forEach((w) => {
+        const t = cur ? cur + ' ' + w : w;
+        if (ctx.measureText(t).width <= maxW) cur = t; else { lines.push(cur); cur = w; }
+      });
+      if (cur) lines.push(cur);
+      if (lines.length * size * 1.9 <= maxH) break;
+    }
+    const lh = size * 1.9;
+    const startY = IMG_H / 2 - ((lines.length - 1) * lh) / 2;
+    ctx.fillStyle = '#1d1d1b';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    lines.forEach((l, i) => ctx.fillText(l, IMG_W / 2, startY + i * lh));
+
+    ctx.fillStyle = '#8a6d2f';
+    ctx.font = '54px ' + family;
+    ctx.fillText(surahLabel, IMG_W / 2, 200);
+    ctx.font = '40px ' + family;
+    ctx.fillText('﴿ ' + toArabicDigits(ayahNo) + ' ﴾', IMG_W / 2, IMG_H - 200);
+    ctx.font = '36px ' + family;
+    ctx.fillText('القرآن الكريم', IMG_W / 2, IMG_H - 130);
+    return cv;
+  }
+
+  function closeImgModal() {
+    $('#imgModal').hidden = true;
+    if (imgUrl) { URL.revokeObjectURL(imgUrl); imgUrl = null; }
+    imgBlob = null;
+  }
+
+  async function shareAyahImage() {
+    const a = state.sel;
+    if (!a) { toast('اضغط على الآية أولاً'); return; }
+    const text = plainAyah(a.html);
+    if (!text) { toast('تعذّر تجهيز نص الآية'); return; }
+    const font = await loadImgFont();
+    const cv = drawAyahCard(text, surahName(a.s), a.n, !!font);
+    const blob = await new Promise((r) => cv.toBlob(r, 'image/png'));
+    if (!blob) { toast('تعذّر إنشاء الصورة'); return; }
+    closeImgModal();
+    imgBlob = blob;
+    imgUrl = URL.createObjectURL(blob);
+    imgName = 'ayah-' + a.s + '-' + a.n + '.png';
+    $('#imgPreview').src = imgUrl;
+    $('#imgModal').hidden = false;
+  }
+
+  $('#btnShareImg').addEventListener('click', shareAyahImage);
+  $('#imgClose').addEventListener('click', closeImgModal);
+  $('#imgModal').addEventListener('click', (e) => { if (e.target.id === 'imgModal') closeImgModal(); });
+  $('#imgSave').addEventListener('click', () => {
+    if (!imgUrl) return;
+    const link = document.createElement('a');
+    link.href = imgUrl; link.download = imgName;
+    document.body.appendChild(link); link.click(); link.remove();
+  });
+  $('#imgShare').addEventListener('click', async () => {
+    if (!imgBlob) return;
+    const file = new File([imgBlob], imgName, { type: 'image/png' });
+    if (!navigator.share || !navigator.canShare || !navigator.canShare({ files: [file] })) {
+      toast('المشاركة غير متاحة هنا، استخدم التنزيل');
+      return;
+    }
+    try { await navigator.share({ files: [file], title: 'آية من القرآن الكريم' }); }
+    catch (e) { if (e && e.name !== 'AbortError') toast('تعذّرت المشاركة، استخدم التنزيل'); }
+  });
+
   // ---------- الورد اليومي وتتبع الختمة ----------
   // البيانات: الورد المختار، والصفحة التالية في الختمة، وعدد صفحات كل يوم، والختمات المكتملة
   const WIRD_KEY = 'wird';

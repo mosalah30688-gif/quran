@@ -90,6 +90,10 @@
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
     .muted { color: var(--muted); font-size: 13px; }
     label.lbl { font-size: 13px; color: var(--muted); display: block; margin: 8px 0 4px; }
+    .img-modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 60; padding: 12px; }
+    .img-modal[hidden] { display: none; }
+    .img-box { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; width: 100%; max-width: 460px; max-height: 100%; overflow: auto; }
+    #imgPreview { width: 100%; height: auto; border-radius: 8px; display: block; }
     .sr-hit { background: #ffe27a; color: #111; border-radius: 4px; padding: 0 2px; }
     .sr-item { cursor: pointer; }
     .sr-text { font-size: 19px; line-height: 2; margin-top: 6px; }
@@ -271,6 +275,16 @@
       </div>
     </aside>
     <div class="backdrop" id="backdrop"></div>
+    <div class="img-modal" id="imgModal" hidden>
+      <div class="img-box">
+        <img id="imgPreview" alt="" />
+        <div class="row" style="justify-content:center;margin-top:12px">
+          <button class="btn" id="imgShare">مشاركة</button>
+          <button class="btn ghost" id="imgSave">تنزيل</button>
+          <button class="btn ghost" id="imgClose">إغلاق</button>
+        </div>
+      </div>
+    </div>
 
     <main class="content" id="content">
       <div class="topbar">
@@ -289,6 +303,7 @@
             <select id="playReciter" class="tsel" title="الشيخ"></select>
             <button class="btn ghost small" id="btnBm">☆ علامة</button>
             <button class="btn ghost small" id="btnTafsir">التفسير</button>
+            <button class="btn ghost small" id="btnShareImg">مشاركة الآية</button>
             <button class="btn ghost small" id="btnResume">↩ آخر موضع</button>
           </div>
 
