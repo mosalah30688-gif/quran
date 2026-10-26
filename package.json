@@ -1,0 +1,16 @@
+{
+  "name": "quran-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "تطبيق القرآن الكريم - مصحف صفحة بصفحة بالتلاوات والتفسير والتجويد والحفظ",
+  "scripts": {
+    "build:www": "bash scripts/build-www.sh",
+    "android:sync": "bash scripts/build-www.sh && npx cap sync android",
+    "android:apk": "bash scripts/build-apk.sh"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.2",
+    "@capacitor/cli": "^6.2.2",
+    "@capacitor/core": "^6.2.2"
+  }
+}
