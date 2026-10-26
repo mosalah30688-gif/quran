@@ -620,6 +620,13 @@
   audio.addEventListener('play', setPlayerUI);
   audio.addEventListener('pause', setPlayerUI);
 
+  // قياس ارتفاع شريط التشغيل ليترك المحتوى مساحة له (لا يغطي أزرار الصفحات)
+  if (window.ResizeObserver) {
+    new ResizeObserver(() => {
+      document.documentElement.style.setProperty('--player-h', $('#player').offsetHeight + 'px');
+    }).observe($('#player'));
+  }
+
   $('#pToggle').addEventListener('click', () => {
     if (!play.active) return;
     audio.paused ? audio.play() : audio.pause();

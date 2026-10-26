@@ -16,7 +16,7 @@
     :root {
       --bg: #f7f4ec; --card: #ffffff; --ink: #1d2b27; --muted: #6b7a75;
       --brand: #0f5b4c; --brand-2: #1a8a74; --gold: #b8860b; --line: #e3ddcf;
-      --hl: #fff4cc; --quran-size: 26px; --side: 300px;
+      --hl: #fff4cc; --quran-size: 26px; --side: 300px; --player-h: 120px;
       --paper: #f3e8cc; --paper-edge: #e2cd9c; --paper-ink: #1d170c; --paper-gold: #a8843f; --paper-muted: #6e5629;
     }
     body.dark {
@@ -33,7 +33,7 @@
     }
 
     /* ---------- الهيكل العام ---------- */
-    .app { display: grid; grid-template-columns: var(--side) 1fr; height: 100vh; }
+    .app { display: grid; grid-template-columns: var(--side) 1fr; height: 100vh; height: 100dvh; }
     aside.side { background: var(--card); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
     .brand {
       background: var(--brand); color: #fff; padding: 12px 14px; display: flex; align-items: center; gap: 10px;
@@ -74,7 +74,7 @@
       background: var(--card); color: var(--ink); font-size: 15px; font-family: inherit;
     }
 
-    main.content { overflow-y: auto; height: 100vh; min-width: 0; position: relative; }
+    main.content { overflow-y: auto; height: 100vh; height: 100dvh; min-width: 0; position: relative; }
     .topbar { position: sticky; top: 0; z-index: 15; background: var(--bg); border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
     .topbar .title { flex: 1; font-weight: 700; font-size: 16px; }
     .menu-toggle { display: none; background: var(--brand); color: #fff; }
@@ -196,7 +196,6 @@
       .player .info { order: -1; flex: 0 0 100%; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
       .player .btn { min-width: 52px; min-height: 44px; font-size: 18px; }
       .player #pToggle { min-width: 72px; }
-      body:has(.player.show) .wrap { padding-bottom: 170px; }
     }
     .back-btn { background: var(--brand); color: #fff; }
     .back-btn[hidden] { display: none; }
@@ -209,7 +208,16 @@
     .dev-bio { margin: 6px 0 0; }
     a.ext { color: var(--brand); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
     a.btn { text-decoration: none; display: inline-block; }
+    body:has(.player.show) .wrap { padding-bottom: calc(var(--player-h) + 28px); }
     .backdrop { display: none; }
+
+    /* شاشات الهاتف القصيرة (وضع أفقي): شريط تشغيل سطر واحد مضغوط */
+    @media (max-height: 500px) {
+      .player { padding: 6px 10px; padding-bottom: max(6px, env(safe-area-inset-bottom)); gap: 6px; flex-wrap: nowrap; }
+      .player .info { order: 0; flex: 1 1 auto; font-size: 13px; }
+      .player .btn { min-width: 40px; min-height: 36px; padding: 4px 8px; font-size: 15px; }
+      .player #pToggle { min-width: 52px; }
+    }
   </style>
 </head>
 <body>
