@@ -1,6 +1,6 @@
 // تخزين مؤقت للواجهة ليعمل التطبيق بدون اتصال (بيانات السور تُخزن عند أول تحميل)
-const CACHE = 'quran-shell-v1';
-const SHELL = ['./', './index.html', './app.js', './manifest.json', './icon.svg'];
+const CACHE = 'quran-shell-v2';
+const SHELL = ['./', './index.html', './app.js', './manifest.json', './icon.png', './icon-192.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

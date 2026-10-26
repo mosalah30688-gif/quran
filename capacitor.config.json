@@ -1,0 +1,12 @@
+{
+  "appId": "com.quran.mushaf",
+  "appName": "القرآن الكريم",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#f3e8cc"
+  }
+}

@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#0f5b4c" />
   <meta name="description" content="تطبيق القرآن الكريم: مصحف المدينة صفحة بصفحة، بالتلاوات والتفسير والتجويد والحفظ." />
   <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="icon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="icon" href="icon.png" type="image/png" />
+  <link rel="apple-touch-icon" href="icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Amiri+Quran&family=Noto+Naskh+Arabic:wght@400;700&display=swap" rel="stylesheet" />
@@ -188,7 +188,27 @@
       .player, .panel-tafsir { left: 0; }
       .page { padding: 24px 14px 12px; min-height: 60vh; }
       .page-body { padding: 0 2px; }
+      .btn, .icon-btn, nav.menu button, .seg button, .pager .btn { min-height: 44px; }
+      .ayah-grid button { min-height: 40px; }
+      .toolbar select { min-height: 40px; }
+      /* شريط التشغيل على الهاتف: سطر للمعلومات وصف للأزرار الكبيرة */
+      .player { padding: 10px 12px; padding-bottom: max(10px, env(safe-area-inset-bottom)); gap: 8px; justify-content: center; }
+      .player .info { order: -1; flex: 0 0 100%; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
+      .player .btn { min-width: 52px; min-height: 44px; font-size: 18px; }
+      .player #pToggle { min-width: 72px; }
+      body:has(.player.show) .wrap { padding-bottom: 170px; }
     }
+    .back-btn { background: var(--brand); color: #fff; }
+    .back-btn[hidden] { display: none; }
+    .about-head { display: flex; align-items: center; gap: 14px; }
+    .about-icon { width: 72px; height: 72px; border-radius: 16px; flex: 0 0 72px; box-shadow: 0 4px 14px rgba(0,0,0,.2); }
+    .about-title { margin: 0 0 4px; font-family: Amiri, serif; font-size: 24px; color: var(--brand); }
+    ul.feat { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+    ul.feat li { line-height: 1.8; padding: 8px 10px; background: var(--bg); border-radius: 10px; }
+    .dev-line { font-size: 17px; margin: 4px 0; }
+    .dev-bio { margin: 6px 0 0; }
+    a.ext { color: var(--brand); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+    a.btn { text-decoration: none; display: inline-block; }
     .backdrop { display: none; }
   </style>
 </head>
@@ -205,6 +225,7 @@
         <button data-view="memo"><span class="ic">🧠</span>الحفظ</button>
         <button data-view="bookmarks"><span class="ic">⭐</span>المحفوظات</button>
         <button data-view="settings"><span class="ic">⚙️</span>الإعدادات</button>
+        <button data-view="about"><span class="ic">ℹ️</span>عن التطبيق</button>
       </nav>
 
       <div class="index-wrap">
@@ -225,6 +246,7 @@
 
     <main class="content" id="content">
       <div class="topbar">
+        <button class="icon-btn back-btn" id="backBtn" hidden>→ رجوع</button>
         <button class="icon-btn menu-toggle" id="menuBtn">⚙ الإعدادات</button>
         <div class="title" id="topTitle">المصحف</div>
       </div>
@@ -370,6 +392,41 @@
             <h3 style="margin-top:0">تثبيت التطبيق</h3>
             <p class="muted">من متصفح الهاتف اختر "إضافة إلى الشاشة الرئيسية" ليعمل كتطبيق. التغليف لكل نظام يُضاف لاحقاً.</p>
             <button class="btn ghost" id="btnClearCache">مسح الذاكرة المؤقتة</button>
+          </div>
+        </section>
+        <!-- عن التطبيق -->
+        <section class="view" id="view-about">
+          <div class="card about-head">
+            <img src="icon.png" alt="أيقونة التطبيق" class="about-icon" />
+            <div>
+              <h2 class="about-title">القرآن الكريم</h2>
+              <div class="muted">مصحف المدينة صفحة بصفحة، بالتلاوات والتفسير والتجويد والحفظ</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-top:0">مميزات التطبيق</h3>
+            <ul class="feat">
+              <li>📖 المصحف صفحة بصفحة بترقيم مصحف المدينة، والتقليب بالسحب أو الأسهم</li>
+              <li>🔤 روايات ورسوم متعددة، مع وضع ألوان أحكام التجويد</li>
+              <li>🔊 تلاوات بأصوات عدة قراء، مع تشغيل السورة أو من آية محددة</li>
+              <li>📚 تفسير وترجمة لمعاني القرآن بلغات متعددة</li>
+              <li>🧠 وضع الحفظ: إخفاء النص واختبار نفسك آية بآية</li>
+              <li>⭐ علامات على الآيات، والرجوع لآخر موضع تلقائياً</li>
+              <li>⬇ تحميل التلاوات للاستماع بدون إنترنت</li>
+              <li>🌙 وضع ليلي، ويعمل على الهاتف والتابلت والحاسوب</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-top:0">نبذة عن المطور</h3>
+            <p class="dev-line">
+              <a class="ext" href="https://elkatebmohamadsalah.blogspot.com/p/c.html" target="_blank" rel="noopener noreferrer">محمد صلاح عبد الخالق</a>
+            </p>
+            <p class="muted dev-bio">[نبذة مختصرة عن المطور — تُضاف هنا]</p>
+            <div class="row" style="margin-top:10px">
+              <a class="btn" href="https://elkatebmohamadsalah.blogspot.com/p/blog-page_827.html" target="_blank" rel="noopener noreferrer">📞 اتصل بنا</a>
+            </div>
           </div>
         </section>
       </div>
