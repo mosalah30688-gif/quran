@@ -151,6 +151,7 @@
     $('#memoSurah').innerHTML = surahs.map((s) => `<option value="${s.number}">${s.number}. ${esc(s.name)}</option>`).join('');
     renderIndex();
     syncPlayControls();
+    setupDownloadUI();
   }
 
   function renderIndex() {
@@ -510,12 +511,16 @@
   async function playAyah(a) {
     if (!a) { stopPlayback(); return; }
     play.cur = a;
-    if (!a.audio) {
+    const local = await localAudioUrl(settings.reciter, a.s, a.n).catch(() => null);
+    if (!local && !a.audio) {
       toast('لا يوجد تسجيل لهذه الآية مع القارئ المختار');
       const nxt = await play.nextFn(a);
       return playAyah(nxt);
     }
-    audio.src = a.audio;
+    const prevObj = objUrl;
+    objUrl = local;
+    audio.src = local || a.audio;
+    if (prevObj) URL.revokeObjectURL(prevObj);
     audio.play().catch(() => toast('تعذر تشغيل الصوت. اضغط تشغيل مرة أخرى.'));
     play.active = true;
     // تقليب الصفحة تلقائياً مع التلاوة
@@ -763,6 +768,222 @@
     if ('caches' in window) { for (const k of await caches.keys()) await caches.delete(k); }
     toast('تم مسح الذاكرة المؤقتة');
   });
+
+  // ---------- التحميل للاستماع بدون إنترنت ----------
+  // مصدر الملفات: everyayah.com (يسمح بالتحميل من المتصفح) - لكل آية ملف مستقل
+  const OFFLINE_SRC = {
+    'ar.alafasy': 'Alafasy_128kbps',
+    'ar.abdurrahmaansudais': 'Abdurrahmaan_As-Sudais_192kbps',
+    'ar.husary': 'Husary_128kbps',
+    'ar.husarymujawwad': 'Husary_128kbps_Mujawwad',
+    'ar.hudhaify': 'Hudhaify_128kbps',
+    'ar.shaatree': 'Abu_Bakr_Ash-Shaatree_128kbps',
+    'ar.hanirifai': 'Hani_Rifai_192kbps',
+    'ar.ibrahimakhbar': 'Ibrahim_Akhdar_32kbps',
+    'ar.aymanswoaid': 'Ayman_Sowaid_64kbps',
+    'ar.abdullahbasfar': 'Abdullah_Basfar_192kbps',
+  };
+  const IDB_NAME = 'quran-offline';
+  let dbPromise = null;
+  let objUrl = null;
+  const dl = { running: false, cancel: false };
+
+  function openDB() {
+    if (!dbPromise) {
+      dbPromise = new Promise((res, rej) => {
+        const r = indexedDB.open(IDB_NAME, 1);
+        r.onupgradeneeded = () => { r.result.createObjectStore('audio'); r.result.createObjectStore('meta'); };
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      });
+    }
+    return dbPromise;
+  }
+  async function idbReq(store, mode, fn) {
+    const d = await openDB();
+    return new Promise((res, rej) => {
+      const t = d.transaction(store, mode);
+      const req = fn(t.objectStore(store));
+      t.oncomplete = () => res(req ? req.result : undefined);
+      t.onerror = () => rej(t.error);
+    });
+  }
+  const idbGet = (store, key) => idbReq(store, 'readonly', (st) => st.get(key));
+  const idbPut = (store, key, val) => idbReq(store, 'readwrite', (st) => st.put(val, key));
+  const idbDel = (store, key) => idbReq(store, 'readwrite', (st) => st.delete(key));
+  const idbKeys = (store) => idbReq(store, 'readonly', (st) => st.getAllKeys());
+
+  const audioKey = (reciter, s, n) => `${reciter}|${s}|${n}`;
+  const pad3 = (x) => String(x).padStart(3, '0');
+  const folderSupported = () => typeof window.showDirectoryPicker === 'function';
+
+  async function getDirHandle() {
+    try { return (await idbGet('meta', 'dirHandle')) || null; } catch { return null; }
+  }
+
+  // رابط تشغيل محلي لآية محفوظة (من المجلد أولاً ثم من التخزين داخل التطبيق)
+  async function localAudioUrl(reciter, s, n) {
+    const dir = await getDirHandle();
+    if (dir && (await dir.queryPermission({ mode: 'read' })) === 'granted') {
+      try {
+        const sub = await (await dir.getDirectoryHandle(reciter)).getDirectoryHandle(String(s));
+        const file = await (await sub.getFileHandle(`${n}.mp3`)).getFile();
+        return URL.createObjectURL(file);
+      } catch { /* غير موجود في المجلد */ }
+    }
+    const blob = await idbGet('audio', audioKey(reciter, s, n));
+    return blob ? URL.createObjectURL(blob) : null;
+  }
+
+  async function hasLocal(target, root, reciter, s, n) {
+    if (target === 'folder') {
+      try {
+        const sub = await (await root.getDirectoryHandle(reciter)).getDirectoryHandle(String(s));
+        await sub.getFileHandle(`${n}.mp3`);
+        return true;
+      } catch { return false; }
+    }
+    return !!(await idbGet('audio', audioKey(reciter, s, n)));
+  }
+
+  async function saveToFolder(root, reciter, s, n, blob) {
+    const sub = await (await root.getDirectoryHandle(reciter, { create: true })).getDirectoryHandle(String(s), { create: true });
+    const fh = await sub.getFileHandle(`${n}.mp3`, { create: true });
+    const w = await fh.createWritable();
+    await w.write(blob);
+    await w.close();
+  }
+
+  function selectedScope() {
+    return document.querySelector('input[name=dlScope]:checked')?.value || 'full';
+  }
+
+  function refsForScope() {
+    const nums = selectedScope() === 'full' ? surahs.map((x) => x.number) : [Number($('#dlSurahSel').value)];
+    const refs = [];
+    nums.forEach((s) => {
+      const c = surahs[s - 1]?.numberOfAyahs || 0;
+      for (let n = 1; n <= c; n++) refs.push({ s, n });
+    });
+    return refs;
+  }
+
+  function updateEstimate() {
+    const refs = refsForScope();
+    const mb = refs.length * 0.1;
+    const size = mb < 1 ? 'أقل من ميجابايت' : `نحو ${Math.round(mb)} ميجابايت`;
+    const scopeTxt = selectedScope() === 'full' ? 'المصحف كاملاً' : `سورة ${surahNameShort(Number($('#dlSurahSel').value))}`;
+    $('#dlEstimate').textContent = `${scopeTxt}: ${refs.length} آية، حجم تقريبي ${size}.`;
+  }
+
+  async function runDownload() {
+    if (dl.running) return;
+    const reciter = $('#dlReciter').value;
+    const folder = OFFLINE_SRC[reciter];
+    if (!folder) return toast('هذا القارئ غير متاح للتحميل');
+    const target = $('#dlTarget').value;
+    const refs = refsForScope();
+    if (!refs.length) return;
+
+    let root = null;
+    if (target === 'folder') {
+      if (!folderSupported()) return toast('المجلد غير مدعوم في هذا المتصفح، استخدم Chrome أو Edge على الحاسوب');
+      root = await getDirHandle();
+      try {
+        if (!root) {
+          root = await window.showDirectoryPicker({ mode: 'readwrite' });
+          await idbPut('meta', 'dirHandle', root);
+        }
+        if ((await root.requestPermission({ mode: 'readwrite' })) !== 'granted') return toast('لم يُمنح إذن الكتابة في المجلد');
+      } catch { return toast('تم إلغاء اختيار المجلد'); }
+    } else if (navigator.storage?.persist) {
+      navigator.storage.persist().catch(() => {});
+    }
+
+    dl.running = true; dl.cancel = false;
+    $('#btnDownload').disabled = true;
+    $('#btnCancelDl').disabled = false;
+    const bar = $('#dlBar');
+    bar.style.display = 'block'; bar.max = refs.length; bar.value = 0;
+
+    const queue = refs.slice();
+    let done = 0, saved = 0, skipped = 0, failed = 0;
+    const update = () => {
+      bar.value = done;
+      $('#dlProgress').textContent = `${done} من ${refs.length} · محفوظ ${saved} · موجود ${skipped} · فشل ${failed}`;
+    };
+    const worker = async () => {
+      while (queue.length && !dl.cancel) {
+        const r = queue.shift();
+        try {
+          if (await hasLocal(target, root, reciter, r.s, r.n)) {
+            skipped++;
+          } else {
+            const res = await fetch(`https://everyayah.com/data/${folder}/${pad3(r.s)}${pad3(r.n)}.mp3`);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const blob = await res.blob();
+            if (target === 'folder') await saveToFolder(root, reciter, r.s, r.n, blob);
+            else await idbPut('audio', audioKey(reciter, r.s, r.n), blob);
+            saved++;
+          }
+        } catch { failed++; }
+        done++;
+        update();
+      }
+    };
+    update();
+    await Promise.all(Array.from({ length: 6 }, worker));
+
+    dl.running = false;
+    $('#btnDownload').disabled = false;
+    $('#btnCancelDl').disabled = true;
+    toast(dl.cancel ? 'تم إيقاف التحميل' : 'انتهى التحميل');
+    refreshStored();
+  }
+
+  async function refreshStored() {
+    const reciter = $('#dlReciter').value;
+    const keys = ((await idbKeys('audio').catch(() => [])) || []).filter((k) => k.startsWith(reciter + '|'));
+    const perSurah = {};
+    keys.forEach((k) => { const s = k.split('|')[1]; perSurah[s] = (perSurah[s] || 0) + 1; });
+    const complete = Object.keys(perSurah).filter((s) => perSurah[s] >= (surahs[Number(s) - 1]?.numberOfAyahs || Infinity)).length;
+    const dir = await getDirHandle();
+    $('#dlStored').textContent = `داخل التطبيق: ${keys.length} آية، ${complete} سورة مكتملة لهذا القارئ.` +
+      (dir ? ` المجلد المختار: ${dir.name}` : '');
+  }
+
+  async function deleteAppAudio() {
+    const reciter = $('#dlReciter').value;
+    const keys = ((await idbKeys('audio').catch(() => [])) || []).filter((k) => k.startsWith(reciter + '|'));
+    for (const k of keys) await idbDel('audio', k);
+    toast(`حُذف ${keys.length} ملف من التطبيق`);
+    refreshStored();
+  }
+
+  function setupDownloadUI() {
+    const supported = Object.keys(OFFLINE_SRC);
+    $('#dlReciter').innerHTML = RECITERS.filter(([id]) => supported.includes(id))
+      .map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
+    $('#dlReciter').value = supported.includes(settings.reciter) ? settings.reciter : supported[0];
+    $('#dlSurahSel').innerHTML = surahs.map((x) => `<option value="${x.number}">${x.number}. ${esc(x.name)}</option>`).join('');
+    const folderOpt = $('#dlTarget option[value=folder]');
+    folderOpt.disabled = !folderSupported();
+    $('#dlNote').textContent = folderSupported()
+      ? 'مجلد الجهاز يُختار مرة واحدة ويُحفظ، والملفات تُرتّب داخله: القارئ / رقم السورة / رقم الآية.mp3. التخزين داخل التطبيق يعمل على كل الأجهزة.'
+      : 'مجلد الجهاز متاح في Chrome أو Edge على الحاسوب فقط. على الهاتف والمتصفحات الأخرى يُحفظ التحميل داخل التطبيق.';
+    updateEstimate();
+    refreshStored();
+  }
+
+  $('#dlReciter').addEventListener('change', refreshStored);
+  $('#dlSurahSel').addEventListener('change', updateEstimate);
+  $$('input[name=dlScope]').forEach((r) => r.addEventListener('change', () => {
+    $('#dlSurahSel').disabled = selectedScope() === 'full';
+    updateEstimate();
+  }));
+  $('#btnDownload').addEventListener('click', runDownload);
+  $('#btnCancelDl').addEventListener('click', () => { dl.cancel = true; });
+  $('#btnDeleteDl').addEventListener('click', deleteAppAudio);
 
   // ---------- التشغيل الأولي ----------
   applyTheme();

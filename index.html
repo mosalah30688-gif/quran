@@ -315,7 +315,6 @@
               <option value="quran-uthmani-min">حفص - عثماني مختصر</option>
               <option value="quran-tajweed">حفص - بألوان أحكام التجويد</option>
             </select>
-            <p class="muted">روايات أخرى مثل ورش وقالون تحتاج مصدر نص منفصل، وهي في خطة التطوير.</p>
 
             <label class="lbl">القارئ</label>
             <select id="setReciter"></select>
@@ -339,6 +338,33 @@
             <div class="row" style="margin-top:12px">
               <label><input type="checkbox" id="setTajweed" /> تفعيل ألوان التجويد</label>
             </div>
+          </div>
+          <div class="card">
+            <h3 style="margin-top:0">تحميل التلاوات للاستماع بدون إنترنت</h3>
+            <label class="lbl">القارئ</label>
+            <select id="dlReciter"></select>
+            <label class="lbl">ما الذي تريد تحميله؟</label>
+            <div class="row">
+              <label><input type="radio" name="dlScope" value="full" checked /> المصحف كاملاً</label>
+              <label><input type="radio" name="dlScope" value="surah" /> سورة محددة</label>
+            </div>
+            <select id="dlSurahSel" style="margin-top:8px" disabled></select>
+            <div class="muted" id="dlEstimate" style="margin-top:6px"></div>
+            <label class="lbl">مكان التخزين</label>
+            <select id="dlTarget">
+              <option value="app">داخل التطبيق (المتصفح)</option>
+              <option value="folder">مجلد على الجهاز</option>
+            </select>
+            <p class="muted" id="dlNote"></p>
+            <div class="row" style="margin-top:8px">
+              <button class="btn" id="btnDownload">⬇ بدء التحميل</button>
+              <button class="btn ghost" id="btnCancelDl" disabled>إيقاف</button>
+              <button class="btn ghost" id="btnDeleteDl">حذف تحميلات هذا القارئ من التطبيق</button>
+            </div>
+            <progress id="dlBar" value="0" max="1" style="width:100%;margin-top:10px;display:none"></progress>
+            <div class="muted" id="dlProgress" style="margin-top:6px"></div>
+            <div class="muted" id="dlStored" style="margin-top:6px"></div>
+            <p class="muted">القارئ الذي لا يظهر هنا يعمل للاستماع المباشر، لكن تحميله غير متاح حالياً.</p>
           </div>
           <div class="card">
             <h3 style="margin-top:0">تثبيت التطبيق</h3>
