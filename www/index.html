@@ -90,6 +90,11 @@
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
     .muted { color: var(--muted); font-size: 13px; }
     label.lbl { font-size: 13px; color: var(--muted); display: block; margin: 8px 0 4px; }
+    .wird-big { font-size: 26px; font-weight: 700; margin: 4px 0 8px; }
+    .wbar { height: 10px; background: var(--line); border-radius: 999px; overflow: hidden; }
+    .wfill { height: 100%; width: 0; background: var(--brand); border-radius: 999px; transition: width .3s; }
+    .wird-line { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+    .wird-line:last-child { border-bottom: 0; }
 
     /* ---------- شريط القراءة ---------- */
     .toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; padding: 8px 10px; }
@@ -241,6 +246,7 @@
         <button data-view="reader" class="active"><span class="ic">📖</span>المصحف</button>
         <button data-view="tafsir"><span class="ic">📚</span>التفسير</button>
         <button data-view="memo"><span class="ic">🧠</span>الحفظ</button>
+        <button data-view="wird"><span class="ic">🌿</span>الورد</button>
         <button data-view="bookmarks"><span class="ic">⭐</span>المحفوظات</button>
         <button data-view="settings"><span class="ic">⚙️</span>الإعدادات</button>
         <button data-view="about"><span class="ic">ℹ️</span>عن التطبيق</button>
@@ -346,6 +352,65 @@
         </section>
 
         <!-- الإعدادات -->
+        <!-- الورد -->
+        <section class="view" id="view-wird">
+          <div class="card">
+            <h3 style="margin-top:0">ورد اليوم</h3>
+            <div class="wird-big"><span id="wdDone">0</span> من <span id="wdTarget">4</span> صفحة</div>
+            <div class="wbar"><div class="wfill" id="wdFill"></div></div>
+            <div class="row" style="margin-top:12px">
+              <button class="btn" id="wdAdd">قرأت صفحة</button>
+              <button class="btn ghost" id="wdFinish">أكملت الورد كله</button>
+              <button class="btn ghost small" id="wdSub">تراجع عن صفحة</button>
+            </div>
+            <div id="wdMsg" class="muted" style="margin-top:10px"></div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-top:0">الختمة الحالية</h3>
+            <div class="wird-line"><span>الصفحة التالية</span><b id="khNext">1</b></div>
+            <div class="wird-line"><span>نسبة الختمة</span><b id="khPct">0%</b></div>
+            <div class="wird-line"><span>الصفحات المتبقية</span><b id="khLeft">604</b></div>
+            <div class="wird-line"><span>تنتهي تقريباً</span><b id="khEnd">-</b></div>
+            <div class="wbar" style="margin-top:12px"><div class="wfill" id="khFill"></div></div>
+            <div class="row" style="margin-top:12px">
+              <button class="btn" id="wdGo">متابعة القراءة من هنا</button>
+              <button class="btn ghost small" id="wdFromLast">من آخر موضع في المصحف</button>
+              <button class="btn ghost small" id="wdSetPage">تحديد الصفحة</button>
+            </div>
+            <div class="row" id="wdSetRow" hidden style="margin-top:10px">
+              <label class="lbl" for="wdPageIn">رقم الصفحة</label>
+              <input type="text" id="wdPageIn" inputmode="numeric" style="max-width:120px" />
+              <button class="btn small" id="wdPageOk">حفظ</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-top:0">إعدادات الورد</h3>
+            <label class="lbl" for="wdTargetSel">عدد الصفحات في اليوم</label>
+            <select id="wdTargetSel">
+              <option value="1">صفحة واحدة</option>
+              <option value="2">صفحتان</option>
+              <option value="3">3 صفحات</option>
+              <option value="4">4 صفحات</option>
+              <option value="5">5 صفحات</option>
+              <option value="10">10 صفحات</option>
+              <option value="20">جزء كامل (20 صفحة)</option>
+            </select>
+            <div class="wird-line" style="margin-top:12px"><span>السلسلة الحالية</span><b id="wdStreak">0 يوم</b></div>
+            <div class="wird-line"><span>أيام مكتملة</span><b id="wdDays">0</b></div>
+            <div class="wird-line"><span>الختمات المكتملة</span><b id="wdKhCount">0</b></div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-top:0">الختمات السابقة</h3>
+            <div id="wdHist" class="muted">لا توجد ختمات مكتملة بعد.</div>
+            <div class="row" style="margin-top:12px">
+              <button class="btn ghost small" id="wdNewKhatma">بدء ختمة جديدة</button>
+            </div>
+          </div>
+        </section>
+
         <section class="view" id="view-tafsir">
           <div class="card">
             <div class="tf-head" id="tfTitle"></div>

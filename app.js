@@ -45,7 +45,7 @@
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
     translation: '', size: 26, tajweed: false, dark: false,
   };
-  const VIEW_TITLES = { reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق' };
+  const VIEW_TITLES = { reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', wird: 'الورد', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق' };
   const Cap = window.Capacitor || null;
 
   // قواعد التجويد بحسب رموز مصدر quran-tajweed في alquran.cloud (الاسم، الشرح)
@@ -152,6 +152,7 @@
     $('#backBtn').hidden = name === 'reader';
     if (name === 'bookmarks') renderBookmarks();
     if (name === 'tafsir') renderTafsirView();
+    if (name === 'wird') renderWird();
     $('#content').scrollTop = 0;
   }
   function popView() { showView(navStack.pop() || 'reader', { back: true }); }
@@ -1267,6 +1268,155 @@
       if (r && r.catch) r.catch(() => {});
     }
   } catch { /* الإضافة غير موجودة في هذه النسخة، يبقى الرجوع الافتراضي */ }
+
+  // ---------- الورد اليومي وتتبع الختمة ----------
+  // البيانات: الورد المختار، والصفحة التالية في الختمة، وعدد صفحات كل يوم، والختمات المكتملة
+  const WIRD_KEY = 'wird';
+  const dateKey = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const todayKey = () => dateKey(new Date());
+  const dateAr = (d) => new Date(d).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
+  function getWird() {
+    const w = store.get(WIRD_KEY, null) || {};
+    return {
+      target: [1, 2, 3, 4, 5, 10, 20].includes(Number(w.target)) ? Number(w.target) : 4,
+      pointer: Math.min(TOTAL_PAGES, Math.max(1, Number(w.pointer) || 1)),
+      startDate: w.startDate || todayKey(),
+      days: w.days || {},
+      finished: Array.isArray(w.finished) ? w.finished : [],
+    };
+  }
+  function saveWird(w) { store.set(WIRD_KEY, w); }
+
+  // عدد أيام الورد المكتملة متتالية حتى اليوم (إن لم يكتمل ورد اليوم بعد لا يُحسب اليوم ضد السلسلة)
+  function wirdStreak(w) {
+    let n = 0;
+    const d = new Date();
+    if ((w.days[todayKey()] || 0) < w.target) d.setDate(d.getDate() - 1);
+    for (let i = 0; i < 3650; i++) {
+      if ((w.days[dateKey(d)] || 0) >= w.target) { n++; d.setDate(d.getDate() - 1); } else break;
+    }
+    return n;
+  }
+
+  function renderWird() {
+    const w = getWird();
+    const key = todayKey();
+    const done = w.days[key] || 0;
+    $('#wdTargetSel').value = String(w.target);
+    $('#wdTarget').textContent = toArabicDigits(w.target);
+    $('#wdDone').textContent = toArabicDigits(done);
+    $('#wdFill').style.width = Math.min(100, (done / w.target) * 100) + '%';
+    $('#wdMsg').textContent = done >= w.target ? 'أتممت ورد اليوم، بارك الله فيك.' : (done ? 'بقي ' + toArabicDigits(w.target - done) + ' من ورد اليوم.' : 'ابدأ ورد اليوم.');
+
+    const next = w.pointer;
+    const readInKhatma = next - 1;
+    const left = TOTAL_PAGES - readInKhatma;
+    const pct = (readInKhatma / TOTAL_PAGES) * 100;
+    $('#khNext').textContent = toArabicDigits(next);
+    $('#khPct').textContent = toArabicDigits(pct.toFixed(1)) + '%';
+    $('#khLeft').textContent = toArabicDigits(left);
+    $('#khFill').style.width = pct + '%';
+    const daysLeft = Math.ceil(left / w.target);
+    const endD = new Date(); endD.setDate(endD.getDate() + daysLeft);
+    $('#khEnd').textContent = readInKhatma >= TOTAL_PAGES ? '-' : dateAr(endD);
+
+    const totalDays = Object.values(w.days).filter((c) => c >= w.target).length;
+    $('#wdStreak').textContent = toArabicDigits(wirdStreak(w)) + ' يوم';
+    $('#wdDays').textContent = toArabicDigits(totalDays);
+    $('#wdKhCount').textContent = toArabicDigits(w.finished.length);
+    $('#wdHist').innerHTML = w.finished.length
+      ? w.finished.map((f, i) => `<div class="wird-line"><span>الختمة ${toArabicDigits(i + 1)}</span><span class="muted">${dateAr(f.start)} - ${dateAr(f.end)}</span></div>`).join('')
+      : '<div class="muted">لا توجد ختمات مكتملة بعد.</div>';
+  }
+
+  // يغيّر عدد صفحات اليوم، ويحرّك مؤشر الختمة بالمقدار نفسه
+  function addWirdPages(n) {
+    const w = getWird();
+    const key = todayKey();
+    const before = w.days[key] || 0;
+    const after = Math.max(0, before + n);
+    const delta = after - before;
+    if (!delta) return;
+    w.days[key] = after;
+    w.pointer = w.pointer + delta;
+    if (w.pointer > TOTAL_PAGES) {
+      w.finished.push({ start: w.startDate, end: key });
+      w.pointer = 1;
+      w.startDate = key;
+      toast('تمت الختمة، بارك الله فيك. بدأت ختمة جديدة');
+    } else {
+      w.pointer = Math.max(1, w.pointer);
+    }
+    saveWird(w);
+    renderWird();
+  }
+
+  $('#wdAdd').addEventListener('click', () => addWirdPages(1));
+  $('#wdSub').addEventListener('click', () => addWirdPages(-1));
+  $('#wdFinish').addEventListener('click', () => {
+    const w = getWird();
+    const done = w.days[todayKey()] || 0;
+    if (done >= w.target) { toast('ورد اليوم مكتمل'); return; }
+    addWirdPages(w.target - done);
+  });
+  $('#wdTargetSel').addEventListener('change', (e) => {
+    const w = getWird();
+    w.target = Number(e.target.value);
+    saveWird(w);
+    renderWird();
+  });
+  $('#wdGo').addEventListener('click', () => {
+    const w = getWird();
+    showView('reader');
+    showPage(Math.min(TOTAL_PAGES, w.pointer));
+  });
+  $('#wdFromLast').addEventListener('click', () => {
+    const last = getLast();
+    if (!last || !last.p) { toast('لا يوجد موضع محفوظ في المصحف بعد'); return; }
+    const w = getWird();
+    w.pointer = Math.min(TOTAL_PAGES, Math.max(1, Number(last.p)));
+    saveWird(w);
+    renderWird();
+    toast('تم تحديد الصفحة من آخر موضع');
+  });
+  $('#wdSetPage').addEventListener('click', () => {
+    const row = $('#wdSetRow');
+    row.hidden = !row.hidden;
+    $('#wdPageIn').value = String(getWird().pointer);
+  });
+  function saveWirdPage() {
+    const raw = $('#wdPageIn').value.trim();
+    const p = Number(raw.replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
+    if (!Number.isInteger(p) || p < 1 || p > TOTAL_PAGES) { toast('أدخل رقم صفحة بين 1 و 604'); return; }
+    const w = getWird();
+    w.pointer = p;
+    saveWird(w);
+    $('#wdSetRow').hidden = true;
+    renderWird();
+    toast('تم حفظ الصفحة');
+  }
+  $('#wdPageOk').addEventListener('click', saveWirdPage);
+  $('#wdPageIn').addEventListener('keydown', (e) => { if (e.key === 'Enter') saveWirdPage(); });
+
+  // بدء ختمة جديدة يحتاج ضغطتين لتجنب الخطأ
+  let wdNewArmed = false;
+  $('#wdNewKhatma').addEventListener('click', (e) => {
+    const btn = e.currentTarget;
+    if (!wdNewArmed) {
+      wdNewArmed = true;
+      btn.textContent = 'اضغط مرة أخرى للتأكيد';
+      setTimeout(() => { wdNewArmed = false; btn.textContent = 'بدء ختمة جديدة'; }, 4000);
+      return;
+    }
+    wdNewArmed = false;
+    btn.textContent = 'بدء ختمة جديدة';
+    const w = getWird();
+    w.pointer = 1;
+    w.startDate = todayKey();
+    saveWird(w);
+    renderWird();
+    toast('بدأت ختمة جديدة');
+  });
 
   // ---------- التشغيل الأولي ----------
   applyTheme();
