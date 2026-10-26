@@ -179,6 +179,7 @@
     if (name === 'stats') renderStats();
     if (name === 'adhkar') renderAdhkarHome();
     if (name === 'tajweed') renderTajweedView();
+    if (name === 'settings') syncIndexSelects();
     if (name === 'meanings') renderMeaningsView();
     if (name === 'memo') renderMemoReview();
     $('#content').scrollTop = 0;
@@ -218,16 +219,16 @@
 
   function applyTheme() {
     document.body.classList.toggle('dark', !!settings.dark);
-    $('#themeBtn').textContent = settings.dark ? '☀️' : '🌙';
+    if ($('#setDark')) $('#setDark').checked = !!settings.dark;
   }
-  $('#themeBtn').addEventListener('click', () => { settings.dark = !settings.dark; saveSettings(); applyTheme(); });
+  $('#setDark').addEventListener('change', (e) => { settings.dark = e.target.checked; saveSettings(); applyTheme(); });
 
   // ---------- الفهرس: سورة / جزء / آية ----------
   async function loadSurahs() {
     try {
       surahs = (await getJSON(API + '/surah')).data;
     } catch {
-      $('#surahList').innerHTML = '<div class="muted" style="padding:10px">تعذر تحميل الفهرس. تحقق من الاتصال بالإنترنت.</div>';
+      toast('تعذر تحميل الفهرس. تحقق من الاتصال بالإنترنت.');
       return;
     }
     $('#memoSurah').innerHTML = surahs.map((s) => `<option value="${s.number}">${s.number}. ${esc(s.name)}</option>`).join('');
@@ -236,63 +237,33 @@
     setupDownloadUI();
   }
 
+  // الفهرس: ثلاث قوائم منسدلة (السورة، الجزء، الآية) تنتقل للموضع المختار
+  function fillAyahNums(surahNo) {
+    const count = surahs[surahNo - 1]?.numberOfAyahs || 0;
+    $('#idxAyahNum').innerHTML = Array.from({ length: count }, (_, i) => `<option value="${i + 1}">${toArabicDigits(i + 1)}</option>`).join('');
+  }
+  function syncIndexSelects() {
+    if (!surahs.length) return;
+    const cur = state.sel || { s: 1, n: 1, juz: 1 };
+    $('#idxSurah').value = String(cur.s);
+    $('#idxJuz').value = String(cur.juz || 1);
+    fillAyahNums(cur.s);
+    $('#idxAyahNum').value = String(cur.n);
+  }
   function renderIndex() {
     if (!surahs.length) return;
-    const curS = state.sel ? state.sel.s : 1;
-    const curJuz = state.sel ? state.sel.juz : 0;
-    // السور: مع البحث بالاسم أو الرقم
-    const raw = $('#indexSearch').value.trim();
-    const term = raw.toLowerCase();
-    const items = surahs.filter((s) =>
-      !term || String(s.number) === term || s.englishName.toLowerCase().includes(term) ||
-      s.englishNameTranslation.toLowerCase().includes(term) || s.name.includes(raw));
-    $('#surahList').innerHTML = items.map((s) => `
-      <div class="idx ${s.number === curS ? 'current' : ''}" data-s="${s.number}" data-a="1">
-        <div class="n">${s.number}</div>
-        <div>
-          <div class="t">${esc(s.name)}</div>
-          <div class="s">${esc(s.englishName)} · ${s.numberOfAyahs} آية · ${s.revelationType === 'Meccan' ? 'مكية' : 'مدنية'}</div>
-        </div>
-        <div class="badge">جـ ${juzOf(s.number, 1)}</div>
-      </div>`).join('') || '<div class="muted" style="padding:10px">لا توجد نتائج.</div>';
-    // الأجزاء
-    $('#juzList').innerHTML = JUZ_START.map(([s, a], i) => `
-      <div class="idx ${curJuz === i + 1 ? 'current' : ''}" data-s="${s}" data-a="${a}">
-        <div class="n">${i + 1}</div>
-        <div>
-          <div class="t">الجزء ${toArabicDigits(i + 1)}</div>
-          <div class="s">يبدأ من ${esc(surahName(s))} آية ${a}</div>
-        </div>
-        <div class="badge"></div>
-      </div>`).join('');
-    // الآيات: تختار السورة ثم الآية
-    const sel = index.surah;
-    const count = surahs[sel - 1]?.numberOfAyahs || 0;
-    let grid = '';
-    for (let a = 1; a <= count; a++) {
-      grid += `<button data-a="${a}" class="${state.sel && state.sel.s === sel && state.sel.n === a ? 'current' : ''}">${toArabicDigits(a)}</button>`;
-    }
-    $('#ayahList').innerHTML = `
-      <select id="ayahSurahSel">
-        ${surahs.map((s) => `<option value="${s.number}" ${s.number === sel ? 'selected' : ''}>${s.number}. ${esc(s.name)}</option>`).join('')}
-      </select>
-      <div class="muted" style="padding:0 10px 6px">${count} آية</div>
-      <div class="ayah-grid" id="ayahGrid">${grid}</div>`;
+    const sOpts = surahs.map((x) => `<option value="${x.number}">${x.number}. ${esc(x.name)}</option>`).join('');
+    $('#idxSurah').innerHTML = sOpts;
+    $('#idxJuz').innerHTML = JUZ_START.map((_, i) => `<option value="${i + 1}">الجزء ${toArabicDigits(i + 1)}</option>`).join('');
+    syncIndexSelects();
   }
-
-  $('#indexSearch').addEventListener('input', renderIndex);
-  const goFromIndex = (e) => {
-    const item = e.target.closest('.idx[data-s]');
-    if (item) { goToAyah(Number(item.dataset.s), Number(item.dataset.a)); closeSide(); }
-  };
-  $('#surahList').addEventListener('click', goFromIndex);
-  $('#juzList').addEventListener('click', goFromIndex);
-  $('#ayahList').addEventListener('click', (e) => {
-    const g = e.target.closest('#ayahGrid button');
-    if (g) { goToAyah(index.surah, Number(g.dataset.a)); closeSide(); }
+  $('#idxSurah').addEventListener('change', (e) => { fillAyahNums(Number(e.target.value)); goToAyah(Number(e.target.value), 1); closeSide(); });
+  $('#idxJuz').addEventListener('change', (e) => {
+    const [s, a] = JUZ_START[Number(e.target.value) - 1];
+    goToAyah(s, a); closeSide();
   });
-  $('#ayahList').addEventListener('change', (e) => {
-    if (e.target.id === 'ayahSurahSel') { index.surah = Number(e.target.value); renderIndex(); }
+  $('#idxAyahNum').addEventListener('change', (e) => {
+    goToAyah(Number($('#idxSurah').value), Number(e.target.value)); closeSide();
   });
 
   // ---------- تحميل الصفحات ----------

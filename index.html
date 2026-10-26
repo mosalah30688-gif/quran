@@ -288,6 +288,17 @@
     .group-menu { max-height: 60vh; overflow-y: auto; }
     .tab-group[data-group="adhkarak"] .group-menu { left: 0; right: auto; }
     .search-inner { padding: 4px 0 0; }
+    .idx-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    .idx-grid select { width: 100%; }
+    .idx-pair { display: grid; grid-template-columns: 1fr 96px; gap: 8px; }
+    @media (min-width: 720px) { .idx-grid { grid-template-columns: repeat(3, 1fr); } }
+    details.sub-dd { border-top: 1px solid var(--line); }
+    details.sub-dd > summary { list-style: none; cursor: pointer; padding: 12px 16px; font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; user-select: none; }
+    details.sub-dd > summary::-webkit-details-marker { display: none; }
+    details.sub-dd > summary::after { content: "▾"; margin-right: auto; color: var(--muted); }
+    details.sub-dd[open] > summary::after { content: "▴"; }
+    details.sub-dd > .index-search, details.sub-dd > .index-list { margin: 0 10px 10px; }
+    #ayahList select { width: calc(100% - 20px); margin: 0 10px 8px; }
     .search-inner .card { margin-bottom: 10px; }
     nav.menu .group-menu button { width: 100%; flex: none; min-height: 44px; padding: 10px 12px; display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 8px; font-size: 14px; white-space: nowrap; text-align: right; }
     nav.menu .group-menu button .ic { width: 22px; text-align: center; }
@@ -378,7 +389,6 @@
         </nav>
           <div class="nav-end">
             <button class="btn small" id="settingsBtn" title="الإعدادات" aria-label="الإعدادات">⚙️<span class="lbl"> الإعدادات</span></button>
-            <button class="theme-btn" id="themeBtn" title="الوضع الليلي" aria-label="الوضع الليلي">🌙</button>
           </div>
         </div>
       </header>
@@ -601,21 +611,26 @@
           <div id="mnList"></div>
         </section>
         <section class="view" id="view-settings">
-          <details class="card dd">
-            <summary>السور</summary>
-            <div class="index-wrap">
-              <div class="index-search"><input type="text" id="indexSearch" placeholder="ابحث باسم السورة أو رقمها..." /></div>
-              <div class="index-list" id="surahList"></div>
+          <div class="card">
+            <label><input type="checkbox" id="setDark" /> الوضع الليلي</label>
+          </div>
+          <div class="card">
+            <h3 style="margin-top:0">الفهرس</h3>
+            <div class="idx-grid">
+              <div>
+                <label class="lbl" for="idxSurah">السورة</label>
+                <select id="idxSurah"></select>
+              </div>
+              <div>
+                <label class="lbl" for="idxJuz">الجزء</label>
+                <select id="idxJuz"></select>
+              </div>
+              <div>
+                <label class="lbl" for="idxAyahNum">الآية</label>
+                <select id="idxAyahNum"></select>
+              </div>
             </div>
-          </details>
-          <details class="card dd">
-            <summary>الأجزاء</summary>
-            <div class="index-wrap"><div class="index-list" id="juzList"></div></div>
-          </details>
-          <details class="card dd">
-            <summary>الآيات</summary>
-            <div class="index-wrap"><div class="index-list" id="ayahList"></div></div>
-          </details>
+          </div>
           <details class="card dd">
             <summary>البحث في القرآن</summary>
             <div class="search-inner">
