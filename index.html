@@ -396,6 +396,15 @@
             <div class="muted" id="dlStored" style="margin-top:6px"></div>
             <p class="muted">القارئ الذي لا يظهر هنا يعمل للاستماع المباشر، لكن تحميله غير متاح حالياً.</p>
           </div>
+          <div class="card">
+            <h3 style="margin-top:0">تحديث التطبيق</h3>
+            <div class="muted">الإصدار الحالي: <strong id="verVal"></strong></div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn" id="btnUpdate">🔄 تحديث التطبيق</button>
+              <button class="btn ghost" id="btnRestore" hidden>استعادة النسخة الأصلية</button>
+            </div>
+            <p class="muted" id="updStatus" style="margin-bottom:0"></p>
+          </div>
         </section>
         <!-- عن التطبيق -->
         <section class="view" id="view-about">
@@ -454,6 +463,53 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="app.js"></script>
+  <script id="boot-loader">
+  (function () {
+    window.APP_BUNDLE_VERSION = '1.0.3';
+    var KEY = 'quran-update', PEND = 'quran-update-pending';
+
+    function run(code, src) {
+      var el = document.createElement('script');
+      el.async = false;
+      if (code != null) el.textContent = code; else el.src = src;
+      document.body.appendChild(el);
+    }
+
+    function applyUpdate(up) {
+      var files = up.files || {};
+      if (!files['index.html']) return false;
+      var doc = new DOMParser().parseFromString(files['index.html'], 'text/html');
+      var self = doc.getElementById('boot-loader');
+      if (self) self.parentNode.removeChild(self);
+      // علامة: التحديث بدأ ولم يكمل الإقلاع بعد. لو وقع أي خطأ الآن نرجع للنسخة الأصلية
+      localStorage.setItem(PEND, up.version || 'update');
+      window.addEventListener('error', function () {
+        if (localStorage.getItem(PEND)) {
+          localStorage.removeItem(KEY);
+          localStorage.removeItem(PEND);
+          location.reload();
+        }
+      });
+      document.head.innerHTML = doc.head.innerHTML;
+      document.body.innerHTML = doc.body.innerHTML;
+      Object.keys(files).forEach(function (f) { if (/\.js$/.test(f)) run(files[f], null); });
+      return true;
+    }
+
+    var applied = false;
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw && localStorage.getItem(PEND)) {
+        // التحديث السابق ما اكتملش: نرجع للنسخة الأصلية
+        localStorage.removeItem(KEY);
+        localStorage.removeItem(PEND);
+        raw = null;
+      }
+      if (raw) applied = applyUpdate(JSON.parse(raw));
+    } catch (e) { applied = false; }
+
+    if (!applied) run(null, 'app.js');
+  })();
+  </script>
 </body>
 </html>

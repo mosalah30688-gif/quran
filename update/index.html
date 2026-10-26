@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f5b4c" />
+  <meta name="description" content="تطبيق القرآن الكريم: مصحف المدينة صفحة بصفحة، بالتلاوات والتفسير والتجويد والحفظ." />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.png" type="image/png" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Amiri+Quran&family=Noto+Naskh+Arabic:wght@400;700&display=swap" rel="stylesheet" />
+  <title>القرآن الكريم</title>
+  <style>
+    :root {
+      --bg: #f7f4ec; --card: #ffffff; --ink: #1d2b27; --muted: #6b7a75;
+      --brand: #0f5b4c; --brand-2: #1a8a74; --gold: #b8860b; --line: #e3ddcf;
+      --hl: #fff4cc; --quran-size: 26px; --side: 300px; --player-h: 120px;
+      --paper: #f3e8cc; --paper-edge: #e2cd9c; --paper-ink: #1d170c; --paper-gold: #a8843f; --paper-muted: #6e5629;
+    }
+    body.dark {
+      --bg: #0e1715; --card: #15221f; --ink: #e8efec; --muted: #9bb0aa;
+      --brand: #3fbfa5; --brand-2: #2ea58d; --gold: #e0b44a; --line: #243632;
+      --hl: #2b3a1f;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      background: var(--bg); color: var(--ink);
+      font-family: "Noto Naskh Arabic", "Segoe UI", Tahoma, sans-serif;
+      -webkit-tap-highlight-color: transparent; overflow: hidden;
+    }
+
+    /* ---------- الهيكل العام ---------- */
+    .app { display: grid; grid-template-columns: var(--side) 1fr; height: 100vh; height: 100dvh; }
+    aside.side { background: var(--card); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+    .brand {
+      background: var(--brand); color: #fff; padding: 12px 14px; display: flex; align-items: center; gap: 10px;
+      padding-top: max(12px, env(safe-area-inset-top));
+    }
+    .brand h1 { font-size: 20px; margin: 0; flex: 1; font-family: Amiri, serif; }
+    .icon-btn { background: rgba(255,255,255,.15); color: #fff; border: 0; border-radius: 10px; padding: 6px 10px; font-size: 14px; cursor: pointer; }
+    nav.menu { display: flex; flex-direction: column; gap: 4px; padding: 10px; border-bottom: 1px solid var(--line); }
+    nav.menu button {
+      display: flex; align-items: center; gap: 10px; text-align: right; width: 100%;
+      border: 0; background: transparent; color: var(--ink); padding: 9px 12px; border-radius: 10px;
+      cursor: pointer; font-size: 15px; font-family: inherit;
+    }
+    nav.menu button:hover { background: var(--bg); }
+    nav.menu button.active { background: var(--brand); color: #fff; }
+    nav.menu .ic { width: 22px; text-align: center; }
+
+    .index-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .index-head { padding: 10px 12px 6px; }
+    .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: var(--bg); padding: 4px; border-radius: 10px; }
+    .seg button { border: 0; background: transparent; color: var(--muted); padding: 7px 4px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 14px; }
+    .seg button.on { background: var(--card); color: var(--brand); font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .index-search { padding: 6px 12px 10px; }
+    .index-search input { width: 100%; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font-size: 14px; font-family: inherit; }
+    .index-list { overflow-y: auto; flex: 1; padding: 0 8px 12px; }
+    .idx { display: grid; grid-template-columns: 34px 1fr auto; gap: 10px; align-items: center; padding: 8px; border-radius: 10px; cursor: pointer; border: 1px solid transparent; }
+    .idx:hover { background: var(--bg); }
+    .idx.current { border-color: var(--brand-2); background: var(--hl); }
+    .idx .n { width: 34px; height: 34px; border-radius: 9px; background: var(--brand); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 700; }
+    .idx .t { font-family: Amiri, serif; font-size: 17px; line-height: 1.3; }
+    .idx .s { font-size: 12px; color: var(--muted); }
+    .idx .badge { font-size: 12px; color: var(--gold); white-space: nowrap; }
+    .ayah-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 6px 8px; }
+    .ayah-grid button { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 8px; padding: 7px 0; cursor: pointer; font-family: inherit; font-size: 14px; }
+    .ayah-grid button.current { background: var(--brand); color: #fff; border-color: var(--brand); }
+    .index-list select, select, input[type=text] {
+      width: 100%; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line);
+      background: var(--card); color: var(--ink); font-size: 15px; font-family: inherit;
+    }
+
+    main.content { overflow-y: auto; height: 100vh; height: 100dvh; min-width: 0; position: relative; }
+    .topbar { position: sticky; top: 0; z-index: 15; background: var(--bg); border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
+    .topbar .title { flex: 1; font-weight: 700; font-size: 16px; }
+    .menu-toggle { display: none; background: var(--brand); color: #fff; }
+    .wrap { padding: 14px; max-width: 900px; margin: 0 auto; padding-bottom: 120px; }
+    section.view { display: none; }
+    section.view.active { display: block; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .btn { background: var(--brand); color: #fff; border: 0; padding: 9px 14px; border-radius: 10px; cursor: pointer; font-family: inherit; font-size: 14px; }
+    .btn.ghost { background: transparent; color: var(--brand); border: 1px solid var(--brand); }
+    .btn.small { padding: 5px 10px; font-size: 13px; }
+    .btn:disabled { opacity: .4; cursor: default; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    label.lbl { font-size: 13px; color: var(--muted); display: block; margin: 8px 0 4px; }
+
+    /* ---------- شريط القراءة ---------- */
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+    .toolbar select { width: auto; padding: 7px 10px; font-size: 14px; }
+    .toolbar select.tsel { min-width: 120px; max-width: 200px; }
+
+    /* ---------- الصفحة (مصحف ورقي) ---------- */
+    .stage { touch-action: pan-y; user-select: text; }
+    .page {
+      position: relative; max-width: 640px; margin: 0 auto; min-height: 70vh;
+      background:
+        radial-gradient(ellipse at 15% 8%, rgba(255,255,255,.45), transparent 45%),
+        radial-gradient(ellipse at 85% 95%, rgba(120,80,20,.10), transparent 50%),
+        repeating-linear-gradient(0deg, rgba(120,90,30,.025) 0 2px, transparent 2px 5px),
+        var(--paper);
+      border-radius: 6px; padding: 30px 26px 16px; color: var(--paper-ink);
+      box-shadow: 0 1px 0 #d6bf8c, 0 12px 28px rgba(60,40,10,.28), inset 0 0 70px rgba(120,80,20,.14);
+    }
+    .page::before { content: ""; position: absolute; inset: 9px; border: 2px solid var(--paper-gold); border-radius: 4px; pointer-events: none; }
+    .page::after { content: ""; position: absolute; inset: 14px; border: 1px solid var(--paper-gold); opacity: .55; border-radius: 3px; pointer-events: none; }
+    .page .corner { position: absolute; width: 34px; height: 34px; color: var(--paper-gold); font-size: 22px; line-height: 34px; text-align: center; z-index: 2; font-family: Amiri, serif; }
+    .page .c1 { top: 4px; right: 4px; } .page .c2 { top: 4px; left: 4px; }
+    .page .c3 { bottom: 4px; right: 4px; } .page .c4 { bottom: 4px; left: 4px; }
+    .page-head { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--paper-muted); padding: 0 8px 6px; position: relative; z-index: 1; font-family: "Noto Naskh Arabic", serif; }
+    .page-body { position: relative; z-index: 1; padding: 0 6px; }
+    .page-foot { text-align: center; font-family: Amiri, serif; color: var(--paper-muted); font-size: 18px; margin-top: 10px; position: relative; z-index: 1; }
+
+    .surah-banner {
+      margin: 14px auto 8px; text-align: center; font-family: "Amiri Quran", Amiri, serif; font-size: 25px;
+      border-top: 2px solid var(--paper-gold); border-bottom: 2px solid var(--paper-gold); padding: 6px 0;
+      background: linear-gradient(90deg, transparent, rgba(168,132,63,.16), transparent);
+    }
+    .bism { text-align: center; font-family: "Amiri Quran", Amiri, serif; font-size: calc(var(--quran-size) * .95); margin: 2px 0 6px; }
+    .flow {
+      font-family: "Amiri Quran", Amiri, serif; font-size: var(--quran-size); line-height: 2.15;
+      text-align: justify; margin: 0; word-spacing: .02em;
+    }
+    .ay { cursor: pointer; border-radius: 6px; transition: background .2s; }
+    .ay.sel { background: rgba(168,132,63,.24); }
+    .ay.playing { background: rgba(40,140,90,.28); }
+    .end {
+      display: inline-grid; place-items: center; width: 1.9em; height: 1.9em; border: 1.5px solid var(--paper-gold);
+      border-radius: 50%; font-family: Arial, sans-serif; font-size: 12px; color: #7a5c24; vertical-align: middle;
+      margin: 0 3px; cursor: pointer; line-height: 1; background: rgba(255,255,255,.35);
+    }
+    .tj-h, .tj-l { color: #9a9a9a; }
+    .tj-n { color: #ff7e1e; } .tj-p { color: #d300c5; } .tj-q { color: #dd0008; }
+    .tj-m, .tj-s, .tj-f, .tj-g, .tj-c, .tj-a, .tj-b { color: #537fff; }
+    .tj-i, .tj-o, .tj-e, .tj-d, .tj-j, .tj-k, .tj-r, .tj-t, .tj-u, .tj-v, .tj-w, .tj-x, .tj-y, .tj-z { color: #1a8a74; }
+
+    .page.flip-next { animation: flipN .35s ease; }
+    .page.flip-prev { animation: flipP .35s ease; }
+    @keyframes flipN { from { transform: translateX(-28px); opacity: .25; } to { transform: none; opacity: 1; } }
+    @keyframes flipP { from { transform: translateX(28px); opacity: .25; } to { transform: none; opacity: 1; } }
+
+    .pager { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 12px 0 4px; }
+    .pager .btn { padding: 5px 12px; font-size: 13px; }
+    .pager .pno { font-size: 13px; color: var(--muted); min-width: 110px; text-align: center; }
+    .hint { text-align: center; font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+    /* ---------- شريط التشغيل ---------- */
+    .player {
+      position: fixed; bottom: 0; left: var(--side); right: 0; z-index: 25; background: var(--card);
+      border-top: 1px solid var(--line); padding: 10px 14px; padding-bottom: max(10px, env(safe-area-inset-bottom));
+      display: none; gap: 10px; align-items: center; flex-wrap: wrap; box-shadow: 0 -4px 16px rgba(0,0,0,.08);
+    }
+    .player.show { display: flex; }
+    .player .info { flex: 1; min-width: 150px; font-size: 14px; }
+    .panel-tafsir {
+      position: fixed; left: var(--side); right: 0; bottom: 0; max-height: 55vh; overflow: auto; z-index: 30; background: var(--card);
+      border-top: 2px solid var(--brand); padding: 14px; border-radius: 16px 16px 0 0; display: none; box-shadow: 0 -8px 24px rgba(0,0,0,.2);
+    }
+    .panel-tafsir.show { display: block; }
+    .panel-tafsir .tf { font-size: 18px; line-height: 2; font-family: "Noto Naskh Arabic", serif; }
+
+    /* ---------- الحفظ والمحفوظات ---------- */
+    .ayah { font-family: "Amiri Quran", Amiri, serif; font-size: var(--quran-size); line-height: 2.2; padding: 6px 10px; border-bottom: 1px dashed var(--line); }
+    .ayah.hidden-text .txt { filter: blur(7px); user-select: none; cursor: pointer; }
+    .ayah.playing { background: var(--hl); }
+    .toast {
+      position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: #222; color: #fff;
+      padding: 8px 14px; border-radius: 10px; font-size: 14px; opacity: 0; transition: opacity .3s; z-index: 50; pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+
+    /* ---------- الشاشات الصغيرة ---------- */
+    @media (max-width: 860px) {
+      .app { grid-template-columns: 1fr; }
+      aside.side {
+        position: fixed; top: 0; bottom: 0; right: 0; width: min(86vw, 320px); z-index: 40;
+        transform: translateX(100%); transition: transform .25s ease; box-shadow: -8px 0 24px rgba(0,0,0,.2);
+      }
+      body.side-open aside.side { transform: translateX(0); }
+      body.side-open .backdrop { display: block; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 35; }
+      .menu-toggle { display: inline-block; }
+      .player, .panel-tafsir { left: 0; }
+      .page { padding: 24px 14px 12px; min-height: 60vh; }
+      .page-body { padding: 0 2px; }
+      .btn, .icon-btn, nav.menu button, .seg button, .pager .btn { min-height: 44px; }
+      .ayah-grid button { min-height: 40px; }
+      .toolbar select { min-height: 40px; }
+      /* شريط التشغيل على الهاتف: سطر للمعلومات وصف للأزرار الكبيرة */
+      .player { padding: 10px 12px; padding-bottom: max(10px, env(safe-area-inset-bottom)); gap: 8px; justify-content: center; }
+      .player .info { order: -1; flex: 0 0 100%; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
+      .player .btn { min-width: 52px; min-height: 44px; font-size: 18px; }
+      .player #pToggle { min-width: 72px; }
+    }
+    .back-btn { background: var(--brand); color: #fff; }
+    .back-btn[hidden] { display: none; }
+    .about-head { display: flex; align-items: center; gap: 14px; }
+    .about-icon { width: 72px; height: 72px; border-radius: 16px; flex: 0 0 72px; box-shadow: 0 4px 14px rgba(0,0,0,.2); }
+    .about-title { margin: 0 0 4px; font-family: Amiri, serif; font-size: 24px; color: var(--brand); }
+    ul.feat { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+    ul.feat li { line-height: 1.8; padding: 8px 10px; background: var(--bg); border-radius: 10px; }
+    .dev-line { font-size: 17px; margin: 4px 0; }
+    .dev-bio { margin: 6px 0 0; }
+    a.ext { color: var(--brand); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+    a.btn { text-decoration: none; display: inline-block; }
+    body:has(.player.show) .wrap { padding-bottom: calc(var(--player-h) + 28px); }
+    .backdrop { display: none; }
+
+    /* شاشات الهاتف القصيرة (وضع أفقي): شريط تشغيل سطر واحد مضغوط */
+    @media (max-height: 500px) {
+      .player { padding: 6px 10px; padding-bottom: max(6px, env(safe-area-inset-bottom)); gap: 6px; flex-wrap: nowrap; }
+      .player .info { order: 0; flex: 1 1 auto; font-size: 13px; }
+      .player .btn { min-width: 40px; min-height: 36px; padding: 4px 8px; font-size: 15px; }
+      .player #pToggle { min-width: 52px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="side" id="side">
+      <div class="brand">
+        <h1>القرآن الكريم</h1>
+        <button class="icon-btn" id="themeBtn" title="الوضع الليلي">🌙</button>
+      </div>
+
+      <nav class="menu" id="tabs">
+        <button data-view="reader" class="active"><span class="ic">📖</span>المصحف</button>
+        <button data-view="memo"><span class="ic">🧠</span>الحفظ</button>
+        <button data-view="bookmarks"><span class="ic">⭐</span>المحفوظات</button>
+        <button data-view="settings"><span class="ic">⚙️</span>الإعدادات</button>
+        <button data-view="about"><span class="ic">ℹ️</span>عن التطبيق</button>
+      </nav>
+
+      <div class="index-wrap">
+        <div class="index-head">
+          <div class="seg" id="indexSeg">
+            <button data-mode="surah" class="on">السورة</button>
+            <button data-mode="juz">الجزء</button>
+            <button data-mode="ayah">الآية</button>
+          </div>
+        </div>
+        <div class="index-search" id="indexSearchWrap">
+          <input type="text" id="indexSearch" placeholder="ابحث باسم السورة أو رقمها..." />
+        </div>
+        <div class="index-list" id="indexList"></div>
+      </div>
+    </aside>
+    <div class="backdrop" id="backdrop"></div>
+
+    <main class="content" id="content">
+      <div class="topbar">
+        <button class="icon-btn back-btn" id="backBtn" hidden>→ رجوع</button>
+        <button class="icon-btn menu-toggle" id="menuBtn">⚙ الإعدادات</button>
+        <div class="title" id="topTitle">المصحف</div>
+      </div>
+
+      <div class="wrap">
+        <!-- المصحف: صفحة بصفحة -->
+        <section class="view active" id="view-reader">
+          <div class="card toolbar">
+            <button class="btn" id="btnPlaySurah">▶ تشغيل</button>
+            <select id="playSurah" class="tsel" title="السورة"></select>
+            <select id="playFrom" class="tsel" title="الآية"></select>
+            <select id="playReciter" class="tsel" title="الشيخ"></select>
+            <button class="btn ghost small" id="btnBm">☆ علامة</button>
+            <button class="btn ghost small" id="btnTafsir">التفسير</button>
+            <button class="btn ghost small" id="btnResume">↩ آخر موضع</button>
+          </div>
+
+          <div class="stage" id="stage">
+            <div class="page" id="page">
+              <span class="corner c1">❁</span><span class="corner c2">❁</span>
+              <span class="corner c3">❁</span><span class="corner c4">❁</span>
+              <div class="page-head"><span id="pgJuz"></span><span id="pgSurah"></span></div>
+              <div class="page-body" id="pageBody"></div>
+              <div class="page-foot" id="pgFoot"></div>
+            </div>
+          </div>
+
+          <div class="pager">
+            <button class="btn small" id="pPrevS">‹ السابقة</button>
+            <span class="pno" id="pageNo"></span>
+            <button class="btn small" id="pNextS">التالية ›</button>
+          </div>
+        </section>
+
+        <!-- الحفظ -->
+        <section class="view" id="view-memo">
+          <div class="card">
+            <h3 style="margin-top:0">وضع الحفظ</h3>
+            <div class="grid">
+              <div>
+                <label class="lbl">السورة</label>
+                <select id="memoSurah"></select>
+              </div>
+              <div>
+                <label class="lbl">من الآية</label>
+                <input type="text" id="memoFrom" value="1" inputmode="numeric" />
+              </div>
+              <div>
+                <label class="lbl">إلى الآية</label>
+                <input type="text" id="memoTo" value="5" inputmode="numeric" />
+              </div>
+              <div>
+                <label class="lbl">عدد مرات تكرار كل آية</label>
+                <select id="memoRepeat">
+                  <option value="1">1</option><option value="3" selected>3</option><option value="5">5</option><option value="10">10</option>
+                </select>
+              </div>
+            </div>
+            <div class="row" style="margin-top:12px">
+              <button class="btn" id="btnMemoLoad">تحميل المقطع</button>
+              <button class="btn ghost" id="btnMemoHide">إخفاء/إظهار النص</button>
+              <button class="btn ghost" id="btnMemoPlay">تشغيل مع التكرار</button>
+            </div>
+            <p class="muted">اضغط على الآية المخفية لإظهارها، وكرر التلاوة حتى تثبت.</p>
+          </div>
+          <div class="card" id="memoText"></div>
+        </section>
+
+        <!-- المحفوظات -->
+        <section class="view" id="view-bookmarks">
+          <div class="card">
+            <h3 style="margin-top:0">آخر موضع</h3>
+            <div id="lastRead" class="muted">لا توجد قراءة سابقة.</div>
+          </div>
+          <div class="card">
+            <h3 style="margin-top:0">الآيات المحفوظة</h3>
+            <div id="bookmarkList" class="muted">لا توجد علامات بعد.</div>
+          </div>
+        </section>
+
+        <!-- الإعدادات -->
+        <section class="view" id="view-settings">
+          <div class="card">
+            <label class="lbl">الرواية والرسم</label>
+            <select id="setRiwaya">
+              <option value="quran-uthmani">حفص عن عاصم - الرسم العثماني</option>
+              <option value="quran-simple">حفص - رسم إملائي مبسط</option>
+              <option value="quran-uthmani-min">حفص - عثماني مختصر</option>
+              <option value="quran-tajweed">حفص - بألوان أحكام التجويد</option>
+            </select>
+
+            <label class="lbl">القارئ</label>
+            <select id="setReciter"></select>
+
+            <label class="lbl">كتاب التفسير</label>
+            <select id="setTafsir"></select>
+
+            <label class="lbl">الترجمة</label>
+            <select id="setTranslation">
+              <option value="">بدون ترجمة</option>
+              <option value="en.sahih">English - Sahih International</option>
+              <option value="fr.hamidullah">Français - Hamidullah</option>
+              <option value="ur.jalandhry">اردو - جالندھری</option>
+              <option value="id.indonesian">Bahasa Indonesia</option>
+              <option value="tr.diyanet">Türkçe - Diyanet</option>
+            </select>
+
+            <label class="lbl">حجم الخط: <span id="sizeVal"></span></label>
+            <input type="range" id="setSize" min="18" max="40" step="1" />
+
+            <div class="row" style="margin-top:12px">
+              <label><input type="checkbox" id="setTajweed" /> تفعيل ألوان التجويد</label>
+            </div>
+          </div>
+          <div class="card">
+            <h3 style="margin-top:0">تحميل التلاوات للاستماع بدون إنترنت</h3>
+            <label class="lbl">القارئ</label>
+            <select id="dlReciter"></select>
+            <label class="lbl">ما الذي تريد تحميله؟</label>
+            <div class="row">
+              <label><input type="radio" name="dlScope" value="full" checked /> المصحف كاملاً</label>
+              <label><input type="radio" name="dlScope" value="surah" /> سورة محددة</label>
+            </div>
+            <select id="dlSurahSel" style="margin-top:8px" disabled></select>
+            <div class="muted" id="dlEstimate" style="margin-top:6px"></div>
+            <label class="lbl">مكان التخزين</label>
+            <select id="dlTarget">
+              <option value="app">داخل التطبيق</option>
+              <option value="folder">مجلد على الجهاز</option>
+            </select>
+            <p class="muted" id="dlNote"></p>
+            <div class="row" style="margin-top:8px">
+              <button class="btn" id="btnDownload">⬇ بدء التحميل</button>
+              <button class="btn ghost" id="btnCancelDl" disabled>إيقاف</button>
+              <button class="btn ghost" id="btnDeleteDl">حذف تحميلات هذا القارئ من التطبيق</button>
+            </div>
+            <progress id="dlBar" value="0" max="1" style="width:100%;margin-top:10px;display:none"></progress>
+            <div class="muted" id="dlProgress" style="margin-top:6px"></div>
+            <div class="muted" id="dlStored" style="margin-top:6px"></div>
+            <p class="muted">القارئ الذي لا يظهر هنا يعمل للاستماع المباشر، لكن تحميله غير متاح حالياً.</p>
+          </div>
+          <div class="card">
+            <h3 style="margin-top:0">تحديث التطبيق</h3>
+            <div class="muted">الإصدار الحالي: <strong id="verVal"></strong></div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn" id="btnUpdate">🔄 تحديث التطبيق</button>
+              <button class="btn ghost" id="btnRestore" hidden>استعادة النسخة الأصلية</button>
+            </div>
+            <p class="muted" id="updStatus" style="margin-bottom:0"></p>
+          </div>
+        </section>
+        <!-- عن التطبيق -->
+        <section class="view" id="view-about">
+          <div class="card about-head">
+            <img src="icon.png" alt="أيقونة التطبيق" class="about-icon" />
+            <div>
+              <h2 class="about-title">القرآن الكريم</h2>
+              <div class="muted">مصحف المدينة صفحة بصفحة، بالتلاوات والتفسير والتجويد والحفظ</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-top:0">مميزات التطبيق</h3>
+            <ul class="feat">
+              <li>📖 المصحف صفحة بصفحة بترقيم مصحف المدينة</li>
+              <li>🔤 روايات ورسوم متعددة، مع وضع ألوان أحكام التجويد</li>
+              <li>🔊 تلاوات بأصوات عدة قراء، مع تشغيل السورة أو من آية محددة</li>
+              <li>📚 تفسير وترجمة لمعاني القرآن بلغات متعددة</li>
+              <li>🧠 وضع الحفظ: إخفاء النص واختبار نفسك آية بآية</li>
+              <li>⭐ علامات على الآيات، والرجوع لآخر موضع تلقائياً</li>
+              <li>⬇ تحميل التلاوات للاستماع بدون إنترنت</li>
+              <li>🌙 وضع ليلي للقراءة المريحة</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-top:0">نبذة عن المطور</h3>
+            <p class="dev-line">
+              <a class="ext" href="https://elkatebmohamadsalah.blogspot.com/p/c.html" target="_blank" rel="noopener noreferrer">محمد صلاح عبد الخالق</a>
+            </p>
+            <p class="muted dev-bio">محمد صلاح عبد الخالق، مطوّر هذا التطبيق. لمعرفة المزيد عن أعماله، زُر صفحته.</p>
+            <div class="row" style="margin-top:10px">
+              <a class="btn" href="https://elkatebmohamadsalah.blogspot.com/p/blog-page_827.html" target="_blank" rel="noopener noreferrer">📞 اتصل بنا</a>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="player" id="player">
+    <div class="info" id="playerInfo">لا يوجد تشغيل</div>
+    <button class="btn small" id="pPrev">⏮</button>
+    <button class="btn" id="pToggle">⏯</button>
+    <button class="btn small" id="pNext">⏭</button>
+    <button class="btn small ghost" id="pStop">إيقاف</button>
+  </div>
+
+  <div class="panel-tafsir" id="tafsirPanel">
+    <div class="row" style="justify-content:space-between">
+      <strong id="tafsirTitle"></strong>
+      <button class="btn small ghost" id="tafsirClose">إغلاق</button>
+    </div>
+    <div class="tf" id="tafsirBody" style="margin-top:10px"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script id="boot-loader">
+  (function () {
+    window.APP_BUNDLE_VERSION = '1.0.3';
+    var KEY = 'quran-update', PEND = 'quran-update-pending';
+
+    function run(code, src) {
+      var el = document.createElement('script');
+      el.async = false;
+      if (code != null) el.textContent = code; else el.src = src;
+      document.body.appendChild(el);
+    }
+
+    function applyUpdate(up) {
+      var files = up.files || {};
+      if (!files['index.html']) return false;
+      var doc = new DOMParser().parseFromString(files['index.html'], 'text/html');
+      var self = doc.getElementById('boot-loader');
+      if (self) self.parentNode.removeChild(self);
+      // علامة: التحديث بدأ ولم يكمل الإقلاع بعد. لو وقع أي خطأ الآن نرجع للنسخة الأصلية
+      localStorage.setItem(PEND, up.version || 'update');
+      window.addEventListener('error', function () {
+        if (localStorage.getItem(PEND)) {
+          localStorage.removeItem(KEY);
+          localStorage.removeItem(PEND);
+          location.reload();
+        }
+      });
+      document.head.innerHTML = doc.head.innerHTML;
+      document.body.innerHTML = doc.body.innerHTML;
+      Object.keys(files).forEach(function (f) { if (/\.js$/.test(f)) run(files[f], null); });
+      return true;
+    }
+
+    var applied = false;
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw && localStorage.getItem(PEND)) {
+        // التحديث السابق ما اكتملش: نرجع للنسخة الأصلية
+        localStorage.removeItem(KEY);
+        localStorage.removeItem(PEND);
+        raw = null;
+      }
+      if (raw) applied = applyUpdate(JSON.parse(raw));
+    } catch (e) { applied = false; }
+
+    if (!applied) run(null, 'app.js');
+  })();
+  </script>
+</body>
+</html>

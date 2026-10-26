@@ -776,6 +776,53 @@
   });
 
   // ---------- التحميل للاستماع بدون إنترنت ----------
+  // ---------- تحديث التطبيق من GitHub (بدون إعادة تحزيم) ----------
+  const UPDATE_KEY = 'quran-update';
+  const UPDATE_BASE = 'https://raw.githubusercontent.com/mosalah30688-gif/quran/main/update/';
+  const storedUpdate = () => { try { return JSON.parse(localStorage.getItem(UPDATE_KEY) || 'null'); } catch (e) { return null; } };
+  const currentVersion = () => (storedUpdate() || {}).version || window.APP_BUNDLE_VERSION || '1.0.0';
+  function renderUpdateCard() {
+    $('#verVal').textContent = currentVersion();
+    $('#btnRestore').hidden = !storedUpdate();
+  }
+  async function checkForUpdate() {
+    const btn = $('#btnUpdate'), st = $('#updStatus');
+    btn.disabled = true;
+    st.textContent = 'جاري البحث عن تحديث...';
+    try {
+      const mres = await fetch(UPDATE_BASE + 'manifest.json?t=' + Date.now(), { cache: 'no-store' });
+      if (!mres.ok) throw new Error('manifest');
+      const manifest = await mres.json();
+      if (!manifest.version || !Array.isArray(manifest.files) || !manifest.files.includes('index.html')) throw new Error('bad manifest');
+      if (manifest.version === currentVersion()) {
+        st.textContent = 'أنت على أحدث نسخة (' + manifest.version + ')';
+        btn.disabled = false;
+        return;
+      }
+      st.textContent = 'جاري تنزيل الإصدار ' + manifest.version + '...';
+      const files = {};
+      for (const f of manifest.files) {
+        const r = await fetch(UPDATE_BASE + f + '?t=' + Date.now(), { cache: 'no-store' });
+        if (!r.ok) throw new Error('file ' + f);
+        const txt = await r.text();
+        if (!txt.trim()) throw new Error('empty ' + f);
+        files[f] = txt;
+      }
+      localStorage.setItem(UPDATE_KEY, JSON.stringify({ version: manifest.version, files: files }));
+      st.textContent = 'تم التنزيل، جاري تطبيق التحديث...';
+      setTimeout(() => location.reload(), 400);
+    } catch (e) {
+      st.textContent = 'تعذّر التحديث. تأكد من الاتصال بالإنترنت وحاول مرة أخرى.';
+      btn.disabled = false;
+    }
+  }
+  $('#btnUpdate').addEventListener('click', checkForUpdate);
+  $('#btnRestore').addEventListener('click', () => {
+    localStorage.removeItem(UPDATE_KEY);
+    location.reload();
+  });
+  renderUpdateCard();
+
   // مصدر الملفات: everyayah.com (يسمح بالتحميل من المتصفح) - لكل آية ملف مستقل
   const OFFLINE_SRC = {
     'ar.alafasy': 'Alafasy_128kbps',
@@ -999,6 +1046,8 @@
 
   // الصفحة الرئيسية = الصفحة التي توقف عندها القارئ
   loadSurahs().finally(async () => {
+    // التطبيق اشتغل بنجاح: نلغي علامة التحديث المعلّق
+    localStorage.removeItem('quran-update-pending');
     const last = getLast();
     if (last && last.p) {
       showPage(last.p, { selG: last.g, save: false });
