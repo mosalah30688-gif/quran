@@ -346,7 +346,7 @@
         openP = true;
         lastS = a.s;
       }
-      html += `<span class="ay" data-g="${a.g}">${a.html} <span class="end" data-act="tafsir" data-g="${a.g}" title="التفسير">${toArabicDigits(a.n)}</span></span> `;
+      html += `<span class="ay" data-g="${a.g}">${a.html} <span class="end" data-act="tafsir" data-g="${a.g}" title="الآية">${toArabicDigits(a.n)}</span></span> `;
     });
     if (openP) html += '</p>';
 
@@ -483,9 +483,9 @@
     const a = state.pg && state.pg.ayahs.find((x) => x.g === g);
     if (!a) return;
     selectAyah(a);
+    // التفسير والترجمة يظهران من زر "التفسير" فقط. الكلمة الملونة تعرض قاعدة التجويد
     const tj = !end && e.target.closest('[class^="tj-"]');
-    if (tj) { showTajweedPanel((tj.className.match(/tj-([a-z])/) || [])[1]); return; }
-    showTafsirPanel(a);
+    if (tj) showTajweedPanel((tj.className.match(/tj-([a-z])/) || [])[1]);
   });
 
   $('#playSurah').addEventListener('change', (e) => {

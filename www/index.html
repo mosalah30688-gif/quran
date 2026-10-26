@@ -92,9 +92,9 @@
     label.lbl { font-size: 13px; color: var(--muted); display: block; margin: 8px 0 4px; }
 
     /* ---------- شريط القراءة ---------- */
-    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
-    .toolbar select { width: auto; padding: 7px 10px; font-size: 14px; }
-    .toolbar select.tsel { min-width: 120px; max-width: 200px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; padding: 8px 10px; }
+    .toolbar select { width: auto; padding: 4px 8px; font-size: 13px; }
+    .toolbar select.tsel { min-width: 96px; max-width: 150px; }
 
     /* ---------- الصفحة (مصحف ورقي) ---------- */
     .stage { touch-action: pan-y; user-select: text; }
@@ -198,7 +198,8 @@
       .page-body { padding: 0 2px; }
       .btn, .icon-btn, nav.menu button, .seg button, .pager .btn { min-height: 44px; }
       .ayah-grid button { min-height: 40px; }
-      .toolbar select { min-height: 40px; }
+      .toolbar select { min-height: 32px; }
+      .toolbar .btn { min-height: 32px; padding: 4px 9px; font-size: 13px; }
       /* شريط التشغيل على الهاتف: سطر للمعلومات وصف للأزرار الكبيرة */
       .player { padding: 10px 12px; padding-bottom: max(10px, env(safe-area-inset-bottom)); gap: 8px; justify-content: center; }
       .player .info { order: -1; flex: 0 0 100%; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
