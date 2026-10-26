@@ -1269,25 +1269,33 @@
     }
   } catch { /* الإضافة غير موجودة في هذه النسخة، يبقى الرجوع الافتراضي */ }
 
-  // ---------- البحث في القرآن ----------
+  // ---------- البحث في القرآن (داخل التطبيق) ----------
   const SR_PAGE = 40;
   let srMatches = [];
   let srShown = 0;
   let srWords = [];
-  const srCache = new Map();
+  let srIndex = null;
   const srEsc = (w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/[اأإآ]/g, '[اأإآ]').replace(/[يى]/g, '[يى]');
+  // تجاهل التشكيل والتطويل، وتوحيد الألف والياء، ليتطابق البحث مع أي كتابة
+  const srNorm = (x) => String(x || '')
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED\u0640\ufeff]/g, '')
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ى/g, 'ي');
 
-  async function fetchSearch(q) {
-    if (srCache.has(q)) return srCache.get(q);
-    const res = await fetch('https://api.alquran.cloud/v1/search/' + encodeURIComponent(q) + '/all/quran-simple-clean');
-    let j = null;
-    try { j = await res.json(); } catch { j = null; }
-    let out;
-    if (j && j.code === 200 && j.data && Array.isArray(j.data.matches)) out = j.data.matches;
-    else if (j && j.code === 404) out = [];
-    else throw new Error('search failed');
-    srCache.set(q, out);
-    return out;
+  // فهرس الآيات يُحمَّل مرة واحدة عند أول بحث، ثم يعمل بدون اتصال
+  async function loadSearchIndex() {
+    if (srIndex) return srIndex;
+    const res = await fetch('quran-search.json');
+    if (!res.ok) throw new Error('index');
+    const j = await res.json();
+    srIndex = j.ayahs.map(([s, a, t]) => ({ s, a, t, n: srNorm(t) }));
+    return srIndex;
+  }
+
+  async function searchQuran(q) {
+    const idx = await loadSearchIndex();
+    const nq = srNorm(q);
+    return idx.filter((x) => x.n.includes(nq));
   }
 
   async function runSearch() {
@@ -1298,16 +1306,15 @@
     $('#srResults').innerHTML = '';
     $('#srMoreRow').hidden = true;
     try {
-      srMatches = await fetchSearch(q);
+      srMatches = await searchQuran(q);
     } catch {
       srMatches = [];
-      $('#srInfo').textContent = 'تعذّر البحث، تحقق من الاتصال بالإنترنت ثم حاول مرة أخرى.';
+      $('#srInfo').textContent = 'تعذّر فتح البحث، حاول مرة أخرى.';
       return;
     }
     if (!srMatches.length) { $('#srInfo').textContent = 'لا توجد نتائج لهذه الكلمة.'; return; }
     $('#srInfo').textContent = 'عدد النتائج: ' + toArabicDigits(srMatches.length);
     srShown = 0;
-    $('#srResults').innerHTML = '';
     renderSearchMore();
   }
 
@@ -1321,12 +1328,12 @@
   function renderSearchMore() {
     const chunk = srMatches.slice(srShown, srShown + SR_PAGE);
     $('#srResults').insertAdjacentHTML('beforeend', chunk.map((m) => `
-      <div class="card sr-item" data-s="${m.surah.number}" data-a="${m.numberInSurah}">
+      <div class="card sr-item" data-s="${m.s}" data-a="${m.a}">
         <div class="row" style="justify-content:space-between">
-          <b>${esc(surahNameShort(m.surah.number))}</b>
-          <span class="muted">الآية ${toArabicDigits(m.numberInSurah)}</span>
+          <b>${esc(surahNameShort(m.s))}</b>
+          <span class="muted">الآية ${toArabicDigits(m.a)}</span>
         </div>
-        <div class="sr-text">${highlightWords(m.text)}</div>
+        <div class="sr-text">${highlightWords(m.t)}</div>
       </div>`).join(''));
     srShown += chunk.length;
     const left = srMatches.length - srShown;

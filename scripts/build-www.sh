@@ -3,5 +3,5 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 rm -rf www && mkdir -p www
-cp index.html app.js manifest.json icon.png icon-192.png www/
+cp index.html app.js manifest.json icon.png icon-192.png quran-search.json www/
 echo "www ready: $(ls www | tr '\n' ' ')"
