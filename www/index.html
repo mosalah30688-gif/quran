@@ -127,18 +127,21 @@
       font-family: "Amiri Quran", Amiri, serif; font-size: var(--quran-size); line-height: 2.15;
       text-align: justify; margin: 0; word-spacing: .02em;
     }
-    .ay { cursor: pointer; border-radius: 6px; transition: background .2s; }
-    .ay.sel { background: rgba(168,132,63,.24); }
+    .ay { cursor: pointer; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+    .ay.sel { background: rgba(168,132,63,.28); }
     .ay.playing { background: rgba(40,140,90,.28); }
+    .page-body, .flow, .ay { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
     .end {
       display: inline-grid; place-items: center; width: 1.9em; height: 1.9em; border: 1.5px solid var(--paper-gold);
       border-radius: 50%; font-family: Arial, sans-serif; font-size: 12px; color: #7a5c24; vertical-align: middle;
       margin: 0 3px; cursor: pointer; line-height: 1; background: rgba(255,255,255,.35);
     }
-    .tj-h, .tj-l { color: #9a9a9a; }
-    .tj-n { color: #ff7e1e; } .tj-p { color: #d300c5; } .tj-q { color: #dd0008; }
-    .tj-m, .tj-s, .tj-f, .tj-g, .tj-c, .tj-a, .tj-b { color: #537fff; }
-    .tj-i, .tj-o, .tj-e, .tj-d, .tj-j, .tj-k, .tj-r, .tj-t, .tj-u, .tj-v, .tj-w, .tj-x, .tj-y, .tj-z { color: #1a8a74; }
+    [class^="tj-"] { cursor: pointer; }
+    .tj-h, .tj-s, .tj-l { color: #AAAAAA; }
+    .tj-n { color: #537FFF; } .tj-p { color: #4050FF; } .tj-m { color: #000EBC; } .tj-o { color: #2144C1; }
+    .tj-q { color: #DD0008; } .tj-c { color: #D500B7; } .tj-f { color: #9400A8; }
+    .tj-w { color: #58B800; } .tj-i { color: #26BFFD; } .tj-a { color: #169777; } .tj-u { color: #169200; }
+    .tj-d, .tj-b { color: #A1A1A1; } .tj-g { color: #FF7E1E; }
 
     .page.flip-next { animation: flipN .35s ease; }
     .page.flip-prev { animation: flipP .35s ease; }
@@ -163,7 +166,12 @@
       border-top: 2px solid var(--brand); padding: 14px; border-radius: 16px 16px 0 0; display: none; box-shadow: 0 -8px 24px rgba(0,0,0,.2);
     }
     .panel-tafsir.show { display: block; }
-    .panel-tafsir .tf { font-size: 18px; line-height: 2; font-family: "Noto Naskh Arabic", serif; }
+    .panel-tafsir .tf, .tf { font-size: 18px; line-height: 2; font-family: "Noto Naskh Arabic", serif; white-space: pre-line; }
+    .tr { font-size: 16px; line-height: 1.8; }
+    .tf-head { font-weight: 700; }
+    .tf-arabic { font-family: "Amiri Quran", Amiri, serif; font-size: 26px; line-height: 2.1; margin-top: 8px; }
+    .pop-ayah { font-family: "Amiri Quran", Amiri, serif; font-size: 22px; line-height: 2; margin-top: 8px; }
+    .pop-label { font-size: 13px; color: var(--muted); margin-top: 12px; }
 
     /* ---------- الحفظ والمحفوظات ---------- */
     .ayah { font-family: "Amiri Quran", Amiri, serif; font-size: var(--quran-size); line-height: 2.2; padding: 6px 10px; border-bottom: 1px dashed var(--line); }
@@ -230,6 +238,7 @@
 
       <nav class="menu" id="tabs">
         <button data-view="reader" class="active"><span class="ic">📖</span>المصحف</button>
+        <button data-view="tafsir"><span class="ic">📚</span>التفسير</button>
         <button data-view="memo"><span class="ic">🧠</span>الحفظ</button>
         <button data-view="bookmarks"><span class="ic">⭐</span>المحفوظات</button>
         <button data-view="settings"><span class="ic">⚙️</span>الإعدادات</button>
@@ -336,6 +345,26 @@
         </section>
 
         <!-- الإعدادات -->
+        <section class="view" id="view-tafsir">
+          <div class="card">
+            <div class="tf-head" id="tfTitle"></div>
+            <div class="tf-arabic" id="tfArabic"></div>
+            <div class="row" style="justify-content:space-between;margin-top:12px">
+              <button class="btn small ghost" id="tfPrev">الآية السابقة</button>
+              <button class="btn small ghost" id="tfNext">الآية التالية</button>
+            </div>
+          </div>
+          <div class="card">
+            <label class="lbl">كتاب التفسير</label>
+            <select id="tfBook"></select>
+            <div class="tf" id="tfTafsir" style="margin-top:10px"></div>
+          </div>
+          <div class="card">
+            <label class="lbl">الترجمة</label>
+            <select id="tfTrans"></select>
+            <div class="tr" id="tfTransText" dir="auto" style="margin-top:10px"></div>
+          </div>
+        </section>
         <section class="view" id="view-settings">
           <div class="card">
             <label class="lbl">الرواية والرسم</label>
@@ -382,7 +411,7 @@
             <div class="muted" id="dlEstimate" style="margin-top:6px"></div>
             <label class="lbl">مكان التخزين</label>
             <select id="dlTarget">
-              <option value="app">داخل التطبيق (المتصفح)</option>
+              <option value="app">داخل التطبيق</option>
               <option value="folder">مجلد على الجهاز</option>
             </select>
             <p class="muted" id="dlNote"></p>
@@ -397,9 +426,13 @@
             <p class="muted">القارئ الذي لا يظهر هنا يعمل للاستماع المباشر، لكن تحميله غير متاح حالياً.</p>
           </div>
           <div class="card">
-            <h3 style="margin-top:0">تثبيت التطبيق</h3>
-            <p class="muted">من متصفح الهاتف اختر "إضافة إلى الشاشة الرئيسية" ليعمل كتطبيق. التغليف لكل نظام يُضاف لاحقاً.</p>
-            <button class="btn ghost" id="btnClearCache">مسح الذاكرة المؤقتة</button>
+            <h3 style="margin-top:0">تحديث التطبيق</h3>
+            <div class="muted">الإصدار الحالي: <strong id="verVal"></strong></div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn" id="btnUpdate">🔄 تحديث التطبيق</button>
+              <button class="btn ghost" id="btnRestore" hidden>استعادة النسخة الأصلية</button>
+            </div>
+            <p class="muted" id="updStatus" style="margin-bottom:0"></p>
           </div>
         </section>
         <!-- عن التطبيق -->
@@ -415,14 +448,14 @@
           <div class="card">
             <h3 style="margin-top:0">مميزات التطبيق</h3>
             <ul class="feat">
-              <li>📖 المصحف صفحة بصفحة بترقيم مصحف المدينة، والتقليب بالسحب أو الأسهم</li>
+              <li>📖 المصحف صفحة بصفحة بترقيم مصحف المدينة</li>
               <li>🔤 روايات ورسوم متعددة، مع وضع ألوان أحكام التجويد</li>
               <li>🔊 تلاوات بأصوات عدة قراء، مع تشغيل السورة أو من آية محددة</li>
               <li>📚 تفسير وترجمة لمعاني القرآن بلغات متعددة</li>
               <li>🧠 وضع الحفظ: إخفاء النص واختبار نفسك آية بآية</li>
               <li>⭐ علامات على الآيات، والرجوع لآخر موضع تلقائياً</li>
               <li>⬇ تحميل التلاوات للاستماع بدون إنترنت</li>
-              <li>🌙 وضع ليلي، ويعمل على الهاتف والتابلت والحاسوب</li>
+              <li>🌙 وضع ليلي للقراءة المريحة</li>
             </ul>
           </div>
 
@@ -431,7 +464,7 @@
             <p class="dev-line">
               <a class="ext" href="https://elkatebmohamadsalah.blogspot.com/p/c.html" target="_blank" rel="noopener noreferrer">محمد صلاح عبد الخالق</a>
             </p>
-            <p class="muted dev-bio">[نبذة مختصرة عن المطور — تُضاف هنا]</p>
+            <p class="muted dev-bio">محمد صلاح عبد الخالق، مطوّر هذا التطبيق. لمعرفة المزيد عن أعماله، زُر صفحته.</p>
             <div class="row" style="margin-top:10px">
               <a class="btn" href="https://elkatebmohamadsalah.blogspot.com/p/blog-page_827.html" target="_blank" rel="noopener noreferrer">📞 اتصل بنا</a>
             </div>
@@ -454,11 +487,70 @@
       <strong id="tafsirTitle"></strong>
       <button class="btn small ghost" id="tafsirClose">إغلاق</button>
     </div>
-    <div class="tf" id="tafsirBody" style="margin-top:10px"></div>
+    <div class="pop-ayah" id="tafsirAyah"></div>
+    <div class="pop-label" id="tafsirLabel">التفسير</div>
+    <div class="tf" id="tafsirBody"></div>
+    <div class="pop-label" id="transLabel">الترجمة</div>
+    <div class="tr" id="tafsirTrans" dir="auto"></div>
+  </div>
+
+  <div class="panel-tafsir" id="tjPanel">
+    <div class="row" style="justify-content:space-between">
+      <strong id="tjTitle"></strong>
+      <button class="btn small ghost" id="tjClose">إغلاق</button>
+    </div>
+    <div class="tf" id="tjBody" style="margin-top:10px"></div>
   </div>
 
   <div class="toast" id="toast"></div>
 
-  <script src="app.js"></script>
+  <script id="boot-loader">
+  (function () {
+    window.APP_BUNDLE_VERSION = '1.0.3';
+    var KEY = 'quran-update', PEND = 'quran-update-pending';
+
+    function run(code, src) {
+      var el = document.createElement('script');
+      el.async = false;
+      if (code != null) el.textContent = code; else el.src = src;
+      document.body.appendChild(el);
+    }
+
+    function applyUpdate(up) {
+      var files = up.files || {};
+      if (!files['index.html']) return false;
+      var doc = new DOMParser().parseFromString(files['index.html'], 'text/html');
+      var self = doc.getElementById('boot-loader');
+      if (self) self.parentNode.removeChild(self);
+      // علامة: التحديث بدأ ولم يكمل الإقلاع بعد. لو وقع أي خطأ الآن نرجع للنسخة الأصلية
+      localStorage.setItem(PEND, up.version || 'update');
+      window.addEventListener('error', function () {
+        if (localStorage.getItem(PEND)) {
+          localStorage.removeItem(KEY);
+          localStorage.removeItem(PEND);
+          location.reload();
+        }
+      });
+      document.head.innerHTML = doc.head.innerHTML;
+      document.body.innerHTML = doc.body.innerHTML;
+      Object.keys(files).forEach(function (f) { if (/\.js$/.test(f)) run(files[f], null); });
+      return true;
+    }
+
+    var applied = false;
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw && localStorage.getItem(PEND)) {
+        // التحديث السابق ما اكتملش: نرجع للنسخة الأصلية
+        localStorage.removeItem(KEY);
+        localStorage.removeItem(PEND);
+        raw = null;
+      }
+      if (raw) applied = applyUpdate(JSON.parse(raw));
+    } catch (e) { applied = false; }
+
+    if (!applied) run(null, 'app.js');
+  })();
+  </script>
 </body>
 </html>

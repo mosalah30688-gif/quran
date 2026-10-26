@@ -45,7 +45,29 @@
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
     translation: '', size: 26, tajweed: false, dark: false,
   };
-  const VIEW_TITLES = { reader: 'المصحف', memo: 'وضع الحفظ', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق' };
+  const VIEW_TITLES = { reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق' };
+  const Cap = window.Capacitor || null;
+
+  // قواعد التجويد بحسب رموز مصدر quran-tajweed في alquran.cloud (الاسم، الشرح)
+  const TJ_RULES = {
+    h: ['همزة الوصل', 'تُنطق في أول الكلام فقط، وتسقط في الوصل.'],
+    l: ['لام شمسية', 'لا تُنطق اللام، وتُدغم في الحرف الشمسي بعدها.'],
+    s: ['حرف غير ملفوظ', 'حرف مكتوب ولا يُنطق في هذا الموضع.'],
+    n: ['مد طبيعي', 'يُمد الصوت حركتين.'],
+    p: ['مد جائز', 'يُمد الصوت حركتين أو أربعاً أو ست حركات.'],
+    m: ['مد لازم', 'يُمد الصوت ست حركات ولا يجوز قصره.'],
+    o: ['مد واجب متصل', 'يُمد الصوت أربع أو خمس حركات.'],
+    q: ['قلقلة', 'نبرة ارتداد خفيفة عند سكون أحد حروف (قطب جد).'],
+    c: ['إخفاء شفوي', 'إخفاء الميم الساكنة عند الباء، مع غنة.'],
+    f: ['إخفاء', 'إخفاء النون الساكنة أو التنوين مع غنة.'],
+    w: ['إدغام شفوي', 'إدغام الميم الساكنة في ميم بعدها، مع غنة.'],
+    i: ['إقلاب', 'قلب النون الساكنة أو التنوين ميماً عند الباء، مع غنة.'],
+    a: ['إدغام بغنة', 'إدغام النون الساكنة أو التنوين في (ي ن م و) مع غنة.'],
+    u: ['إدغام بلا غنة', 'إدغام النون الساكنة أو التنوين في (ل ر) بلا غنة.'],
+    d: ['إدغام متجانسين', 'حرفان من مخرج واحد، يُدغم الأول في الثاني.'],
+    b: ['إدغام متقاربين', 'حرفان متقاربان في المخرج، يُدغم الأول في الثاني.'],
+    g: ['غنة', 'صوت من الخيشوم يُمد حركتين.'],
+  };
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -117,16 +139,23 @@
   }
 
   // ---------- التنقل بين الأقسام ----------
-  function showView(name) {
+  // سجل الأقسام: زر الرجوع يعيد خطوة واحدة للخلف داخل التطبيق
+  const navStack = [];
+  let curView = 'reader';
+  function showView(name, opts = {}) {
+    if (name !== curView && !opts.back) { navStack.push(curView); if (navStack.length > 30) navStack.shift(); }
+    curView = name;
     $$('#tabs button').forEach((b) => b.classList.toggle('active', b.dataset.view === name));
     $$('section.view').forEach((s) => s.classList.toggle('active', s.id === 'view-' + name));
     if (name === 'reader') updateChrome(); else $('#topTitle').textContent = VIEW_TITLES[name] || '';
-    // زر الرجوع يظهر في كل الأقسام ما عدا المصحف، ويرجع للمصحف
+    // زر الرجوع يظهر في كل الأقسام ما عدا المصحف
     $('#backBtn').hidden = name === 'reader';
     if (name === 'bookmarks') renderBookmarks();
+    if (name === 'tafsir') renderTafsirView();
     $('#content').scrollTop = 0;
   }
-  $('#backBtn').addEventListener('click', () => showView('reader'));
+  function popView() { showView(navStack.pop() || 'reader', { back: true }); }
+  $('#backBtn').addEventListener('click', () => handleBack());
   function closeSide() { document.body.classList.remove('side-open'); }
 
   $('#tabs').addEventListener('click', (e) => {
@@ -388,9 +417,10 @@
     $('#playReciter').value = settings.reciter;
   }
 
-  function saveLast() {
+  function saveLast(light) {
     const s = state.sel;
     store.set('last', { p: state.page, s: s.s, a: s.n, g: s.g });
+    if (light) return;
     renderLast();
     updateResumeBtn();
   }
@@ -424,12 +454,18 @@
   const stage = $('#stage');
   stage.addEventListener('pointerdown', (e) => {
     if (e.target.closest('button, select')) return;
-    drag = { x: e.clientX, y: e.clientY, t: Date.now() };
+    drag = { x: e.clientX, y: e.clientY, t: Date.now(), hadSel: !!(window.getSelection && window.getSelection().toString().trim()) };
   });
   stage.addEventListener('pointerup', (e) => {
     if (!drag) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    const held = Date.now() - drag.t;
+    const hadSel = drag.hadSel;
     drag = null;
+    // لا تقلب الصفحة أثناء تحديد النص (ضغط مطوّل أو تحديد نشط)
+    // التحديد الجديد يبدأ بضغط مطوّل؛ التحديد القديم لا يمنع السحب السريع
+    const selectingNow = !!(window.getSelection && window.getSelection().toString().trim());
+    if (held > 350 || (!hadSel && selectingNow)) return;
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.6) {
       window.getSelection()?.removeAllRanges();
       if (dx > 0) nextPage(); else prevPage();
@@ -439,23 +475,17 @@
 
   // ---------- اختيار الآية ----------
   $('#pageBody').addEventListener('click', (e) => {
+    if (window.getSelection && window.getSelection().toString().trim()) return; // تحديد نص للنسخ
     const end = e.target.closest('.end');
-    if (end) {
-      const g = Number(end.dataset.g);
-      const a = state.pg.ayahs.find((x) => x.g === g);
-      if (a) showTafsirPanel(a);
-      return;
-    }
     const ay = e.target.closest('.ay');
-    if (!ay) return;
-    const g = Number(ay.dataset.g);
-    const a = state.pg.ayahs.find((x) => x.g === g);
+    if (!end && !ay) return;
+    const g = Number((end || ay).dataset.g);
+    const a = state.pg && state.pg.ayahs.find((x) => x.g === g);
     if (!a) return;
-    state.sel = a;
-    state.selSurah = a.s;
-    markSelection();
-    saveLast();
-    updateChrome();
+    selectAyah(a);
+    const tj = !end && e.target.closest('[class^="tj-"]');
+    if (tj) { showTajweedPanel((tj.className.match(/tj-([a-z])/) || [])[1]); return; }
+    showTafsirPanel(a);
   });
 
   $('#playSurah').addEventListener('change', (e) => {
@@ -496,11 +526,127 @@
 
   // ---------- التفسير ----------
   function showTafsirPanel(a) {
-    $('#tafsirTitle').textContent = `${surahName(a.s)} - الآية ${a.n} (${TAFSIRS.find((t) => t[0] === settings.tafsir)?.[1] || ''})`;
+    const book = TAFSIRS.find((t) => t[0] === settings.tafsir)?.[1] || '';
+    $('#tafsirTitle').textContent = `${surahName(a.s)} - الآية ${toArabicDigits(a.n)}`;
+    $('#tafsirAyah').textContent = a.text;
+    $('#tafsirLabel').textContent = book || 'التفسير';
     $('#tafsirBody').textContent = a.tafsir || 'لا يوجد تفسير لهذه الآية في هذا الكتاب.';
+    const hasTr = !!settings.translation;
+    $('#transLabel').style.display = hasTr ? 'block' : 'none';
+    $('#tafsirTrans').style.display = hasTr ? 'block' : 'none';
+    $('#tafsirTrans').textContent = hasTr ? (a.tr || 'لا توجد ترجمة لهذه الآية.') : '';
+    $('#tjPanel').classList.remove('show');
     $('#tafsirPanel').classList.add('show');
   }
   $('#tafsirClose').addEventListener('click', () => $('#tafsirPanel').classList.remove('show'));
+
+  // ---------- اختيار الآية بلا إعادة رسم كاملة ----------
+  function selectAyah(a) {
+    const surahChanged = state.selSurah !== a.s;
+    state.sel = a;
+    state.selSurah = a.s;
+    markSelection();
+    saveLast(true);
+    refreshSelectionUI(surahChanged);
+  }
+
+  function refreshSelectionUI(surahChanged) {
+    if (!state.pg || !state.sel) return;
+    const pg = state.pg;
+    $('#topTitle').textContent = `${surahName(state.sel.s)} · الجزء ${toArabicDigits(state.sel.juz || pg.ayahs[0].juz)} · ص ${toArabicDigits(pg.p)}`;
+    $('#btnBm').textContent = isBookmarked(state.sel.s, state.sel.n) ? '★ علامة' : '☆ علامة';
+    updateResumeBtn();
+    syncPlayControls();
+    if (surahChanged) renderIndex();
+  }
+
+  // ---------- نافذة التجويد ----------
+  function showTajweedPanel(code) {
+    const rule = TJ_RULES[code];
+    if (!rule) return;
+    $('#tjTitle').textContent = rule[0];
+    $('#tjBody').textContent = rule[1];
+    $('#tafsirPanel').classList.remove('show');
+    $('#tjPanel').classList.add('show');
+  }
+  $('#tjClose').addEventListener('click', () => $('#tjPanel').classList.remove('show'));
+
+  // ---------- قسم التفسير ----------
+  function renderTafsirView() {
+    const a = state.sel;
+    $('#tfBook').value = settings.tafsir;
+    $('#tfTrans').value = settings.translation;
+    if (!a) {
+      $('#tfTitle').textContent = '';
+      $('#tfArabic').textContent = '';
+      $('#tfTafsir').textContent = '';
+      $('#tfTransText').textContent = '';
+      return;
+    }
+    $('#tfTitle').textContent = `${surahName(a.s)} - الآية ${toArabicDigits(a.n)}`;
+    $('#tfArabic').textContent = a.text;
+    $('#tfTafsir').textContent = a.tafsir || 'لا يوجد تفسير لهذه الآية في هذا الكتاب.';
+    $('#tfTransText').textContent = settings.translation ? (a.tr || 'لا توجد ترجمة لهذه الآية.') : 'بدون ترجمة مختارة.';
+  }
+
+  async function stepAyah(delta) {
+    if (!state.sel) return;
+    let s = state.sel.s, n = state.sel.n;
+    if (delta > 0) {
+      if (n < (surahs[s - 1]?.numberOfAyahs || 0)) n++;
+      else if (s < 114) { s++; n = 1; }
+      else return;
+    } else if (n > 1) {
+      n--;
+    } else if (s > 1) {
+      s--; n = surahs[s - 1].numberOfAyahs;
+    } else return;
+    try {
+      const ay = await findAyah(s, n);
+      if (!ay) return;
+      await showPage(ay.page, { selG: ay.g });
+      renderTafsirView();
+    } catch {
+      toast('تعذر تحميل الآية. تحقق من الاتصال.');
+    }
+  }
+  $('#tfPrev').addEventListener('click', () => stepAyah(-1));
+  $('#tfNext').addEventListener('click', () => stepAyah(1));
+  $('#tfBook').addEventListener('change', (e) => onSettingChange('tafsir', e.target.value));
+  $('#tfTrans').addEventListener('change', (e) => onSettingChange('translation', e.target.value));
+
+  // ---------- زر الرجوع في الأندرويد ----------
+  let capApp = null;
+  function getCapApp() {
+    if (!capApp && isNative() && Cap.registerPlugin) capApp = Cap.registerPlugin('App');
+    return capApp;
+  }
+  let exitArmedAt = 0;
+  function handleBack() {
+    if ($('#tafsirPanel').classList.contains('show')) { $('#tafsirPanel').classList.remove('show'); return; }
+    if ($('#tjPanel').classList.contains('show')) { $('#tjPanel').classList.remove('show'); return; }
+    if (document.body.classList.contains('side-open')) { closeSide(); return; }
+    if (navStack.length) { popView(); return; }
+    if (curView !== 'reader') { showView('reader', { back: true }); return; }
+    if (Date.now() - exitArmedAt < 2000) { const app = getCapApp(); if (app) app.exitApp(); return; }
+    exitArmedAt = Date.now();
+    toast('اضغط مرة أخرى للخروج');
+  }
+
+  // ---------- أدوات الأندرويد للتحميل إلى مجلد الجهاز ----------
+  function isNative() { return !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform()); }
+  function nativeCall(plugin, method, opts) { return Cap.nativePromise(plugin, method, opts || {}); }
+  function bytesToBase64(bytes) {
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(bin);
+  }
+  function base64ToBlob(b64, type) {
+    const bin = atob(b64);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type });
+  }
 
   // ---------- التشغيل ----------
   function setPlayerUI() {
@@ -750,6 +896,10 @@
     $('#setTafsir').innerHTML = TAFSIRS.map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
     $('#setTafsir').value = settings.tafsir;
     $('#setTranslation').value = settings.translation;
+    $('#tfBook').innerHTML = $('#setTafsir').innerHTML;
+    $('#tfBook').value = settings.tafsir;
+    $('#tfTrans').innerHTML = $('#setTranslation').innerHTML;
+    $('#tfTrans').value = settings.translation;
     $('#setSize').value = settings.size;
     $('#sizeVal').textContent = settings.size + 'px';
     $('#setTajweed').checked = !!settings.tajweed;
@@ -761,8 +911,14 @@
     settings[key] = value;
     saveSettings();
     if (key === 'reciter') { $('#setReciter').value = value; $('#playReciter').value = value; }
+    if (key === 'tafsir') { $('#setTafsir').value = value; $('#tfBook').value = value; }
+    if (key === 'translation') { $('#setTranslation').value = value; $('#tfTrans').value = value; }
     pageCache.clear();
-    if (state.sel) showPage(state.page, { selG: state.sel.g, save: false });
+    if (state.sel) {
+      showPage(state.page, { selG: state.sel.g, save: false }).then(() => {
+        if ($('#view-tafsir').classList.contains('active')) renderTafsirView();
+      });
+    }
   }
   $('#setRiwaya').addEventListener('change', (e) => onSettingChange('riwaya', e.target.value));
   $('#setReciter').addEventListener('change', (e) => onSettingChange('reciter', e.target.value));
@@ -774,13 +930,55 @@
     $('#sizeVal').textContent = settings.size + 'px';
     applySize(); saveSettings();
   });
-  $('#btnClearCache').addEventListener('click', async () => {
-    cache.clear(); pageCache.clear();
-    if ('caches' in window) { for (const k of await caches.keys()) await caches.delete(k); }
-    toast('تم مسح الذاكرة المؤقتة');
-  });
 
   // ---------- التحميل للاستماع بدون إنترنت ----------
+  // ---------- تحديث التطبيق من GitHub (بدون إعادة تحزيم) ----------
+  const UPDATE_KEY = 'quran-update';
+  const UPDATE_BASE = 'https://raw.githubusercontent.com/mosalah30688-gif/quran/main/update/';
+  const storedUpdate = () => { try { return JSON.parse(localStorage.getItem(UPDATE_KEY) || 'null'); } catch (e) { return null; } };
+  const currentVersion = () => (storedUpdate() || {}).version || window.APP_BUNDLE_VERSION || '1.0.0';
+  function renderUpdateCard() {
+    $('#verVal').textContent = currentVersion();
+    $('#btnRestore').hidden = !storedUpdate();
+  }
+  async function checkForUpdate() {
+    const btn = $('#btnUpdate'), st = $('#updStatus');
+    btn.disabled = true;
+    st.textContent = 'جاري البحث عن تحديث...';
+    try {
+      const mres = await fetch(UPDATE_BASE + 'manifest.json?t=' + Date.now(), { cache: 'no-store' });
+      if (!mres.ok) throw new Error('manifest');
+      const manifest = await mres.json();
+      if (!manifest.version || !Array.isArray(manifest.files) || !manifest.files.includes('index.html')) throw new Error('bad manifest');
+      if (manifest.version === currentVersion()) {
+        st.textContent = 'أنت على أحدث نسخة (' + manifest.version + ')';
+        btn.disabled = false;
+        return;
+      }
+      st.textContent = 'جاري تنزيل الإصدار ' + manifest.version + '...';
+      const files = {};
+      for (const f of manifest.files) {
+        const r = await fetch(UPDATE_BASE + f + '?t=' + Date.now(), { cache: 'no-store' });
+        if (!r.ok) throw new Error('file ' + f);
+        const txt = await r.text();
+        if (!txt.trim()) throw new Error('empty ' + f);
+        files[f] = txt;
+      }
+      localStorage.setItem(UPDATE_KEY, JSON.stringify({ version: manifest.version, files: files }));
+      st.textContent = 'تم التنزيل، جاري تطبيق التحديث...';
+      setTimeout(() => location.reload(), 400);
+    } catch (e) {
+      st.textContent = 'تعذّر التحديث. تأكد من الاتصال بالإنترنت وحاول مرة أخرى.';
+      btn.disabled = false;
+    }
+  }
+  $('#btnUpdate').addEventListener('click', checkForUpdate);
+  $('#btnRestore').addEventListener('click', () => {
+    localStorage.removeItem(UPDATE_KEY);
+    location.reload();
+  });
+  renderUpdateCard();
+
   // مصدر الملفات: everyayah.com (يسمح بالتحميل من المتصفح) - لكل آية ملف مستقل
   const OFFLINE_SRC = {
     'ar.alafasy': 'Alafasy_128kbps',
@@ -826,7 +1024,7 @@
 
   const audioKey = (reciter, s, n) => `${reciter}|${s}|${n}`;
   const pad3 = (x) => String(x).padStart(3, '0');
-  const folderSupported = () => typeof window.showDirectoryPicker === 'function';
+  const folderSupported = () => isNative() || typeof window.showDirectoryPicker === 'function';
 
   async function getDirHandle() {
     try { return (await idbGet('meta', 'dirHandle')) || null; } catch { return null; }
@@ -834,6 +1032,15 @@
 
   // رابط تشغيل محلي لآية محفوظة (من المجلد أولاً ثم من التخزين داخل التطبيق)
   async function localAudioUrl(reciter, s, n) {
+    if (isNative()) {
+      const uri = store.get('folderUri', null);
+      if (uri) {
+        try {
+          const r = await nativeCall('FolderPicker', 'readFile', { uri, path: `${reciter}/${s}/${n}.mp3` });
+          if (r && r.data) return URL.createObjectURL(base64ToBlob(r.data, 'audio/mpeg'));
+        } catch { /* غير موجود في المجلد */ }
+      }
+    }
     const dir = await getDirHandle();
     if (dir && (await dir.queryPermission({ mode: 'read' })) === 'granted') {
       try {
@@ -847,6 +1054,12 @@
   }
 
   async function hasLocal(target, root, reciter, s, n) {
+    if (target === 'folder' && root && root.native) {
+      try {
+        const r = await nativeCall('FolderPicker', 'exists', { uri: root.uri, path: `${reciter}/${s}/${n}.mp3` });
+        return !!(r && r.exists);
+      } catch { return false; }
+    }
     if (target === 'folder') {
       try {
         const sub = await (await root.getDirectoryHandle(reciter)).getDirectoryHandle(String(s));
@@ -858,6 +1071,11 @@
   }
 
   async function saveToFolder(root, reciter, s, n, blob) {
+    if (root && root.native) {
+      const b64 = bytesToBase64(new Uint8Array(await blob.arrayBuffer()));
+      await nativeCall('FolderPicker', 'writeFile', { uri: root.uri, path: `${reciter}/${s}/${n}.mp3`, data: b64 });
+      return;
+    }
     const sub = await (await root.getDirectoryHandle(reciter, { create: true })).getDirectoryHandle(String(s), { create: true });
     const fh = await sub.getFileHandle(`${n}.mp3`, { create: true });
     const w = await fh.createWritable();
@@ -898,15 +1116,25 @@
 
     let root = null;
     if (target === 'folder') {
-      if (!folderSupported()) return toast('المجلد غير مدعوم في هذا المتصفح، استخدم Chrome أو Edge على الحاسوب');
-      root = await getDirHandle();
-      try {
-        if (!root) {
-          root = await window.showDirectoryPicker({ mode: 'readwrite' });
-          await idbPut('meta', 'dirHandle', root);
+      if (!folderSupported()) return toast('مجلد الجهاز غير متاح هنا، اختر داخل التطبيق');
+      if (isNative()) {
+        let uri = store.get('folderUri', null);
+        if (!uri) {
+          try { const r = await nativeCall('FolderPicker', 'pickFolder'); uri = r && r.uri; } catch { uri = null; }
+          if (!uri) return toast('لم يتم اختيار مجلد');
+          store.set('folderUri', uri);
         }
-        if ((await root.requestPermission({ mode: 'readwrite' })) !== 'granted') return toast('لم يُمنح إذن الكتابة في المجلد');
-      } catch { return toast('تم إلغاء اختيار المجلد'); }
+        root = { native: true, uri };
+      } else {
+        root = await getDirHandle();
+        try {
+          if (!root) {
+            root = await window.showDirectoryPicker({ mode: 'readwrite' });
+            await idbPut('meta', 'dirHandle', root);
+          }
+          if ((await root.requestPermission({ mode: 'readwrite' })) !== 'granted') return toast('لم يُمنح إذن الكتابة في المجلد');
+        } catch { return toast('تم إلغاء اختيار المجلد'); }
+      }
     } else if (navigator.storage?.persist) {
       navigator.storage.persist().catch(() => {});
     }
@@ -960,7 +1188,7 @@
     const complete = Object.keys(perSurah).filter((s) => perSurah[s] >= (surahs[Number(s) - 1]?.numberOfAyahs || Infinity)).length;
     const dir = await getDirHandle();
     $('#dlStored').textContent = `داخل التطبيق: ${keys.length} آية، ${complete} سورة مكتملة لهذا القارئ.` +
-      (dir ? ` المجلد المختار: ${dir.name}` : '');
+      (dir ? ` المجلد المختار: ${dir.name}` : (store.get('folderUri', null) ? ' المجلد المختار على الجهاز.' : ''));
   }
 
   async function deleteAppAudio() {
@@ -978,10 +1206,10 @@
     $('#dlReciter').value = supported.includes(settings.reciter) ? settings.reciter : supported[0];
     $('#dlSurahSel').innerHTML = surahs.map((x) => `<option value="${x.number}">${x.number}. ${esc(x.name)}</option>`).join('');
     const folderOpt = $('#dlTarget option[value=folder]');
-    folderOpt.disabled = !folderSupported();
+    if (folderOpt && !folderSupported()) folderOpt.remove();
     $('#dlNote').textContent = folderSupported()
-      ? 'مجلد الجهاز يُختار مرة واحدة ويُحفظ، والملفات تُرتّب داخله: القارئ / رقم السورة / رقم الآية.mp3. التخزين داخل التطبيق يعمل على كل الأجهزة.'
-      : 'مجلد الجهاز متاح في Chrome أو Edge على الحاسوب فقط. على الهاتف والمتصفحات الأخرى يُحفظ التحميل داخل التطبيق.';
+      ? 'مجلد الجهاز يُختار مرة واحدة ويُحفظ، والملفات تُرتّب داخله: القارئ / رقم السورة / رقم الآية.'
+      : '';
     updateEstimate();
     refreshStored();
   }
@@ -996,6 +1224,9 @@
   $('#btnCancelDl').addEventListener('click', () => { dl.cancel = true; });
   $('#btnDeleteDl').addEventListener('click', deleteAppAudio);
 
+  const backListenerApp = isNative() ? getCapApp() : null;
+  if (backListenerApp && backListenerApp.addListener) backListenerApp.addListener('backButton', handleBack);
+
   // ---------- التشغيل الأولي ----------
   applyTheme();
   fillSettings();
@@ -1004,6 +1235,8 @@
 
   // الصفحة الرئيسية = الصفحة التي توقف عندها القارئ
   loadSurahs().finally(async () => {
+    // التطبيق اشتغل بنجاح: نلغي علامة التحديث المعلّق
+    localStorage.removeItem('quran-update-pending');
     const last = getLast();
     if (last && last.p) {
       showPage(last.p, { selG: last.g, save: false });
