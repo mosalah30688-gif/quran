@@ -942,6 +942,32 @@
     $('#verVal').textContent = currentVersion();
     $('#btnRestore').hidden = !storedUpdate();
   }
+  // مقارنة أرقام الإصدارات: 1.0.10 أحدث من 1.0.9
+  function newerVersion(a, b) {
+    const pa = String(a).split('.').map(Number), pb = String(b).split('.').map(Number);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+      const x = pa[i] || 0, y = pb[i] || 0;
+      if (x !== y) return x > y;
+    }
+    return false;
+  }
+
+  // نسخة كاملة (APK): تُنزَّل وتُفتح نافذة التثبيت عند المستخدم
+  async function installNewApk(apk, st) {
+    const perm = await nativeCall('ApkUpdater', 'canInstall');
+    if (!perm || !perm.allowed) {
+      await nativeCall('ApkUpdater', 'openInstallPermission');
+      st.textContent = 'اسمح بالتثبيت من هذا التطبيق، ثم اضغط التحديث مرة أخرى.';
+      return;
+    }
+    st.textContent = 'جاري تنزيل الإصدار ' + apk.version + '...';
+    // النسخة الكاملة تحمل واجهتها، فنزيل التحديث الداخلي السابق حتى لا يغطي عليها
+    localStorage.removeItem(UPDATE_KEY);
+    localStorage.removeItem('quran-update-pending');
+    await nativeCall('ApkUpdater', 'downloadAndInstall', { url: apk.url, sha256: apk.sha256 || '' });
+    st.textContent = 'اضغط تثبيت في النافذة لإكمال التحديث.';
+  }
+
   async function checkForUpdate() {
     const btn = $('#btnUpdate'), st = $('#updStatus');
     btn.disabled = true;
@@ -951,6 +977,15 @@
       if (!mres.ok) throw new Error('manifest');
       const manifest = await mres.json();
       if (!manifest.version || !Array.isArray(manifest.files) || !manifest.files.includes('index.html')) throw new Error('bad manifest');
+      // نسخة كاملة أحدث على الهاتف؟ تُثبَّت بدل تحديث الواجهة وحدها
+      if (manifest.apk && manifest.apk.url && manifest.apk.version && hasNativePlugin('ApkUpdater')) {
+        const nv = await nativeCall('ApkUpdater', 'getVersion').then((r) => r.version).catch(() => null);
+        if (nv && newerVersion(manifest.apk.version, nv)) {
+          await installNewApk(manifest.apk, st);
+          btn.disabled = false;
+          return;
+        }
+      }
       if (manifest.version === currentVersion()) {
         st.textContent = 'أنت على أحدث نسخة (' + manifest.version + ')';
         btn.disabled = false;
