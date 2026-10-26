@@ -180,6 +180,8 @@
     .panel-tafsir.show { display: block; }
     .panel-tafsir .tf, .tf { font-size: 18px; line-height: 2; font-family: "Noto Naskh Arabic", serif; white-space: pre-line; }
     .tr { font-size: 16px; line-height: 1.8; }
+    .mw { margin: 6px 0; line-height: 1.9; font-size: 16px; }
+    .mw b { color: var(--brand); margin-left: 4px; }
     .tf-head { font-weight: 700; }
     .tf-arabic { font-family: "Amiri Quran", Amiri, serif; font-size: 26px; line-height: 2.1; margin-top: 8px; }
     .pop-ayah { font-family: "Amiri Quran", Amiri, serif; font-size: 22px; line-height: 2; margin-top: 8px; }
@@ -304,6 +306,7 @@
             <button class="btn ghost small" id="btnBm">☆ علامة</button>
             <button class="btn ghost small" id="btnTafsir">التفسير</button>
             <button class="btn ghost small" id="btnShareImg">مشاركة الآية</button>
+            <button class="btn ghost small" id="btnMeanings">معاني الكلمات</button>
             <button class="btn ghost small" id="btnResume">↩ آخر موضع</button>
           </div>
 
@@ -593,6 +596,16 @@
     <div class="tf" id="tafsirBody"></div>
     <div class="pop-label" id="transLabel">الترجمة</div>
     <div class="tr" id="tafsirTrans" dir="auto"></div>
+  </div>
+
+  <div class="panel-tafsir" id="meanPanel">
+    <div class="row" style="justify-content:space-between">
+      <strong id="meanTitle"></strong>
+      <button class="btn small ghost" id="meanClose">إغلاق</button>
+    </div>
+    <div class="pop-ayah" id="meanAyah"></div>
+    <div id="meanBody"></div>
+    <div class="muted" style="margin-top:10px">المصدر: الموسوعة القرآنية quranpedia.net</div>
   </div>
 
   <div class="panel-tafsir" id="tjPanel">

@@ -537,6 +537,7 @@
     $('#tafsirTrans').style.display = hasTr ? 'block' : 'none';
     $('#tafsirTrans').textContent = hasTr ? (a.tr || 'لا توجد ترجمة لهذه الآية.') : '';
     $('#tjPanel').classList.remove('show');
+    $('#meanPanel').classList.remove('show');
     $('#tafsirPanel').classList.add('show');
   }
   $('#tafsirClose').addEventListener('click', () => $('#tafsirPanel').classList.remove('show'));
@@ -569,6 +570,7 @@
     $('#tjBody').textContent = rule[1];
     $('#tafsirPanel').classList.remove('show');
     $('#tjPanel').classList.add('show');
+    $('#meanPanel').classList.remove('show');
   }
   $('#tjClose').addEventListener('click', () => $('#tjPanel').classList.remove('show'));
 
@@ -1350,6 +1352,40 @@
     goToAyah(Number(card.dataset.s), Number(card.dataset.a));
     showView('reader');
   });
+
+  // ---------- معاني الكلمات (من الموسوعة القرآنية) ----------
+  let meanData = null;
+  let meanToken = 0;
+  async function loadMeanings() {
+    if (meanData) return meanData;
+    const res = await fetch('quran-meanings.json');
+    if (!res.ok) throw new Error('meanings');
+    meanData = (await res.json()).ayahs || {};
+    return meanData;
+  }
+  function showMeaningsPanel() {
+    const a = state.sel;
+    if (!a) { toast('اضغط على الآية أولاً'); return; }
+    const token = ++meanToken;
+    $('#meanTitle').textContent = `${surahName(a.s)} - الآية ${toArabicDigits(a.n)}`;
+    $('#meanAyah').textContent = plainAyah(a.html);
+    $('#meanBody').innerHTML = '<div class="muted">جاري التحميل...</div>';
+    $('#tjPanel').classList.remove('show');
+    $('#tafsirPanel').classList.remove('show');
+    $('#meanPanel').classList.add('show');
+    loadMeanings().then((all) => {
+      if (token !== meanToken) return;
+      const items = all[`${a.s}:${a.n}`] || [];
+      $('#meanBody').innerHTML = items.length
+        ? items.map(([book, words]) => `<div class="pop-label">${esc(book)}</div>` +
+            words.map(([t, m]) => `<div class="mw"><b>${esc(t)}</b>${esc(m)}</div>`).join('')).join('')
+        : '<div class="muted">لا توجد معانٍ لكلمات هذه الآية.</div>';
+    }).catch(() => {
+      if (token === meanToken) $('#meanBody').textContent = 'تعذّر تحميل المعاني، حاول مرة أخرى.';
+    });
+  }
+  $('#btnMeanings').addEventListener('click', showMeaningsPanel);
+  $('#meanClose').addEventListener('click', () => $('#meanPanel').classList.remove('show'));
 
   // ---------- مشاركة الآية كصورة ----------
   const IMG_W = 1080, IMG_H = 1350;
