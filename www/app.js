@@ -45,7 +45,7 @@
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
     translation: '', size: 26, tajweed: false, dark: false,
   };
-  const VIEW_TITLES = { reader: 'المصحف', memo: 'وضع الحفظ', bookmarks: 'المحفوظات', settings: 'الإعدادات' };
+  const VIEW_TITLES = { reader: 'المصحف', memo: 'وضع الحفظ', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق' };
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -121,8 +121,12 @@
     $$('#tabs button').forEach((b) => b.classList.toggle('active', b.dataset.view === name));
     $$('section.view').forEach((s) => s.classList.toggle('active', s.id === 'view-' + name));
     if (name === 'reader') updateChrome(); else $('#topTitle').textContent = VIEW_TITLES[name] || '';
+    // زر الرجوع يظهر في كل الأقسام ما عدا المصحف، ويرجع للمصحف
+    $('#backBtn').hidden = name === 'reader';
     if (name === 'bookmarks') renderBookmarks();
+    $('#content').scrollTop = 0;
   }
+  $('#backBtn').addEventListener('click', () => showView('reader'));
   function closeSide() { document.body.classList.remove('side-open'); }
 
   $('#tabs').addEventListener('click', (e) => {
@@ -615,6 +619,13 @@
   });
   audio.addEventListener('play', setPlayerUI);
   audio.addEventListener('pause', setPlayerUI);
+
+  // قياس ارتفاع شريط التشغيل ليترك المحتوى مساحة له (لا يغطي أزرار الصفحات)
+  if (window.ResizeObserver) {
+    new ResizeObserver(() => {
+      document.documentElement.style.setProperty('--player-h', $('#player').offsetHeight + 'px');
+    }).observe($('#player'));
+  }
 
   $('#pToggle').addEventListener('click', () => {
     if (!play.active) return;
