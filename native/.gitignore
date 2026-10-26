@@ -1,7 +1,0 @@
-__pycache__/
-build/
-dist/
-AppDir/
-*.AppImage
-appimagetool
-*.spec
