@@ -150,6 +150,7 @@
     }
     $('#memoSurah').innerHTML = surahs.map((s) => `<option value="${s.number}">${s.number}. ${esc(s.name)}</option>`).join('');
     renderIndex();
+    syncPlayControls();
   }
 
   function renderIndex() {
@@ -354,23 +355,32 @@
     $('#topTitle').textContent = `${surahName(state.sel.s)} · الجزء ${toArabicDigits(state.sel.juz || juz)} · ص ${toArabicDigits(pg.p)}`;
 
     // قائمة اختيار الآية تتبع السورة المحددة
-    fillPlayFrom();
+    syncPlayControls();
     const bm = isBookmarked(state.sel.s, state.sel.n);
     $('#btnBm').textContent = bm ? '★ علامة' : '☆ علامة';
     updateResumeBtn();
     renderIndex();
   }
 
-  function fillPlayFrom() {
+  // أدوات التشغيل: السورة، الآية، الشيخ
+  function syncPlayControls() {
+    if (!surahs.length) return;
     const s = state.selSurah;
-    const sel = $('#playFrom');
-    if (sel.dataset.s === String(s)) { sel.value = state.sel && state.sel.s === s ? state.sel.n : sel.value; return; }
-    const count = surahs[s - 1]?.numberOfAyahs || 0;
-    let opts = '';
-    for (let a = 1; a <= count; a++) opts += `<option value="${a}">${toArabicDigits(a)}</option>`;
-    sel.innerHTML = opts;
-    sel.dataset.s = String(s);
-    sel.value = state.sel && state.sel.s === s ? state.sel.n : 1;
+    const surahSel = $('#playSurah');
+    if (!surahSel.options.length) {
+      surahSel.innerHTML = surahs.map((x) => `<option value="${x.number}">${x.number}. ${esc(x.name)}</option>`).join('');
+    }
+    surahSel.value = String(s);
+    const ayahSel = $('#playFrom');
+    if (ayahSel.dataset.s !== String(s)) {
+      const count = surahs[s - 1]?.numberOfAyahs || 0;
+      let opts = '';
+      for (let a = 1; a <= count; a++) opts += `<option value="${a}">${toArabicDigits(a)}</option>`;
+      ayahSel.innerHTML = opts;
+      ayahSel.dataset.s = String(s);
+    }
+    ayahSel.value = String(state.sel && state.sel.s === s ? state.sel.n : 1);
+    $('#playReciter').value = settings.reciter;
   }
 
   function saveLast() {
@@ -443,17 +453,16 @@
     updateChrome();
   });
 
-  $('#playFrom').addEventListener('change', async (e) => {
-    const n = Number(e.target.value);
-    const s = state.selSurah;
-    const ayah = await findAyah(s, n).catch(() => null);
-    if (!ayah) return;
-    if (ayah.page === state.page) {
-      state.sel = state.pg.ayahs.find((x) => x.g === ayah.g) || ayah;
-      markSelection(); saveLast();
-    } else {
-      showPage(ayah.page, { selG: ayah.g });
-    }
+  $('#playSurah').addEventListener('change', (e) => {
+    const s = Number(e.target.value);
+    state.selSurah = s;
+    goToAyah(s, 1);
+  });
+  $('#playFrom').addEventListener('change', (e) => {
+    goToAyah(Number($('#playSurah').value), Number(e.target.value));
+  });
+  $('#playReciter').addEventListener('change', (e) => {
+    onSettingChange('reciter', e.target.value);
   });
 
   $('#btnResume').addEventListener('click', () => {
@@ -618,7 +627,8 @@
 
   $('#btnPlaySurah').addEventListener('click', () => {
     const n = Number($('#playFrom').value) || 1;
-    startSurahPlay(state.selSurah, n).catch(() => toast('تعذر بدء التلاوة'));
+    const s = Number($('#playSurah').value) || state.selSurah;
+    startSurahPlay(s, n).catch(() => toast('تعذر بدء التلاوة'));
   });
 
   // ---------- الحفظ ----------
@@ -719,6 +729,8 @@
     $('#setRiwaya').value = settings.riwaya;
     $('#setReciter').innerHTML = RECITERS.map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
     $('#setReciter').value = settings.reciter;
+    $('#playReciter').innerHTML = RECITERS.map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
+    $('#playReciter').value = settings.reciter;
     $('#setTafsir').innerHTML = TAFSIRS.map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
     $('#setTafsir').value = settings.tafsir;
     $('#setTranslation').value = settings.translation;
@@ -732,6 +744,7 @@
   function onSettingChange(key, value) {
     settings[key] = value;
     saveSettings();
+    if (key === 'reciter') { $('#setReciter').value = value; $('#playReciter').value = value; }
     pageCache.clear();
     if (state.sel) showPage(state.page, { selG: state.sel.g, save: false });
   }

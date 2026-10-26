@@ -93,7 +93,8 @@
 
     /* ---------- شريط القراءة ---------- */
     .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
-    .toolbar select { width: auto; min-width: 150px; padding: 7px 10px; font-size: 14px; }
+    .toolbar select { width: auto; padding: 7px 10px; font-size: 14px; }
+    .toolbar select.tsel { min-width: 120px; max-width: 200px; }
 
     /* ---------- الصفحة (مصحف ورقي) ---------- */
     .stage { touch-action: pan-y; user-select: text; }
@@ -224,7 +225,7 @@
 
     <main class="content" id="content">
       <div class="topbar">
-        <button class="icon-btn menu-toggle" id="menuBtn">☰ الفهرس</button>
+        <button class="icon-btn menu-toggle" id="menuBtn">⚙ الإعدادات</button>
         <div class="title" id="topTitle">المصحف</div>
       </div>
 
@@ -232,9 +233,10 @@
         <!-- المصحف: صفحة بصفحة -->
         <section class="view active" id="view-reader">
           <div class="card toolbar">
-            <button class="btn" id="btnPlaySurah">▶ تشغيل من الآية</button>
-            <label class="muted">الآية:</label>
-            <select id="playFrom" style="width:auto"></select>
+            <button class="btn" id="btnPlaySurah">▶ تشغيل</button>
+            <select id="playSurah" class="tsel" title="السورة"></select>
+            <select id="playFrom" class="tsel" title="الآية"></select>
+            <select id="playReciter" class="tsel" title="الشيخ"></select>
             <button class="btn ghost small" id="btnBm">☆ علامة</button>
             <button class="btn ghost small" id="btnTafsir">التفسير</button>
             <button class="btn ghost small" id="btnResume">↩ آخر موضع</button>
@@ -255,7 +257,6 @@
             <span class="pno" id="pageNo"></span>
             <button class="btn small" id="pNextS">التالية ›</button>
           </div>
-          <div class="hint">اسحب الصفحة يميناً للسابقة ويساراً للتالية، أو استخدم السهم ← للتالية و→ للسابقة</div>
         </section>
 
         <!-- الحفظ -->
