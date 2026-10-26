@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=المصحف
+Comment=مصحف بالروايات، مع التلاوة والتفسير والحفظ والورد
+Exec=mushaf
+Icon=mushaf
+Categories=Education;
+Terminal=false
