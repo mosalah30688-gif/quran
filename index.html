@@ -265,7 +265,13 @@
     .hdr .topbar { position: static; border-bottom: 0; }
     nav.menu { display: flex; flex-direction: row; overflow-x: auto; gap: 6px; padding: 4px 10px 8px; border: 0; scrollbar-width: none; }
     nav.menu::-webkit-scrollbar { display: none; }
-    nav.menu button { flex: 0 0 auto; white-space: nowrap; padding: 7px 12px; border-radius: 10px; }
+    .navbar { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--card); border-bottom: 1px solid var(--line); }
+    .navbar nav.menu { flex: 1 1 auto; min-width: 0; padding: 0; border: 0; }
+    nav.menu button { width: auto; flex: 0 0 auto; white-space: nowrap; padding: 8px 12px; border-radius: 10px; }
+    nav.menu button.active { background: var(--brand); color: #fff; }
+    .nav-end { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+    .nav-end .btn { padding: 7px 10px; font-size: 13px; }
+    .theme-btn { border: 1px solid var(--line); background: var(--bg); border-radius: 10px; width: 38px; height: 36px; cursor: pointer; font-size: 16px; }
     nav.menu .ic { width: auto; }
     .wrap { padding-bottom: 28px; }
     body:has(.player.show) .wrap { padding-bottom: 28px; }
@@ -306,9 +312,8 @@
         <div class="topbar">
           <button class="icon-btn back-btn" id="backBtn" hidden>→ رجوع</button>
           <div class="title" id="topTitle">المصحف</div>
-          <button class="btn small" id="settingsBtn" title="الإعدادات" aria-label="الإعدادات">⚙️ الإعدادات</button>
-          <button class="icon-btn" id="themeBtn" title="الوضع الليلي">🌙</button>
         </div>
+        <div class="navbar">
         <nav class="menu" id="tabs">
           <button data-view="reader" class="active"><span class="ic">📖</span>المصحف</button>
           <button data-view="tafsir"><span class="ic">📚</span>التفسير</button>
@@ -320,6 +325,11 @@
           <button data-view="bookmarks"><span class="ic">⭐</span>المحفوظات</button>
           <button data-view="settings"><span class="ic">⚙️</span>الإعدادات</button>
         </nav>
+          <div class="nav-end">
+            <button class="btn small" id="settingsBtn" title="الإعدادات" aria-label="الإعدادات">⚙️ الإعدادات</button>
+            <button class="theme-btn" id="themeBtn" title="الوضع الليلي" aria-label="الوضع الليلي">🌙</button>
+          </div>
+        </div>
       </header>
 
       <div class="wrap">
