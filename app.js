@@ -167,6 +167,7 @@
     if (name !== curView && !opts.back) { navStack.push(curView); if (navStack.length > 30) navStack.shift(); }
     curView = name;
     $$('#tabs button').forEach((b) => b.classList.toggle('active', b.dataset.view === name));
+    $('#tabs button.active')?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
     $$('section.view').forEach((s) => s.classList.toggle('active', s.id === 'view-' + name));
     if (name === 'reader') updateChrome(); else $('#topTitle').textContent = VIEW_TITLES[name] || '';
     // زر الرجوع يظهر في كل الأقسام ما عدا المصحف
@@ -181,6 +182,7 @@
   }
   function popView() { showView(navStack.pop() || 'reader', { back: true }); }
   $('#backBtn').addEventListener('click', () => handleBack());
+  $('#settingsBtn').addEventListener('click', () => showView('settings'));
   function closeSide() { document.body.classList.remove('side-open'); }
 
   $('#tabs').addEventListener('click', (e) => {
@@ -189,7 +191,6 @@
     showView(b.dataset.view);
     closeSide();
   });
-  $('#menuBtn').addEventListener('click', () => document.body.classList.toggle('side-open'));
   $('#backdrop').addEventListener('click', closeSide);
 
   function applyTheme() {
@@ -1205,6 +1206,24 @@
     location.reload();
   });
   renderUpdateCard();
+
+  // فحص هادئ عند فتح التطبيق: لو فيه نسخة كاملة أحدث يظهر بانر بدل ما المستخدم يدوّر على الزر
+  async function silentUpdateCheck() {
+    try {
+      if (!hasNativePlugin('ApkUpdater')) return;
+      const mres = await fetch(UPDATE_BASE + 'manifest.json?t=' + Date.now(), { cache: 'no-store' });
+      if (!mres.ok) return;
+      const m = await mres.json();
+      if (!m.apk || !m.apk.url || !m.apk.version) return;
+      const nv = await nativeCall('ApkUpdater', 'getVersion').then((r) => r.version).catch(() => null);
+      if (!nv || !newerVersion(m.apk.version, nv)) return;
+      $('#updBannerText').textContent = 'فيه تحديث جديد للتطبيق (' + m.apk.version + ')';
+      $('#updBannerBtn').onclick = () => { $('#updBanner').hidden = true; showView('settings'); checkForUpdate(); };
+      $('#updBannerX').onclick = () => { $('#updBanner').hidden = true; };
+      $('#updBanner').hidden = false;
+    } catch (e) { /* بلا إنترنت أو بلا ملف: نتجاهل بهدوء */ }
+  }
+  silentUpdateCheck();
 
   // مصدر الملفات: everyayah.com (يسمح بالتحميل من المتصفح) - لكل آية ملف مستقل
   const OFFLINE_SRC = {
