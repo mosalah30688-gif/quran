@@ -1,6 +1,6 @@
 // تخزين مؤقت للواجهة ليعمل التطبيق بدون اتصال (بيانات السور تُخزن عند أول تحميل)
 const CACHE = 'quran-shell-v1';
-const SHELL = ['./', './index.html', './app.js', './manifest.json', './icon.svg', './data/centers.json'];
+const SHELL = ['./', './index.html', './app.js', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -17,7 +17,7 @@ self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  const isAPI = url.hostname.includes('alquran.cloud') || url.hostname.includes('islamic.network') || url.hostname.includes('tile.openstreetmap');
+  const isAPI = url.hostname.includes('alquran.cloud') || url.hostname.includes('islamic.network');
   if (isAPI) {
     // شبكة أولاً ثم تخزين مؤقت عند انقطاع الاتصال
     e.respondWith(

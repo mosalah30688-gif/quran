@@ -11,7 +11,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Noto+Naskh+Arabic:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   <title>القرآن الكريم</title>
   <style>
     :root {
@@ -159,7 +158,6 @@
     }
     .panel-tafsir.show { display: block; }
     .panel-tafsir .tf { font-size: 18px; line-height: 2; font-family: "Noto Naskh Arabic", serif; }
-    #map { height: 60vh; border-radius: 14px; border: 1px solid var(--line); }
     .center-card img { width: 100%; border-radius: 10px; max-height: 180px; object-fit: cover; margin-bottom: 8px; }
     .legend span { display: inline-block; margin: 3px 8px 3px 0; font-size: 13px; }
     .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: middle; margin-left: 4px; }
@@ -198,7 +196,6 @@
         <button data-view="reader" class="active"><span class="ic">📖</span>القراءة</button>
         <button data-view="memo"><span class="ic">🧠</span>الحفظ</button>
         <button data-view="bookmarks"><span class="ic">⭐</span>المحفوظات</button>
-        <button data-view="map"><span class="ic">🗺️</span>مراكز المصاحف</button>
         <button data-view="settings"><span class="ic">⚙️</span>الإعدادات</button>
       </nav>
 
@@ -284,17 +281,6 @@
           </div>
         </section>
 
-        <!-- الخريطة -->
-        <section class="view" id="view-map">
-          <div class="card legend">
-            <span><i style="background:#0f5b4c"></i>مجمع طباعة/مركز مصاحف</span>
-            <span><i style="background:#b8860b"></i>مركز تحفيظ/معهد</span>
-            <span class="muted">البيانات من ملف data/centers.json ويمكن توسيعها بإضافة مراكز جديدة.</span>
-          </div>
-          <div id="map"></div>
-          <div id="centerList" style="margin-top:12px"></div>
-        </section>
-
         <!-- الإعدادات -->
         <section class="view" id="view-settings">
           <div class="card">
@@ -358,7 +344,6 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="app.js"></script>
 </body>
 </html>

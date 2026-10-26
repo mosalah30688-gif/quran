@@ -1,5 +1,5 @@
 /* القرآن الكريم - تطبيق ويب تقدمي
- * المصادر: api.alquran.cloud (النص والتفسير والتلاوات) + Leaflet (الخريطة)
+ * المصادر: api.alquran.cloud (النص والتفسير والتلاوات)
  */
 (() => {
   'use strict';
@@ -45,7 +45,7 @@
     translation: '', size: 28, tajweed: false, dark: false,
   };
   const VIEW_TITLES = {
-    reader: 'القراءة', memo: 'وضع الحفظ', bookmarks: 'المحفوظات', map: 'مراكز المصاحف', settings: 'الإعدادات',
+    reader: 'القراءة', memo: 'وضع الحفظ', bookmarks: 'المحفوظات', settings: 'الإعدادات',
   };
 
   const $ = (sel, root = document) => root.querySelector(sel);
@@ -121,7 +121,6 @@
     $('#topTitle').textContent = name === 'reader' && current.data
       ? `${current.data.info.name} · الجزء ${juzOf(current.n, 1)}`
       : (VIEW_TITLES[name] || '');
-    if (name === 'map') setTimeout(() => { if (map) map.invalidateSize(); }, 50);
     if (name === 'bookmarks') renderBookmarks();
     if (name !== 'reader') $('#content').scrollTo({ top: 0 });
   }
@@ -626,53 +625,11 @@
     toast('تم مسح الذاكرة المؤقتة');
   });
 
-  // ---------- خريطة مراكز المصاحف ----------
-  let map = null;
-  const markers = {};
-  async function initMap() {
-    if (typeof L === 'undefined') { $('#map').innerHTML = '<div class="card">تعذر تحميل الخريطة (يلزم اتصال بالإنترنت).</div>'; return; }
-    map = L.map('map').setView([25, 30], 2);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18, attribution: '&copy; OpenStreetMap',
-    }).addTo(map);
-    try {
-      const res = await fetch('data/centers.json');
-      renderCenters(await res.json());
-    } catch {
-      $('#centerList').innerHTML = '<div class="muted">تعذر تحميل بيانات المراكز.</div>';
-    }
-  }
-
-  function renderCenters(centers) {
-    const colors = { printing: '#0f5b4c', memorization: '#b8860b' };
-    centers.forEach((c, idx) => {
-      const m = L.circleMarker([c.lat, c.lng], {
-        radius: 9, color: '#fff', weight: 2, fillColor: colors[c.type] || '#0f5b4c', fillOpacity: 1,
-      }).addTo(map);
-      m.bindPopup(`<strong>${esc(c.name)}</strong><br>${esc(c.city)}, ${esc(c.country)}`);
-      markers[idx] = m;
-    });
-    $('#centerList').innerHTML = centers.map((c, idx) => `
-      <div class="card center-card" data-idx="${idx}" style="cursor:pointer">
-        ${c.image ? `<img src="${esc(c.image)}" alt="${esc(c.name)}" loading="lazy" />` : ''}
-        <div style="font-weight:700">${esc(c.name)}</div>
-        <div class="muted">${esc(c.city)}، ${esc(c.country)} ${c.founded ? '· تأسس ' + esc(c.founded) : ''}</div>
-        <p style="margin:8px 0 0;line-height:1.8">${esc(c.description || '')}</p>
-      </div>`).join('');
-  }
-  $('#centerList').addEventListener('click', (e) => {
-    const card = e.target.closest('[data-idx]');
-    if (!card || !map) return;
-    const m = markers[card.dataset.idx];
-    if (m) { map.flyTo(m.getLatLng(), 6); m.openPopup(); }
-  });
-
   // ---------- التشغيل ----------
   applyTheme();
   fillSettings();
   renderBookmarks();
   renderLast();
-  initMap();
 
   // الصفحة الرئيسية = آخر موضع توقف عنده القارئ (بعد تحميل الفهرس)
   loadSurahs().then(() => {
