@@ -415,7 +415,7 @@
     if (e.key === 'ArrowLeft') { e.preventDefault(); nextPage(); }
   });
 
-  // السحب باللمس أو الفأرة: يمين ← السابقة، يسار ← التالية
+  // السحب باللمس أو الفأرة: يمين ← التالية (نفس اتجاه زر "التالية ›")، يسار ← السابقة (نفس اتجاه "‹ السابقة")
   let drag = null;
   const stage = $('#stage');
   stage.addEventListener('pointerdown', (e) => {
@@ -428,7 +428,7 @@
     drag = null;
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.6) {
       window.getSelection()?.removeAllRanges();
-      if (dx > 0) prevPage(); else nextPage();
+      if (dx > 0) nextPage(); else prevPage();
     }
   });
   stage.addEventListener('pointercancel', () => { drag = null; });
