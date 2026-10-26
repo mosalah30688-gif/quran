@@ -492,7 +492,7 @@
   function setPlayerUI() {
     $('#player').classList.toggle('show', play.active);
     if (play.active && play.cur) {
-      $('#playerInfo').textContent = `${play.label} · ${surahName(play.cur.s)} · الآية ${play.cur.n}` +
+      $('#playerInfo').textContent = `${play.label} · الآية ${play.cur.n}` +
         (play.repeatCount > 1 ? ` · تكرار ${play.repeatCount - play.repeatLeft + 1}/${play.repeatCount}` : '');
     }
     $('#pToggle').textContent = audio.paused ? '▶' : '⏸';
