@@ -618,7 +618,7 @@
   // ---------- زر الرجوع في الأندرويد ----------
   let capApp = null;
   function getCapApp() {
-    if (!capApp && isNative() && Cap.registerPlugin) capApp = Cap.registerPlugin('App');
+    if (!capApp && hasNativePlugin('App') && Cap.registerPlugin) capApp = Cap.registerPlugin('App');
     return capApp;
   }
   let exitArmedAt = 0;
@@ -635,6 +635,7 @@
 
   // ---------- أدوات الأندرويد للتحميل إلى مجلد الجهاز ----------
   function isNative() { return !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform()); }
+  function hasNativePlugin(name) { return !!(isNative() && Cap.isPluginAvailable && Cap.isPluginAvailable(name)); }
   function nativeCall(plugin, method, opts) { return Cap.nativePromise(plugin, method, opts || {}); }
   function bytesToBase64(bytes) {
     let bin = '';
@@ -1024,7 +1025,7 @@
 
   const audioKey = (reciter, s, n) => `${reciter}|${s}|${n}`;
   const pad3 = (x) => String(x).padStart(3, '0');
-  const folderSupported = () => isNative() || typeof window.showDirectoryPicker === 'function';
+  const folderSupported = () => hasNativePlugin('FolderPicker') || typeof window.showDirectoryPicker === 'function';
 
   async function getDirHandle() {
     try { return (await idbGet('meta', 'dirHandle')) || null; } catch { return null; }
@@ -1032,7 +1033,7 @@
 
   // رابط تشغيل محلي لآية محفوظة (من المجلد أولاً ثم من التخزين داخل التطبيق)
   async function localAudioUrl(reciter, s, n) {
-    if (isNative()) {
+    if (hasNativePlugin('FolderPicker')) {
       const uri = store.get('folderUri', null);
       if (uri) {
         try {
@@ -1117,7 +1118,7 @@
     let root = null;
     if (target === 'folder') {
       if (!folderSupported()) return toast('مجلد الجهاز غير متاح هنا، اختر داخل التطبيق');
-      if (isNative()) {
+      if (hasNativePlugin('FolderPicker')) {
         let uri = store.get('folderUri', null);
         if (!uri) {
           try { const r = await nativeCall('FolderPicker', 'pickFolder'); uri = r && r.uri; } catch { uri = null; }
@@ -1224,8 +1225,13 @@
   $('#btnCancelDl').addEventListener('click', () => { dl.cancel = true; });
   $('#btnDeleteDl').addEventListener('click', deleteAppAudio);
 
-  const backListenerApp = isNative() ? getCapApp() : null;
-  if (backListenerApp && backListenerApp.addListener) backListenerApp.addListener('backButton', handleBack);
+  try {
+    const backListenerApp = getCapApp();
+    if (backListenerApp && backListenerApp.addListener) {
+      const r = backListenerApp.addListener('backButton', handleBack);
+      if (r && r.catch) r.catch(() => {});
+    }
+  } catch { /* الإضافة غير موجودة في هذه النسخة، يبقى الرجوع الافتراضي */ }
 
   // ---------- التشغيل الأولي ----------
   applyTheme();
