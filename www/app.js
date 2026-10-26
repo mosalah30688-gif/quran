@@ -45,7 +45,7 @@
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
     translation: '', size: 26, tajweed: false, dark: false,
   };
-  const VIEW_TITLES = { reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', wird: 'الورد', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق' };
+  const VIEW_TITLES = { reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', wird: 'الورد', search: 'البحث', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق' };
   const Cap = window.Capacitor || null;
 
   // قواعد التجويد بحسب رموز مصدر quran-tajweed في alquran.cloud (الاسم، الشرح)
@@ -1268,6 +1268,81 @@
       if (r && r.catch) r.catch(() => {});
     }
   } catch { /* الإضافة غير موجودة في هذه النسخة، يبقى الرجوع الافتراضي */ }
+
+  // ---------- البحث في القرآن ----------
+  const SR_PAGE = 40;
+  let srMatches = [];
+  let srShown = 0;
+  let srWords = [];
+  const srCache = new Map();
+  const srEsc = (w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/[اأإآ]/g, '[اأإآ]').replace(/[يى]/g, '[يى]');
+
+  async function fetchSearch(q) {
+    if (srCache.has(q)) return srCache.get(q);
+    const res = await fetch('https://api.alquran.cloud/v1/search/' + encodeURIComponent(q) + '/all/quran-simple-clean');
+    let j = null;
+    try { j = await res.json(); } catch { j = null; }
+    let out;
+    if (j && j.code === 200 && j.data && Array.isArray(j.data.matches)) out = j.data.matches;
+    else if (j && j.code === 404) out = [];
+    else throw new Error('search failed');
+    srCache.set(q, out);
+    return out;
+  }
+
+  async function runSearch() {
+    const q = $('#srQuery').value.trim().replace(/\s+/g, ' ');
+    if (q.length < 2) { toast('اكتب حرفين على الأقل'); return; }
+    srWords = q.split(' ').filter(Boolean);
+    $('#srInfo').textContent = 'جاري البحث...';
+    $('#srResults').innerHTML = '';
+    $('#srMoreRow').hidden = true;
+    try {
+      srMatches = await fetchSearch(q);
+    } catch {
+      srMatches = [];
+      $('#srInfo').textContent = 'تعذّر البحث، تحقق من الاتصال بالإنترنت ثم حاول مرة أخرى.';
+      return;
+    }
+    if (!srMatches.length) { $('#srInfo').textContent = 'لا توجد نتائج لهذه الكلمة.'; return; }
+    $('#srInfo').textContent = 'عدد النتائج: ' + toArabicDigits(srMatches.length);
+    srShown = 0;
+    $('#srResults').innerHTML = '';
+    renderSearchMore();
+  }
+
+  function highlightWords(text) {
+    const t = clean(text);
+    if (!srWords.length) return esc(t);
+    const re = new RegExp('(' + srWords.map(srEsc).join('|') + ')');
+    return t.split(re).map((part, i) => (i % 2 ? '<mark class="sr-hit">' + esc(part) + '</mark>' : esc(part))).join('');
+  }
+
+  function renderSearchMore() {
+    const chunk = srMatches.slice(srShown, srShown + SR_PAGE);
+    $('#srResults').insertAdjacentHTML('beforeend', chunk.map((m) => `
+      <div class="card sr-item" data-s="${m.surah.number}" data-a="${m.numberInSurah}">
+        <div class="row" style="justify-content:space-between">
+          <b>${esc(surahNameShort(m.surah.number))}</b>
+          <span class="muted">الآية ${toArabicDigits(m.numberInSurah)}</span>
+        </div>
+        <div class="sr-text">${highlightWords(m.text)}</div>
+      </div>`).join(''));
+    srShown += chunk.length;
+    const left = srMatches.length - srShown;
+    $('#srMoreRow').hidden = left <= 0;
+    $('#srMore').textContent = 'عرض المزيد (' + toArabicDigits(left) + ')';
+  }
+
+  $('#srBtn').addEventListener('click', runSearch);
+  $('#srQuery').addEventListener('keydown', (e) => { if (e.key === 'Enter') runSearch(); });
+  $('#srMore').addEventListener('click', renderSearchMore);
+  $('#srResults').addEventListener('click', (e) => {
+    const card = e.target.closest('.sr-item');
+    if (!card) return;
+    goToAyah(Number(card.dataset.s), Number(card.dataset.a));
+    showView('reader');
+  });
 
   // ---------- الورد اليومي وتتبع الختمة ----------
   // البيانات: الورد المختار، والصفحة التالية في الختمة، وعدد صفحات كل يوم، والختمات المكتملة

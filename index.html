@@ -90,6 +90,9 @@
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
     .muted { color: var(--muted); font-size: 13px; }
     label.lbl { font-size: 13px; color: var(--muted); display: block; margin: 8px 0 4px; }
+    .sr-hit { background: #ffe27a; color: #111; border-radius: 4px; padding: 0 2px; }
+    .sr-item { cursor: pointer; }
+    .sr-text { font-size: 19px; line-height: 2; margin-top: 6px; }
     .wird-big { font-size: 26px; font-weight: 700; margin: 4px 0 8px; }
     .wbar { height: 10px; background: var(--line); border-radius: 999px; overflow: hidden; }
     .wfill { height: 100%; width: 0; background: var(--brand); border-radius: 999px; transition: width .3s; }
@@ -247,6 +250,7 @@
         <button data-view="tafsir"><span class="ic">📚</span>التفسير</button>
         <button data-view="memo"><span class="ic">🧠</span>الحفظ</button>
         <button data-view="wird"><span class="ic">🌿</span>الورد</button>
+        <button data-view="search"><span class="ic">🔍</span>البحث</button>
         <button data-view="bookmarks"><span class="ic">⭐</span>المحفوظات</button>
         <button data-view="settings"><span class="ic">⚙️</span>الإعدادات</button>
         <button data-view="about"><span class="ic">ℹ️</span>عن التطبيق</button>
@@ -352,6 +356,22 @@
         </section>
 
         <!-- الإعدادات -->
+        <!-- البحث -->
+        <section class="view" id="view-search">
+          <div class="card">
+            <label class="lbl" for="srQuery">الكلمة أو العبارة</label>
+            <div class="row">
+              <input type="text" id="srQuery" style="flex:1;min-width:0" />
+              <button class="btn" id="srBtn">بحث</button>
+            </div>
+            <div id="srInfo" class="muted" style="margin-top:10px"></div>
+          </div>
+          <div id="srResults"></div>
+          <div class="row" id="srMoreRow" hidden style="justify-content:center">
+            <button class="btn ghost" id="srMore">عرض المزيد</button>
+          </div>
+        </section>
+
         <!-- الورد -->
         <section class="view" id="view-wird">
           <div class="card">
