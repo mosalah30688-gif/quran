@@ -66,7 +66,7 @@
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
     translation: '', size: 26, tajweed: false, dark: false,
   };
-  const VIEW_TITLES = { reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', wird: 'الورد', stats: 'الإحصائيات', adhkar: 'الأذكار', search: 'البحث', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق' };
+  const VIEW_TITLES = { reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', wird: 'الورد', stats: 'الإحصائيات', adhkar: 'الأذكار', search: 'البحث', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق', tajweed: 'أحكام التجويد', meanings: 'المعاني' };
   const Cap = window.Capacitor || null;
 
   // قواعد التجويد بحسب رموز مصدر quran-tajweed في alquran.cloud (الاسم، الشرح)
@@ -167,6 +167,7 @@
     if (name !== curView && !opts.back) { navStack.push(curView); if (navStack.length > 30) navStack.shift(); }
     curView = name;
     $$('#tabs button').forEach((b) => b.classList.toggle('active', b.dataset.view === name));
+    $$('.tab-group').forEach((g) => g.querySelector('.group-btn').classList.toggle('active', !!g.querySelector(`[data-view="${name}"]`)));
     $('#tabs button.active')?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
     $$('section.view').forEach((s) => s.classList.toggle('active', s.id === 'view-' + name));
     if (name === 'reader') updateChrome(); else $('#topTitle').textContent = VIEW_TITLES[name] || '';
@@ -177,6 +178,8 @@
     if (name === 'wird') renderWird();
     if (name === 'stats') renderStats();
     if (name === 'adhkar') renderAdhkarHome();
+    if (name === 'tajweed') renderTajweedView();
+    if (name === 'meanings') renderMeaningsView();
     if (name === 'memo') renderMemoReview();
     $('#content').scrollTop = 0;
   }
@@ -185,12 +188,32 @@
   $('#settingsBtn').addEventListener('click', () => showView('settings'));
   function closeSide() { document.body.classList.remove('side-open'); }
 
+  // القوائم المنسدلة للشريط: تفتح وتقفل، وتقفل عند اختيار تبويب أو الضغط بره أو Esc
+  function setGroupOpen(group, open) {
+    group.querySelector('.group-menu').hidden = !open;
+    group.querySelector('.group-btn').setAttribute('aria-expanded', String(open));
+  }
+  function closeGroups() { $$('.tab-group').forEach((g) => setGroupOpen(g, false)); }
   $('#tabs').addEventListener('click', (e) => {
+    const gb = e.target.closest('.group-btn');
+    if (gb) {
+      const g = gb.closest('.tab-group');
+      const open = g.querySelector('.group-menu').hidden;
+      closeGroups();
+      if (open) setGroupOpen(g, true);
+      return;
+    }
+    // نوع من الأذكار: يفتح الأذكار مباشرة بدون صفحة اختيار وسيطة
+    const cat = e.target.closest('[data-cat]');
+    if (cat) { closeGroups(); showView('adhkar'); openAdhkarCat(cat.dataset.cat); closeSide(); return; }
     const b = e.target.closest('button[data-view]');
     if (!b) return;
+    closeGroups();
     showView(b.dataset.view);
     closeSide();
   });
+  document.addEventListener('click', (e) => { if (!e.target.closest('.tab-group')) closeGroups(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeGroups(); });
   $('#backdrop').addEventListener('click', closeSide);
 
   function applyTheme() {
@@ -204,7 +227,7 @@
     try {
       surahs = (await getJSON(API + '/surah')).data;
     } catch {
-      $('#indexList').innerHTML = '<div class="muted" style="padding:10px">تعذر تحميل الفهرس. تحقق من الاتصال بالإنترنت.</div>';
+      $('#surahList').innerHTML = '<div class="muted" style="padding:10px">تعذر تحميل الفهرس. تحقق من الاتصال بالإنترنت.</div>';
       return;
     }
     $('#memoSurah').innerHTML = surahs.map((s) => `<option value="${s.number}">${s.number}. ${esc(s.name)}</option>`).join('');
@@ -214,69 +237,61 @@
   }
 
   function renderIndex() {
-    const seg = index.mode;
-    $$('#indexSeg button').forEach((b) => b.classList.toggle('on', b.dataset.mode === seg));
-    $('#indexSearchWrap').style.display = seg === 'surah' ? 'block' : 'none';
-    const list = $('#indexList');
     if (!surahs.length) return;
     const curS = state.sel ? state.sel.s : 1;
     const curJuz = state.sel ? state.sel.juz : 0;
-
-    if (seg === 'surah') {
-      const raw = $('#indexSearch').value.trim();
-      const term = raw.toLowerCase();
-      const items = surahs.filter((s) =>
-        !term || String(s.number) === term || s.englishName.toLowerCase().includes(term) ||
-        s.englishNameTranslation.toLowerCase().includes(term) || s.name.includes(raw));
-      list.innerHTML = items.map((s) => `
-        <div class="idx ${s.number === curS ? 'current' : ''}" data-s="${s.number}" data-a="1">
-          <div class="n">${s.number}</div>
-          <div>
-            <div class="t">${esc(s.name)}</div>
-            <div class="s">${esc(s.englishName)} · ${s.numberOfAyahs} آية · ${s.revelationType === 'Meccan' ? 'مكية' : 'مدنية'}</div>
-          </div>
-          <div class="badge">جـ ${juzOf(s.number, 1)}</div>
-        </div>`).join('') || '<div class="muted" style="padding:10px">لا توجد نتائج.</div>';
-    } else if (seg === 'juz') {
-      list.innerHTML = JUZ_START.map(([s, a], i) => `
-        <div class="idx ${curJuz === i + 1 ? 'current' : ''}" data-s="${s}" data-a="${a}">
-          <div class="n">${i + 1}</div>
-          <div>
-            <div class="t">الجزء ${toArabicDigits(i + 1)}</div>
-            <div class="s">يبدأ من ${esc(surahName(s))} آية ${a}</div>
-          </div>
-          <div class="badge"></div>
-        </div>`).join('');
-    } else {
-      const sel = index.surah;
-      const count = surahs[sel - 1]?.numberOfAyahs || 0;
-      let grid = '';
-      for (let a = 1; a <= count; a++) {
-        grid += `<button data-a="${a}" class="${state.sel && state.sel.s === sel && state.sel.n === a ? 'current' : ''}">${toArabicDigits(a)}</button>`;
-      }
-      list.innerHTML = `
-        <select id="ayahSurahSel">
-          ${surahs.map((s) => `<option value="${s.number}" ${s.number === sel ? 'selected' : ''}>${s.number}. ${esc(s.name)}</option>`).join('')}
-        </select>
-        <div class="muted" style="padding:0 10px 6px">${count} آية</div>
-        <div class="ayah-grid" id="ayahGrid">${grid}</div>`;
+    // السور: مع البحث بالاسم أو الرقم
+    const raw = $('#indexSearch').value.trim();
+    const term = raw.toLowerCase();
+    const items = surahs.filter((s) =>
+      !term || String(s.number) === term || s.englishName.toLowerCase().includes(term) ||
+      s.englishNameTranslation.toLowerCase().includes(term) || s.name.includes(raw));
+    $('#surahList').innerHTML = items.map((s) => `
+      <div class="idx ${s.number === curS ? 'current' : ''}" data-s="${s.number}" data-a="1">
+        <div class="n">${s.number}</div>
+        <div>
+          <div class="t">${esc(s.name)}</div>
+          <div class="s">${esc(s.englishName)} · ${s.numberOfAyahs} آية · ${s.revelationType === 'Meccan' ? 'مكية' : 'مدنية'}</div>
+        </div>
+        <div class="badge">جـ ${juzOf(s.number, 1)}</div>
+      </div>`).join('') || '<div class="muted" style="padding:10px">لا توجد نتائج.</div>';
+    // الأجزاء
+    $('#juzList').innerHTML = JUZ_START.map(([s, a], i) => `
+      <div class="idx ${curJuz === i + 1 ? 'current' : ''}" data-s="${s}" data-a="${a}">
+        <div class="n">${i + 1}</div>
+        <div>
+          <div class="t">الجزء ${toArabicDigits(i + 1)}</div>
+          <div class="s">يبدأ من ${esc(surahName(s))} آية ${a}</div>
+        </div>
+        <div class="badge"></div>
+      </div>`).join('');
+    // الآيات: تختار السورة ثم الآية
+    const sel = index.surah;
+    const count = surahs[sel - 1]?.numberOfAyahs || 0;
+    let grid = '';
+    for (let a = 1; a <= count; a++) {
+      grid += `<button data-a="${a}" class="${state.sel && state.sel.s === sel && state.sel.n === a ? 'current' : ''}">${toArabicDigits(a)}</button>`;
     }
+    $('#ayahList').innerHTML = `
+      <select id="ayahSurahSel">
+        ${surahs.map((s) => `<option value="${s.number}" ${s.number === sel ? 'selected' : ''}>${s.number}. ${esc(s.name)}</option>`).join('')}
+      </select>
+      <div class="muted" style="padding:0 10px 6px">${count} آية</div>
+      <div class="ayah-grid" id="ayahGrid">${grid}</div>`;
   }
 
-  $('#indexSeg').addEventListener('click', (e) => {
-    const b = e.target.closest('button[data-mode]');
-    if (!b) return;
-    index.mode = b.dataset.mode;
-    renderIndex();
-  });
   $('#indexSearch').addEventListener('input', renderIndex);
-  $('#indexList').addEventListener('click', (e) => {
-    const g = e.target.closest('#ayahGrid button');
-    if (g) { goToAyah(index.surah, Number(g.dataset.a)); closeSide(); return; }
+  const goFromIndex = (e) => {
     const item = e.target.closest('.idx[data-s]');
     if (item) { goToAyah(Number(item.dataset.s), Number(item.dataset.a)); closeSide(); }
+  };
+  $('#surahList').addEventListener('click', goFromIndex);
+  $('#juzList').addEventListener('click', goFromIndex);
+  $('#ayahList').addEventListener('click', (e) => {
+    const g = e.target.closest('#ayahGrid button');
+    if (g) { goToAyah(index.surah, Number(g.dataset.a)); closeSide(); }
   });
-  $('#indexList').addEventListener('change', (e) => {
+  $('#ayahList').addEventListener('change', (e) => {
     if (e.target.id === 'ayahSurahSel') { index.surah = Number(e.target.value); renderIndex(); }
   });
 
@@ -1560,6 +1575,12 @@
     showView('reader');
   });
 
+  // ---------- تدبر: أحكام التجويد ----------
+  function renderTajweedView() {
+    $('#tjList').innerHTML = Object.values(TJ_RULES).map(([name, desc]) =>
+      `<div class="card"><strong>${esc(name)}</strong><div class="muted" style="margin-top:4px">${esc(desc)}</div></div>`).join('');
+  }
+
   // ---------- معاني الكلمات (من الموسوعة القرآنية) ----------
   let meanData = null;
   let meanToken = 0;
@@ -1592,6 +1613,34 @@
     });
   }
   $('#btnMeanings').addEventListener('click', showMeaningsPanel);
+  let mnToken = 0;
+  function renderMeaningsView() {
+    const sel = $('#mnSurah');
+    if (!sel.options.length) sel.innerHTML = surahs.map((x) => `<option value="${x.number}">${x.number}. ${esc(x.name)}</option>`).join('');
+    if (state.sel) sel.value = String(state.sel.s);
+    renderMeaningsList();
+  }
+  function renderMeaningsList() {
+    const s = Number($('#mnSurah').value) || 1;
+    const info = surahs[s - 1];
+    const out = $('#mnList');
+    if (!info) return;
+    const token = ++mnToken;
+    out.innerHTML = '<div class="muted">جاري التحميل...</div>';
+    loadMeanings().then((all) => {
+      if (token !== mnToken) return;
+      let html = '';
+      for (let n = 1; n <= info.numberOfAyahs; n++) {
+        const items = all[`${s}:${n}`];
+        if (!items || !items.length) continue;
+        html += `<div class="card"><strong>${esc(info.name)} - الآية ${toArabicDigits(n)}</strong>` +
+          items.map(([book, words]) => `<div class="pop-label">${esc(book)}</div>` +
+            words.map(([t, m]) => `<div class="mw"><b>${esc(t)}</b>${esc(m)}</div>`).join('')).join('') + '</div>';
+      }
+      out.innerHTML = html || '<div class="muted">لا توجد معانٍ مسجلة لهذه السورة.</div>';
+    }).catch(() => { if (token === mnToken) out.innerHTML = '<div class="muted">تعذّر تحميل المعاني، حاول مرة أخرى.</div>'; });
+  }
+  $('#mnSurah').addEventListener('change', renderMeaningsList);
   $('#meanClose').addEventListener('click', () => $('#meanPanel').classList.remove('show'));
 
   // ---------- مشاركة الآية كصورة ----------
@@ -1709,15 +1758,16 @@
     if (!s || s.day !== todayKey()) return { day: todayKey(), c: {} };
     return s;
   }
+  // الشاشة الأولى للأذكار: تعليمات فقط، والاختيار يكون من قائمة "أذكارك"
   function renderAdhkarHome() {
     $('#adhkarCat').hidden = true;
     $('#adhkarHome').hidden = false;
-    $('#adhkarHome').innerHTML = '<div class="muted">جاري التحميل...</div>';
-    loadAdhkar().then((cats) => {
-      $('#adhkarHome').innerHTML = `<div class="card">${cats.map((c) => `
-        <button class="btn ghost adh-cat" data-cat="${esc(c.id)}"><span>${esc(c.name)}</span><span>${toArabicDigits(c.items.length)}</span></button>`).join('')}</div>`;
-    }).catch(() => { $('#adhkarHome').innerHTML = '<div class="muted">تعذّر تحميل الأذكار.</div>'; });
+    $('#adhkarHome').innerHTML = '<div class="card muted">اختر نوع الأذكار من قائمة «أذكارك» في الشريط.</div>';
   }
+  function renderAdhkarMenu(cats) {
+    $('#adhkarMenu').innerHTML = cats.map((c) => `<button data-view="adhkar" data-cat="${esc(c.id)}"><span class="ic">📿</span>${esc(c.name)}</button>`).join('');
+  }
+  loadAdhkar().then(renderAdhkarMenu).catch(() => { $('#adhkarMenu').innerHTML = '<div class="muted" style="padding:8px">تعذّر تحميل الأذكار.</div>'; });
   function openAdhkarCat(id) {
     const cat = (adhkarCats || []).find((c) => c.id === id);
     if (!cat) return;
@@ -1728,7 +1778,6 @@
       <div class="card">
         <div class="row" style="justify-content:space-between">
           <strong>${esc(cat.name)}</strong>
-          <button class="btn small ghost" id="adhBack">العودة للأذكار</button>
         </div>
       </div>
       ${cat.items.map((it, i) => {
@@ -1743,7 +1792,6 @@
           </div>
         </div>`;
       }).join('')}`;
-    $('#adhBack').addEventListener('click', renderAdhkarHome);
   }
   $('#adhkarHome').addEventListener('click', (e) => {
     const b = e.target.closest('[data-cat]');

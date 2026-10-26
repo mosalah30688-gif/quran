@@ -281,6 +281,34 @@
     nav.menu button.active { background: var(--brand); color: #fff; }
     .nav-end { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
     .nav-end .btn { padding: 7px 10px; font-size: 13px; }
+    /* ===== مجموعة "المزيد": قائمة منسدلة للتفسير والحفظ والورد والإحصائيات ===== */
+    .tab-group { position: relative; flex: 0 0 auto; display: flex; }
+    .group-menu { position: absolute; top: calc(100% + 6px); right: 0; min-width: 170px; z-index: 40; background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.18); padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+    .group-menu[hidden] { display: none; }
+    .group-menu { max-height: 60vh; overflow-y: auto; }
+    .tab-group[data-group="adhkarak"] .group-menu { left: 0; right: auto; }
+    .search-inner { padding: 4px 0 0; }
+    .search-inner .card { margin-bottom: 10px; }
+    nav.menu .group-menu button { width: 100%; flex: none; min-height: 44px; padding: 10px 12px; display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 8px; font-size: 14px; white-space: nowrap; text-align: right; }
+    nav.menu .group-menu button .ic { width: 22px; text-align: center; }
+    nav.menu .group-menu button.active { background: var(--brand); color: #fff; }
+    .group-btn.active { background: var(--brand); color: #fff; }
+
+    /* ===== الهاتف: التبويبات شبكة ظاهرة كلها بدون سحب، وزرّا الإعدادات والوضع الليلي عموديين على اليسار ===== */
+    @media (max-width: 720px) {
+      .navbar { align-items: stretch; gap: 6px; padding: 6px 8px; }
+      .navbar nav.menu { flex: 1 1 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; overflow: visible; padding: 0; min-width: 0; }
+      .tab-group { display: block; position: static; }
+      .tab-group .group-menu, .tab-group[data-group="adhkarak"] .group-menu { left: 8px; right: 8px; min-width: 0; top: calc(100% + 4px); }
+      .group-btn { font-size: 11px; }
+      nav.menu button { width: 100%; flex: none; white-space: normal; min-height: 50px; padding: 4px 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px; line-height: 1.15; border-radius: 10px; text-align: center; }
+      nav.menu .ic { font-size: 17px; line-height: 1; }
+      .group-menu { left: auto; right: 0; min-width: 180px; }
+      .nav-end { flex-direction: column; justify-content: center; gap: 4px; }
+      .nav-end .btn { padding: 4px 9px; font-size: 16px; min-height: 40px; }
+      .nav-end .lbl { display: none; }
+      .theme-btn { width: 40px; height: 40px; }
+    }
     .theme-btn { border: 1px solid var(--line); background: var(--bg); border-radius: 10px; width: 38px; height: 36px; cursor: pointer; font-size: 16px; }
     nav.menu .ic { width: auto; }
     .wrap { padding-bottom: 28px; }
@@ -326,17 +354,30 @@
         <div class="navbar">
         <nav class="menu" id="tabs">
           <button data-view="reader" class="active"><span class="ic">📖</span>المصحف</button>
-          <button data-view="tafsir"><span class="ic">📚</span>التفسير</button>
-          <button data-view="memo"><span class="ic">🧠</span>الحفظ</button>
-          <button data-view="wird"><span class="ic">🌿</span>الورد</button>
-          <button data-view="stats"><span class="ic">📊</span>الإحصائيات</button>
-          <button data-view="adhkar"><span class="ic">📿</span>الأذكار</button>
-          <button data-view="search"><span class="ic">🔍</span>البحث</button>
-          <button data-view="bookmarks"><span class="ic">⭐</span>المحفوظات</button>
-          <button data-view="settings"><span class="ic">⚙️</span>الإعدادات</button>
+          <div class="tab-group" data-group="rasid">
+            <button type="button" class="group-btn" aria-haspopup="true" aria-expanded="false"><span class="ic">🏅</span>رصيدك ▾</button>
+            <div class="group-menu" hidden>
+              <button data-view="stats"><span class="ic">📊</span>الإحصائيات</button>
+              <button data-view="memo"><span class="ic">🧠</span>الحفظ</button>
+              <button data-view="wird"><span class="ic">🌿</span>الورد</button>
+              <button data-view="bookmarks"><span class="ic">⭐</span>المحفوظات</button>
+            </div>
+          </div>
+          <div class="tab-group" data-group="tadabbur">
+            <button type="button" class="group-btn" aria-haspopup="true" aria-expanded="false"><span class="ic">💡</span>تدبر ▾</button>
+            <div class="group-menu" hidden>
+              <button data-view="tafsir"><span class="ic">📚</span>التفسير</button>
+              <button data-view="tajweed"><span class="ic">🎨</span>أحكام التجويد</button>
+              <button data-view="meanings"><span class="ic">🔤</span>المعاني</button>
+            </div>
+          </div>
+          <div class="tab-group" data-group="adhkarak">
+            <button type="button" class="group-btn" aria-haspopup="true" aria-expanded="false"><span class="ic">📿</span>أذكارك ▾</button>
+            <div class="group-menu" id="adhkarMenu" hidden></div>
+          </div>
         </nav>
           <div class="nav-end">
-            <button class="btn small" id="settingsBtn" title="الإعدادات" aria-label="الإعدادات">⚙️ الإعدادات</button>
+            <button class="btn small" id="settingsBtn" title="الإعدادات" aria-label="الإعدادات">⚙️<span class="lbl"> الإعدادات</span></button>
             <button class="theme-btn" id="themeBtn" title="الوضع الليلي" aria-label="الوضع الليلي">🌙</button>
           </div>
         </div>
@@ -442,20 +483,7 @@
 
         <!-- الإعدادات -->
         <!-- البحث -->
-        <section class="view" id="view-search">
-          <div class="card">
-            <label class="lbl" for="srQuery">الكلمة أو العبارة</label>
-            <div class="row">
-              <input type="text" id="srQuery" style="flex:1;min-width:0" />
-              <button class="btn" id="srBtn">بحث</button>
-            </div>
-            <div id="srInfo" class="muted" style="margin-top:10px"></div>
-          </div>
-          <div id="srResults"></div>
-          <div class="row" id="srMoreRow" hidden style="justify-content:center">
-            <button class="btn ghost" id="srMore">عرض المزيد</button>
-          </div>
-        </section>
+        
 
         <!-- الأذكار -->
         <section class="view" id="view-adhkar">
@@ -562,21 +590,47 @@
             <div class="tr" id="tfTransText" dir="auto" style="margin-top:10px"></div>
           </div>
         </section>
+        <section class="view" id="view-tajweed">
+          <div id="tjList"></div>
+        </section>
+        <section class="view" id="view-meanings">
+          <div class="card">
+            <label class="lbl" for="mnSurah">السورة</label>
+            <select id="mnSurah"></select>
+          </div>
+          <div id="mnList"></div>
+        </section>
         <section class="view" id="view-settings">
           <details class="card dd">
-            <summary>الفهرس: السورة والجزء والآية</summary>
-        <div class="index-wrap">
-          <div class="index-head">
-            <div class="seg" id="indexSeg">
-              <button data-mode="surah" class="on">السورة</button>
-              <button data-mode="juz">الجزء</button>
-              <button data-mode="ayah">الآية</button>
+            <summary>السور</summary>
+            <div class="index-wrap">
+              <div class="index-search"><input type="text" id="indexSearch" placeholder="ابحث باسم السورة أو رقمها..." /></div>
+              <div class="index-list" id="surahList"></div>
             </div>
+          </details>
+          <details class="card dd">
+            <summary>الأجزاء</summary>
+            <div class="index-wrap"><div class="index-list" id="juzList"></div></div>
+          </details>
+          <details class="card dd">
+            <summary>الآيات</summary>
+            <div class="index-wrap"><div class="index-list" id="ayahList"></div></div>
+          </details>
+          <details class="card dd">
+            <summary>البحث في القرآن</summary>
+            <div class="search-inner">
+          <div class="card">
+            <label class="lbl" for="srQuery">الكلمة أو العبارة</label>
+            <div class="row">
+              <input type="text" id="srQuery" style="flex:1;min-width:0" />
+              <button class="btn" id="srBtn">بحث</button>
+            </div>
+            <div id="srInfo" class="muted" style="margin-top:10px"></div>
           </div>
-          <div class="index-search" id="indexSearchWrap">
-            <input type="text" id="indexSearch" placeholder="ابحث باسم السورة أو رقمها..." />
+          <div id="srResults"></div>
+          <div class="row" id="srMoreRow" hidden style="justify-content:center">
+            <button class="btn ghost" id="srMore">عرض المزيد</button>
           </div>
-          <div class="index-list" id="indexList"></div>
         </div>
           </details>
           <div class="card">

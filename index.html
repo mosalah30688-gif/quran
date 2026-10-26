@@ -97,6 +97,18 @@
     .sr-hit { background: #ffe27a; color: #111; border-radius: 4px; padding: 0 2px; }
     .sr-item { cursor: pointer; }
     .sr-text { font-size: 19px; line-height: 2; margin-top: 6px; }
+    .adh-cat { display: flex; justify-content: space-between; width: 100%; text-align: right; margin: 6px 0; }
+    .adh-item { font-size: 19px; line-height: 2.1; }
+    .adh-item.done { opacity: .6; }
+    .adh-count { min-width: 74px; }
+    .bars { display: flex; align-items: flex-end; gap: 8px; height: 150px; margin-top: 10px; }
+    .bar-col { flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; }
+    .bar { width: 100%; background: var(--brand); border-radius: 6px 6px 0 0; min-height: 2px; }
+    .bar-n { font-size: 12px; }
+    .bar-d { font-size: 12px; color: var(--muted); }
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-box { border: 1px solid var(--line); border-radius: 12px; padding: 10px; text-align: center; }
+    .stat-box b { display: block; font-size: 24px; margin-top: 4px; }
     .wird-big { font-size: 26px; font-weight: 700; margin: 4px 0 8px; }
     .wbar { height: 10px; background: var(--line); border-radius: 999px; overflow: hidden; }
     .wfill { height: 100%; width: 0; background: var(--brand); border-radius: 999px; transition: width .3s; }
@@ -180,6 +192,10 @@
     .panel-tafsir.show { display: block; }
     .panel-tafsir .tf, .tf { font-size: 18px; line-height: 2; font-family: "Noto Naskh Arabic", serif; white-space: pre-line; }
     .tr { font-size: 16px; line-height: 1.8; }
+    @font-face { font-family: 'AmiriQuranBundled'; src: url(fonts/AmiriQuran-arabic.woff2) format('woff2'); }
+    body.riw #pageBody { font-family: 'AmiriQuranBundled', 'Amiri Quran', serif; }
+    .mw-w { display: inline-block; padding: 0 2px; margin: 0 1px; border-radius: 6px; cursor: pointer; }
+    .mw-w.h:not(.shown) { color: transparent; background: var(--line); }
     .mw { margin: 6px 0; line-height: 1.9; font-size: 16px; }
     .mw b { color: var(--brand); margin-left: 4px; }
     .tf-head { font-weight: 700; }
@@ -196,6 +212,16 @@
       padding: 8px 14px; border-radius: 10px; font-size: 14px; opacity: 0; transition: opacity .3s; z-index: 50; pointer-events: none;
     }
     .toast.show { opacity: 1; }
+    .upd-banner {
+      position: fixed; bottom: 12px; left: 12px; right: 12px; z-index: 60; background: #1f5e3b; color: #fff;
+      border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; gap: 8px; font-size: 14px;
+      box-shadow: 0 6px 20px rgba(0,0,0,.25);
+    }
+    .upd-banner[hidden] { display: none; }
+    .upd-banner span { flex: 1; }
+    .upd-banner button { border: 0; border-radius: 8px; padding: 6px 10px; font-size: 13px; cursor: pointer; font-family: inherit; }
+    .upd-banner #updBannerBtn { background: #fff; color: #1f5e3b; font-weight: 700; }
+    .upd-banner #updBannerX { background: transparent; color: #fff; font-size: 18px; padding: 2px 6px; }
 
     /* ---------- الشاشات الصغيرة ---------- */
     @media (max-width: 860px) {
@@ -241,41 +267,72 @@
       .player .btn { min-width: 40px; min-height: 36px; padding: 4px 8px; font-size: 15px; }
       .player #pToggle { min-width: 52px; }
     }
+
+    /* ===== تخطيط جديد: رأس ثابت بالتبويبات، والمشغل داخل المصحف، والإعدادات تحوي الفهرس وعن التطبيق ===== */
+    .app { display: block; }
+    main.content { height: 100vh; height: 100dvh; }
+    .hdr { position: sticky; top: 0; z-index: 15; background: var(--bg); border-bottom: 1px solid var(--line); }
+    .hdr .topbar { position: static; border-bottom: 0; }
+    nav.menu { display: flex; flex-direction: row; overflow-x: auto; gap: 6px; padding: 4px 10px 8px; border: 0; scrollbar-width: none; }
+    nav.menu::-webkit-scrollbar { display: none; }
+    .navbar { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--card); border-bottom: 1px solid var(--line); }
+    .navbar nav.menu { flex: 1 1 auto; min-width: 0; padding: 0; border: 0; }
+    nav.menu button { width: auto; flex: 0 0 auto; white-space: nowrap; padding: 8px 12px; border-radius: 10px; }
+    nav.menu button.active { background: var(--brand); color: #fff; }
+    .nav-end { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+    .nav-end .btn { padding: 7px 10px; font-size: 13px; }
+    /* ===== مجموعة "المزيد": قائمة منسدلة للتفسير والحفظ والورد والإحصائيات ===== */
+    .tab-group { position: relative; flex: 0 0 auto; display: flex; }
+    .group-menu { position: absolute; top: calc(100% + 6px); right: 0; min-width: 170px; z-index: 40; background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.18); padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+    .group-menu[hidden] { display: none; }
+    .group-menu { max-height: 60vh; overflow-y: auto; }
+    .tab-group[data-group="adhkarak"] .group-menu { left: 0; right: auto; }
+    .search-inner { padding: 4px 0 0; }
+    .search-inner .card { margin-bottom: 10px; }
+    nav.menu .group-menu button { width: 100%; flex: none; min-height: 44px; padding: 10px 12px; display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 8px; font-size: 14px; white-space: nowrap; text-align: right; }
+    nav.menu .group-menu button .ic { width: 22px; text-align: center; }
+    nav.menu .group-menu button.active { background: var(--brand); color: #fff; }
+    .group-btn.active { background: var(--brand); color: #fff; }
+
+    /* ===== الهاتف: التبويبات شبكة ظاهرة كلها بدون سحب، وزرّا الإعدادات والوضع الليلي عموديين على اليسار ===== */
+    @media (max-width: 720px) {
+      .navbar { align-items: stretch; gap: 6px; padding: 6px 8px; }
+      .navbar nav.menu { flex: 1 1 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; overflow: visible; padding: 0; min-width: 0; }
+      .tab-group { display: block; position: static; }
+      .tab-group .group-menu, .tab-group[data-group="adhkarak"] .group-menu { left: 8px; right: 8px; min-width: 0; top: calc(100% + 4px); }
+      .group-btn { font-size: 11px; }
+      nav.menu button { width: 100%; flex: none; white-space: normal; min-height: 50px; padding: 4px 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px; line-height: 1.15; border-radius: 10px; text-align: center; }
+      nav.menu .ic { font-size: 17px; line-height: 1; }
+      .group-menu { left: auto; right: 0; min-width: 180px; }
+      .nav-end { flex-direction: column; justify-content: center; gap: 4px; }
+      .nav-end .btn { padding: 4px 9px; font-size: 16px; min-height: 40px; }
+      .nav-end .lbl { display: none; }
+      .theme-btn { width: 40px; height: 40px; }
+    }
+    .theme-btn { border: 1px solid var(--line); background: var(--bg); border-radius: 10px; width: 38px; height: 36px; cursor: pointer; font-size: 16px; }
+    nav.menu .ic { width: auto; }
+    .wrap { padding-bottom: 28px; }
+    body:has(.player.show) .wrap { padding-bottom: 28px; }
+    .player { position: static; left: auto; right: auto; bottom: auto; z-index: auto; margin-top: 14px; border: 1px solid var(--line); border-radius: 14px; box-shadow: none; }
+    .index-list { flex: none; max-height: 55vh; overflow-y: auto; }
+    details.dd { padding: 0; overflow: hidden; margin-bottom: 12px; }
+    details.dd > summary { list-style: none; cursor: pointer; padding: 14px 16px; font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 8px; user-select: none; }
+    details.dd > summary::-webkit-details-marker { display: none; }
+    details.dd > summary::after { content: '▾'; margin-inline-start: auto; color: var(--muted); transition: transform .25s ease; }
+    details.dd[open] > summary::after { transform: rotate(180deg); }
+    details.dd[open] > summary { border-bottom: 1px solid var(--line); }
+    details.dd > *:not(summary) { margin-inline: 14px; }
+    details.dd > .index-wrap { margin: 0; }
+    details.dd[open] > *:not(summary) { animation: ddIn .28s ease both; }
+    @keyframes ddIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+    details.dd > .about-head { margin: 12px 14px; }
+    details.dd > .card { margin: 12px 14px; }
+    .side, aside.side { display: none !important; }
+    .menu-toggle, #menuBtn { display: none !important; }
   </style>
 </head>
 <body>
   <div class="app">
-    <aside class="side" id="side">
-      <div class="brand">
-        <h1>القرآن الكريم</h1>
-        <button class="icon-btn" id="themeBtn" title="الوضع الليلي">🌙</button>
-      </div>
-
-      <nav class="menu" id="tabs">
-        <button data-view="reader" class="active"><span class="ic">📖</span>المصحف</button>
-        <button data-view="tafsir"><span class="ic">📚</span>التفسير</button>
-        <button data-view="memo"><span class="ic">🧠</span>الحفظ</button>
-        <button data-view="wird"><span class="ic">🌿</span>الورد</button>
-        <button data-view="search"><span class="ic">🔍</span>البحث</button>
-        <button data-view="bookmarks"><span class="ic">⭐</span>المحفوظات</button>
-        <button data-view="settings"><span class="ic">⚙️</span>الإعدادات</button>
-        <button data-view="about"><span class="ic">ℹ️</span>عن التطبيق</button>
-      </nav>
-
-      <div class="index-wrap">
-        <div class="index-head">
-          <div class="seg" id="indexSeg">
-            <button data-mode="surah" class="on">السورة</button>
-            <button data-mode="juz">الجزء</button>
-            <button data-mode="ayah">الآية</button>
-          </div>
-        </div>
-        <div class="index-search" id="indexSearchWrap">
-          <input type="text" id="indexSearch" placeholder="ابحث باسم السورة أو رقمها..." />
-        </div>
-        <div class="index-list" id="indexList"></div>
-      </div>
-    </aside>
     <div class="backdrop" id="backdrop"></div>
     <div class="img-modal" id="imgModal" hidden>
       <div class="img-box">
@@ -289,11 +346,42 @@
     </div>
 
     <main class="content" id="content">
-      <div class="topbar">
-        <button class="icon-btn back-btn" id="backBtn" hidden>→ رجوع</button>
-        <button class="icon-btn menu-toggle" id="menuBtn">⚙ الإعدادات</button>
-        <div class="title" id="topTitle">المصحف</div>
-      </div>
+      <header class="hdr">
+        <div class="topbar">
+          <button class="icon-btn back-btn" id="backBtn" hidden>→ رجوع</button>
+          <div class="title" id="topTitle">المصحف</div>
+        </div>
+        <div class="navbar">
+        <nav class="menu" id="tabs">
+          <button data-view="reader" class="active"><span class="ic">📖</span>المصحف</button>
+          <div class="tab-group" data-group="rasid">
+            <button type="button" class="group-btn" aria-haspopup="true" aria-expanded="false"><span class="ic">🏅</span>رصيدك ▾</button>
+            <div class="group-menu" hidden>
+              <button data-view="stats"><span class="ic">📊</span>الإحصائيات</button>
+              <button data-view="memo"><span class="ic">🧠</span>الحفظ</button>
+              <button data-view="wird"><span class="ic">🌿</span>الورد</button>
+              <button data-view="bookmarks"><span class="ic">⭐</span>المحفوظات</button>
+            </div>
+          </div>
+          <div class="tab-group" data-group="tadabbur">
+            <button type="button" class="group-btn" aria-haspopup="true" aria-expanded="false"><span class="ic">💡</span>تدبر ▾</button>
+            <div class="group-menu" hidden>
+              <button data-view="tafsir"><span class="ic">📚</span>التفسير</button>
+              <button data-view="tajweed"><span class="ic">🎨</span>أحكام التجويد</button>
+              <button data-view="meanings"><span class="ic">🔤</span>المعاني</button>
+            </div>
+          </div>
+          <div class="tab-group" data-group="adhkarak">
+            <button type="button" class="group-btn" aria-haspopup="true" aria-expanded="false"><span class="ic">📿</span>أذكارك ▾</button>
+            <div class="group-menu" id="adhkarMenu" hidden></div>
+          </div>
+        </nav>
+          <div class="nav-end">
+            <button class="btn small" id="settingsBtn" title="الإعدادات" aria-label="الإعدادات">⚙️<span class="lbl"> الإعدادات</span></button>
+            <button class="theme-btn" id="themeBtn" title="الوضع الليلي" aria-label="الوضع الليلي">🌙</button>
+          </div>
+        </div>
+      </header>
 
       <div class="wrap">
         <!-- المصحف: صفحة بصفحة -->
@@ -323,6 +411,13 @@
             <span class="pno" id="pageNo"></span>
             <button class="btn small" id="pNextS">التالية ›</button>
           </div>
+            <div class="player" id="player">
+              <div class="info" id="playerInfo">لا يوجد تشغيل</div>
+              <button class="btn small" id="pPrev">⏮</button>
+              <button class="btn" id="pToggle">⏯</button>
+              <button class="btn small" id="pNext">⏭</button>
+              <button class="btn small ghost" id="pStop">إيقاف</button>
+            </div>
         </section>
 
         <!-- الحفظ -->
@@ -354,7 +449,22 @@
               <button class="btn ghost" id="btnMemoHide">إخفاء/إظهار النص</button>
               <button class="btn ghost" id="btnMemoPlay">تشغيل مع التكرار</button>
             </div>
+            <div class="row" style="margin-top:12px">
+              <label class="lbl" for="memoLevel">إخفاء الكلمات</label>
+              <select id="memoLevel" style="max-width:170px">
+                <option value="0">بدون إخفاء</option>
+                <option value="1">ربع الكلمات</option>
+                <option value="2">نصف الكلمات</option>
+                <option value="3">ثلاثة أرباع</option>
+                <option value="4">كل الكلمات</option>
+              </select>
+              <button class="btn small" id="btnMemoSaved">حفظت هذا المقطع</button>
+            </div>
             <p class="muted">اضغط على الآية المخفية لإظهارها، وكرر التلاوة حتى تثبت.</p>
+          </div>
+          <div class="card" id="memoReview">
+            <h3 style="margin-top:0">مراجعة اليوم</h3>
+            <div id="memoDue" class="muted"></div>
           </div>
           <div class="card" id="memoText"></div>
         </section>
@@ -373,18 +483,31 @@
 
         <!-- الإعدادات -->
         <!-- البحث -->
-        <section class="view" id="view-search">
+        
+
+        <!-- الأذكار -->
+        <section class="view" id="view-adhkar">
+          <div id="adhkarHome"></div>
+          <div id="adhkarCat" hidden></div>
+        </section>
+
+        <!-- الإحصائيات -->
+        <section class="view" id="view-stats">
           <div class="card">
-            <label class="lbl" for="srQuery">الكلمة أو العبارة</label>
-            <div class="row">
-              <input type="text" id="srQuery" style="flex:1;min-width:0" />
-              <button class="btn" id="srBtn">بحث</button>
+            <h3 style="margin-top:0">قراءتك</h3>
+            <div class="stat-grid">
+              <div class="stat-box">اليوم<b id="stDay">0</b></div>
+              <div class="stat-box">آخر 7 أيام<b id="stWeek">0</b></div>
+              <div class="stat-box">أيام القراءة<b id="stDays">0</b></div>
+              <div class="stat-box">السلسلة<b id="stStreak">0</b></div>
             </div>
-            <div id="srInfo" class="muted" style="margin-top:10px"></div>
           </div>
-          <div id="srResults"></div>
-          <div class="row" id="srMoreRow" hidden style="justify-content:center">
-            <button class="btn ghost" id="srMore">عرض المزيد</button>
+          <div class="card">
+            <h3 style="margin-top:0">صفحات الأيام السبعة الأخيرة</h3>
+            <div class="bars" id="stBars"></div>
+          </div>
+          <div class="card">
+            <div class="wird-line"><span>صفحات مختلفة قرأتها</span><b id="stUnique">0 من 604</b></div>
           </div>
         </section>
 
@@ -467,14 +590,60 @@
             <div class="tr" id="tfTransText" dir="auto" style="margin-top:10px"></div>
           </div>
         </section>
-        <section class="view" id="view-settings">
+        <section class="view" id="view-tajweed">
+          <div id="tjList"></div>
+        </section>
+        <section class="view" id="view-meanings">
           <div class="card">
+            <label class="lbl" for="mnSurah">السورة</label>
+            <select id="mnSurah"></select>
+          </div>
+          <div id="mnList"></div>
+        </section>
+        <section class="view" id="view-settings">
+          <details class="card dd">
+            <summary>السور</summary>
+            <div class="index-wrap">
+              <div class="index-search"><input type="text" id="indexSearch" placeholder="ابحث باسم السورة أو رقمها..." /></div>
+              <div class="index-list" id="surahList"></div>
+            </div>
+          </details>
+          <details class="card dd">
+            <summary>الأجزاء</summary>
+            <div class="index-wrap"><div class="index-list" id="juzList"></div></div>
+          </details>
+          <details class="card dd">
+            <summary>الآيات</summary>
+            <div class="index-wrap"><div class="index-list" id="ayahList"></div></div>
+          </details>
+          <details class="card dd">
+            <summary>البحث في القرآن</summary>
+            <div class="search-inner">
+          <div class="card">
+            <label class="lbl" for="srQuery">الكلمة أو العبارة</label>
+            <div class="row">
+              <input type="text" id="srQuery" style="flex:1;min-width:0" />
+              <button class="btn" id="srBtn">بحث</button>
+            </div>
+            <div id="srInfo" class="muted" style="margin-top:10px"></div>
+          </div>
+          <div id="srResults"></div>
+          <div class="row" id="srMoreRow" hidden style="justify-content:center">
+            <button class="btn ghost" id="srMore">عرض المزيد</button>
+          </div>
+        </div>
+          </details>
+          <div class="card">
+            <h3 style="margin-top:0">اختيار المصحف</h3>
             <label class="lbl">الرواية والرسم</label>
             <select id="setRiwaya">
               <option value="quran-uthmani">حفص عن عاصم - الرسم العثماني</option>
               <option value="quran-simple">حفص - رسم إملائي مبسط</option>
               <option value="quran-uthmani-min">حفص - عثماني مختصر</option>
               <option value="quran-tajweed">حفص - بألوان أحكام التجويد</option>
+              <option value="warsh">ورش عن نافع</option>
+              <option value="qalun">قالون عن نافع</option>
+              <option value="duri">الدوري عن أبي عمرو</option>
             </select>
 
             <label class="lbl">القارئ</label>
@@ -500,8 +669,8 @@
               <label><input type="checkbox" id="setTajweed" /> تفعيل ألوان التجويد</label>
             </div>
           </div>
-          <div class="card">
-            <h3 style="margin-top:0">تحميل التلاوات للاستماع بدون إنترنت</h3>
+          <details class="card dd">
+            <summary>تحميل التلاوات للاستماع بدون إنترنت</summary>
             <label class="lbl">القارئ</label>
             <select id="dlReciter"></select>
             <label class="lbl">ما الذي تريد تحميله؟</label>
@@ -526,7 +695,7 @@
             <div class="muted" id="dlProgress" style="margin-top:6px"></div>
             <div class="muted" id="dlStored" style="margin-top:6px"></div>
             <p class="muted">القارئ الذي لا يظهر هنا يعمل للاستماع المباشر، لكن تحميله غير متاح حالياً.</p>
-          </div>
+          </details>
           <div class="card">
             <h3 style="margin-top:0">تحديث التطبيق</h3>
             <div class="muted">الإصدار الحالي: <strong id="verVal"></strong></div>
@@ -536,9 +705,8 @@
             </div>
             <p class="muted" id="updStatus" style="margin-bottom:0"></p>
           </div>
-        </section>
-        <!-- عن التطبيق -->
-        <section class="view" id="view-about">
+        <details class="card dd">
+          <summary>عن التطبيق</summary>
           <div class="card about-head">
             <img src="icon.png" alt="أيقونة التطبيق" class="about-icon" />
             <div>
@@ -571,18 +739,12 @@
               <a class="btn" href="https://elkatebmohamadsalah.blogspot.com/p/blog-page_827.html" target="_blank" rel="noopener noreferrer">📞 اتصل بنا</a>
             </div>
           </div>
+        </details>
         </section>
       </div>
     </main>
   </div>
 
-  <div class="player" id="player">
-    <div class="info" id="playerInfo">لا يوجد تشغيل</div>
-    <button class="btn small" id="pPrev">⏮</button>
-    <button class="btn" id="pToggle">⏯</button>
-    <button class="btn small" id="pNext">⏭</button>
-    <button class="btn small ghost" id="pStop">إيقاف</button>
-  </div>
 
   <div class="panel-tafsir" id="tafsirPanel">
     <div class="row" style="justify-content:space-between">
@@ -619,10 +781,15 @@
   </div>
 
   <div class="toast" id="toast"></div>
+  <div class="upd-banner" id="updBanner" hidden>
+    <span id="updBannerText"></span>
+    <button id="updBannerBtn">حدّث الآن</button>
+    <button id="updBannerX" aria-label="إغلاق">×</button>
+  </div>
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.0.3';
+    window.APP_BUNDLE_VERSION = '1.2.0';
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {

@@ -5,8 +5,8 @@
     "app.js"
   ],
   "apk": {
-    "version": "1.2.0",
+    "version": "1.3.0",
     "url": "https://raw.githubusercontent.com/mosalah30688-gif/quran/main/update/app.apk",
-    "sha256": "382da93c4423b78f22d26f86fa011b0d49d179aa95ac181bdc9741dad4fca796"
+    "sha256": "56bb7d3a890076d4dcdb00bd217345548deeca9027d4b30218f71b8802fcaefc"
   }
 }
