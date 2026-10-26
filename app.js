@@ -167,6 +167,7 @@
     if (name !== curView && !opts.back) { navStack.push(curView); if (navStack.length > 30) navStack.shift(); }
     curView = name;
     $$('#tabs button').forEach((b) => b.classList.toggle('active', b.dataset.view === name));
+    $('#tabs button.active')?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
     $$('section.view').forEach((s) => s.classList.toggle('active', s.id === 'view-' + name));
     if (name === 'reader') updateChrome(); else $('#topTitle').textContent = VIEW_TITLES[name] || '';
     // زر الرجوع يظهر في كل الأقسام ما عدا المصحف
@@ -181,6 +182,7 @@
   }
   function popView() { showView(navStack.pop() || 'reader', { back: true }); }
   $('#backBtn').addEventListener('click', () => handleBack());
+  $('#settingsBtn').addEventListener('click', () => showView('settings'));
   function closeSide() { document.body.classList.remove('side-open'); }
 
   $('#tabs').addEventListener('click', (e) => {
@@ -189,7 +191,6 @@
     showView(b.dataset.view);
     closeSide();
   });
-  $('#menuBtn').addEventListener('click', () => document.body.classList.toggle('side-open'));
   $('#backdrop').addEventListener('click', closeSide);
 
   function applyTheme() {

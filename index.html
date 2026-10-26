@@ -257,43 +257,38 @@
       .player .btn { min-width: 40px; min-height: 36px; padding: 4px 8px; font-size: 15px; }
       .player #pToggle { min-width: 52px; }
     }
+
+    /* ===== تخطيط جديد: رأس ثابت بالتبويبات، والمشغل داخل المصحف، والإعدادات تحوي الفهرس وعن التطبيق ===== */
+    .app { display: block; }
+    main.content { height: 100vh; height: 100dvh; }
+    .hdr { position: sticky; top: 0; z-index: 15; background: var(--bg); border-bottom: 1px solid var(--line); }
+    .hdr .topbar { position: static; border-bottom: 0; }
+    nav.menu { display: flex; flex-direction: row; overflow-x: auto; gap: 6px; padding: 4px 10px 8px; border: 0; scrollbar-width: none; }
+    nav.menu::-webkit-scrollbar { display: none; }
+    nav.menu button { flex: 0 0 auto; white-space: nowrap; padding: 7px 12px; border-radius: 10px; }
+    nav.menu .ic { width: auto; }
+    .wrap { padding-bottom: 28px; }
+    body:has(.player.show) .wrap { padding-bottom: 28px; }
+    .player { position: static; left: auto; right: auto; bottom: auto; z-index: auto; margin-top: 14px; border: 1px solid var(--line); border-radius: 14px; box-shadow: none; }
+    .index-list { flex: none; max-height: 55vh; overflow-y: auto; }
+    details.dd { padding: 0; overflow: hidden; margin-bottom: 12px; }
+    details.dd > summary { list-style: none; cursor: pointer; padding: 14px 16px; font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 8px; user-select: none; }
+    details.dd > summary::-webkit-details-marker { display: none; }
+    details.dd > summary::after { content: '▾'; margin-inline-start: auto; color: var(--muted); transition: transform .25s ease; }
+    details.dd[open] > summary::after { transform: rotate(180deg); }
+    details.dd[open] > summary { border-bottom: 1px solid var(--line); }
+    details.dd > *:not(summary) { margin-inline: 14px; }
+    details.dd > .index-wrap { margin: 0; }
+    details.dd[open] > *:not(summary) { animation: ddIn .28s ease both; }
+    @keyframes ddIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+    details.dd > .about-head { margin: 12px 14px; }
+    details.dd > .card { margin: 12px 14px; }
+    .side, aside.side { display: none !important; }
+    .menu-toggle, #menuBtn { display: none !important; }
   </style>
 </head>
 <body>
   <div class="app">
-    <aside class="side" id="side">
-      <div class="brand">
-        <h1>القرآن الكريم</h1>
-        <button class="icon-btn" id="themeBtn" title="الوضع الليلي">🌙</button>
-      </div>
-
-      <nav class="menu" id="tabs">
-        <button data-view="reader" class="active"><span class="ic">📖</span>المصحف</button>
-        <button data-view="tafsir"><span class="ic">📚</span>التفسير</button>
-        <button data-view="memo"><span class="ic">🧠</span>الحفظ</button>
-        <button data-view="wird"><span class="ic">🌿</span>الورد</button>
-        <button data-view="stats"><span class="ic">📊</span>الإحصائيات</button>
-        <button data-view="adhkar"><span class="ic">📿</span>الأذكار</button>
-        <button data-view="search"><span class="ic">🔍</span>البحث</button>
-        <button data-view="bookmarks"><span class="ic">⭐</span>المحفوظات</button>
-        <button data-view="settings"><span class="ic">⚙️</span>الإعدادات</button>
-        <button data-view="about"><span class="ic">ℹ️</span>عن التطبيق</button>
-      </nav>
-
-      <div class="index-wrap">
-        <div class="index-head">
-          <div class="seg" id="indexSeg">
-            <button data-mode="surah" class="on">السورة</button>
-            <button data-mode="juz">الجزء</button>
-            <button data-mode="ayah">الآية</button>
-          </div>
-        </div>
-        <div class="index-search" id="indexSearchWrap">
-          <input type="text" id="indexSearch" placeholder="ابحث باسم السورة أو رقمها..." />
-        </div>
-        <div class="index-list" id="indexList"></div>
-      </div>
-    </aside>
     <div class="backdrop" id="backdrop"></div>
     <div class="img-modal" id="imgModal" hidden>
       <div class="img-box">
@@ -307,11 +302,25 @@
     </div>
 
     <main class="content" id="content">
-      <div class="topbar">
-        <button class="icon-btn back-btn" id="backBtn" hidden>→ رجوع</button>
-        <button class="icon-btn menu-toggle" id="menuBtn">⚙ الإعدادات</button>
-        <div class="title" id="topTitle">المصحف</div>
-      </div>
+      <header class="hdr">
+        <div class="topbar">
+          <button class="icon-btn back-btn" id="backBtn" hidden>→ رجوع</button>
+          <div class="title" id="topTitle">المصحف</div>
+          <button class="btn small" id="settingsBtn" title="الإعدادات" aria-label="الإعدادات">⚙️ الإعدادات</button>
+          <button class="icon-btn" id="themeBtn" title="الوضع الليلي">🌙</button>
+        </div>
+        <nav class="menu" id="tabs">
+          <button data-view="reader" class="active"><span class="ic">📖</span>المصحف</button>
+          <button data-view="tafsir"><span class="ic">📚</span>التفسير</button>
+          <button data-view="memo"><span class="ic">🧠</span>الحفظ</button>
+          <button data-view="wird"><span class="ic">🌿</span>الورد</button>
+          <button data-view="stats"><span class="ic">📊</span>الإحصائيات</button>
+          <button data-view="adhkar"><span class="ic">📿</span>الأذكار</button>
+          <button data-view="search"><span class="ic">🔍</span>البحث</button>
+          <button data-view="bookmarks"><span class="ic">⭐</span>المحفوظات</button>
+          <button data-view="settings"><span class="ic">⚙️</span>الإعدادات</button>
+        </nav>
+      </header>
 
       <div class="wrap">
         <!-- المصحف: صفحة بصفحة -->
@@ -341,6 +350,13 @@
             <span class="pno" id="pageNo"></span>
             <button class="btn small" id="pNextS">التالية ›</button>
           </div>
+            <div class="player" id="player">
+              <div class="info" id="playerInfo">لا يوجد تشغيل</div>
+              <button class="btn small" id="pPrev">⏮</button>
+              <button class="btn" id="pToggle">⏯</button>
+              <button class="btn small" id="pNext">⏭</button>
+              <button class="btn small ghost" id="pStop">إيقاف</button>
+            </div>
         </section>
 
         <!-- الحفظ -->
@@ -527,7 +543,24 @@
           </div>
         </section>
         <section class="view" id="view-settings">
+          <details class="card dd">
+            <summary>الفهرس: السورة والجزء والآية</summary>
+        <div class="index-wrap">
+          <div class="index-head">
+            <div class="seg" id="indexSeg">
+              <button data-mode="surah" class="on">السورة</button>
+              <button data-mode="juz">الجزء</button>
+              <button data-mode="ayah">الآية</button>
+            </div>
+          </div>
+          <div class="index-search" id="indexSearchWrap">
+            <input type="text" id="indexSearch" placeholder="ابحث باسم السورة أو رقمها..." />
+          </div>
+          <div class="index-list" id="indexList"></div>
+        </div>
+          </details>
           <div class="card">
+            <h3 style="margin-top:0">اختيار المصحف</h3>
             <label class="lbl">الرواية والرسم</label>
             <select id="setRiwaya">
               <option value="quran-uthmani">حفص عن عاصم - الرسم العثماني</option>
@@ -562,8 +595,8 @@
               <label><input type="checkbox" id="setTajweed" /> تفعيل ألوان التجويد</label>
             </div>
           </div>
-          <div class="card">
-            <h3 style="margin-top:0">تحميل التلاوات للاستماع بدون إنترنت</h3>
+          <details class="card dd">
+            <summary>تحميل التلاوات للاستماع بدون إنترنت</summary>
             <label class="lbl">القارئ</label>
             <select id="dlReciter"></select>
             <label class="lbl">ما الذي تريد تحميله؟</label>
@@ -588,7 +621,7 @@
             <div class="muted" id="dlProgress" style="margin-top:6px"></div>
             <div class="muted" id="dlStored" style="margin-top:6px"></div>
             <p class="muted">القارئ الذي لا يظهر هنا يعمل للاستماع المباشر، لكن تحميله غير متاح حالياً.</p>
-          </div>
+          </details>
           <div class="card">
             <h3 style="margin-top:0">تحديث التطبيق</h3>
             <div class="muted">الإصدار الحالي: <strong id="verVal"></strong></div>
@@ -598,9 +631,8 @@
             </div>
             <p class="muted" id="updStatus" style="margin-bottom:0"></p>
           </div>
-        </section>
-        <!-- عن التطبيق -->
-        <section class="view" id="view-about">
+        <details class="card dd">
+          <summary>عن التطبيق</summary>
           <div class="card about-head">
             <img src="icon.png" alt="أيقونة التطبيق" class="about-icon" />
             <div>
@@ -633,18 +665,12 @@
               <a class="btn" href="https://elkatebmohamadsalah.blogspot.com/p/blog-page_827.html" target="_blank" rel="noopener noreferrer">📞 اتصل بنا</a>
             </div>
           </div>
+        </details>
         </section>
       </div>
     </main>
   </div>
 
-  <div class="player" id="player">
-    <div class="info" id="playerInfo">لا يوجد تشغيل</div>
-    <button class="btn small" id="pPrev">⏮</button>
-    <button class="btn" id="pToggle">⏯</button>
-    <button class="btn small" id="pNext">⏭</button>
-    <button class="btn small ghost" id="pStop">إيقاف</button>
-  </div>
 
   <div class="panel-tafsir" id="tafsirPanel">
     <div class="row" style="justify-content:space-between">
