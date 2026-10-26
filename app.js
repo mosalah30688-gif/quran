@@ -774,11 +774,6 @@
     $('#sizeVal').textContent = settings.size + 'px';
     applySize(); saveSettings();
   });
-  $('#btnClearCache').addEventListener('click', async () => {
-    cache.clear(); pageCache.clear();
-    if ('caches' in window) { for (const k of await caches.keys()) await caches.delete(k); }
-    toast('تم مسح الذاكرة المؤقتة');
-  });
 
   // ---------- التحميل للاستماع بدون إنترنت ----------
   // مصدر الملفات: everyayah.com (يسمح بالتحميل من المتصفح) - لكل آية ملف مستقل
@@ -898,7 +893,7 @@
 
     let root = null;
     if (target === 'folder') {
-      if (!folderSupported()) return toast('المجلد غير مدعوم في هذا المتصفح، استخدم Chrome أو Edge على الحاسوب');
+      if (!folderSupported()) return toast('مجلد الجهاز غير متاح هنا، اختر داخل التطبيق');
       root = await getDirHandle();
       try {
         if (!root) {
@@ -978,10 +973,10 @@
     $('#dlReciter').value = supported.includes(settings.reciter) ? settings.reciter : supported[0];
     $('#dlSurahSel').innerHTML = surahs.map((x) => `<option value="${x.number}">${x.number}. ${esc(x.name)}</option>`).join('');
     const folderOpt = $('#dlTarget option[value=folder]');
-    folderOpt.disabled = !folderSupported();
+    if (folderOpt && !folderSupported()) folderOpt.remove();
     $('#dlNote').textContent = folderSupported()
-      ? 'مجلد الجهاز يُختار مرة واحدة ويُحفظ، والملفات تُرتّب داخله: القارئ / رقم السورة / رقم الآية.mp3. التخزين داخل التطبيق يعمل على كل الأجهزة.'
-      : 'مجلد الجهاز متاح في Chrome أو Edge على الحاسوب فقط. على الهاتف والمتصفحات الأخرى يُحفظ التحميل داخل التطبيق.';
+      ? 'مجلد الجهاز يُختار مرة واحدة ويُحفظ، والملفات تُرتّب داخله: القارئ / رقم السورة / رقم الآية.'
+      : '';
     updateEstimate();
     refreshStored();
   }
