@@ -396,15 +396,15 @@
   $('#pNextS').addEventListener('click', nextPage);
   $('#pPrevS').addEventListener('click', prevPage);
 
-  // التقليب بالأسهم: → التالية، ← السابقة (نفس اتجاه السحب)
+  // التقليب بالأسهم: → السابقة، ← التالية (نفس اتجاه السحب)
   document.addEventListener('keydown', (e) => {
     if (!$('#view-reader').classList.contains('active')) return;
     if (e.target.matches('input, select, textarea')) return;
-    if (e.key === 'ArrowRight') { e.preventDefault(); nextPage(); }
-    if (e.key === 'ArrowLeft') { e.preventDefault(); prevPage(); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); prevPage(); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); nextPage(); }
   });
 
-  // السحب باللمس أو الفأرة: يمين ← التالية، يسار ← السابقة
+  // السحب باللمس أو الفأرة: يمين ← السابقة، يسار ← التالية
   let drag = null;
   const stage = $('#stage');
   stage.addEventListener('pointerdown', (e) => {
