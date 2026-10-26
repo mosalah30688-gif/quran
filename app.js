@@ -1,10 +1,11 @@
-/* القرآن الكريم - تطبيق ويب تقدمي
- * المصادر: api.alquran.cloud (النص والتفسير والتلاوات)
+/* القرآن الكريم - مصحف صفحة بصفحة (ترقيم مصحف المدينة - 604 صفحة)
+ * المصادر: api.alquran.cloud (النص والتلاوات والتفسير)
  */
 (() => {
   'use strict';
 
   const API = 'https://api.alquran.cloud/v1';
+  const TOTAL_PAGES = 604;
 
   // بداية كل جزء (سورة، آية) - مُتحقق منها عبر الـ API
   const JUZ_START = [
@@ -42,11 +43,9 @@
 
   const DEFAULTS = {
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
-    translation: '', size: 28, tajweed: false, dark: false,
+    translation: '', size: 26, tajweed: false, dark: false,
   };
-  const VIEW_TITLES = {
-    reader: 'القراءة', memo: 'وضع الحفظ', bookmarks: 'المحفوظات', settings: 'الإعدادات',
-  };
+  const VIEW_TITLES = { reader: 'المصحف', memo: 'وضع الحفظ', bookmarks: 'المحفوظات', settings: 'الإعدادات' };
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -57,30 +56,34 @@
       try { const v = localStorage.getItem('quran:' + key); return v === null ? fallback : JSON.parse(v); }
       catch { return fallback; }
     },
-    set(key, value) {
-      try { localStorage.setItem('quran:' + key, JSON.stringify(value)); } catch {}
-    },
+    set(key, value) { try { localStorage.setItem('quran:' + key, JSON.stringify(value)); } catch {} },
   };
-
   const settings = Object.assign({}, DEFAULTS, store.get('settings', {}));
   const saveSettings = () => store.set('settings', settings);
 
+  // ---------- الحالة ----------
   let surahs = [];
-  const cache = new Map();
+  const cache = new Map();          // طلبات الـ API
+  const pageCache = new Map();      // صفحات جاهزة (مُعالجة)
   const audio = new Audio();
   audio.preload = 'auto';
-  const play = { list: [], i: 0, repeatLeft: 1, repeatCount: 1, active: false, label: '' };
-  let current = { n: 0, data: null };
+
+  const state = { page: 0, pg: null, sel: null, selSurah: 1, renderToken: 0 };
+  const play = { active: false, label: '', cur: null, nextFn: null, prevFn: null, repeatCount: 1, repeatLeft: 1 };
   let memo = { ayahs: [], hidden: true, label: '' };
   let index = { mode: 'surah', surah: 1 };
   let suppressTrack = false;
 
-  // ---------- أدوات مساعدة ----------
+  // ---------- أدوات ----------
   const toArabicDigits = (s) => String(s).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const clean = (s) => String(s ?? '').replace(/\uFEFF/g, '');
+  const surahName = (s) => surahs[s - 1]?.name || '';
+  const surahNameShort = (s) => {
+    const parts = (surahs[s - 1]?.name || '').trim().split(/\s+/);
+    return parts.length > 1 && /^س/.test(parts[0]) ? parts.slice(1).join(' ') : parts.join(' ');
+  };
 
-  // رقم الجزء لأي موضع (سورة، آية)
   function juzOf(s, a) {
     let j = 1;
     for (let i = 0; i < JUZ_START.length; i++) {
@@ -107,22 +110,18 @@
     return json;
   }
 
-  // تحويل ترميز التجويد [code[text] إلى عناصر ملوّنة
   function renderTajweed(raw) {
     let s = esc(clean(raw));
     s = s.replace(/\[([a-z]+)(?::\d+)?\[([^\[\]]*)\]/g, '<span class="tj-$1">$2</span>');
     return s.replace(/\[|\]/g, '');
   }
 
-  // ---------- التنقل ----------
+  // ---------- التنقل بين الأقسام ----------
   function showView(name) {
     $$('#tabs button').forEach((b) => b.classList.toggle('active', b.dataset.view === name));
     $$('section.view').forEach((s) => s.classList.toggle('active', s.id === 'view-' + name));
-    $('#topTitle').textContent = name === 'reader' && current.data
-      ? `${current.data.info.name} · الجزء ${juzOf(current.n, 1)}`
-      : (VIEW_TITLES[name] || '');
+    if (name === 'reader') updateChrome(); else $('#topTitle').textContent = VIEW_TITLES[name] || '';
     if (name === 'bookmarks') renderBookmarks();
-    if (name !== 'reader') $('#content').scrollTo({ top: 0 });
   }
   function closeSide() { document.body.classList.remove('side-open'); }
 
@@ -135,30 +134,22 @@
   $('#menuBtn').addEventListener('click', () => document.body.classList.toggle('side-open'));
   $('#backdrop').addEventListener('click', closeSide);
 
-  // ---------- الوضع الليلي ----------
   function applyTheme() {
     document.body.classList.toggle('dark', !!settings.dark);
     $('#themeBtn').textContent = settings.dark ? '☀️' : '🌙';
   }
-  $('#themeBtn').addEventListener('click', () => {
-    settings.dark = !settings.dark; saveSettings(); applyTheme();
-  });
+  $('#themeBtn').addEventListener('click', () => { settings.dark = !settings.dark; saveSettings(); applyTheme(); });
 
-  // ---------- الفهرس الجانبي: سورة / جزء / آية ----------
+  // ---------- الفهرس: سورة / جزء / آية ----------
   async function loadSurahs() {
     try {
-      const json = await getJSON(API + '/surah');
-      surahs = json.data;
+      surahs = (await getJSON(API + '/surah')).data;
     } catch {
       $('#indexList').innerHTML = '<div class="muted" style="padding:10px">تعذر تحميل الفهرس. تحقق من الاتصال بالإنترنت.</div>';
       return;
     }
-    fillMemoSelect();
-    renderIndex();
-  }
-
-  function fillMemoSelect() {
     $('#memoSurah').innerHTML = surahs.map((s) => `<option value="${s.number}">${s.number}. ${esc(s.name)}</option>`).join('');
+    renderIndex();
   }
 
   function renderIndex() {
@@ -167,15 +158,17 @@
     $('#indexSearchWrap').style.display = seg === 'surah' ? 'block' : 'none';
     const list = $('#indexList');
     if (!surahs.length) return;
+    const curS = state.sel ? state.sel.s : 1;
+    const curJuz = state.sel ? state.sel.juz : 0;
 
-    const curN = current.n;
     if (seg === 'surah') {
-      const term = $('#indexSearch').value.trim().toLowerCase();
+      const raw = $('#indexSearch').value.trim();
+      const term = raw.toLowerCase();
       const items = surahs.filter((s) =>
         !term || String(s.number) === term || s.englishName.toLowerCase().includes(term) ||
-        s.englishNameTranslation.toLowerCase().includes(term) || s.name.includes($('#indexSearch').value.trim()));
+        s.englishNameTranslation.toLowerCase().includes(term) || s.name.includes(raw));
       list.innerHTML = items.map((s) => `
-        <div class="idx ${s.number === curN ? 'current' : ''}" data-s="${s.number}" data-a="1">
+        <div class="idx ${s.number === curS ? 'current' : ''}" data-s="${s.number}" data-a="1">
           <div class="n">${s.number}</div>
           <div>
             <div class="t">${esc(s.name)}</div>
@@ -185,27 +178,26 @@
         </div>`).join('') || '<div class="muted" style="padding:10px">لا توجد نتائج.</div>';
     } else if (seg === 'juz') {
       list.innerHTML = JUZ_START.map(([s, a], i) => `
-        <div class="idx ${juzOf(curN || 1, 1) === i + 1 && current.data ? 'current' : ''}" data-s="${s}" data-a="${a}">
+        <div class="idx ${curJuz === i + 1 ? 'current' : ''}" data-s="${s}" data-a="${a}">
           <div class="n">${i + 1}</div>
           <div>
             <div class="t">الجزء ${toArabicDigits(i + 1)}</div>
-            <div class="s">يبدأ من ${esc(surahs[s - 1]?.name || '')} آية ${a}</div>
+            <div class="s">يبدأ من ${esc(surahName(s))} آية ${a}</div>
           </div>
           <div class="badge"></div>
         </div>`).join('');
     } else {
-      // الآية: اختيار السورة ثم شبكة الآيات
       const sel = index.surah;
       const count = surahs[sel - 1]?.numberOfAyahs || 0;
       let grid = '';
       for (let a = 1; a <= count; a++) {
-        grid += `<button data-a="${a}" class="${current.n === sel && current.data && curN === sel && a === (store.get('last', {}).a || 0) ? 'current' : ''}">${toArabicDigits(a)}</button>`;
+        grid += `<button data-a="${a}" class="${state.sel && state.sel.s === sel && state.sel.n === a ? 'current' : ''}">${toArabicDigits(a)}</button>`;
       }
       list.innerHTML = `
         <select id="ayahSurahSel">
           ${surahs.map((s) => `<option value="${s.number}" ${s.number === sel ? 'selected' : ''}>${s.number}. ${esc(s.name)}</option>`).join('')}
         </select>
-        <div class="muted" style="padding:0 10px 6px">${surahs[sel - 1] ? esc(surahs[sel - 1].name) + ' · ' + count + ' آية' : ''}</div>
+        <div class="muted" style="padding:0 10px 6px">${count} آية</div>
         <div class="ayah-grid" id="ayahGrid">${grid}</div>`;
     }
   }
@@ -217,278 +209,384 @@
     renderIndex();
   });
   $('#indexSearch').addEventListener('input', renderIndex);
-
   $('#indexList').addEventListener('click', (e) => {
-    const grid = e.target.closest('#ayahGrid button');
-    if (grid) {
-      jumpTo(index.surah, Number(grid.dataset.a));
-      closeSide();
-      return;
-    }
+    const g = e.target.closest('#ayahGrid button');
+    if (g) { goToAyah(index.surah, Number(g.dataset.a)); closeSide(); return; }
     const item = e.target.closest('.idx[data-s]');
-    if (item) {
-      openSurah(Number(item.dataset.s), Number(item.dataset.a));
-      closeSide();
-    }
+    if (item) { goToAyah(Number(item.dataset.s), Number(item.dataset.a)); closeSide(); }
   });
   $('#indexList').addEventListener('change', (e) => {
-    if (e.target.id === 'ayahSurahSel') {
-      index.surah = Number(e.target.value);
-      renderIndex();
-    }
+    if (e.target.id === 'ayahSurahSel') { index.surah = Number(e.target.value); renderIndex(); }
   });
 
-  function jumpTo(s, a) {
-    if (current.data && current.n === s) {
-      scrollToAyah(a, true);
-      setLast(s, a);
-      showView('reader');
-    } else {
-      openSurah(s, a);
+  // ---------- تحميل الصفحات ----------
+  // الصفحة = آيات من إصدارات متعددة (نص + تلاوة + تفسير + ترجمة اختيارية)
+  async function loadPage(p) {
+    if (p < 1 || p > TOTAL_PAGES) return null;
+    const key = p + '|' + [settings.riwaya, settings.reciter, settings.tafsir, settings.translation, settings.tajweed].join('|');
+    if (pageCache.has(key)) return pageCache.get(key);
+
+    const ids = [settings.riwaya, settings.reciter, settings.tafsir];
+    if (settings.translation) ids.push(settings.translation);
+    const withTajweed = settings.tajweed && settings.riwaya !== 'quran-tajweed';
+    if (withTajweed) ids.push('quran-tajweed');
+
+    const res = await Promise.all(ids.map((id) => getJSON(`${API}/page/${p}/${id}`)));
+    const byId = {};
+    ids.forEach((id, i) => { byId[id] = res[i].data.ayahs; });
+    const base = byId[settings.riwaya];
+    const markupSrc = settings.riwaya === 'quran-tajweed' ? base : (withTajweed ? byId['quran-tajweed'] : null);
+
+    const ayahs = base.map((a, i) => {
+      const markup = markupSrc ? markupSrc[i].text : null;
+      return {
+        s: a.surah.number,
+        n: a.numberInSurah,
+        g: a.number,
+        page: p,
+        juz: a.juz,
+        text: clean(a.text),
+        html: markup ? renderTajweed(markup) : esc(clean(a.text)),
+        audio: byId[settings.reciter]?.[i]?.audio || null,
+        tafsir: byId[settings.tafsir]?.[i]?.text || '',
+        tr: settings.translation ? (byId[settings.translation]?.[i]?.text || '') : '',
+      };
+    });
+    const obj = { p, ayahs };
+    pageCache.set(key, obj);
+    return obj;
+  }
+
+  // رقم الصفحة لأي آية (من بيانات السورة)
+  async function pageOfAyah(s, a) {
+    const json = await getJSON(`${API}/surah/${s}/quran-uthmani`);
+    return json.data.ayahs[a - 1].page;
+  }
+
+  async function findAyah(s, a) {
+    const p = await pageOfAyah(s, a);
+    const pg = await loadPage(p);
+    return pg.ayahs.find((x) => x.s === s && x.n === a) || null;
+  }
+
+  // ---------- عرض الصفحة ----------
+  async function showPage(p, opts = {}) {
+    p = Math.min(TOTAL_PAGES, Math.max(1, p));
+    const token = ++state.renderToken;
+    let pg;
+    try {
+      pg = await loadPage(p);
+    } catch {
+      $('#pageBody').innerHTML = '<div class="muted" style="text-align:center;padding:30px">تعذر تحميل الصفحة. تحقق من الاتصال بالإنترنت.</div>';
+      return;
+    }
+    if (token !== state.renderToken) return;
+
+    state.page = p;
+    state.pg = pg;
+    let sel = null;
+    if (opts.selG) sel = pg.ayahs.find((a) => a.g === opts.selG) || null;
+    if (!sel) sel = pg.ayahs[0];
+    state.sel = sel;
+    state.selSurah = sel.s;
+
+    renderPage(opts.dir);
+    updateChrome();
+    if (opts.save !== false) saveLast();
+  }
+
+  function renderPage(dir) {
+    const pg = state.pg;
+    let html = '';
+    let openP = false;
+    let lastS = 0;
+    pg.ayahs.forEach((a) => {
+      if (a.s !== lastS) {
+        if (openP) { html += '</p>'; openP = false; }
+        if (a.n === 1) {
+          html += `<div class="surah-banner">${esc(surahName(a.s))}</div>`;
+          if (a.s !== 1 && a.s !== 9) html += `<div class="bism">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>`;
+        }
+        html += '<p class="flow">';
+        openP = true;
+        lastS = a.s;
+      }
+      html += `<span class="ay" data-g="${a.g}">${a.html} <span class="end" data-act="tafsir" data-g="${a.g}" title="التفسير">${toArabicDigits(a.n)}</span></span> `;
+    });
+    if (openP) html += '</p>';
+
+    const body = $('#pageBody');
+    body.innerHTML = html;
+
+    const page = $('#page');
+    page.classList.remove('flip-next', 'flip-prev');
+    void page.offsetWidth;
+    if (dir === 'next') page.classList.add('flip-next');
+    if (dir === 'prev') page.classList.add('flip-prev');
+
+    markSelection();
+  }
+
+  function markSelection() {
+    $$('#pageBody .ay.sel').forEach((el) => el.classList.remove('sel'));
+    $$('#pageBody .ay.playing').forEach((el) => el.classList.remove('playing'));
+    if (state.sel) {
+      const el = $(`#pageBody .ay[data-g="${state.sel.g}"]`);
+      if (el) el.classList.add('sel');
+    }
+    if (play.cur) {
+      const el = $(`#pageBody .ay[data-g="${play.cur.g}"]`);
+      if (el) el.classList.add('playing');
     }
   }
 
-  // ---------- تحميل السورة بعدة إصدارات ----------
-  function editionsFor(includeTajweed) {
-    const ids = [settings.riwaya, settings.reciter, settings.tafsir];
-    if (settings.translation) ids.push(settings.translation);
-    if (includeTajweed && settings.riwaya !== 'quran-tajweed') ids.push('quran-tajweed');
-    return ids;
+  function updateChrome() {
+    if (!state.pg || !state.sel) return;
+    const pg = state.pg;
+    const surahsOnPage = [...new Set(pg.ayahs.map((a) => a.s))];
+    const juz = pg.ayahs[0].juz;
+    $('#pgJuz').textContent = `الجزء ${toArabicDigits(juz)}`;
+    $('#pgSurah').textContent = surahsOnPage.map((s) => surahNameShort(s)).join(' - ');
+    $('#pgFoot').textContent = toArabicDigits(pg.p);
+    $('#pageNo').textContent = `صفحة ${toArabicDigits(pg.p)} من ${toArabicDigits(TOTAL_PAGES)}`;
+    $('#pPrevS').disabled = pg.p <= 1;
+    $('#pNextS').disabled = pg.p >= TOTAL_PAGES;
+    $('#topTitle').textContent = `${surahName(state.sel.s)} · الجزء ${toArabicDigits(state.sel.juz || juz)} · ص ${toArabicDigits(pg.p)}`;
+
+    // قائمة اختيار الآية تتبع السورة المحددة
+    fillPlayFrom();
+    const bm = isBookmarked(state.sel.s, state.sel.n);
+    $('#btnBm').textContent = bm ? '★ علامة' : '☆ علامة';
+    updateResumeBtn();
+    renderIndex();
   }
 
-  async function fetchSurah(n) {
-    const ids = editionsFor(settings.tajweed);
-    const json = await getJSON(`${API}/surah/${n}/editions/${ids.join(',')}`);
-    const byId = {};
-    json.data.forEach((ed) => { byId[ed.edition.identifier] = ed; });
-    const base = byId[settings.riwaya];
-    const markupSource = settings.riwaya === 'quran-tajweed' ? base
-      : (settings.tajweed && byId['quran-tajweed'] ? byId['quran-tajweed'] : null);
-    const ayahs = base.ayahs.map((a, idx) => {
-      const markup = markupSource ? markupSource.ayahs[idx].text : null;
-      return {
-        n: a.numberInSurah,
-        text: clean(a.text),
-        html: markup ? renderTajweed(markup) : esc(clean(a.text)),
-        audio: (byId[settings.reciter]?.ayahs[idx]?.audio) || null,
-        tafsir: byId[settings.tafsir]?.ayahs[idx]?.text || '',
-        tr: settings.translation ? (byId[settings.translation]?.ayahs[idx]?.text || '') : '',
-      };
-    });
-    const meta = surahs[n - 1] || {};
-    return {
-      info: {
-        number: n, name: meta.name, englishName: meta.englishName,
-        translation: meta.englishNameTranslation, ayahs: meta.numberOfAyahs || ayahs.length,
-        type: meta.revelationType,
-      },
-      ayahs,
-    };
+  function fillPlayFrom() {
+    const s = state.selSurah;
+    const sel = $('#playFrom');
+    if (sel.dataset.s === String(s)) { sel.value = state.sel && state.sel.s === s ? state.sel.n : sel.value; return; }
+    const count = surahs[s - 1]?.numberOfAyahs || 0;
+    let opts = '';
+    for (let a = 1; a <= count; a++) opts += `<option value="${a}">${toArabicDigits(a)}</option>`;
+    sel.innerHTML = opts;
+    sel.dataset.s = String(s);
+    sel.value = state.sel && state.sel.s === s ? state.sel.n : 1;
   }
 
-  // ---------- آخر موضع (الصفحة الرئيسية) ----------
-  const getLast = () => store.get('last', { s: 1, a: 1 });
-  function setLast(s, a) {
-    const prev = getLast();
-    if (prev.s === s && prev.a === a) return;
-    store.set('last', { s, a });
+  function saveLast() {
+    const s = state.sel;
+    store.set('last', { p: state.page, s: s.s, a: s.n, g: s.g });
     renderLast();
-    $$('#readerText .ayah.last-read').forEach((el) => el.classList.remove('last-read'));
-    const el = document.querySelector(`#readerText .ayah[data-n="${a}"]`);
-    if (el && current.n === s) el.classList.add('last-read');
     updateResumeBtn();
   }
+  const getLast = () => store.get('last', null);
 
   function updateResumeBtn() {
     const last = getLast();
     const btn = $('#btnResume');
-    btn.style.display = current.n === last.s ? 'none' : 'inline-block';
-    btn.textContent = `↩ الذهاب لآخر موضع (${surahs[last.s - 1]?.name || ''} ${last.a})`;
+    if (!last || !last.p) { btn.style.display = 'none'; return; }
+    btn.style.display = last.p === state.page ? 'none' : 'inline-block';
+    btn.textContent = `↩ آخر موضع (ص ${toArabicDigits(last.p)})`;
   }
 
-  function scrollToAyah(a, smooth) {
-    const el = document.querySelector(`#readerText .ayah[data-n="${a}"]`);
-    if (!el) return;
-    suppressTrack = true;
-    el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
-    setTimeout(() => { suppressTrack = false; }, smooth ? 900 : 150);
-  }
+  // ---------- التقليب ----------
+  function nextPage() { if (state.page < TOTAL_PAGES) showPage(state.page + 1, { dir: 'next' }); }
+  function prevPage() { if (state.page > 1) showPage(state.page - 1, { dir: 'prev' }); }
 
-  // يحدد الآية الظاهرة أعلى الشاشة ويحفظها تلقائياً
-  let trackTimer = null;
-  function trackPosition() {
-    if (suppressTrack || !current.data || !$('#view-reader').classList.contains('active')) return;
-    const els = $$('#readerText .ayah');
-    for (const el of els) {
-      if (el.getBoundingClientRect().bottom > 120) {
-        setLast(current.n, Number(el.dataset.n));
-        return;
-      }
-    }
-  }
-  $('#content').addEventListener('scroll', () => {
-    clearTimeout(trackTimer);
-    trackTimer = setTimeout(trackPosition, 120);
-  }, { passive: true });
+  $('#pNextS').addEventListener('click', nextPage);
+  $('#pPrevS').addEventListener('click', prevPage);
 
-  // ---------- فتح سورة ----------
-  async function openSurah(n, startAyah = 1, opts = {}) {
-    showView('reader');
-    const box = $('#readerText');
-    if (!current.data || current.n !== n) {
-      box.innerHTML = '<div class="muted">جارٍ تحميل السورة...</div>';
-    }
-    try {
-      const data = await fetchSurah(n);
-      current = { n, data };
-      renderInfo(data.info);
-      renderReader(data);
-      setLast(n, startAyah);
-      renderLast();
-      updateResumeBtn();
-      showView('reader');
-      renderIndex();
-      if (startAyah > 1 || opts.instant) {
-        requestAnimationFrame(() => scrollToAyah(startAyah, !opts.instant));
-      }
-      if (opts.autoPlay) playQueue(data.ayahs, `سورة ${data.info.englishName}`);
-    } catch {
-      box.innerHTML = '<div class="muted">تعذر تحميل السورة. تحقق من الاتصال بالإنترنت.</div>';
-    }
-  }
-
-  function renderInfo(info) {
-    const juzFrom = juzOf(info.number, 1);
-    const juzTo = juzOf(info.number, info.ayahs);
-    const juzText = juzFrom === juzTo ? `الجزء ${juzFrom}` : `الأجزاء ${juzFrom} - ${juzTo}`;
-    $('#readerInfo').innerHTML = `
-      <div class="row" style="justify-content:space-between">
-        <div>
-          <div style="font-family:Amiri,serif;font-size:26px">${esc(info.name)}</div>
-          <div class="muted">${esc(info.englishName)} · ${esc(info.translation || '')} · ${info.ayahs} آية · ${info.type === 'Meccan' ? 'مكية' : 'مدنية'} · ${juzText}</div>
-        </div>
-        <div class="muted">${RECITERS.find((r) => r[0] === settings.reciter)?.[1] || ''}</div>
-      </div>`;
-    $('#topTitle').textContent = `${info.name} · الجزء ${juzFrom}`;
-  }
-
-  function renderReader(data) {
-    const box = $('#readerText');
-    const showTafsir = box.dataset.tafsir === '1';
-    box.innerHTML = data.ayahs.map((a) => {
-      const bm = isBookmarked(data.info.number, a.n);
-      return `
-      <div class="ayah" id="a-${a.n}" data-n="${a.n}">
-        <span class="txt">${a.html}</span>
-        <span class="mark" data-act="tafsir" title="التفسير">${toArabicDigits(a.n)}</span>
-        <span class="actions">
-          <button data-act="play" title="تشغيل">▶</button>
-          <button data-act="bm" class="${bm ? 'on' : ''}" title="علامة">${bm ? '★' : '☆'}</button>
-        </span>
-        ${a.tr ? `<span class="tr">${esc(a.tr)}</span>` : ''}
-        <div class="tf-inline muted" style="display:${showTafsir ? 'block' : 'none'};font-size:16px;line-height:1.9;margin-top:6px">${esc(a.tafsir)}</div>
-      </div>`;
-    }).join('');
-    const last = getLast();
-    if (last.s === data.info.number) {
-      const el = box.querySelector(`.ayah[data-n="${last.a}"]`);
-      if (el) el.classList.add('last-read');
-    }
-  }
-
-  $('#readerText').addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-act]');
-    if (!btn || !current.data) return;
-    const ayahEl = btn.closest('.ayah');
-    const n = Number(ayahEl.dataset.n);
-    const a = current.data.ayahs[n - 1];
-    const act = btn.dataset.act;
-    if (act === 'play') {
-      playQueue(current.data.ayahs.slice(n - 1), `سورة ${current.data.info.englishName}`);
-    } else if (act === 'bm') {
-      toggleBookmark(current.data.info.number, n, current.data.info.englishName);
-      const on = isBookmarked(current.data.info.number, n);
-      btn.textContent = on ? '★' : '☆';
-      btn.classList.toggle('on', on);
-    } else if (act === 'tafsir') {
-      showTafsirPanel(current.data.info, a);
-    }
-    setLast(current.n, n);
+  // التقليب بالأسهم: → التالية، ← السابقة (نفس اتجاه السحب)
+  document.addEventListener('keydown', (e) => {
+    if (!$('#view-reader').classList.contains('active')) return;
+    if (e.target.matches('input, select, textarea')) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); nextPage(); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); prevPage(); }
   });
 
-  $('#btnTafsirToggle').addEventListener('click', () => {
-    const box = $('#readerText');
-    box.dataset.tafsir = box.dataset.tafsir === '1' ? '0' : '1';
-    $$('.tf-inline', box).forEach((el) => { el.style.display = box.dataset.tafsir === '1' ? 'block' : 'none'; });
+  // السحب باللمس أو الفأرة: يمين ← التالية، يسار ← السابقة
+  let drag = null;
+  const stage = $('#stage');
+  stage.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('button, select')) return;
+    drag = { x: e.clientX, y: e.clientY, t: Date.now() };
+  });
+  stage.addEventListener('pointerup', (e) => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    drag = null;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.6) {
+      window.getSelection()?.removeAllRanges();
+      if (dx > 0) nextPage(); else prevPage();
+    }
+  });
+  stage.addEventListener('pointercancel', () => { drag = null; });
+
+  // ---------- اختيار الآية ----------
+  $('#pageBody').addEventListener('click', (e) => {
+    const end = e.target.closest('.end');
+    if (end) {
+      const g = Number(end.dataset.g);
+      const a = state.pg.ayahs.find((x) => x.g === g);
+      if (a) showTafsirPanel(a);
+      return;
+    }
+    const ay = e.target.closest('.ay');
+    if (!ay) return;
+    const g = Number(ay.dataset.g);
+    const a = state.pg.ayahs.find((x) => x.g === g);
+    if (!a) return;
+    state.sel = a;
+    state.selSurah = a.s;
+    markSelection();
+    saveLast();
+    updateChrome();
+  });
+
+  $('#playFrom').addEventListener('change', async (e) => {
+    const n = Number(e.target.value);
+    const s = state.selSurah;
+    const ayah = await findAyah(s, n).catch(() => null);
+    if (!ayah) return;
+    if (ayah.page === state.page) {
+      state.sel = state.pg.ayahs.find((x) => x.g === ayah.g) || ayah;
+      markSelection(); saveLast();
+    } else {
+      showPage(ayah.page, { selG: ayah.g });
+    }
   });
 
   $('#btnResume').addEventListener('click', () => {
     const last = getLast();
-    jumpTo(last.s, last.a);
+    if (last && last.p) showPage(last.p, { selG: last.g, save: false });
   });
 
-  $('#btnPlaySurah').addEventListener('click', () => {
-    if (!current.data) return;
-    playQueue(current.data.ayahs, `سورة ${current.data.info.englishName}`);
+  $('#btnBm').addEventListener('click', () => {
+    if (!state.sel) return;
+    toggleBookmark(state.sel.s, state.sel.n, surahNameShort(state.sel.s));
+    updateChrome();
   });
+  $('#btnTafsir').addEventListener('click', () => { if (state.sel) showTafsirPanel(state.sel); });
 
-  // ---------- التفسير (لوحة) ----------
-  function showTafsirPanel(info, a) {
-    $('#tafsirTitle').textContent = `${info.name} - الآية ${a.n} (${TAFSIRS.find((t) => t[0] === settings.tafsir)?.[1] || ''})`;
+  // ---------- الانتقال إلى آية أو سورة أو جزء ----------
+  async function goToAyah(s, a) {
+    try {
+      const ayah = await findAyah(s, a);
+      if (!ayah) return;
+      showView('reader');
+      showPage(ayah.page, { selG: ayah.g });
+    } catch {
+      toast('تعذر الوصول إلى الآية. تحقق من الاتصال.');
+    }
+  }
+
+  // ---------- التفسير ----------
+  function showTafsirPanel(a) {
+    $('#tafsirTitle').textContent = `${surahName(a.s)} - الآية ${a.n} (${TAFSIRS.find((t) => t[0] === settings.tafsir)?.[1] || ''})`;
     $('#tafsirBody').textContent = a.tafsir || 'لا يوجد تفسير لهذه الآية في هذا الكتاب.';
     $('#tafsirPanel').classList.add('show');
   }
   $('#tafsirClose').addEventListener('click', () => $('#tafsirPanel').classList.remove('show'));
 
-  // ---------- المشغل الصوتي ----------
+  // ---------- التشغيل ----------
   function setPlayerUI() {
-    const cur = play.list[play.i];
     $('#player').classList.toggle('show', play.active);
-    if (play.active && cur) {
-      $('#playerInfo').textContent = `${play.label} · الآية ${cur.n}` + (play.repeatCount > 1 ? ` · تكرار ${play.repeatCount - play.repeatLeft + 1}/${play.repeatCount}` : '');
+    if (play.active && play.cur) {
+      $('#playerInfo').textContent = `${play.label} · ${surahName(play.cur.s)} · الآية ${play.cur.n}` +
+        (play.repeatCount > 1 ? ` · تكرار ${play.repeatCount - play.repeatLeft + 1}/${play.repeatCount}` : '');
     }
     $('#pToggle').textContent = audio.paused ? '▶' : '⏸';
   }
 
-  function highlight(n) {
-    $$('.ayah.playing').forEach((el) => el.classList.remove('playing'));
-    const el = document.querySelector(`#readerText .ayah[data-n="${n}"]`) || document.querySelector(`#memoText .ayah[data-n="${n}"]`);
-    if (el) {
-      el.classList.add('playing');
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  async function playAyah(a) {
+    if (!a) { stopPlayback(); return; }
+    play.cur = a;
+    if (!a.audio) {
+      toast('لا يوجد تسجيل لهذه الآية مع القارئ المختار');
+      const nxt = await play.nextFn(a);
+      return playAyah(nxt);
     }
-  }
-
-  function playIndex(i) {
-    if (i < 0 || i >= play.list.length) { stopPlayback(); return; }
-    play.i = i;
-    const a = play.list[i];
-    if (!a.audio) { toast('لا يوجد تسجيل لهذه الآية مع القارئ المختار'); playIndex(i + 1); return; }
     audio.src = a.audio;
     audio.play().catch(() => toast('تعذر تشغيل الصوت. اضغط تشغيل مرة أخرى.'));
     play.active = true;
-    highlight(a.n);
-    if (current.data && $('#readerText .ayah[data-n="' + a.n + '"]')) setLast(current.n, a.n);
+    // تقليب الصفحة تلقائياً مع التلاوة
+    if (a.page && a.page !== state.page && play.follow) {
+      state.sel = a; state.selSurah = a.s;
+      showPage(a.page, { selG: a.g, save: false });
+    } else {
+      markSelection();
+      if (state.pg && state.pg.ayahs.some((x) => x.g === a.g)) {
+        state.sel = a; state.selSurah = a.s; markSelection(); updateChrome();
+      }
+    }
+    store.set('last', { p: a.page || state.page, s: a.s, a: a.n, g: a.g });
+    renderLast();
     setPlayerUI();
   }
 
-  function playQueue(list, label, repeat = 1) {
-    play.list = list;
+  // بدء تشغيل السورة من آية محددة حتى نهايتها
+  async function startSurahPlay(s, n) {
+    const first = await findAyah(s, n);
+    if (!first) return;
+    const label = `سورة ${surahNameShort(s)}`;
     play.label = label;
-    play.repeatCount = repeat;
-    play.repeatLeft = repeat;
-    playIndex(0);
+    play.repeatCount = 1; play.repeatLeft = 1;
+    play.follow = true;
+    play.nextFn = async (cur) => {
+      const pg = await loadPage(cur.page);
+      const idx = pg.ayahs.findIndex((x) => x.g === cur.g);
+      let cand = idx >= 0 && idx + 1 < pg.ayahs.length ? pg.ayahs[idx + 1] : null;
+      if (!cand && cur.page < TOTAL_PAGES) {
+        const np = await loadPage(cur.page + 1);
+        cand = np.ayahs[0] || null;
+      }
+      return cand && cand.s === cur.s ? cand : null;
+    };
+    play.prevFn = async (cur) => {
+      const pg = await loadPage(cur.page);
+      const idx = pg.ayahs.findIndex((x) => x.g === cur.g);
+      let cand = idx > 0 ? pg.ayahs[idx - 1] : null;
+      if (!cand && cur.page > 1) {
+        const pp = await loadPage(cur.page - 1);
+        cand = pp.ayahs[pp.ayahs.length - 1] || null;
+      }
+      return cand && cand.s === cur.s ? cand : null;
+    };
+    play.active = true;
+    await playAyah(first);
+  }
+
+  // تشغيل من مصفوفة (للحفظ)
+  function startListPlay(list, label, repeat) {
+    let i = 0;
+    play.label = label;
+    play.repeatCount = repeat; play.repeatLeft = repeat;
+    play.follow = false;
+    play.nextFn = async (cur) => {
+      const idx = list.findIndex((x) => x.g === cur.g);
+      return list[idx + 1] || null;
+    };
+    play.prevFn = async (cur) => {
+      const idx = list.findIndex((x) => x.g === cur.g);
+      return idx > 0 ? list[idx - 1] : null;
+    };
+    play.active = true;
+    i = 0;
+    playAyah(list[i]);
   }
 
   function stopPlayback() {
     audio.pause();
     audio.removeAttribute('src');
     play.active = false;
-    $$('.ayah.playing').forEach((el) => el.classList.remove('playing'));
+    play.cur = null;
     setPlayerUI();
+    if (state.pg) markSelection();
+    $$('.ayah.playing').forEach((el) => el.classList.remove('playing'));
   }
 
-  audio.addEventListener('ended', () => {
+  audio.addEventListener('ended', async () => {
+    if (!play.active || !play.cur) return;
     if (play.repeatLeft > 1) {
       play.repeatLeft--;
       audio.currentTime = 0;
@@ -497,7 +595,9 @@
       return;
     }
     play.repeatLeft = play.repeatCount;
-    playIndex(play.i + 1);
+    const nxt = await play.nextFn(play.cur).catch(() => null);
+    if (!nxt) { stopPlayback(); toast('انتهت التلاوة'); return; }
+    playAyah(nxt);
   });
   audio.addEventListener('play', setPlayerUI);
   audio.addEventListener('pause', setPlayerUI);
@@ -506,11 +606,38 @@
     if (!play.active) return;
     audio.paused ? audio.play() : audio.pause();
   });
-  $('#pNext').addEventListener('click', () => { play.repeatLeft = play.repeatCount; playIndex(play.i + 1); });
-  $('#pPrev').addEventListener('click', () => { play.repeatLeft = play.repeatCount; playIndex(Math.max(0, play.i - 1)); });
+  $('#pNext').addEventListener('click', async () => {
+    if (!play.active || !play.cur) return;
+    playAyah(await play.nextFn(play.cur).catch(() => null));
+  });
+  $('#pPrev').addEventListener('click', async () => {
+    if (!play.active || !play.cur) return;
+    playAyah(await play.prevFn(play.cur).catch(() => null));
+  });
   $('#pStop').addEventListener('click', stopPlayback);
 
+  $('#btnPlaySurah').addEventListener('click', () => {
+    const n = Number($('#playFrom').value) || 1;
+    startSurahPlay(state.selSurah, n).catch(() => toast('تعذر بدء التلاوة'));
+  });
+
   // ---------- الحفظ ----------
+  async function fetchSurahForMemo(n) {
+    const ids = [settings.riwaya, settings.reciter, settings.tafsir];
+    if (settings.translation) ids.push(settings.translation);
+    const json = await getJSON(`${API}/surah/${n}/editions/${ids.join(',')}`);
+    const byId = {};
+    json.data.forEach((ed) => { byId[ed.edition.identifier] = ed; });
+    const base = byId[settings.riwaya];
+    return base.ayahs.map((a, i) => ({
+      s: n, n: a.numberInSurah, g: a.number, page: a.page,
+      html: esc(clean(a.text)),
+      audio: byId[settings.reciter]?.ayahs[i]?.audio || null,
+      tafsir: byId[settings.tafsir]?.ayahs[i]?.text || '',
+      tr: settings.translation ? (byId[settings.translation]?.ayahs[i]?.text || '') : '',
+    }));
+  }
+
   async function loadMemo() {
     const n = Number($('#memoSurah').value);
     const from = Math.max(1, parseInt($('#memoFrom').value, 10) || 1);
@@ -518,11 +645,10 @@
     const box = $('#memoText');
     box.innerHTML = '<div class="muted">جارٍ التحميل...</div>';
     try {
-      const data = await fetchSurah(n);
-      const max = data.ayahs.length;
-      const start = Math.min(from, max), end = Math.min(Math.max(to, start), max);
-      memo.ayahs = data.ayahs.slice(start - 1, end).map((a) => Object.assign({}, a, { n: a.n }));
-      memo.label = `حفظ ${data.info.englishName} ${start}-${end}`;
+      const all = await fetchSurahForMemo(n);
+      const start = Math.min(from, all.length), end = Math.min(Math.max(to, start), all.length);
+      memo.ayahs = all.slice(start - 1, end);
+      memo.label = `حفظ ${surahNameShort(n)} ${start}-${end}`;
       renderMemo();
     } catch {
       box.innerHTML = '<div class="muted">تعذر التحميل.</div>';
@@ -531,24 +657,23 @@
 
   function renderMemo() {
     $('#memoText').innerHTML = memo.ayahs.map((a) => `
-      <div class="ayah ${memo.hidden ? 'hidden-text' : ''}" data-n="${a.n}">
+      <div class="ayah ${memo.hidden ? 'hidden-text' : ''}" data-g="${a.g}">
         <span class="txt">${a.html}</span>
-        <span class="mark">${toArabicDigits(a.n)}</span>
+        <span class="end">${toArabicDigits(a.n)}</span>
       </div>`).join('') || '<div class="muted">حدد مقطعاً ثم اضغط تحميل.</div>';
   }
-
   $('#btnMemoLoad').addEventListener('click', loadMemo);
   $('#btnMemoHide').addEventListener('click', () => { memo.hidden = !memo.hidden; renderMemo(); });
   $('#btnMemoPlay').addEventListener('click', () => {
     if (!memo.ayahs.length) return toast('حمّل المقطع أولاً');
-    playQueue(memo.ayahs, memo.label, Number($('#memoRepeat').value));
+    startListPlay(memo.ayahs, memo.label, Number($('#memoRepeat').value));
   });
   $('#memoText').addEventListener('click', (e) => {
     const ayah = e.target.closest('.ayah');
     if (ayah && memo.hidden) ayah.classList.toggle('hidden-text');
   });
 
-  // ---------- العلامات وآخر قراءة ----------
+  // ---------- العلامات وآخر موضع ----------
   const getBookmarks = () => store.get('bookmarks', []);
   const isBookmarked = (s, a) => getBookmarks().some((b) => b.s === s && b.a === a);
   function toggleBookmark(s, a, name) {
@@ -573,19 +698,20 @@
   }
   $('#bookmarkList').addEventListener('click', (e) => {
     const b = e.target.closest('[data-go-s]');
-    if (b) { jumpTo(Number(b.dataset.goS), Number(b.dataset.goA)); showView('reader'); }
+    if (b) { goToAyah(Number(b.dataset.goS), Number(b.dataset.goA)); showView('reader'); }
   });
 
   function renderLast() {
     const last = getLast();
-    const s = surahs[last.s - 1];
+    if (!last) return;
     $('#lastRead').innerHTML = `<div class="row" style="justify-content:space-between">
-      <span>${s ? esc(s.name) : ''} - الجزء ${juzOf(last.s, last.a)} - الآية ${last.a}</span>
-      <button class="btn small" data-go-s="${last.s}" data-go-a="${last.a}">متابعة</button></div>`;
+      <span>${esc(surahName(last.s))} - الآية ${last.a} - صفحة ${toArabicDigits(last.p || '')}</span>
+      <button class="btn small" id="btnGoLast">متابعة</button></div>`;
   }
   $('#lastRead').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-go-s]');
-    if (b) { jumpTo(Number(b.dataset.goS), Number(b.dataset.goA)); showView('reader'); }
+    if (!e.target.closest('#btnGoLast')) return;
+    const last = getLast();
+    if (last && last.p) { showView('reader'); showPage(last.p, { selG: last.g, save: false }); }
   });
 
   // ---------- الإعدادات ----------
@@ -601,40 +727,44 @@
     $('#setTajweed').checked = !!settings.tajweed;
     applySize();
   }
-  function applySize() {
-    document.documentElement.style.setProperty('--quran-size', settings.size + 'px');
-  }
-  function onSettingChange(key, value, reloadReader) {
+  function applySize() { document.documentElement.style.setProperty('--quran-size', settings.size + 'px'); }
+
+  function onSettingChange(key, value) {
     settings[key] = value;
     saveSettings();
-    if (reloadReader && current.n) openSurah(current.n, getLast().s === current.n ? getLast().a : 1, { instant: true });
+    pageCache.clear();
+    if (state.sel) showPage(state.page, { selG: state.sel.g, save: false });
   }
-  $('#setRiwaya').addEventListener('change', (e) => onSettingChange('riwaya', e.target.value, true));
-  $('#setReciter').addEventListener('change', (e) => onSettingChange('reciter', e.target.value, true));
-  $('#setTafsir').addEventListener('change', (e) => onSettingChange('tafsir', e.target.value, false));
-  $('#setTranslation').addEventListener('change', (e) => onSettingChange('translation', e.target.value, true));
-  $('#setTajweed').addEventListener('change', (e) => onSettingChange('tajweed', e.target.checked, true));
+  $('#setRiwaya').addEventListener('change', (e) => onSettingChange('riwaya', e.target.value));
+  $('#setReciter').addEventListener('change', (e) => onSettingChange('reciter', e.target.value));
+  $('#setTafsir').addEventListener('change', (e) => onSettingChange('tafsir', e.target.value));
+  $('#setTranslation').addEventListener('change', (e) => onSettingChange('translation', e.target.value));
+  $('#setTajweed').addEventListener('change', (e) => onSettingChange('tajweed', e.target.checked));
   $('#setSize').addEventListener('input', (e) => {
     settings.size = Number(e.target.value);
     $('#sizeVal').textContent = settings.size + 'px';
     applySize(); saveSettings();
   });
   $('#btnClearCache').addEventListener('click', async () => {
-    cache.clear();
+    cache.clear(); pageCache.clear();
     if ('caches' in window) { for (const k of await caches.keys()) await caches.delete(k); }
     toast('تم مسح الذاكرة المؤقتة');
   });
 
-  // ---------- التشغيل ----------
+  // ---------- التشغيل الأولي ----------
   applyTheme();
   fillSettings();
   renderBookmarks();
   renderLast();
 
-  // الصفحة الرئيسية = آخر موضع توقف عنده القارئ (بعد تحميل الفهرس)
-  loadSurahs().then(() => {
+  // الصفحة الرئيسية = الصفحة التي توقف عندها القارئ
+  loadSurahs().finally(async () => {
     const last = getLast();
-    openSurah(last.s, last.a, { instant: true });
+    if (last && last.p) {
+      showPage(last.p, { selG: last.g, save: false });
+    } else {
+      goToAyah(1, 1);
+    }
   });
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
