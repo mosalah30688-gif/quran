@@ -1,0 +1,41 @@
+name: Build Desktop AppImage
+
+on:
+  push:
+    tags: ['desktop-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  appimage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Prepare web files for the desktop app
+        run: |
+          bash scripts/build-www.sh
+          rm -rf desktop/app
+          cp -r www desktop/app
+
+      - name: Install Electron and builder
+        working-directory: desktop
+        run: npm install
+
+      - name: Build AppImage and publish to GitHub Releases
+        working-directory: desktop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --linux AppImage --publish always
+
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mushaf-appimage
+          path: desktop/dist/*.AppImage
