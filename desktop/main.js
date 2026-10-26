@@ -28,7 +28,8 @@ function createWindow() {
 
 // التحديث التلقائي من GitHub Releases (يشتغل مع نسخة AppImage المبنية فقط)
 function setupUpdates() {
-  if (!app.isPackaged) return;
+  // نسخة Windows المحمولة (portable) ما بتتحدثش لوحدها، تتنزّل من صفحة الإصدارات
+  if (!app.isPackaged || process.env.PORTABLE_EXECUTABLE_FILE) return;
   autoUpdater.autoDownload = true;
   autoUpdater.on('update-downloaded', (info) => {
     dialog.showMessageBox(win || undefined, {

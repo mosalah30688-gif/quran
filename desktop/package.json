@@ -31,7 +31,9 @@
       "package.json"
     ],
     "linux": {
-      "target": ["AppImage"],
+      "target": [
+        "AppImage"
+      ],
       "category": "Education",
       "icon": "build/icon.png",
       "artifactName": "Mushaf-${version}.${ext}"
@@ -41,6 +43,13 @@
       "owner": "mosalah30688-gif",
       "repo": "quran",
       "releaseType": "release"
+    },
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "icon": "build/icon.png",
+      "artifactName": "Mushaf-${version}-portable.${ext}"
     }
   }
 }

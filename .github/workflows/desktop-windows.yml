@@ -1,0 +1,50 @@
+name: Build Desktop Windows Portable
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows-portable:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Prepare web files for the desktop app
+        shell: bash
+        run: |
+          bash scripts/build-www.sh
+          rm -rf desktop/app
+          cp -r www desktop/app
+
+      - name: Install Electron and builder
+        shell: bash
+        working-directory: desktop
+        run: npm install
+
+      - name: Build portable EXE
+        shell: bash
+        working-directory: desktop
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npx electron-builder --win portable --publish never
+
+      - name: Upload EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mushaf-portable-exe
+          path: desktop/dist/*.exe
+
+      - name: Attach EXE to the desktop release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VER=$(node -p "require('./desktop/package.json').version")
+          gh release upload "v$VER" desktop/dist/*.exe --clobber --repo "$GITHUB_REPOSITORY"
