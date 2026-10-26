@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f5b4c" />
+  <meta name="description" content="تطبيق القرآن الكريم: مصحف بالروايات والرسوم، تلاوات، تفسير، تجويد، حفظ، وخريطة مراكز المصاحف." />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Noto+Naskh+Arabic:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <title>القرآن الكريم</title>
+  <style>
+    :root {
+      --bg: #f7f4ec; --card: #ffffff; --ink: #1d2b27; --muted: #6b7a75;
+      --brand: #0f5b4c; --brand-2: #1a8a74; --gold: #b8860b; --line: #e3ddcf;
+      --hl: #fff4cc; --quran-size: 28px;
+    }
+    body.dark {
+      --bg: #0e1715; --card: #15221f; --ink: #e8efec; --muted: #9bb0aa;
+      --brand: #3fbfa5; --brand-2: #2ea58d; --gold: #e0b44a; --line: #243632;
+      --hl: #2b3a1f;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      background: var(--bg); color: var(--ink);
+      font-family: "Noto Naskh Arabic", "Segoe UI", Tahoma, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    header.top {
+      position: sticky; top: 0; z-index: 20;
+      background: var(--brand); color: #fff;
+      padding: 10px 14px; display: flex; align-items: center; gap: 10px;
+      padding-top: max(10px, env(safe-area-inset-top));
+    }
+    header.top h1 { font-size: 18px; margin: 0; flex: 1; font-family: Amiri, serif; }
+    header.top button.icon {
+      background: rgba(255,255,255,.15); color: #fff; border: 0; border-radius: 10px;
+      padding: 6px 10px; font-size: 14px; cursor: pointer;
+    }
+    nav.tabs {
+      display: flex; gap: 6px; overflow-x: auto; padding: 8px 10px;
+      background: var(--card); border-bottom: 1px solid var(--line); position: sticky; top: 52px; z-index: 19;
+    }
+    nav.tabs button {
+      border: 1px solid var(--line); background: transparent; color: var(--ink);
+      padding: 7px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap; font-size: 14px;
+    }
+    nav.tabs button.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+    main { padding: 14px; max-width: 980px; margin: 0 auto; padding-bottom: 110px; }
+    section.view { display: none; }
+    section.view.active { display: block; }
+    .card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 12px;
+    }
+    input[type=search], input[type=text], select {
+      width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line);
+      background: var(--card); color: var(--ink); font-size: 16px; font-family: inherit;
+    }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .btn {
+      background: var(--brand); color: #fff; border: 0; padding: 9px 14px; border-radius: 10px;
+      cursor: pointer; font-family: inherit; font-size: 14px;
+    }
+    .btn.ghost { background: transparent; color: var(--brand); border: 1px solid var(--brand); }
+    .btn.small { padding: 5px 9px; font-size: 13px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+    .surah-item { cursor: pointer; display: flex; gap: 12px; align-items: center; }
+    .surah-item:hover { border-color: var(--brand-2); }
+    .num {
+      width: 40px; height: 40px; border-radius: 10px; background: var(--brand); color: #fff;
+      display: grid; place-items: center; font-weight: 700; flex: 0 0 auto;
+    }
+    .muted { color: var(--muted); font-size: 13px; }
+    .ayah {
+      font-family: "Amiri", "Noto Naskh Arabic", serif; font-size: var(--quran-size);
+      line-height: 2.2; padding: 6px 10px; border-radius: 12px; border-bottom: 1px dashed var(--line);
+      transition: background .3s;
+    }
+    .ayah.playing { background: var(--hl); }
+    .ayah .tr { display: block; font-family: "Segoe UI", sans-serif; font-size: 15px; line-height: 1.7; color: var(--muted); direction: ltr; text-align: left; }
+    .ayah .mark {
+      display: inline-grid; place-items: center; min-width: 30px; height: 30px; border-radius: 50%;
+      border: 1px solid var(--gold); color: var(--gold); font-size: 13px; margin: 0 6px; font-family: Arial, sans-serif; cursor: pointer; padding: 0 4px;
+    }
+    .ayah.hidden-text .txt { filter: blur(7px); user-select: none; cursor: pointer; }
+    .ayah .actions { display: inline-flex; gap: 4px; vertical-align: middle; }
+    .ayah .actions button { background: none; border: 0; cursor: pointer; font-size: 16px; color: var(--muted); }
+    .ayah .actions button.on { color: var(--gold); }
+    .tj-h { color: #9a9a9a; } .tj-l { color: #9a9a9a; }
+    .tj-n { color: #ff7e1e; } .tj-p { color: #d300c5; } .tj-q { color: #dd0008; }
+    .tj-m, .tj-s, .tj-f, .tj-g, .tj-c, .tj-a, .tj-b { color: #537fff; }
+    .tj-i, .tj-o, .tj-e, .tj-d, .tj-j, .tj-k, .tj-r, .tj-t, .tj-u, .tj-v, .tj-w, .tj-x, .tj-y, .tj-z { color: #1a8a74; }
+    .player {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 25; background: var(--card);
+      border-top: 1px solid var(--line); padding: 10px 14px; padding-bottom: max(10px, env(safe-area-inset-bottom));
+      display: none; gap: 10px; align-items: center; flex-wrap: wrap; box-shadow: 0 -4px 16px rgba(0,0,0,.08);
+    }
+    .player.show { display: flex; }
+    .player .info { flex: 1; min-width: 150px; font-size: 14px; }
+    .panel-tafsir {
+      position: fixed; inset: auto 0 0 0; max-height: 55vh; overflow: auto; z-index: 30; background: var(--card);
+      border-top: 2px solid var(--brand); padding: 14px; border-radius: 16px 16px 0 0; display: none;
+      box-shadow: 0 -8px 24px rgba(0,0,0,.2);
+    }
+    .panel-tafsir.show { display: block; }
+    .panel-tafsir .tf { font-size: 18px; line-height: 2; font-family: "Noto Naskh Arabic", serif; }
+    #map { height: 62vh; border-radius: 14px; border: 1px solid var(--line); }
+    .center-card img { width: 100%; border-radius: 10px; max-height: 180px; object-fit: cover; margin-bottom: 8px; }
+    .legend span { display: inline-block; margin: 3px 8px 3px 0; font-size: 13px; }
+    .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: middle; margin-left: 4px; }
+    .toast {
+      position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: #222; color: #fff;
+      padding: 8px 14px; border-radius: 10px; font-size: 14px; opacity: 0; transition: opacity .3s; z-index: 50; pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+    label.lbl { font-size: 13px; color: var(--muted); display: block; margin: 8px 0 4px; }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <h1>القرآن الكريم</h1>
+    <button class="icon" id="themeBtn" title="الوضع الليلي">🌙</button>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button data-view="surahs" class="active">السور</button>
+    <button data-view="reader">القراءة</button>
+    <button data-view="memo">الحفظ</button>
+    <button data-view="bookmarks">المحفوظات</button>
+    <button data-view="map">مراكز المصاحف</button>
+    <button data-view="settings">الإعدادات</button>
+  </nav>
+
+  <main>
+    <!-- السور -->
+    <section class="view active" id="view-surahs">
+      <div class="card">
+        <input type="search" id="surahSearch" placeholder="ابحث عن سورة بالاسم أو الرقم..." />
+      </div>
+      <div class="grid" id="surahGrid"><div class="muted">جارٍ التحميل...</div></div>
+    </section>
+
+    <!-- القراءة -->
+    <section class="view" id="view-reader">
+      <div class="card">
+        <div class="row">
+          <select id="readerSurah" style="flex:1; min-width:180px"></select>
+          <button class="btn" id="btnPlaySurah">▶ تشغيل السورة</button>
+          <button class="btn ghost" id="btnTafsirToggle">التفسير</button>
+        </div>
+      </div>
+      <div class="card" id="readerInfo"></div>
+      <div class="card" id="readerText"><div class="muted">اختر سورة للقراءة.</div></div>
+    </section>
+
+    <!-- الحفظ -->
+    <section class="view" id="view-memo">
+      <div class="card">
+        <h3 style="margin-top:0">وضع الحفظ</h3>
+        <div class="grid">
+          <div>
+            <label class="lbl">السورة</label>
+            <select id="memoSurah"></select>
+          </div>
+          <div>
+            <label class="lbl">من الآية</label>
+            <input type="text" id="memoFrom" value="1" inputmode="numeric" />
+          </div>
+          <div>
+            <label class="lbl">إلى الآية</label>
+            <input type="text" id="memoTo" value="5" inputmode="numeric" />
+          </div>
+          <div>
+            <label class="lbl">عدد مرات تكرار كل آية</label>
+            <select id="memoRepeat">
+              <option value="1">1</option><option value="3" selected>3</option><option value="5">5</option><option value="10">10</option>
+            </select>
+          </div>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn" id="btnMemoLoad">تحميل المقطع</button>
+          <button class="btn ghost" id="btnMemoHide">إخفاء/إظهار النص</button>
+          <button class="btn ghost" id="btnMemoPlay">تشغيل مع التكرار</button>
+        </div>
+        <p class="muted">نصيحة: اضغط على الآية المخفية لإظهارها، ويمكنك تكرار التلاوة حتى تثبت.</p>
+      </div>
+      <div class="card" id="memoText"></div>
+    </section>
+
+    <!-- المحفوظات -->
+    <section class="view" id="view-bookmarks">
+      <div class="card">
+        <h3 style="margin-top:0">آخر قراءة</h3>
+        <div id="lastRead" class="muted">لا توجد قراءة سابقة.</div>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">الآيات المحفوظة</h3>
+        <div id="bookmarkList" class="muted">لا توجد علامات بعد.</div>
+      </div>
+    </section>
+
+    <!-- الخريطة -->
+    <section class="view" id="view-map">
+      <div class="card legend">
+        <span><i style="background:#0f5b4c"></i>مجمع طباعة/مركز مصاحف</span>
+        <span><i style="background:#b8860b"></i>مركز تحفيظ/معهد</span>
+        <span class="muted">البيانات تُقرأ من ملف data/centers.json ويمكن توسيعها بإضافة مراكز جديدة.</span>
+      </div>
+      <div id="map"></div>
+      <div id="centerList" style="margin-top:12px"></div>
+    </section>
+
+    <!-- الإعدادات -->
+    <section class="view" id="view-settings">
+      <div class="card">
+        <label class="lbl">الرواية والرسم</label>
+        <select id="setRiwaya">
+          <option value="quran-uthmani">حفص عن عاصم - الرسم العثماني</option>
+          <option value="quran-simple">حفص - رسم إملائي مبسط</option>
+          <option value="quran-uthmani-min">حفص - عثماني مختصر</option>
+          <option value="quran-tajweed">حفص - بألوان أحكام التجويد</option>
+        </select>
+        <p class="muted">روايات أخرى مثل ورش وقالون تحتاج مصدر نص منفصل، وهي مدرجة في خطة التطوير.</p>
+
+        <label class="lbl">القارئ</label>
+        <select id="setReciter"></select>
+
+        <label class="lbl">كتاب التفسير</label>
+        <select id="setTafsir"></select>
+
+        <label class="lbl">الترجمة</label>
+        <select id="setTranslation">
+          <option value="">بدون ترجمة</option>
+          <option value="en.sahih">English - Sahih International</option>
+          <option value="fr.hamidullah">Français - Hamidullah</option>
+          <option value="ur.jalandhry">اردو - جالندھری</option>
+          <option value="id.indonesian">Bahasa Indonesia</option>
+          <option value="tr.diyanet">Türkçe - Diyanet</option>
+        </select>
+
+        <label class="lbl">حجم الخط: <span id="sizeVal"></span></label>
+        <input type="range" id="setSize" min="20" max="48" step="2" />
+
+        <div class="row" style="margin-top:12px">
+          <label><input type="checkbox" id="setTajweed" /> تفعيل ألوان التجويد</label>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">تثبيت التطبيق</h3>
+        <p class="muted">من متصفح الهاتف اختر "إضافة إلى الشاشة الرئيسية" ليعمل كتطبيق. التغليف لكل نظام (أندرويد، iOS، ويندوز، ماك، لينكس) سيُضاف لاحقاً.</p>
+        <button class="btn ghost" id="btnClearCache">مسح الذاكرة المؤقتة</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="player" id="player">
+    <div class="info" id="playerInfo">لا يوجد تشغيل</div>
+    <button class="btn small" id="pPrev">⏮</button>
+    <button class="btn" id="pToggle">⏯</button>
+    <button class="btn small" id="pNext">⏭</button>
+    <button class="btn small ghost" id="pStop">إيقاف</button>
+  </div>
+
+  <div class="panel-tafsir" id="tafsirPanel">
+    <div class="row" style="justify-content:space-between">
+      <strong id="tafsirTitle"></strong>
+      <button class="btn small ghost" id="tafsirClose">إغلاق</button>
+    </div>
+    <div class="tf" id="tafsirBody" style="margin-top:10px"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="app.js"></script>
+</body>
+</html>

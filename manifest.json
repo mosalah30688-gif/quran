@@ -1,0 +1,16 @@
+{
+  "name": "القرآن الكريم",
+  "short_name": "القرآن",
+  "description": "مصحف بالروايات والرسوم والتلاوات والتفسير والتجويد والحفظ",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f4ec",
+  "theme_color": "#0f5b4c",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
