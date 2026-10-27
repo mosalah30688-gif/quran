@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""المصحف - تطبيق سطح المكتب (Qt أصلي) بنفس مميزات تطبيق الأندرويد 1.3.1.
+"""سراج — تطبيق قرآن كريم أصلي بواجهة Qt لنظام Linux.
 
-الملفات كلها محلية، والتلاوة والتفسير من الإنترنت كما في الأندرويد.
+البيانات الأساسية محلية، والتلاوة وبعض التفاسير من الإنترنت كما في Android.
 تشغيل:   python3 main.py
 اختبار:  python3 main.py --selftest
 """
@@ -17,20 +17,20 @@ import sys
 import time
 from pathlib import Path
 
-from PySide6.QtCore import QByteArray, QObject, QPropertyAnimation, QRect, QSettings, QSize, QStandardPaths, Qt, QTimer, QUrl, Signal
+from PySide6.QtCore import QByteArray, QObject, QPropertyAnimation, QRect, QSettings, QSize, QStandardPaths, Qt, QTimer, QUrl
 from PySide6.QtSvg import QSvgRenderer
-from PySide6.QtGui import QAction, QColor, QDesktopServices, QFont, QFontDatabase, QGuiApplication, QIcon, QImage, QKeySequence, QPainter, QPen, QPixmap, QShortcut, QTextDocument
+from PySide6.QtGui import QColor, QDesktopServices, QFont, QFontDatabase, QGuiApplication, QIcon, QImage, QKeySequence, QPainter, QPen, QPixmap, QShortcut, QTextDocument
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PySide6.QtWidgets import (
-    QApplication, QButtonGroup, QCheckBox, QComboBox, QFileDialog, QFormLayout, QFrame,
+    QApplication, QButtonGroup, QComboBox, QFileDialog, QFormLayout, QFrame,
     QGraphicsOpacityEffect, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem,
     QDialog, QMainWindow, QMessageBox, QProgressBar, QPushButton, QRadioButton, QScrollArea, QSpinBox,
     QStackedWidget, QTextBrowser,
     QVBoxLayout, QWidget,
 )
 
-APP_NAME = 'Mushaf'
-APP_VERSION = '4.0.7'  # محتوى مطابق لتطبيق الأندرويد 1.3.1
+from runtime import configure_runtime_streams
+from version import APP_DESCRIPTION_AR, APP_ID, APP_NAME, APP_NAME_AR, APP_VERSION
 
 if getattr(sys, 'frozen', False):
     BASE = Path(getattr(sys, '_MEIPASS', Path(sys.executable).parent))
@@ -496,7 +496,7 @@ def fade_in(widget):
     widget._fade_anim = anim
 
 
-UPDATE_MANIFEST = 'https://raw.githubusercontent.com/mosalah30688-gif/quran/main/update/manifest.json'
+UPDATE_MANIFEST = 'https://raw.githubusercontent.com/mosalah30688-gif/quran/main/update/linux/stable.json'
 
 
 def version_tuple(v):
@@ -504,13 +504,52 @@ def version_tuple(v):
     return tuple(nums) or (0,)
 
 
+def validated_update_info(manifest):
+    """يرفض أي أصل تحديث لا يحمل هوية سراج أو حجمًا وSHA-256 صالحين."""
+    try:
+        asset = (manifest.get('assets') or {}).get('appimage') or {}
+        info = {
+            'version': str(manifest.get('version', '')),
+            'url': str(asset.get('url', '')),
+            'sha256': str(asset.get('sha256', '')).lower(),
+            'size': int(asset.get('size', 0)),
+        }
+    except (ValueError, TypeError, AttributeError):
+        return None
+    expected_prefix = 'https://github.com/mosalah30688-gif/quran/releases/download/'
+    valid = (
+        manifest.get('schema') == 1
+        and manifest.get('product') == 'siraj-quran-linux'
+        and manifest.get('channel') == 'stable'
+        and manifest.get('available') is True
+        and info['url'].startswith(expected_prefix)
+        and re.fullmatch(r'[0-9a-f]{64}', info['sha256']) is not None
+        and info['size'] > 1_000_000
+    )
+    return info if valid else None
+
+
+def app_settings():
+    """إعدادات سراج مع ترحيل صامت لإعدادات AppImage القديمة مرة واحدة."""
+    current = QSettings('mosalah30688', APP_NAME)
+    marker = 'migration/mushaf-settings-v1'
+    if not current.value(marker, False, type=bool):
+        legacy = QSettings('mosalah30688', 'Mushaf')
+        if not current.allKeys():
+            for key in legacy.allKeys():
+                current.setValue(key, legacy.value(key))
+        current.setValue(marker, True)
+        current.sync()
+    return current
+
+
 class Main(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle('المصحف')
+        self.setWindowTitle(f'{APP_NAME_AR} — {APP_DESCRIPTION_AR}')
         if ICON.exists():
             self.setWindowIcon(QIcon(str(ICON)))
-        self.settings = QSettings('mosalah30688', APP_NAME)
+        self.settings = app_settings()
         self.theme_name = self.settings.value('theme', 'light', type=str)
         if self.theme_name not in THEMES:
             self.theme_name = 'light'
@@ -581,9 +620,9 @@ class Main(QMainWindow):
         side.setFixedWidth(248)
         sl = QVBoxLayout(side)
         sl.setContentsMargins(0, 0, 0, 12)
-        brand = QLabel('المصحف')
+        brand = QLabel(APP_NAME_AR)
         brand.setObjectName('brand')
-        sub = QLabel(f'الإصدار {APP_VERSION}')
+        sub = QLabel(f'{APP_DESCRIPTION_AR} · الإصدار {APP_VERSION}')
         sub.setObjectName('brandSub')
         sl.addWidget(brand)
         sl.addWidget(sub)
@@ -2239,7 +2278,7 @@ class Main(QMainWindow):
         c3 = card()
         cl3 = QVBoxLayout(c3)
         cl3.setContentsMargins(20, 18, 20, 18)
-        about = QLabel(f'المصحف {APP_VERSION}')
+        about = QLabel(f'{APP_NAME_AR} {APP_VERSION} — {APP_DESCRIPTION_AR}')
         about.setStyleSheet('font-weight:700; font-size:16px;')
         cl3.addWidget(about)
         self.upd_status = QLabel('')
@@ -2300,14 +2339,13 @@ class Main(QMainWindow):
         data = bytes(reply.readAll()) if ok else b''
         reply.deleteLater()
         try:
-            info = json.loads(data.decode('utf-8')).get('desktop') if data else None
-        except (ValueError, AttributeError):
-            info = None
-        platform_key = 'windows' if sys.platform.startswith('win') else 'linux'
-        url = (info or {}).get(platform_key)
-        newer = bool(info and url and version_tuple(info.get('version')) > version_tuple(APP_VERSION))
+            manifest = json.loads(data.decode('utf-8')) if data else {}
+        except (ValueError, TypeError, AttributeError):
+            manifest = {}
+        info = validated_update_info(manifest)
+        newer = bool(info and version_tuple(info['version']) > version_tuple(APP_VERSION))
         if newer:
-            self.update_info = (info['version'], url)
+            self.update_info = info
             self.update_banner_label.setText(f'يتوفر تحديث {info["version"]}')
             self.update_banner.show()
             self.upd_status.setText(f'الإصدار {info["version"]} متاح')
@@ -2317,20 +2355,25 @@ class Main(QMainWindow):
         self.update_banner.hide()
         self.btn_check_update.setText('تحقق من التحديث')
         if manual:
-            self.upd_status.setText('أنت على أحدث نسخة' if ok else 'تعذّر الاتصال بالمستودع')
+            self.upd_status.setText('أنت على أحدث نسخة' if ok and manifest else 'تعذّر الاتصال بالمستودع')
 
     def download_update(self):
-        version, url = self.update_info
+        info = dict(self.update_info)
+        url = info['url']
+        file_name = QUrl(url).fileName()
+        if not re.fullmatch(r'Siraj-Quran-[0-9A-Za-z.-]+-linux-x86_64\.AppImage', file_name):
+            self.upd_status.setText('رابط التحديث غير صالح')
+            return
         target_dir = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DownloadLocation)
                           or Path.home() / 'Downloads')
         target_dir.mkdir(parents=True, exist_ok=True)
-        self.upd_target = target_dir / url.rsplit('/', 1)[-1]
+        self.upd_target = target_dir / file_name
         req = QNetworkRequest(QUrl(url))
         req.setAttribute(QNetworkRequest.Attribute.RedirectPolicyAttribute,
                          QNetworkRequest.RedirectPolicy.NoLessSafeRedirectPolicy)
         reply = self.nam.get(req)
         reply.downloadProgress.connect(self._update_progress)
-        reply.finished.connect(lambda: self._update_downloaded(reply))
+        reply.finished.connect(lambda: self._update_downloaded(reply, info))
         self.upd_status.setText('جارٍ التنزيل…')
         self.btn_check_update.setEnabled(False)
 
@@ -2338,18 +2381,20 @@ class Main(QMainWindow):
         if total > 0:
             self.upd_status.setText(f'جارٍ التنزيل… {got * 100 // total}%')
 
-    def _update_downloaded(self, reply):
+    def _update_downloaded(self, reply, info):
         self.btn_check_update.setEnabled(True)
         ok = reply.error() == QNetworkReply.NetworkError.NoError
         data = bytes(reply.readAll()) if ok else b''
         reply.deleteLater()
-        if len(data) < 1_000_000:
-            self.upd_status.setText('تعذّر التنزيل')
+        digest = hashlib.sha256(data).hexdigest()
+        if len(data) != info['size'] or digest != info['sha256']:
+            self.upd_status.setText('رُفض التحديث: الحجم أو SHA-256 غير صحيح')
             return
-        self.upd_target.write_bytes(data)
-        if not sys.platform.startswith('win'):
-            self.upd_target.chmod(0o755)
-        self.upd_status.setText(f'تم التنزيل: {self.upd_target}')
+        temp = self.upd_target.with_suffix(self.upd_target.suffix + '.part')
+        temp.write_bytes(data)
+        temp.chmod(0o755)
+        temp.replace(self.upd_target)
+        self.upd_status.setText(f'تم التنزيل والتحقق: {self.upd_target}')
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.upd_target.parent)))
 
     def closeEvent(self, event):  # noqa: N802
@@ -2448,16 +2493,20 @@ def run_audiotest(app, win):
 
 
 def main():
+    configure_runtime_streams()
     import faulthandler
-    faulthandler.enable()  # يطبع مكان الانهيار لو حصل انهيار أصلي (لتشخيص ويندوز)
+    faulthandler.enable(file=sys.stderr, all_threads=True)
     if '--selftest' in sys.argv:
         print('stage: start', file=sys.stderr, flush=True)
-    for stream in (sys.stdout, sys.stderr):  # الكونسول على ويندوز cp1252: ما نطبعش عربي بدون تحويل
-        if stream is not None and hasattr(stream, 'reconfigure'):
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, 'reconfigure'):
             stream.reconfigure(encoding='utf-8', errors='replace')
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
+    app.setApplicationDisplayName(f'{APP_NAME_AR} — {APP_DESCRIPTION_AR}')
+    app.setApplicationVersion(APP_VERSION)
     app.setOrganizationName('mosalah30688')
+    app.setDesktopFileName(APP_ID)
     app.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
     QFontDatabase.addApplicationFont(str(FONTS / 'AmiriQuran-arabic.woff2'))
     for name in ('NotoSansArabic-Regular.ttf', 'NotoSansArabic-Bold.ttf'):

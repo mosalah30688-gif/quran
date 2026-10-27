@@ -1,59 +1,148 @@
-name: "Legacy Mushaf Linux AppImage"
+name: "Siraj Linux — build and test AppImage"
 
-# مسار Linux السابق مستقل عن خطة سراج Windows الجديدة.
 on:
-  push:
-    tags: ['mushaf-v*']
   workflow_dispatch:
 
+concurrency:
+  group: siraj-linux-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
-  contents: write
+  contents: read
+  id-token: write
+  attestations: write
 
 jobs:
-  linux:
-    runs-on: ubuntu-latest
+  build-linux-appimage:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: "utf-8"
+      LANG: "C.UTF-8"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
-      - name: System libraries
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: mushaf_app/requirements.txt
+
+      - name: Install Linux runtime and validation tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y libfuse2 libegl1 libxkbcommon0 libxkbcommon-x11-0 libxcb-cursor0 libgl1 libnss3 libxss1 libasound2t64 libpulse0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0 libxcb-xkb1 libxcb-xinerama0 libxcb-randr0 libxkbcommon-x11-0 libxcb-glx0
-      - name: Version
-        id: ver
+          sudo apt-get install -y \
+            appstream desktop-file-utils libasound2 libegl1 libgl1 libnss3 libpulse0 libxss1 \
+            libxcb-cursor0 libxcb-glx0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 \
+            libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 libxcb-xkb1 libxkbcommon-x11-0 \
+            xauth xdotool xvfb
+
+      - name: Install Python dependencies and audit them
         run: |
-          if [[ "$GITHUB_REF" == refs/tags/mushaf-v* ]]; then
-            echo "version=${GITHUB_REF_NAME#mushaf-v}" >> "$GITHUB_OUTPUT"
-          else
-            echo "version=dev-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          python -m pip install --upgrade pip
+          python -m pip install -r mushaf_app/requirements.txt
+          python -m pip install pip-audit cyclonedx-bom==7.5.0
+          python -m pip_audit -r mushaf_app/requirements.txt --progress-spinner off
+
+      - name: Validate version, source and packaging tests
+        run: |
+          python -m py_compile mushaf_app/main.py mushaf_app/runtime.py mushaf_app/version.py mushaf_app/tests/test_*.py
+          python -m unittest discover -s mushaf_app/tests -p "test_*.py" -v
+          VERSION="$(PYTHONPATH=mushaf_app python -c 'from version import APP_VERSION; print(APP_VERSION)')"
+          test "$VERSION" = "$(PYTHONPATH=windows_app python -c 'from version import APP_VERSION; print(APP_VERSION)')"
+          echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> "$GITHUB_ENV"
+
+      - name: Full Linux UI regression test
+        env:
+          QT_QPA_PLATFORM: offscreen
+          SHOTS: ${{ runner.temp }}/siraj-linux-shots
+        run: python mushaf_app/tests/ui_test.py
+
+      - name: Build pinned AppImage
+        working-directory: mushaf_app
+        run: bash ./build_appimage.sh
+
+      - name: Test packaged AppImage features and audio
+        working-directory: mushaf_app
+        env:
+          QT_QPA_PLATFORM: offscreen
+          XDG_CONFIG_HOME: ${{ runner.temp }}/siraj-selftest/config
+          XDG_DATA_HOME: ${{ runner.temp }}/siraj-selftest/data
+          XDG_CACHE_HOME: ${{ runner.temp }}/siraj-selftest/cache
+          XDG_STATE_HOME: ${{ runner.temp }}/siraj-selftest/state
+        run: |
+          APPIMAGE="$(find release -maxdepth 1 -type f -name 'Siraj-Quran-*-linux-x86_64.AppImage' -print -quit)"
+          test -n "$APPIMAGE"
+          APPIMAGE_EXTRACT_AND_RUN=1 "$APPIMAGE" --selftest
+          APPIMAGE_EXTRACT_AND_RUN=1 "$APPIMAGE" --audiotest
+
+      - name: Double-click smoke test under X11
+        working-directory: mushaf_app
+        run: |
+          APPIMAGE="$(find release -maxdepth 1 -type f -name 'Siraj-Quran-*-linux-x86_64.AppImage' -print -quit)"
+          xvfb-run -a -s "-screen 0 1440x900x24" bash packaging/smoke_appimage.sh "$APPIMAGE"
+
+      - name: Inspect AppImage contents and metadata
+        working-directory: mushaf_app
+        run: |
+          set -euo pipefail
+          APPIMAGE="$(find release -maxdepth 1 -type f -name 'Siraj-Quran-*-linux-x86_64.AppImage' -print -quit)"
+          rm -rf squashfs-root
+          "$APPIMAGE" --appimage-extract >/dev/null
+          test -x squashfs-root/AppRun
+          test -x squashfs-root/usr/bin/siraj
+          test -f squashfs-root/com.mosalah30688.siraj.quran.desktop
+          test -f squashfs-root/com.mosalah30688.siraj.quran.png
+          test -f squashfs-root/usr/share/doc/siraj/LICENSE
+          test -f squashfs-root/usr/share/doc/siraj/THIRD_PARTY_NOTICES.md
+          desktop-file-validate squashfs-root/com.mosalah30688.siraj.quran.desktop
+          appstreamcli validate --no-net squashfs-root/usr/share/metainfo/com.mosalah30688.siraj.quran.appdata.xml
+          if find squashfs-root \( -iname 'UserData' -o -iname '*.AppImage' \) -print -quit | grep -q .; then
+            echo "AppImage contains generated user data or a nested AppImage" >&2
+            exit 1
           fi
-      - name: UI test (offscreen)
-        working-directory: mushaf_app
-        env:
-          QT_QPA_PLATFORM: offscreen
-          SHOTS: ${{ runner.temp }}/shots
+          LIB_REPORT="$(find squashfs-root -type f -name '*.so*' -print0 | xargs -0 -r ldd 2>/dev/null || true)"
+          if grep -q 'not found' <<<"$LIB_REPORT"; then
+            echo "AppImage contains an unresolved shared-library dependency" >&2
+            grep 'not found' <<<"$LIB_REPORT" >&2
+            exit 1
+          fi
+          (cd release && sha256sum --check SHA256SUMS.txt)
+          rm -rf squashfs-root
+
+      - name: Generate CycloneDX SBOM
         run: |
-          python3 -m pip install -q -r requirements.txt
-          python3 tests/ui_test.py
-      - name: Build AppImage
-        working-directory: mushaf_app
-        run: bash ./build_appimage.sh "${{ steps.ver.outputs.version }}"
-      - name: Self-test AppImage
-        working-directory: mushaf_app
-        env:
-          QT_QPA_PLATFORM: offscreen
-        run: |
-          ./Mushaf-${{ steps.ver.outputs.version }}-x86_64.AppImage --appimage-extract-and-run --selftest
-          ./Mushaf-${{ steps.ver.outputs.version }}-x86_64.AppImage --appimage-extract-and-run --audiotest
-      - uses: actions/upload-artifact@v4
+          cyclonedx-py requirements mushaf_app/requirements.txt \
+            --output-format JSON \
+            --output-reproducible \
+            --output-file mushaf_app/release/SBOM.cdx.json
+          test "$(find mushaf_app/release -mindepth 1 -maxdepth 1 -type f | wc -l)" -eq 3
+          test "$(find mushaf_app/release -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 0
+
+      - name: Upload Linux UI screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: linux-appimage
-          path: mushaf_app/Mushaf-*.AppImage
-      - name: Attach to release
-        if: startsWith(github.ref, 'refs/tags/mushaf-v')
-        uses: softprops/action-gh-release@v2
+          name: siraj-linux-ui-screenshots
+          path: ${{ runner.temp }}/siraj-linux-shots/*.png
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Attest AppImage artifacts
+        uses: actions/attest-build-provenance@v3
         with:
-          tag_name: ${{ github.ref_name }}
-          files: mushaf_app/Mushaf-*.AppImage
+          subject-path: |
+            mushaf_app/release/*.AppImage
+            mushaf_app/release/SHA256SUMS.txt
+            mushaf_app/release/SBOM.cdx.json
+
+      - name: Upload tested Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: siraj-linux-appimage
+          path: mushaf_app/release/*
+          if-no-files-found: error
+          retention-days: 30

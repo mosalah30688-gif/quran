@@ -1,6 +1,7 @@
 """اختبار واجهة شامل (offscreen): بيفتح كل الشاشات ويتفاعل معاها ويحفظ لقطات."""
 import os
 import sys
+import tempfile
 import time
 import traceback
 from pathlib import Path
@@ -10,6 +11,9 @@ HERE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(HERE))
 OUT = Path(os.environ.get('SHOTS', '/home/user/shots'))
 OUT.mkdir(parents=True, exist_ok=True)
+TEST_HOME = Path(tempfile.mkdtemp(prefix='siraj-linux-ui-'))
+for name in ('CONFIG', 'DATA', 'CACHE', 'STATE'):
+    os.environ[f'XDG_{name}_HOME'] = str(TEST_HOME / name.lower())
 
 from PySide6.QtCore import QEventLoop, QTimer, Qt  # noqa: E402
 from PySide6.QtGui import QFontDatabase  # noqa: E402
@@ -18,6 +22,11 @@ from PySide6.QtWidgets import QApplication  # noqa: E402
 import main as M  # noqa: E402
 
 app = QApplication([])
+app.setApplicationName(M.APP_NAME)
+app.setApplicationDisplayName(f'{M.APP_NAME_AR} — {M.APP_DESCRIPTION_AR}')
+app.setApplicationVersion(M.APP_VERSION)
+app.setOrganizationName('mosalah30688')
+app.setDesktopFileName(M.APP_ID)
 app.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
 QFontDatabase.addApplicationFont(str(M.FONTS / 'AmiriQuran-arabic.woff2'))
 t0 = time.time()
@@ -51,11 +60,17 @@ def check(name, cond):
 
 
 def shot(name):
+    # انتظر انتهاء انتقال fade كي تمثل لقطة CI ما يراه المستخدم فعليًا.
+    wait(280)
     app.processEvents()
     win.grab().save(str(OUT / f'{name}.png'))
 
 
 try:
+    # الهوية والتشغيل الرسومي
+    check('Siraj window title', win.windowTitle() == 'سراج — قرآن كريم')
+    check('Siraj window icon', not win.windowIcon().isNull())
+    check('Linux desktop identity', app.desktopFileName() == M.APP_ID)
     # المصحف
     check('reader has 114 surahs', win.combo_surah.count() == 114)
     check('reader has 30 juz', win.combo_juz.count() == 30)
@@ -134,7 +149,7 @@ try:
     win.toggle_tafsir_panel(True)
     check('tafsir panel shows selected ayah', win.tp_title.text().endswith('الآية ٣'))
     win.toggle_tafsir_panel(False)
-    from PySide6.QtCore import QPointF, QTime
+    from PySide6.QtCore import QPointF
     from PySide6.QtGui import QMouseEvent
     from PySide6.QtCore import QEvent
     vp = win.browser.viewport()
@@ -207,7 +222,6 @@ try:
     check('memo play queue', win.queue_list and len(win.queue) == 3 and win.playing)
     win.stop_play()
     check('memo play stopped', not win.playing and not win.queue_list)
-    import tempfile
     tmp_dir = tempfile.mkdtemp()
     win.settings.setValue('dl_folder', tmp_dir)
     win.dl_reciter.setCurrentIndex(max(win.dl_reciter.findData('ar.alafasy'), 0))

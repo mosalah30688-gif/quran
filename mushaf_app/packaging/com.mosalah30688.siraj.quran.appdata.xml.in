@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.mosalah30688.siraj.quran</id>
+  <name>Siraj</name>
+  <name xml:lang="ar">سراج</name>
+  <summary>A focused Quran reader with recitations and study tools</summary>
+  <summary xml:lang="ar">قرآن كريم مع التلاوات والتفسير وأدوات الحفظ</summary>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <!-- developer_name يحافظ على توافق validator الموجود في Ubuntu 22.04. -->
+  <developer_name>Siraj</developer_name>
+  <description>
+    <p>Siraj provides Quran reading, multiple riwayat, recitations, tafsir, search, word meanings, memorization tools, daily wird, adhkar, bookmarks and reading statistics.</p>
+    <p xml:lang="ar">يوفر سراج قراءة القرآن والروايات والتلاوات والتفسير والبحث ومعاني الكلمات وأدوات الحفظ والورد والأذكار والعلامات والإحصاءات.</p>
+  </description>
+  <launchable type="desktop-id">com.mosalah30688.siraj.quran.desktop</launchable>
+  <provides>
+    <binary>siraj</binary>
+  </provides>
+  <url type="homepage">https://github.com/mosalah30688-gif/quran</url>
+  <url type="bugtracker">https://github.com/mosalah30688-gif/quran/issues</url>
+  <releases>
+    <release version="@VERSION@" date="@RELEASE_DATE@">
+      <description>
+        <p>First Linux AppImage under the Siraj identity.</p>
+      </description>
+    </release>
+  </releases>
+  <content_rating type="oars-1.1"/>
+</component>

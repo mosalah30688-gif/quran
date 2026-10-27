@@ -4,6 +4,8 @@ set -euo pipefail
 DIST="$1"
 QT="$DIST/_internal/PySide6/Qt"
 rm -rf "$QT/translations"
+# الواجهة لها QSS خاص بها؛ حذف qgtk3 يمنع اعتمادًا اختياريًا كبيرًا على GTK 3.
+rm -f "$QT/plugins/platformthemes/libqgtk3.so"
 rm -rf "$QT/resources/qtwebengine_devtools_resources.pak"
 if [ -d "$QT/translations" ] || [ -d "$QT/qtwebengine_locales" ]; then :; fi
 if [ -d "$QT/resources/qtwebengine_locales" ]; then

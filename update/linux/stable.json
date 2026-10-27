@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "product": "siraj-quran-linux",
+  "channel": "stable",
+  "available": false,
+  "version": "1.0.0",
+  "published_at": null,
+  "minimum_linux": "Ubuntu 22.04 or equivalent x86_64",
+  "release_notes": "حزمة AppImage الأولى لهوية سراج قيد الاختبار؛ لم يُنشر إصدار مستقر عام بعد.",
+  "assets": {}
+}

@@ -37,9 +37,24 @@ npm run android:sync
 
 راجع [`windows_app/README.md`](windows_app/README.md) للتشغيل والبناء والتفاصيل.
 
-### Linux السابق
+### Linux — AppImage
 
-نسخة Qt/AppImage السابقة باقية مؤقتًا داخل `mushaf_app/`، وخط بنائها منفصل عن Windows الجديد.
+مسار Linux داخل `mushaf_app/` يحمل الهوية نفسها **سراج — قرآن كريم** وينتج:
+
+- `Siraj-Quran-1.0.0-linux-x86_64.AppImage`
+- `SHA256SUMS.txt`
+- `SBOM.cdx.json`
+
+يبني GitHub Actions الحزمة على Ubuntu 22.04، ثم يشغّل اختبارات الواجهة والبيانات والتلاوة من داخل AppImage، ويشغّل التطبيق بلا arguments تحت X11 افتراضي ويتحقق من ظهور نافذة «سراج» قبل رفع artifact باسم `siraj-linux-appimage`.
+
+بعد التنزيل يلزم منح الملف صلاحية التنفيذ مرة واحدة من **Properties → Permissions → Allow executing file as program** أو بالأمر:
+
+```bash
+chmod +x Siraj-Quran-1.0.0-linux-x86_64.AppImage
+./Siraj-Quran-1.0.0-linux-x86_64.AppImage
+```
+
+لا يُنشئ هذا المسار حزمة DEB/RPM أو مثبّتًا، ولا ينشر Release مستقرًا تلقائيًا. يظل النشر العام محجوبًا إلى حين اكتمال مراجعة تراخيص المحتوى والمراجعة العلمية.
 
 ## خصائص Windows الجديدة
 
