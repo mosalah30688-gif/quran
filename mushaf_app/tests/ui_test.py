@@ -34,6 +34,7 @@ def wait(ms):
 
 
 win = M.Main()
+win.engine.allow_null = True  # بيئة بدون كارت صوت
 win.settings.clear()
 win.page = 1
 win.resize(1440, 900)
@@ -124,6 +125,27 @@ try:
     log('  qalun queue sample:', queue[:1])
     win.riwaya_combo.setCurrentIndex(win.riwaya_combo.findData('quran-uthmani'))
     app.processEvents()
+    # البسملة قبل أول آية، والتفسير من لوحة جانبية، والسحب بالفأرة يقلب الصفحة
+    win.go_page(2)
+    app.processEvents()
+    check('basmala before first ayah', 'ٱلرَّحِيمِ' in win.browser.toPlainText())
+    win.sel_ayah = (2, 3)
+    win.render_page()
+    win.toggle_tafsir_panel(True)
+    check('tafsir panel shows selected ayah', win.tp_title.text().endswith('الآية ٣'))
+    win.toggle_tafsir_panel(False)
+    from PySide6.QtCore import QPointF, QTime
+    from PySide6.QtGui import QMouseEvent
+    from PySide6.QtCore import QEvent
+    vp = win.browser.viewport()
+    def mouse(kind, x, y):
+        ev = QMouseEvent(kind, QPointF(x, y), QPointF(x, y), Qt.MouseButton.LeftButton,
+                         Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier)
+        app.sendEvent(vp, ev)
+    win.browser._last_turn = -1e9
+    mouse(QEvent.Type.MouseButtonPress, 300, 200)
+    mouse(QEvent.Type.MouseButtonRelease, 420, 205)
+    check('mouse drag right -> next page', win.page == 3)
     # الإشارات المرجعية
     win.go_page(10)
     win.toggle_bookmark()

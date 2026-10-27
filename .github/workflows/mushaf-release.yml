@@ -83,7 +83,7 @@ jobs:
         shell: bash
         run: |
           python -m PyInstaller --noconfirm --windowed --name mushaf \
-            --add-data "data;data" --add-data "fonts;fonts" --add-data "icon.png;." main.py
+            --add-data "data;data" --add-data "fonts;fonts" --add-data "icon.png;." --hidden-import _cffi_backend --collect-all miniaudio main.py
           bash ./prune_bundle.sh dist/mushaf
           mv dist/mushaf "dist/Mushaf-${{ steps.ver.outputs.version }}"
       - name: Self-test Windows build

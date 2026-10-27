@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 python3 -m pip install -q -r requirements.txt
 rm -rf build dist AppDir
 python3 -m PyInstaller --noconfirm --windowed --name mushaf \
-  --add-data "data:data" --add-data "fonts:fonts" --add-data "icon.png:." main.py
+  --add-data "data:data" --add-data "fonts:fonts" --add-data "icon.png:." --hidden-import _cffi_backend --collect-all miniaudio main.py
 bash ./prune_bundle.sh dist/mushaf
 # تحقق: مكتبات Qt الخاصة بـ X11 لازم تكون كاملة، وإلا البرنامج مش هيفتح
 if find dist/mushaf -name "libqxcb.so" -print -quit | xargs -r -I{} ldd {} | grep -q "not found"; then

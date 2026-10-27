@@ -6,6 +6,7 @@
 اختبار:  python3 main.py --selftest
 """
 import datetime
+import array
 import hashlib
 import html
 import json
@@ -17,8 +18,8 @@ from pathlib import Path
 
 from PySide6.QtCore import QByteArray, QObject, QPropertyAnimation, QSettings, QSize, QStandardPaths, Qt, QTimer, QUrl, Signal
 from PySide6.QtSvg import QSvgRenderer
-from PySide6.QtGui import QAction, QColor, QFont, QFontDatabase, QGuiApplication, QIcon, QKeySequence, QPainter, QPixmap, QShortcut
-from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
+import miniaudio
+from PySide6.QtGui import QAction, QColor, QDesktopServices, QFont, QFontDatabase, QGuiApplication, QIcon, QKeySequence, QPainter, QPixmap, QShortcut
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PySide6.QtWidgets import (
     QApplication, QButtonGroup, QCheckBox, QComboBox, QFileDialog, QFormLayout, QFrame,
@@ -28,7 +29,7 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = 'Mushaf'
-APP_VERSION = '4.0.1'  # محتوى مطابق لتطبيق الأندرويد 1.3.1
+APP_VERSION = '4.0.3'  # محتوى مطابق لتطبيق الأندرويد 1.3.1
 
 if getattr(sys, 'frozen', False):
     BASE = Path(getattr(sys, '_MEIPASS', Path(sys.executable).parent))
@@ -165,6 +166,8 @@ def juz_of(s, a):
 
 
 # ---------- الألوان والتصميم ----------
+BASMALA = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ'
+
 THEMES = {
     'light': dict(bg='#eef3ef', side='#0f3d32', side_hi='#15614d', card='#ffffff', text='#1d2a26',
                   muted='#6b7b75', brand='#0f7a5c', brand_hi='#14996f', line='#d7e2dc',
@@ -249,6 +252,113 @@ def svg_icon(name, color='#dff3ea', size=20):
     return QIcon(pm)
 
 
+class AudioEngine(QObject):
+    """يفك ملف MP3 ويشغّله على جهاز الصوت (miniaudio): مستقل عن Qt Multimedia وFFmpeg."""
+    RATE = 44100
+    CHUNK = 2048
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.src = None
+        self.dev = None
+        self.gen = None
+        self.paused = False
+        self.frames = 0
+        self.ended = False
+        self._done = False
+        self.error = ''
+        self.allow_null = False  # للاختبار فقط: بدون جهاز صوت يتقدم الوقت بالساعة
+        self.null_mode = False
+        self.pump = QTimer(self)
+        self.pump.setInterval(40)
+        self.pump.timeout.connect(self._pump_tick)
+
+    def play(self, path):
+        self.stop()
+        self.error = ''
+        self.src = miniaudio.stream_file(str(path), output_format=miniaudio.SampleFormat.SIGNED16,
+                                         nchannels=2, sample_rate=self.RATE, frames_to_read=self.CHUNK)
+        next(self.src)
+        self.gen = self._callback()
+        next(self.gen)
+        self.frames = 0
+        self.ended = False
+        self._done = False
+        self.paused = False
+        try:
+            self.dev = miniaudio.PlaybackDevice(output_format=miniaudio.SampleFormat.SIGNED16,
+                                                nchannels=2, sample_rate=self.RATE)
+            self.dev.start(self.gen)
+            self.null_mode = False
+        except Exception as exc:
+            self.dev = None
+            if not self.allow_null:
+                self.stop()
+                self.error = str(exc)
+                raise
+            self.null_mode = True
+            self.pump.start()
+
+    def _callback(self):
+        silence = lambda n: bytes(n * 4)  # noqa: E731
+        n = yield b''
+        while True:
+            n = n or self.CHUNK
+            out = silence(n)
+            if not (self.paused or self.src is None or self._done):
+                try:
+                    chunk = self.src.send(n)
+                except StopIteration:
+                    chunk = b''
+                if isinstance(chunk, array.array):
+                    chunk = chunk.tobytes()
+                if chunk:
+                    self.frames += len(chunk) // 4
+                    out = chunk if len(chunk) == n * 4 else chunk + bytes(n * 4 - len(chunk))
+                else:
+                    self._done = True
+                    self.ended = True
+            n = yield out
+
+    def _pump_tick(self):
+        if self.gen is not None:
+            try:
+                self.gen.send(self.CHUNK)
+            except StopIteration:
+                pass
+
+    def pause(self):
+        self.paused = True
+
+    def resume(self):
+        self.paused = False
+
+    def position_ms(self):
+        return int(self.frames * 1000 / self.RATE)
+
+    def take_ended(self):
+        if self.ended:
+            self.ended = False
+            return True
+        return False
+
+    def stop(self):
+        self.pump.stop()
+        if self.dev is not None:
+            try:
+                self.dev.close()
+            except Exception:
+                pass
+        self.dev = None
+        self.gen = None
+        self.src = None
+        self.paused = False
+        self.ended = False
+        self._done = False
+        self.null_mode = False
+        self.frames = 0
+
+
 class PageBrowser(QTextBrowser):
     """عرض الصفحة: عجلة الماوس عند الحافة تقلب الصفحة (مع فاصل زمني لمنع التقليب المتكرر)."""
 
@@ -256,6 +366,26 @@ class PageBrowser(QTextBrowser):
         super().__init__()
         self._on_turn = on_turn
         self._last_turn = -1e9  # وقت آخر تقليب (ثوانٍ)
+
+    def mousePressEvent(self, event):  # noqa: N802
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._press = (event.position().x(), event.position().y(), time.monotonic())
+        super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event):  # noqa: N802
+        super().mouseReleaseEvent(event)
+        press = getattr(self, '_press', None)
+        self._press = None
+        if not press or event.button() != Qt.MouseButton.LeftButton:
+            return
+        dx = event.position().x() - press[0]
+        dy = event.position().y() - press[1]
+        held = time.monotonic() - press[2]
+        if held < 0.35 and abs(dx) > 60 and abs(dx) > abs(dy) * 1.6:
+            cur = self.textCursor()
+            cur.clearSelection()
+            self.setTextCursor(cur)
+            self._on_turn(1 if dx > 0 else -1)
 
     def wheelEvent(self, event):  # noqa: N802
         bar = self.verticalScrollBar()
@@ -285,7 +415,7 @@ def heading(title, sub=''):
     t = QLabel(title)
     t.setObjectName('pageTitle')
     lay.addWidget(t)
-    if sub:
+    if False and sub:  # بدون جمل إرشادية في الواجهة
         s = QLabel(sub)
         s.setObjectName('pageSub')
         lay.addWidget(s)
@@ -302,6 +432,14 @@ def fade_in(widget):
     anim.finished.connect(lambda: widget.setGraphicsEffect(None))
     anim.start()
     widget._fade_anim = anim
+
+
+UPDATE_MANIFEST = 'https://raw.githubusercontent.com/mosalah30688-gif/quran/main/update/manifest.json'
+
+
+def version_tuple(v):
+    nums = [int(x) for x in re.findall(r'\d+', str(v))][:4]
+    return tuple(nums) or (0,)
 
 
 class Main(QMainWindow):
@@ -326,12 +464,17 @@ class Main(QMainWindow):
         self.nam = QNetworkAccessManager(self)
         self.tafsir_cache = {}
         self.tafsir_key = None
-        self.player = QMediaPlayer(self)
-        self.audio = QAudioOutput(self)
-        self.audio.setVolume(1.0)
-        self.player.setAudioOutput(self.audio)
-        self.player.mediaStatusChanged.connect(self.on_media_status)
-        self.player.errorOccurred.connect(self.on_media_error)
+        self.engine = AudioEngine(self)
+        self.engine_timer = QTimer(self)
+        self.engine_timer.setInterval(150)
+        self.engine_timer.timeout.connect(self.on_audio_tick)
+        self.engine_timer.start()
+        self.play_token = 0
+        self._auto_turn = False
+        self.sel_ayah = None
+        self.update_info = None
+        self.update_busy = False
+        self.upd_target = None
         self.queue = []
         self.queue_index = -1
         self.playing = False
@@ -353,6 +496,7 @@ class Main(QMainWindow):
         QShortcut(QKeySequence('Ctrl+0'), self, activated=lambda: self.set_font(22))
         QShortcut(QKeySequence('Ctrl+='), self, activated=lambda: self.set_font(self.font_pt + 2))
         QShortcut(QKeySequence('Ctrl+-'), self, activated=lambda: self.set_font(self.font_pt - 2))
+        QTimer.singleShot(4000, self.check_updates)  # فحص التحديث من المستودع عند البدء
         # الأسهم: يسار = الصفحة التالية، يمين = السابقة (اتجاه القراءة العربي وعكس أزرار الشاشة)
         for key, step in (('Left', 1), ('Right', -1)):
             sc = QShortcut(QKeySequence(key), self.views['reader'])
@@ -375,7 +519,7 @@ class Main(QMainWindow):
         sl.setContentsMargins(0, 0, 0, 12)
         brand = QLabel('المصحف')
         brand.setObjectName('brand')
-        sub = QLabel(f'الإصدار {APP_VERSION} · تطبيق سطح المكتب')
+        sub = QLabel(f'الإصدار {APP_VERSION}')
         sub.setObjectName('brandSub')
         sl.addWidget(brand)
         sl.addWidget(sub)
@@ -406,6 +550,23 @@ class Main(QMainWindow):
             self.nav_group.addButton(b)
             self.nav_buttons[key] = b
             sl.addWidget(b)
+        self.update_banner = QFrame()
+        self.update_banner.setObjectName('card')
+        ub = QVBoxLayout(self.update_banner)
+        ub.setContentsMargins(12, 10, 12, 10)
+        self.update_banner_label = QLabel()
+        self.update_banner_label.setWordWrap(True)
+        btn_update = QPushButton('تحميل التحديث')
+        btn_update.setObjectName('primary')
+        btn_update.clicked.connect(self.on_update_button)
+        ub.addWidget(self.update_banner_label)
+        ub.addWidget(btn_update)
+        self.update_banner.hide()
+        wrap_banner = QWidget()
+        wl = QVBoxLayout(wrap_banner)
+        wl.setContentsMargins(12, 0, 12, 0)
+        wl.addWidget(self.update_banner)
+        sl.addWidget(wrap_banner)
         sl.addStretch(1)
         b = QPushButton('الإعدادات')
         b.setIcon(svg_icon('settings'))
@@ -469,20 +630,16 @@ class Main(QMainWindow):
     # ---------- المصحف ----------
     def build_reader(self):
         w = QWidget()
-        lay = QVBoxLayout(w)
-        lay.setContentsMargins(0, 0, 0, 0)
-        lay.setSpacing(12)
+        row = QHBoxLayout(w)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(14)
 
-        bar = card()
-        bl = QHBoxLayout(bar)
-        bl.setContentsMargins(14, 10, 14, 10)
-        self.btn_next = QPushButton('التالية ›')
-        self.btn_prev = QPushButton('‹ السابقة')
-        self.btn_next.clicked.connect(lambda: self.go_page(self.page + 1))
-        self.btn_prev.clicked.connect(lambda: self.go_page(self.page - 1))
-        self.page_label = QLabel()
-        self.page_label.setObjectName('pageSub')
-        self.page_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # الفهرس على الجانب الأيمن: قوائم منسدلة للسورة والجزء والآية
+        index_card = card()
+        index_card.setFixedWidth(236)
+        il = QVBoxLayout(index_card)
+        il.setContentsMargins(14, 14, 14, 14)
+        il.setSpacing(8)
         self.combo_surah = QComboBox()
         for s in SURAHS:
             self.combo_surah.addItem(f'{s["number"]}. {s["name"]}', s['number'])
@@ -492,52 +649,189 @@ class Main(QMainWindow):
             self.combo_juz.addItem(f'الجزء {ar(i + 1)}', i)
         self.combo_juz.currentIndexChanged.connect(self.on_juz)
         self.combo_ayah = QComboBox()
-        self.combo_ayah.setMinimumWidth(90)
         self.combo_ayah.currentIndexChanged.connect(self.on_ayah)
-        self.btn_mark = QPushButton('☆ حفظ الصفحة')
+        for title, combo in (('السورة', self.combo_surah), ('الجزء', self.combo_juz), ('الآية', self.combo_ayah)):
+            lab = QLabel(title)
+            lab.setObjectName('muted')
+            il.addWidget(lab)
+            il.addWidget(combo)
+        il.addStretch(1)
+        row.addWidget(index_card)
+
+        center = QWidget()
+        cl = QVBoxLayout(center)
+        cl.setContentsMargins(0, 0, 0, 0)
+        cl.setSpacing(10)
+
+        # شريط أعلى الصفحة: المشغل وزر العلامة وزر التفسير
+        top = card()
+        tl = QHBoxLayout(top)
+        tl.setContentsMargins(12, 8, 12, 8)
+        tl.setSpacing(8)
+        self.btn_play = QPushButton('▶  تشغيل')
+        self.btn_play.setObjectName('primary')
+        self.btn_play.clicked.connect(self.toggle_play)
+        self.btn_stop = QPushButton('إيقاف')
+        self.btn_stop.clicked.connect(lambda: self.stop_play(''))
+        self.reciter_combo = QComboBox()
+        self.reciter_combo.setMinimumWidth(190)
+        self.reciter_combo.currentIndexChanged.connect(self.on_reciter_change)
+        self.play_surah = QComboBox()
+        for s in SURAHS:
+            self.play_surah.addItem(f'{s["number"]}. {s["name"]}', s['number'])
+        self.play_surah.currentIndexChanged.connect(self.on_play_surah)
+        self.play_from = QComboBox()
+        self.play_from.setMinimumWidth(80)
+        self.btn_mark = QPushButton('علامة')
         self.btn_mark.clicked.connect(self.toggle_bookmark)
-        bl.addWidget(self.btn_prev)
-        bl.addWidget(self.btn_next)
-        bl.addSpacing(10)
-        bl.addWidget(self.combo_surah, 2)
-        bl.addWidget(self.combo_juz, 1)
-        bl.addWidget(self.combo_ayah, 0)
-        bl.addStretch(1)
-        bl.addWidget(self.btn_mark)
-        lay.addWidget(bar)
+        self.btn_tafsir = QPushButton('التفسير')
+        self.btn_tafsir.clicked.connect(lambda: self.toggle_tafsir_panel())
+        for wdg in (self.btn_play, self.btn_stop, self.reciter_combo, self.play_surah, self.play_from):
+            tl.addWidget(wdg)
+        self.play_status = QLabel('')
+        self.play_status.setObjectName('muted')
+        tl.addWidget(self.play_status)
+        tl.addStretch(1)
+        tl.addWidget(self.btn_mark)
+        tl.addWidget(self.btn_tafsir)
+        cl.addWidget(top)
 
         self.page_info = QLabel()
         self.page_info.setObjectName('pageSub')
         self.page_info.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        lay.addWidget(self.page_info)
+        cl.addWidget(self.page_info)
 
         self.browser = PageBrowser(lambda d: self.go_page(self.page + d))
         self.browser.setObjectName('mushaf')
+        self.browser.setOpenLinks(False)
         self.browser.setOpenExternalLinks(False)
         self.browser.setFrameShape(QTextBrowser.Shape.NoFrame)
-        lay.addWidget(self.browser, 1)
+        self.browser.anchorClicked.connect(self.on_ayah_anchor)
+        cl.addWidget(self.browser, 1)
 
-        player = card()
-        pl = QHBoxLayout(player)
-        pl.setContentsMargins(14, 10, 14, 10)
-        self.btn_play = QPushButton('▶  تلاوة الصفحة')
-        self.btn_play.setObjectName('primary')
-        self.btn_play.clicked.connect(self.toggle_play)
-        self.btn_stop = QPushButton('إيقاف')
-        self.btn_stop.clicked.connect(lambda: self.stop_play('أوقفت التلاوة'))
-        self.reciter_combo = QComboBox()
-        self.reciter_combo.setMinimumWidth(260)
-        self.reciter_combo.currentIndexChanged.connect(self.on_reciter_change)
-        self.play_status = QLabel('')
-        self.play_status.setObjectName('muted')
-        pl.addWidget(self.btn_play)
-        pl.addWidget(self.btn_stop)
-        pl.addWidget(self.reciter_combo)
-        pl.addStretch(1)
-        pl.addWidget(self.play_status)
-        lay.addWidget(player)
+        # التقليب أسفل الصفحة في المنتصف
+        pager = QHBoxLayout()
+        pager.setSpacing(12)
+        self.btn_prev = QPushButton('‹ السابقة')
+        self.btn_next = QPushButton('التالية ›')
+        self.btn_next.clicked.connect(lambda: self.go_page(self.page + 1))
+        self.btn_prev.clicked.connect(lambda: self.go_page(self.page - 1))
+        self.page_label = QLabel()
+        self.page_label.setObjectName('pageSub')
+        self.page_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.page_label.setMinimumWidth(150)
+        pager.addStretch(1)
+        pager.addWidget(self.btn_prev)
+        pager.addWidget(self.page_label)
+        pager.addWidget(self.btn_next)
+        pager.addStretch(1)
+        cl.addLayout(pager)
+        row.addWidget(center, 1)
+
+        # لوحة التفسير (على اليسار، تظهر عند الضغط على زر التفسير)
+        self.tp_frame = card()
+        self.tp_frame.setFixedWidth(370)
+        tpl = QVBoxLayout(self.tp_frame)
+        tpl.setContentsMargins(14, 14, 14, 14)
+        tpl.setSpacing(8)
+        hdr = QHBoxLayout()
+        self.tp_title = QLabel()
+        self.tp_title.setStyleSheet('font-weight:700; font-size:16px;')
+        btn_close = QPushButton('×')
+        btn_close.setFixedWidth(36)
+        btn_close.clicked.connect(lambda: self.toggle_tafsir_panel(False))
+        hdr.addWidget(self.tp_title, 1)
+        hdr.addWidget(btn_close)
+        tpl.addLayout(hdr)
+        self.tp_book = QComboBox()
+        for eid, name in TAFSIR_EDITIONS:
+            self.tp_book.addItem(name, eid)
+        self.tp_book.setCurrentIndex(max(self.tp_book.findData(
+            self.settings.value('tafsir', 'ar.muyassar', type=str)), 0))
+        self.tp_book.currentIndexChanged.connect(self.on_tp_book)
+        tpl.addWidget(self.tp_book)
+        self.tp_browser = QTextBrowser()
+        self.tp_browser.setOpenExternalLinks(False)
+        tpl.addWidget(self.tp_browser, 1)
+        self.tp_frame.hide()
+        row.addWidget(self.tp_frame)
+
         self.populate_reciters()
+        self.populate_play_from()
         return w
+
+    def populate_play_from(self):
+        s = self.play_surah.currentData() or 1
+        self.play_from.blockSignals(True)
+        self.play_from.clear()
+        for n in range(1, SURAHS[s - 1]['numberOfAyahs'] + 1):
+            self.play_from.addItem(ar(n), n)
+        self.play_from.blockSignals(False)
+
+    def on_play_surah(self, _idx):
+        self.populate_play_from()
+
+    def toggle_tafsir_panel(self, show=None):
+        if show is None:
+            show = not self.tp_frame.isVisible()
+        if show and self.sel_ayah is None:
+            items = self.book.ayahs_on_page(self.page)
+            if items:
+                self.sel_ayah = (items[0][0], items[0][1])
+                self.render_page()
+        self.tp_frame.setVisible(show)
+        if show:
+            self.load_tp()
+
+    def on_ayah_anchor(self, url):
+        text = url.toString() if hasattr(url, 'toString') else str(url)
+        m = re.match(r'ayah:(\d+):(\d+)$', text)
+        if not m:
+            return
+        self.sel_ayah = (int(m.group(1)), int(m.group(2)))
+        self.render_page()
+        if self.tp_frame.isVisible():
+            self.load_tp()
+
+    def on_tp_book(self, _idx):
+        self.settings.setValue('tafsir', self.tp_book.currentData())
+        self.load_tp()
+
+    def load_tp(self):
+        if self.sel_ayah is None:
+            return
+        s, a = self.sel_ayah
+        edition = self.tp_book.currentData()
+        key = (edition, s, a)
+        self.tp_key = key
+        self.tp_title.setText(f'{SURAHS[s - 1]["name"]} · الآية {ar(a)}')
+        if key in self.tafsir_cache:
+            self.show_tp(self.tafsir_cache[key])
+            return
+        self.tp_browser.setHtml('<html><body dir="rtl"><p align="center">…</p></body></html>')
+        req = QNetworkRequest(QUrl(f'https://api.alquran.cloud/v1/ayah/{s}:{a}/{edition}'))
+        reply = self.nam.get(req)
+        reply.finished.connect(lambda: self.on_tp_reply(reply, key))
+
+    def on_tp_reply(self, reply, key):
+        text = None
+        if reply.error() == QNetworkReply.NetworkError.NoError:
+            try:
+                text = json.loads(bytes(reply.readAll()).decode('utf-8'))['data']['text']
+            except (ValueError, KeyError, TypeError):
+                text = None
+        reply.deleteLater()
+        if text is None:
+            if key == getattr(self, 'tp_key', None):
+                self.tp_browser.setHtml('<html><body dir="rtl"><p align="center">تعذّر تحميل التفسير</p></body></html>')
+            return
+        self.tafsir_cache[key] = text
+        if key == getattr(self, 'tp_key', None):
+            self.show_tp(text)
+
+    def show_tp(self, text):
+        self.tp_browser.setHtml(
+            f'<html><body dir="rtl"><p style="font-size:15pt; line-height:175%;">{html.escape(text)}</p></body></html>')
 
     def populate_reciters(self):
         self.reciter_combo.blockSignals(True)
@@ -568,8 +862,9 @@ class Main(QMainWindow):
             return
         self.page = p
         self.settings.setValue('page', p)
-        if self.playing:
+        if self.playing and not self._auto_turn:
             self.stop_play()
+        self.sel_ayah = None
         if self.last_counted != p:
             self.last_counted = p
             self.count_page_visit()
@@ -580,22 +875,41 @@ class Main(QMainWindow):
         page = self.page
         items = self.book.ayahs_on_page(page)
         t = THEMES[self.theme_name]
-        parts = []
+        fs = self.font_pt
+        out = []
+        flow = []
+
+        def flush():
+            if flow:
+                out.append('<p align="center" dir="rtl" style="margin:0 0 4px 0;">' + ''.join(flow) + '</p>')
+                flow.clear()
+
         last = None
         for s, a, text in items:
             if a == 1 and s != last:
-                parts.append(f'<p align="center" style="font-size:{self.font_pt + 6}pt; font-weight:bold; '
-                             f'color:{t["brand"]}; margin-top:6px;">{html.escape(SURAHS[s - 1]["name"])}</p>')
+                flush()
+                out.append(f'<p align="center" style="margin:10px 0 0 0; font-size:{fs + 6}pt; font-weight:bold; '
+                           f'color:{t["brand"]};">{html.escape(SURAHS[s - 1]["name"])}</p>')
+                if s not in (1, 9):
+                    out.append(f'<p align="center" style="margin:0 0 2px 0; font-size:{fs}pt;">{BASMALA}</p>')
                 last = s
-            hl = self.highlight == (s, a)
-            style = (f'background-color:{t["brand"]}; color:#ffffff; border-radius:8px;' if hl else '')
-            parts.append(f'<span style="{style}">{html.escape(text)}</span> '
-                         f'<span style="font-size:{max(self.font_pt - 9, 10)}pt; color:{t["brand"]};">'
-                         f'﴿{ar(a)}﴾</span> ')
-        body = ''.join(parts) or '<p align="center">لا توجد آيات في هذه الصفحة</p>'
+            if self.highlight == (s, a):
+                style = f'background-color:{t["brand"]}; color:#ffffff;'
+            elif self.sel_ayah == (s, a):
+                style = f'background-color:{t["hover"]};'
+            else:
+                style = ''
+            flow.append(f'<a href="ayah:{s}:{a}" style="text-decoration:none; color:{t["text"]};">'
+                        f'<span style="{style}">{html.escape(text)}</span>'
+                        f'<span style="font-size:{max(fs - 9, 10)}pt; color:{t["brand"]};"> ﴿{ar(a)}﴾</span></a> ')
+        flush()
+        body = ''.join(out) or '<p align="center">لا توجد آيات في هذه الصفحة</p>'
+        bar = self.browser.verticalScrollBar()
+        pos = bar.value()
         self.browser.setHtml(
-            f'<html><body dir="rtl" style="font-family:\'Amiri Quran\'; font-size:{self.font_pt}pt; '
-            f'line-height:200%; color:{t["text"]};"><p align="center" dir="rtl">{body}</p></body></html>')
+            f'<html><body dir="rtl" style="font-family:\'Amiri Quran\'; font-size:{fs}pt; '
+            f'line-height:150%; color:{t["text"]};">{body}</body></html>')
+        bar.setValue(pos)
         first = items[0] if items else (1, 1, '')
         self.page_label.setText(f'صفحة {ar(page)} من {ar(TOTAL_PAGES)}')
         self.page_info.setText(f'الجزء {ar(juz_of(first[0], first[1]))}  ·  '
@@ -652,10 +966,12 @@ class Main(QMainWindow):
         self.go_page(self.book.page_of(s, idx + 1))
 
     # ---------- التلاوة ----------
-    def audio_queue_for_page(self):
-        """قائمة الملفات للصفحة: ملف لكل آية (everyayah) أو لكل سورة (mp3quran)."""
+    def audio_queue_for_page(self, start=None):
+        """قائمة ملفات الصفحة (من آية البداية إن وُجدت): ملف لكل آية (حفص) أو لكل سورة (الروايات)."""
         rid = self.current_reciter()
         items = self.book.ayahs_on_page(self.page)
+        if start is not None:
+            items = [it for it in items if (it[0], it[1]) >= start]
         if self.riwaya_id in RIW_RECITERS:
             entry = next((e for e in RIW_RECITERS[self.riwaya_id] if e[0] == rid), None)
             if entry is None:
@@ -674,21 +990,25 @@ class Main(QMainWindow):
         return [(f'https://everyayah.com/data/{folder}/{s:03d}{a:03d}.mp3', (s, a)) for s, a, _t in items]
 
     def toggle_play(self):
-        if self.playing and self.player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
-            self.player.pause()
-            self.btn_play.setText('▶  متابعة التلاوة')
-            self.play_status.setText('متوقفة مؤقتاً')
-            return
         if self.playing:
-            self.player.play()
-            self.btn_play.setText('⏸  إيقاف مؤقت')
+            if self.engine.paused:
+                self.engine.resume()
+                self.btn_play.setText('⏸  إيقاف مؤقت')
+            else:
+                self.engine.pause()
+                self.btn_play.setText('▶  متابعة')
+                self.play_status.setText('متوقفة مؤقتاً')
             return
-        self.queue = self.audio_queue_for_page()
+        s = self.play_surah.currentData()
+        a = self.play_from.currentData()
+        start = (s, a) if s and a else None
+        if start is not None and self.book.page_of(s, a) != self.page:
+            self.go_page(self.book.page_of(s, a))
+        self.queue = self.audio_queue_for_page(start)
         if not self.queue:
-            self.play_status.setText('لا توجد تلاوة لهذا القارئ في هذه الرواية')
+            self.play_status.setText('لا توجد تلاوة لهذا القارئ')
             return
         self.playing = True
-        self.queue_index = 0
         self.btn_play.setText('⏸  إيقاف مؤقت')
         self.play_index(0)
 
@@ -721,7 +1041,17 @@ class Main(QMainWindow):
 
     def play_index(self, i):
         if i >= len(self.queue):
-            self.stop_play('انتهت تلاوة الصفحة')
+            # نهاية صفحة: ينتقل للصفحة التالية ويكمل التلاوة
+            if self.playing and self.page < TOTAL_PAGES:
+                self._auto_turn = True
+                try:
+                    self.go_page(self.page + 1)
+                finally:
+                    self._auto_turn = False
+                self.queue = self.audio_queue_for_page()
+                if self.queue:
+                    return self.play_index(0)
+            self.stop_play('')
             return
         self.queue_index = i
         url, label = self.queue[i]
@@ -732,43 +1062,42 @@ class Main(QMainWindow):
             title = f'{SURAHS[label[0] - 1]["name"]} · الآية {ar(label[1])}'
         self.play_status.setText(title + ' · جارٍ التحميل…')
         self.render_page()
-        self.play_token = getattr(self, 'play_token', 0) + 1
+        self.play_token += 1
         token = self.play_token
         self.local_audio(url, lambda p: self._start_file(p, token, i, title),
                          lambda msg: self._audio_failed(token, msg))
-        if i + 1 < len(self.queue):  # تحميل مسبق للآية التالية لتشغيل متصل
+        if i + 1 < len(self.queue):  # تحميل مسبق للتالي لتشغيل متصل
             self.local_audio(self.queue[i + 1][0], lambda _p: None, lambda _m: None)
 
     def _start_file(self, path, token, i, title):
-        if token != getattr(self, 'play_token', 0) or not self.playing:
+        if token != self.play_token or not self.playing:
             return
-        self.player.setSource(QUrl.fromLocalFile(str(path)))
-        self.player.play()
+        try:
+            self.engine.play(path)
+        except Exception:
+            self.stop_play('تعذّر تشغيل الصوت على هذا الجهاز')
+            return
         self.play_status.setText(title)
 
     def _audio_failed(self, token, msg):
-        if token != getattr(self, 'play_token', 0) or not self.playing:
+        if token != self.play_token or not self.playing:
             return
-        self.stop_play(f'تعذّر تحميل التلاوة ({msg}) — تأكد من الاتصال بالإنترنت')
+        self.stop_play('تعذّر تحميل التلاوة، تحقّق من الاتصال')
 
     def stop_play(self, message=''):
-        self.play_token = getattr(self, 'play_token', 0) + 1
+        self.play_token += 1
         self.playing = False
         self.queue = []
         self.queue_index = -1
         self.highlight = None
-        self.player.stop()
-        self.btn_play.setText('▶  تلاوة الصفحة')
+        self.engine.stop()
+        self.btn_play.setText('▶  تشغيل')
         self.play_status.setText(message)
         self.render_page()
 
-    def on_media_status(self, status):
-        if self.playing and status == QMediaPlayer.MediaStatus.EndOfMedia:
+    def on_audio_tick(self):
+        if self.playing and self.engine.take_ended():
             self.play_index(self.queue_index + 1)
-
-    def on_media_error(self, *_args):
-        if self.playing:
-            self.stop_play('تعذّر تشغيل الصوت، تأكد من الاتصال بالإنترنت')
 
     # ---------- الرواية والإعدادات ----------
     def on_riwaya(self, idx):
@@ -869,7 +1198,7 @@ class Main(QMainWindow):
         if text is None:
             if key == self.tf_key:
                 self.tf_browser.setHtml(f'<html><body dir="rtl">{head}<p align="center">تعذّر تحميل التفسير، '
-                                        'تأكد من الاتصال بالإنترنت.</p></body></html>')
+                                        '</p></body></html>')
             return
         self.tafsir_cache[key] = text
         if key == self.tf_key:
@@ -1218,7 +1547,7 @@ class Main(QMainWindow):
 
     def update_mark_button(self):
         if hasattr(self, 'btn_mark'):
-            self.btn_mark.setText('★ الصفحة محفوظة' if self.page in self.bookmarks() else '☆ حفظ الصفحة')
+            self.btn_mark.setText('★ محفوظة' if self.page in self.bookmarks() else 'علامة')
 
     def page_title(self, page):
         items = self.book.ayahs_on_page(page)
@@ -1248,7 +1577,7 @@ class Main(QMainWindow):
         row.addWidget(btn_del)
         row.addStretch(1)
         lay.addLayout(row)
-        self.bm_empty = QLabel('لا توجد صفحات محفوظة بعد. اضغط "☆ حفظ الصفحة" من شاشة المصحف.')
+        self.bm_empty = QLabel('لا توجد صفحات محفوظة')
         self.bm_empty.setObjectName('muted')
         lay.addWidget(self.bm_empty)
         return w
@@ -1378,20 +1707,21 @@ class Main(QMainWindow):
             self.riwaya_combo.addItem(name, rid)
         self.riwaya_combo.setCurrentIndex(self.riwaya_combo.findData(self.riwaya_id))
         self.riwaya_combo.currentIndexChanged.connect(self.on_riwaya)
-        self.tafsir_hint = QLabel('يمكنك اختيار كتاب التفسير من شاشة التفسير.')
-        self.tafsir_hint.setObjectName('muted')
         f2.addRow('الرواية والرسم', self.riwaya_combo)
-        f2.addRow('', self.tafsir_hint)
         lay.addWidget(c2)
 
         c3 = card()
         cl3 = QVBoxLayout(c3)
         cl3.setContentsMargins(20, 18, 20, 18)
-        about = QLabel(f'المصحف - تطبيق سطح المكتب الإصدار {APP_VERSION}\n'
-                       'نفس مميزات تطبيق الأندرويد 1.3.1: الروايات، القراء والتلاوة، التفسير، البحث، '
-                       'الحفظ، الورد، المحفوظات، الإحصائيات، الأذكار، وأحكام التجويد.')
-        about.setWordWrap(True)
+        about = QLabel(f'المصحف {APP_VERSION}')
+        about.setStyleSheet('font-weight:700; font-size:16px;')
         cl3.addWidget(about)
+        self.upd_status = QLabel('')
+        self.upd_status.setObjectName('muted')
+        cl3.addWidget(self.upd_status)
+        self.btn_check_update = QPushButton('تحقق من التحديث')
+        self.btn_check_update.clicked.connect(self.on_update_button)
+        cl3.addWidget(self.btn_check_update)
         btn_reset = QPushButton('مسح بيانات الإحصائيات والمحفوظات')
         btn_reset.setObjectName('danger')
         btn_reset.clicked.connect(self.clear_user_data)
@@ -1408,7 +1738,7 @@ class Main(QMainWindow):
         self.render_page()
 
     def clear_user_data(self):
-        answer = QMessageBox.question(self, 'تأكيد', 'هيتم مسح الإحصائيات والمحفوظات والورد والأذكار. متأكد؟')
+        answer = QMessageBox.question(self, 'تأكيد', 'مسح الإحصائيات والمحفوظات والورد والأذكار؟')
         if answer != QMessageBox.StandardButton.Yes:
             return
         for key in ('days', 'bookmarks', 'adhkar', 'wird_count', 'wird_next', 'wird_day'):
@@ -1418,6 +1748,82 @@ class Main(QMainWindow):
     def apply_theme(self):
         self.setStyleSheet(qss(THEMES[self.theme_name]))
         self.render_page()
+
+    def on_update_button(self):
+        if self.update_info:
+            self.download_update()
+        else:
+            self.check_updates(manual=True)
+
+    def check_updates(self, manual=False):
+        if self.update_busy:
+            return
+        self.update_busy = True
+        if manual:
+            self.upd_status.setText('جارٍ التحقق…')
+        req = QNetworkRequest(QUrl(f'{UPDATE_MANIFEST}?t={int(time.time())}'))
+        req.setAttribute(QNetworkRequest.Attribute.CacheLoadControlAttribute,
+                         QNetworkRequest.CacheLoadControl.AlwaysNetwork)
+        reply = self.nam.get(req)
+        reply.finished.connect(lambda: self._update_checked(reply, manual))
+
+    def _update_checked(self, reply, manual):
+        self.update_busy = False
+        ok = reply.error() == QNetworkReply.NetworkError.NoError
+        data = bytes(reply.readAll()) if ok else b''
+        reply.deleteLater()
+        try:
+            info = json.loads(data.decode('utf-8')).get('desktop') if data else None
+        except (ValueError, AttributeError):
+            info = None
+        platform_key = 'windows' if sys.platform.startswith('win') else 'linux'
+        url = (info or {}).get(platform_key)
+        newer = bool(info and url and version_tuple(info.get('version')) > version_tuple(APP_VERSION))
+        if newer:
+            self.update_info = (info['version'], url)
+            self.update_banner_label.setText(f'يتوفر تحديث {info["version"]}')
+            self.update_banner.show()
+            self.upd_status.setText(f'الإصدار {info["version"]} متاح')
+            self.btn_check_update.setText('تحميل التحديث')
+            return
+        self.update_info = None
+        self.update_banner.hide()
+        self.btn_check_update.setText('تحقق من التحديث')
+        if manual:
+            self.upd_status.setText('أنت على أحدث نسخة' if ok else 'تعذّر الاتصال بالمستودع')
+
+    def download_update(self):
+        version, url = self.update_info
+        target_dir = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DownloadLocation)
+                          or Path.home() / 'Downloads')
+        target_dir.mkdir(parents=True, exist_ok=True)
+        self.upd_target = target_dir / url.rsplit('/', 1)[-1]
+        req = QNetworkRequest(QUrl(url))
+        req.setAttribute(QNetworkRequest.Attribute.RedirectPolicyAttribute,
+                         QNetworkRequest.RedirectPolicy.NoLessSafeRedirectPolicy)
+        reply = self.nam.get(req)
+        reply.downloadProgress.connect(self._update_progress)
+        reply.finished.connect(lambda: self._update_downloaded(reply))
+        self.upd_status.setText('جارٍ التنزيل…')
+        self.btn_check_update.setEnabled(False)
+
+    def _update_progress(self, got, total):
+        if total > 0:
+            self.upd_status.setText(f'جارٍ التنزيل… {got * 100 // total}%')
+
+    def _update_downloaded(self, reply):
+        self.btn_check_update.setEnabled(True)
+        ok = reply.error() == QNetworkReply.NetworkError.NoError
+        data = bytes(reply.readAll()) if ok else b''
+        reply.deleteLater()
+        if len(data) < 1_000_000:
+            self.upd_status.setText('تعذّر التنزيل')
+            return
+        self.upd_target.write_bytes(data)
+        if not sys.platform.startswith('win'):
+            self.upd_target.chmod(0o755)
+        self.upd_status.setText(f'تم التنزيل: {self.upd_target}')
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.upd_target.parent)))
 
     def closeEvent(self, event):  # noqa: N802
         self.settings.setValue('geometry', self.saveGeometry())
@@ -1455,6 +1861,7 @@ def run_audiotest(app, win):
     import json as _json
     results = {}
     cases = [('hafs', 'quran-simple', 0), ('warsh', 'warsh', 1)]
+    win.engine.allow_null = True  # بيئات بدون كارت صوت (CI): يتقدم الوقت بالساعة ويتحقق من فك الملف
     state = {'i': 0, 'started': 0.0}
 
     def finish(ok):
@@ -1478,14 +1885,15 @@ def run_audiotest(app, win):
         poll(name)
 
     def poll(name):
-        pos = win.player.position()
+        pos = win.engine.position_ms()
         err = win.play_status.text()
         if pos > 1500:
-            results[name] = {'ok': True, 'position_ms': pos, 'status': win.play_status.text()}
+            results[name] = {'ok': True, 'position_ms': pos, 'status': win.play_status.text(),
+                             'device': 'null' if win.engine.null_mode else 'system'}
             state['i'] += 1
             QTimer.singleShot(300, next_case)
         elif time.monotonic() - state['started'] > 25:
-            results[name] = {'ok': False, 'position_ms': pos, 'status': err, 'error': str(win.player.errorString())}
+            results[name] = {'ok': False, 'position_ms': pos, 'status': err, 'error': win.engine.error}
             state['i'] += 1
             QTimer.singleShot(300, next_case)
         else:
