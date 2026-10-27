@@ -28,7 +28,7 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = 'Mushaf'
-APP_VERSION = '4.0.4'  # محتوى مطابق لتطبيق الأندرويد 1.3.1
+APP_VERSION = '4.0.5'  # محتوى مطابق لتطبيق الأندرويد 1.3.1
 
 if getattr(sys, 'frozen', False):
     BASE = Path(getattr(sys, '_MEIPASS', Path(sys.executable).parent))
@@ -1836,6 +1836,17 @@ class Main(QMainWindow):
         super().closeEvent(event)
 
 
+def _hard_exit(code):
+    """إنهاء وضع الاختبار بعد طباعة النتيجة. على ويندوز TerminateProcess يتجاوز انهيار تحرير المكتبات وقت الإغلاق."""
+    sys.stdout.flush()
+    sys.stderr.flush()
+    if sys.platform.startswith('win'):
+        import ctypes
+        k32 = ctypes.windll.kernel32
+        k32.TerminateProcess(k32.GetCurrentProcess(), code)
+    os._exit(code)
+
+
 def run_selftest(app, win):
     """وضع الاختبار: يتأكد إن الصفحة اتعرضت والقوائم اتملت، ويطبع النتيجة ويقفل فوراً."""
     def finish(ok, info):
@@ -1843,7 +1854,7 @@ def run_selftest(app, win):
         try:
             print(_json.dumps({'ok': ok, **info}), flush=True)
         finally:
-            os._exit(0 if ok else 1)
+            _hard_exit(0 if ok else 1)
 
     def check():
         text = win.browser.toPlainText()
@@ -1874,7 +1885,7 @@ def run_audiotest(app, win):
         try:
             print(_json.dumps({'ok': ok, **results}), flush=True)
         finally:
-            os._exit(0 if ok else 1)
+            _hard_exit(0 if ok else 1)
 
     def next_case():
         if state['i'] >= len(cases):
