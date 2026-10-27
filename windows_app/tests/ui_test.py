@@ -5,6 +5,11 @@ import time
 import traceback
 from pathlib import Path
 
+# Windows CI قد يختار cp1252 افتراضيًا، بينما سجل الاختبار يحتوي نصًا عربيًا.
+for stream in (sys.stdout, sys.stderr):
+    if hasattr(stream, 'reconfigure'):
+        stream.reconfigure(encoding='utf-8', errors='backslashreplace')
+
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 HERE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(HERE))
