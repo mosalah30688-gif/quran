@@ -23,7 +23,7 @@ class UpdateSecurityTests(unittest.TestCase):
         self.assertFalse(verify_update_manifest(self.manifest, self.key))
 
     def test_modified_asset_is_rejected(self):
-        self.manifest["assets"] = {"installer": {"url": "https://example.invalid/bad.exe"}}
+        self.manifest["assets"] = {"portable": {"url": "https://example.invalid/bad.zip"}}
         self.assertFalse(verify_update_manifest(self.manifest, self.key))
 
 

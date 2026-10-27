@@ -21,6 +21,7 @@ from PySide6.QtGui import QFontDatabase  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
 import main as M  # noqa: E402
+from runtime import is_portable  # noqa: E402
 
 app = QApplication([])
 app.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
@@ -287,7 +288,7 @@ try:
     win.resize(1300, 820)
     app.processEvents()
     check('expanded sidebar on wide window', win.sidebar.width() == 228)
-    check('portable test mode', M.is_portable())
+    check('portable test mode', is_portable())
     shot('settings')
     log('DONE')
 except Exception:

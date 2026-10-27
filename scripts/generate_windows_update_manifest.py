@@ -32,7 +32,6 @@ def asset(path: Path, base_url: str) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--version", required=True)
-    parser.add_argument("--installer", required=True, type=Path)
     parser.add_argument("--portable", required=True, type=Path)
     parser.add_argument("--base-url", required=True)
     parser.add_argument("--notes", default="تحديث جديد لسراج على Windows.")
@@ -45,9 +44,8 @@ def main() -> int:
     args = parser.parse_args()
     if not args.signing_seed:
         parser.error("WINDOWS_UPDATE_SIGNING_SEED is required")
-    for path in (args.installer, args.portable):
-        if not path.is_file():
-            parser.error(f"missing artifact: {path}")
+    if not args.portable.is_file():
+        parser.error(f"missing artifact: {args.portable}")
     manifest = {
         "schema": 1,
         "product": "siraj-quran-windows",
@@ -58,7 +56,6 @@ def main() -> int:
         "minimum_windows": "10.0.17763",
         "release_notes": args.notes,
         "assets": {
-            "installer": asset(args.installer, args.base_url),
             "portable": asset(args.portable, args.base_url),
         },
     }

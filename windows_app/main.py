@@ -2,7 +2,7 @@
 """سراج — قرآن كريم لنظام Windows.
 
 إعادة بناء مستقلة لويندوز تحافظ على خصائص تطبيق Android مع واجهة Qt متجاوبة،
-ونسخة مثبّتة ونسخة محمولة حقيقية.
+وتُوزَّع كنسخة Portable حقيقية فقط بلا مثبّت.
 تشغيل التطوير: python main.py
 اختبار سريع:   python main.py --selftest
 """
@@ -35,12 +35,12 @@ from PySide6.QtWidgets import (
 )
 
 try:
-    from .runtime import bundle_root, cache_dir, create_settings, is_portable, mode_label
+    from .runtime import bundle_root, cache_dir, create_settings, mode_label
     from .update_security import verify_update_manifest
     from .version import APP_DESCRIPTION_AR, APP_NAME_AR, APP_VERSION, PUBLISHER
     from .widgets import FlowLayout, IndexPopup
 except ImportError:  # تشغيل الملف مباشرة أثناء التطوير وداخل PyInstaller
-    from runtime import bundle_root, cache_dir, create_settings, is_portable, mode_label
+    from runtime import bundle_root, cache_dir, create_settings, mode_label
     from update_security import verify_update_manifest
     from version import APP_DESCRIPTION_AR, APP_NAME_AR, APP_VERSION, PUBLISHER
     from widgets import FlowLayout, IndexPopup
@@ -2751,8 +2751,8 @@ class Main(QMainWindow):
             and info.get('available') is True
             and is_newer_version(info.get('version'))
         )
-        asset_key = 'portable' if is_portable() else 'installer'
-        asset = (info or {}).get('assets', {}).get(asset_key) if valid else None
+        # Windows يُوزَّع كنسخة Portable فقط؛ لا ننزّل أو نشغّل أي مثبّت.
+        asset = (info or {}).get('assets', {}).get('portable') if valid else None
         if not isinstance(asset, dict):
             valid = False
         else:
@@ -2799,8 +2799,7 @@ class Main(QMainWindow):
         url = asset['url']
         raw_name = asset.get('file_name') or url.split('?', 1)[0].rsplit('/', 1)[-1]
         file_name = Path(raw_name).name
-        allowed = ('.exe', '.zip')
-        if not file_name.lower().endswith(allowed):
+        if not file_name.lower().endswith('.zip'):
             self.upd_status.setText('رفض ملف تحديث بصيغة غير معتمدة')
             return
         target_dir = cache_dir('updates')
@@ -2870,46 +2869,28 @@ class Main(QMainWindow):
     def _offer_install_update(self):
         if not self.upd_target or not self.upd_target.exists():
             return
-        if is_portable() and self.upd_target.suffix.lower() == '.zip':
-            helper = Path(sys.executable).resolve().parent / 'SirajPortableUpdater.exe'
-            if helper.exists() and getattr(sys, 'frozen', False):
-                answer = QMessageBox.question(
-                    self,
-                    'تحديث سراج المحمول',
-                    'تم التحقق من التحديث. هل تريد إغلاق سراج وتطبيقه الآن؟',
-                )
-                if answer == QMessageBox.StandardButton.Yes:
-                    temp_helper = Path(tempfile.gettempdir()) / f'SirajPortableUpdater-{os.getpid()}.exe'
-                    shutil.copy2(helper, temp_helper)
-                    subprocess.Popen([
-                        str(temp_helper), '--archive', str(self.upd_target), '--target', str(Path(sys.executable).parent),
-                        '--pid', str(os.getpid()), '--restart', Path(sys.executable).name,
-                    ], close_fds=True)
-                    QApplication.quit()
-                return
-            QMessageBox.information(
+        helper = Path(sys.executable).resolve().parent / 'SirajPortableUpdater.exe'
+        if helper.exists() and getattr(sys, 'frozen', False):
+            answer = QMessageBox.question(
                 self,
-                'التحديث جاهز',
-                'تم تنزيل النسخة المحمولة والتحقق منها. افتح المجلد لفكها بجوار نسختك الحالية.',
+                'تحديث سراج المحمول',
+                'تم التحقق من التحديث. هل تريد إغلاق سراج وتطبيقه الآن؟',
             )
-            QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.upd_target.parent)))
+            if answer == QMessageBox.StandardButton.Yes:
+                temp_helper = Path(tempfile.gettempdir()) / f'SirajPortableUpdater-{os.getpid()}.exe'
+                shutil.copy2(helper, temp_helper)
+                subprocess.Popen([
+                    str(temp_helper), '--archive', str(self.upd_target), '--target', str(Path(sys.executable).parent),
+                    '--pid', str(os.getpid()), '--restart', Path(sys.executable).name,
+                ], close_fds=True)
+                QApplication.quit()
             return
-
-        answer = QMessageBox.question(
+        QMessageBox.information(
             self,
-            'تحديث سراج',
-            'تم تنزيل المثبّت والتحقق من بصمته. هل تريد بدء الترقية الآن؟\n'
-            'ستُحفظ العلامات والتظليلات والصوتيات المحمّلة.',
+            'التحديث جاهز',
+            'تم تنزيل النسخة المحمولة والتحقق منها. افتح المجلد لفكها بجوار نسختك الحالية.',
         )
-        if answer != QMessageBox.StandardButton.Yes:
-            return
-        try:
-            subprocess.Popen([
-                str(self.upd_target), '/SILENT', '/CLOSEAPPLICATIONS', '/RESTARTAPPLICATIONS'
-            ], close_fds=True)
-            QApplication.quit()
-        except OSError as exc:
-            self.upd_status.setText(f'تعذّر تشغيل المثبّت: {exc}')
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.upd_target.parent)))
 
     def closeEvent(self, event):  # noqa: N802
         self.settings.setValue('geometry', self.saveGeometry())
@@ -3006,14 +2987,37 @@ def run_audiotest(app, win):
     QTimer.singleShot(120000, lambda: finish(False))
 
 
+def configure_runtime_streams(log_path=None):
+    """يوفر stdout/stderr عند التشغيل المزدوج لملف PyInstaller ذي الواجهة الرسومية.
+
+    في وضع windowed يعيد PyInstaller القيمتين None عند التشغيل من Explorer؛ لذلك
+    كان faulthandler يفشل قبل إنشاء QApplication. نكتب التشخيص داخل UserData بدلًا
+    من الاعتماد على وجود نافذة Console.
+    """
+    if sys.stderr is None:
+        try:
+            path = Path(log_path) if log_path else cache_dir('logs') / 'siraj-startup.log'
+            path.parent.mkdir(parents=True, exist_ok=True)
+            sys.stderr = path.open('a', encoding='utf-8', buffering=1)
+        except OSError:
+            sys.stderr = open(os.devnull, 'w', encoding='utf-8')
+    if sys.stdout is None:
+        sys.stdout = sys.stderr
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, 'reconfigure'):
+            stream.reconfigure(encoding='utf-8', errors='replace')
+    return sys.stderr
+
+
 def main():
     import faulthandler
-    faulthandler.enable()  # يطبع مكان الانهيار لو حصل انهيار أصلي (لتشخيص ويندوز)
+    diagnostic_stream = configure_runtime_streams()
+    try:
+        faulthandler.enable(file=diagnostic_stream)
+    except (RuntimeError, OSError):
+        pass
     if '--selftest' in sys.argv:
         print('stage: start', file=sys.stderr, flush=True)
-    for stream in (sys.stdout, sys.stderr):  # الكونسول على ويندوز cp1252: ما نطبعش عربي بدون تحويل
-        if stream is not None and hasattr(stream, 'reconfigure'):
-            stream.reconfigure(encoding='utf-8', errors='replace')
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
     app.setApplicationDisplayName(APP_NAME_AR)

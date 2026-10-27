@@ -28,12 +28,12 @@ npm run android:sync
 - الإصدار الأول: `1.0.0`
 - Windows 10/11 x64
 
-النواتج:
+الناتج:
 
-- مثبّت Inno Setup حديث per-user.
-- نسخة Portable حقيقية تحفظ بياناتها بجوار البرنامج.
+- نسخة Windows Portable فقط؛ تُفك بالكامل ويُشغّل `Siraj.exe` بلا تثبيت أو صلاحية مدير.
+- تحفظ بياناتها في `UserData` بجوار البرنامج ولا تستخدم Registry للإعدادات.
 - تحديث مرتبط بـ GitHub Releases مع توقيع Manifest عبر Ed25519 وفحص الحجم وSHA-256.
-- توقيع Authenticode إلزامي للإصدارات المستقرة.
+- توقيع Authenticode لملفات EXE إلزامي للإصدارات المستقرة.
 
 راجع [`windows_app/README.md`](windows_app/README.md) للتشغيل والبناء والتفاصيل.
 

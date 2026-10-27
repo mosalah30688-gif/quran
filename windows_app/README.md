@@ -41,9 +41,9 @@ $env:QT_QPA_PLATFORM = "offscreen"
 .venv\Scripts\python windows_app\tests\ui_test.py
 ```
 
-## بناء Windows
+## بناء Windows Portable
 
-يتطلب Python 3.13 وInno Setup 6 و7-Zip:
+يتطلب Python 3.13 و7-Zip فقط؛ لا يُبنى أي مثبّت:
 
 ```powershell
 windows_app\packaging\build_windows.ps1
@@ -51,15 +51,16 @@ windows_app\packaging\build_windows.ps1
 
 النواتج غير المتتبعة داخل Git:
 
-- `windows_app/release/Siraj-Quran-Setup-X.Y.Z-x64.exe`
 - `windows_app/release/Siraj-Quran-X.Y.Z-windows-portable-x64.zip`
 - `windows_app/release/SHA256SUMS.txt`
+- ويضيف CI ملف `SBOM.cdx.json`.
 
-## المثبّت والنسخة المحمولة
+## النسخة المحمولة
 
-- المثبّت per-user داخل `%LOCALAPPDATA%\Programs\Siraj` ولا يحتاج صلاحية مدير.
-- النسخة المحمولة تحتوي `portable.flag` وتحفظ كل شيء في `UserData` بجوار البرنامج.
-- مساعد `SirajPortableUpdater.exe` يحدّث النسخة المحمولة مع إبقاء `UserData` والرجوع إلى النسخة السابقة عند فشل الاستبدال.
+- فك ZIP كاملًا ثم شغّل `Siraj.exe`؛ لا تحتاج إلى تثبيت أو صلاحية مدير.
+- تحتوي `portable.flag` وتحفظ كل شيء في `UserData` بجوار البرنامج، ولا تستخدم Registry للإعدادات.
+- مساعد `SirajPortableUpdater.exe` يحدّثها مع إبقاء `UserData` والرجوع إلى النسخة السابقة عند فشل الاستبدال.
+- يختبر CI التشغيل العادي بلا Console كما لو نقر المستخدم الملف من Explorer، بالإضافة إلى self-test من الملف المضغوط.
 
 ## التحديث
 
@@ -69,7 +70,7 @@ windows_app\packaging\build_windows.ps1
 update/windows/stable.json
 ```
 
-ويتحقق من توقيع Manifest عبر Ed25519، ثم المنتج والإصدار والحجم وSHA-256 قبل تشغيل أي ملف. المثبّت المستقر يجب توقيعه أيضًا بـ Authenticode؛ GitHub Actions يمنع نشر Tag مستقر إن لم تُضبط الأسرار:
+ويتحقق من توقيع Manifest عبر Ed25519، ثم المنتج والإصدار والحجم وSHA-256 قبل تطبيق ZIP المحمول. يجب توقيع `Siraj.exe` ومساعد التحديث بـ Authenticode في الإصدار المستقر؛ GitHub Actions يمنع نشر Tag مستقر إن لم تُضبط الأسرار:
 
 - `WINDOWS_SIGNING_PFX_BASE64`
 - `WINDOWS_SIGNING_PFX_PASSWORD`
