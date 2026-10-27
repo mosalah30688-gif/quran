@@ -1,0 +1,59 @@
+name: "Legacy Mushaf Linux AppImage"
+
+# مسار Linux السابق مستقل عن خطة سراج Windows الجديدة.
+on:
+  push:
+    tags: ['mushaf-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: System libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfuse2 libegl1 libxkbcommon0 libxkbcommon-x11-0 libxcb-cursor0 libgl1 libnss3 libxss1 libasound2t64 libpulse0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0 libxcb-xkb1 libxcb-xinerama0 libxcb-randr0 libxkbcommon-x11-0 libxcb-glx0
+      - name: Version
+        id: ver
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/mushaf-v* ]]; then
+            echo "version=${GITHUB_REF_NAME#mushaf-v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=dev-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+      - name: UI test (offscreen)
+        working-directory: mushaf_app
+        env:
+          QT_QPA_PLATFORM: offscreen
+          SHOTS: ${{ runner.temp }}/shots
+        run: |
+          python3 -m pip install -q -r requirements.txt
+          python3 tests/ui_test.py
+      - name: Build AppImage
+        working-directory: mushaf_app
+        run: bash ./build_appimage.sh "${{ steps.ver.outputs.version }}"
+      - name: Self-test AppImage
+        working-directory: mushaf_app
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          ./Mushaf-${{ steps.ver.outputs.version }}-x86_64.AppImage --appimage-extract-and-run --selftest
+          ./Mushaf-${{ steps.ver.outputs.version }}-x86_64.AppImage --appimage-extract-and-run --audiotest
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          path: mushaf_app/Mushaf-*.AppImage
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/mushaf-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: mushaf_app/Mushaf-*.AppImage

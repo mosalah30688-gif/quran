@@ -7,3 +7,11 @@ android/local.properties
 android/captures/
 .DS_Store
 *.log
+.venv/
+windows_app/build/
+windows_app/dist/
+windows_app/updater-dist/
+windows_app/release/
+windows_app/*.spec
+windows_app/UserData/
+__pycache__/
