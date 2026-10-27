@@ -40,7 +40,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r windows_app/requirements.txt
-          python -m pip install pip-audit
+          python -m pip install pip-audit cyclonedx-bom==7.5.0
           python -m pip_audit -r windows_app/requirements.txt --progress-spinner off
 
       - name: Install Inno Setup
@@ -51,10 +51,14 @@ jobs:
         shell: pwsh
         env:
           WINDOWS_SIGNING_PFX_BASE64: ${{ secrets.WINDOWS_SIGNING_PFX_BASE64 }}
+          WINDOWS_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
           WINDOWS_UPDATE_SIGNING_SEED: ${{ secrets.WINDOWS_UPDATE_SIGNING_SEED }}
         run: |
           $IsRelease = "${{ github.ref_type }}" -eq "tag"
-          if ($IsRelease -and [string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_PFX_BASE64)) {
+          if ($IsRelease -and (
+              [string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_PFX_BASE64) -or
+              [string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_PFX_PASSWORD)
+          )) {
             throw "Stable releases require WINDOWS_SIGNING_PFX_BASE64 and WINDOWS_SIGNING_PFX_PASSWORD"
           }
           if ($IsRelease -and [string]::IsNullOrWhiteSpace($env:WINDOWS_UPDATE_SIGNING_SEED)) {
@@ -96,6 +100,18 @@ jobs:
           SIRAJ_SIGN_CERT_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
         run: windows_app\packaging\build_windows.ps1
 
+      - name: Generate CycloneDX SBOM
+        shell: pwsh
+        run: |
+          cyclonedx-py requirements windows_app/requirements.txt `
+            --output-format JSON `
+            --output-reproducible `
+            --output-file windows_app/release/SBOM.cdx.json
+          $ReleaseDirs = @(Get-ChildItem windows_app/release -Directory)
+          if ($ReleaseDirs.Count -ne 0) { throw "Release directory must contain final files only" }
+          $ReleaseFiles = @(Get-ChildItem windows_app/release -File)
+          if ($ReleaseFiles.Count -ne 4) { throw "Expected installer, portable ZIP, checksums and SBOM" }
+
       - name: Upload UI screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -111,6 +127,7 @@ jobs:
             windows_app/release/*.exe
             windows_app/release/*.zip
             windows_app/release/SHA256SUMS.txt
+            windows_app/release/SBOM.cdx.json
 
       - name: Upload tested Windows artifacts
         uses: actions/upload-artifact@v4

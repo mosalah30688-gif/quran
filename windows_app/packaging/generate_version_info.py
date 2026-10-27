@@ -1,4 +1,4 @@
-"""يولّد Windows VERSIONINFO من windows_app/version.py."""
+"""يولّد Windows VERSIONINFO للتطبيق ولمساعد تحديث Portable."""
 from __future__ import annotations
 
 import importlib.util
@@ -12,7 +12,10 @@ parts = [int(x) for x in module.APP_VERSION.split(".")]
 while len(parts) < 4:
     parts.append(0)
 version_tuple = tuple(parts[:4])
-text = f"""VSVersionInfo(
+
+
+def render(*, description: str, internal_name: str, original_filename: str) -> str:
+    return f"""VSVersionInfo(
   ffi=FixedFileInfo(
     filevers={version_tuple!r},
     prodvers={version_tuple!r},
@@ -28,11 +31,11 @@ text = f"""VSVersionInfo(
       StringTable(
         '040104B0',
         [StringStruct('CompanyName', '{module.PUBLISHER}'),
-         StringStruct('FileDescription', '{module.APP_NAME_AR} — {module.APP_DESCRIPTION_AR}'),
+         StringStruct('FileDescription', '{description}'),
          StringStruct('FileVersion', '{module.APP_VERSION}'),
-         StringStruct('InternalName', 'Siraj'),
+         StringStruct('InternalName', '{internal_name}'),
          StringStruct('LegalCopyright', 'Copyright © 2026 {module.PUBLISHER}'),
-         StringStruct('OriginalFilename', 'Siraj.exe'),
+         StringStruct('OriginalFilename', '{original_filename}'),
          StringStruct('ProductName', '{module.APP_NAME_AR} - {module.APP_DESCRIPTION_AR}'),
          StringStruct('ProductVersion', '{module.APP_VERSION}')])
     ]),
@@ -40,5 +43,23 @@ text = f"""VSVersionInfo(
   ]
 )
 """
-(ROOT / "packaging" / "version_info.txt").write_text(text, encoding="utf-8")
+
+
+packaging = ROOT / "packaging"
+(packaging / "version_info.txt").write_text(
+    render(
+        description=f"{module.APP_NAME_AR} — {module.APP_DESCRIPTION_AR}",
+        internal_name="Siraj",
+        original_filename="Siraj.exe",
+    ),
+    encoding="utf-8",
+)
+(packaging / "updater_version_info.txt").write_text(
+    render(
+        description=f"مساعد تحديث {module.APP_NAME_AR} Portable",
+        internal_name="SirajPortableUpdater",
+        original_filename="SirajPortableUpdater.exe",
+    ),
+    encoding="utf-8",
+)
 print(module.APP_VERSION)

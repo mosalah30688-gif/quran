@@ -92,6 +92,22 @@ Push-Location $Release
 Pop-Location
 if ($LASTEXITCODE -ne 0) { throw "Portable ZIP creation failed" }
 
+# اختبر الملف المضغوط نفسه في مجلد نظيف، لا مجلد PyInstaller الأصلي فقط.
+$PortableSmoke = Join-Path $Build "portable-zip-smoke"
+New-Item -ItemType Directory -Path $PortableSmoke -Force | Out-Null
+& $SevenZip x -y "-o$PortableSmoke" $PortableZip | Out-Host
+if ($LASTEXITCODE -ne 0) { throw "Portable ZIP extraction smoke test failed" }
+$PortableSmokeExe = Join-Path $PortableSmoke "$PortableName\Siraj.exe"
+$PortableSmokeFlag = Join-Path $PortableSmoke "$PortableName\portable.flag"
+if (-not (Test-Path $PortableSmokeExe) -or -not (Test-Path $PortableSmokeFlag)) {
+    throw "Portable ZIP is missing Siraj.exe or portable.flag"
+}
+& $PortableSmokeExe --selftest
+if ($LASTEXITCODE -ne 0) { throw "Portable ZIP self-test failed" }
+Remove-Item $PortableSmoke -Recurse -Force
+# لا نرفع المجلد غير المضغوط كأثر إضافي ولا نمرره خطأً إلى GitHub Release.
+Remove-Item $PortableDir -Recurse -Force
+
 $IsccCandidates = @(
     "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
     "$env:ProgramFiles\Inno Setup 6\ISCC.exe"
@@ -119,6 +135,23 @@ if ($SigningEnabled) {
     & $SignTool verify /pa /v $Installer | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "Installer signature verification failed" }
 }
+
+# تثبيت صامت فعلي في مسار مؤقت ثم تشغيل النسخة المثبّتة وإلغاء تثبيتها.
+$InstallerSmoke = Join-Path $Build "installer-smoke"
+& $Installer /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /NOICONS "/DIR=$InstallerSmoke" | Out-Host
+if ($LASTEXITCODE -ne 0) { throw "Installer smoke installation failed" }
+$InstalledExe = Join-Path $InstallerSmoke "Siraj.exe"
+if (-not (Test-Path $InstalledExe)) { throw "Installer did not install Siraj.exe" }
+& $InstalledExe --selftest
+if ($LASTEXITCODE -ne 0) { throw "Installed application self-test failed" }
+$Uninstaller = Join-Path $InstallerSmoke "unins000.exe"
+if (-not (Test-Path $Uninstaller)) { throw "Installer did not create an uninstaller" }
+& $Uninstaller /VERYSILENT /SUPPRESSMSGBOXES /NORESTART | Out-Host
+if ($LASTEXITCODE -ne 0) { throw "Uninstaller smoke test failed" }
+for ($Attempt = 0; $Attempt -lt 20 -and (Test-Path $InstalledExe); $Attempt++) {
+    Start-Sleep -Milliseconds 250
+}
+if (Test-Path $InstalledExe) { throw "Uninstaller left Siraj.exe behind" }
 
 $Artifacts = @($Installer, $PortableZip)
 $Lines = foreach ($Artifact in $Artifacts) {

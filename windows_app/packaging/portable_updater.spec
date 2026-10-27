@@ -32,7 +32,7 @@ exe = EXE(
     console=False,
     disable_windowed_traceback=False,
     icon=str(ROOT / 'assets' / 'siraj.ico'),
-    version=str(ROOT / 'packaging' / 'version_info.txt'),
+    version=str(ROOT / 'packaging' / 'updater_version_info.txt'),
     uac_admin=False,
     uac_uiaccess=False,
 )
