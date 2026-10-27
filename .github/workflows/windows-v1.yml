@@ -3,6 +3,8 @@ name: "Siraj Windows — build, test and release"
 on:
   workflow_dispatch:
   push:
+    branches:
+      - "windows-v1-rebuild"
     tags:
       - "siraj-windows-v*"
 
