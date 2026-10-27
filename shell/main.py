@@ -162,16 +162,66 @@ class Window(QMainWindow):
         super().closeEvent(event)
 
 
+SELFTEST_JS = '''(() => {
+  const raw = document.body ? (document.body.innerText || '') : '';
+  const t = raw.replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '').replace(/\u0671/g, '\u0627');
+  const sel = document.querySelector('#setRiwaya');
+  return JSON.stringify({
+    title: document.title,
+    riwayaOptions: sel ? sel.options.length : 0,
+    textLength: raw.length,
+    hasMushafText: t.includes('الفاتح') || raw.includes('﴿'),
+  });
+})()'''
+
+
+def run_selftest(app, win):
+    """وضع الاختبار: بيفتح الواجهة، ويتأكد إن المحتوى اتحمّل، ويطبع النتيجة ويقفل."""
+    from PySide6.QtCore import QTimer
+    import json as _json
+
+    state = {'done': False}
+
+    def finish(ok, info):
+        if state['done']:
+            return
+        state['done'] = True
+        print(_json.dumps({'ok': ok, **info}, ensure_ascii=False), flush=True)
+        app.exit(0 if ok else 1)
+
+    def check():
+        def got(raw):
+            try:
+                info = _json.loads(raw or '{}')
+            except ValueError:
+                info = {}
+            ok = info.get('riwayaOptions', 0) >= 7 and info.get('textLength', 0) > 200 and info.get('hasMushafText')
+            finish(bool(ok), info)
+        win.view.page().runJavaScript(SELFTEST_JS, got)
+
+    def on_load(ok):
+        if ok:
+            QTimer.singleShot(5000, check)  # وقت للبيانات (JSON) تتحمّل بعد الصفحة
+        else:
+            finish(False, {'error': 'loadFinished=false'})
+
+    win.view.loadFinished.connect(on_load)
+    QTimer.singleShot(120000, lambda: finish(False, {'error': 'timeout'}))
+
+
 def main():
     if not WWW.exists():
         print(f'مجلد الواجهة غير موجود: {WWW}', file=sys.stderr)
         return 1
+    selftest = '--selftest' in sys.argv or os.environ.get('MUSHAF_SELFTEST') == '1'
     port = start_server()
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
     app.setOrganizationName('mosalah30688')
     win = Window(f'http://127.0.0.1:{port}/index.html?desktop=1')
     win.show()
+    if selftest:
+        run_selftest(app, win)
     return app.exec()
 
 
