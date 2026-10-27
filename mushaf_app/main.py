@@ -8,6 +8,7 @@
 import datetime
 import array
 import hashlib
+from collections import deque
 import html
 import json
 import os
@@ -16,19 +17,20 @@ import sys
 import time
 from pathlib import Path
 
-from PySide6.QtCore import QByteArray, QObject, QPropertyAnimation, QSettings, QSize, QStandardPaths, Qt, QTimer, QUrl, Signal
+from PySide6.QtCore import QByteArray, QObject, QPropertyAnimation, QRect, QSettings, QSize, QStandardPaths, Qt, QTimer, QUrl, Signal
 from PySide6.QtSvg import QSvgRenderer
-from PySide6.QtGui import QAction, QColor, QDesktopServices, QFont, QFontDatabase, QGuiApplication, QIcon, QKeySequence, QPainter, QPixmap, QShortcut
+from PySide6.QtGui import QAction, QColor, QDesktopServices, QFont, QFontDatabase, QGuiApplication, QIcon, QImage, QKeySequence, QPainter, QPen, QPixmap, QShortcut, QTextDocument
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PySide6.QtWidgets import (
     QApplication, QButtonGroup, QCheckBox, QComboBox, QFileDialog, QFormLayout, QFrame,
     QGraphicsOpacityEffect, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem,
-    QMainWindow, QMessageBox, QPushButton, QScrollArea, QSpinBox, QStackedWidget, QTextBrowser,
+    QDialog, QMainWindow, QMessageBox, QProgressBar, QPushButton, QRadioButton, QScrollArea, QSpinBox,
+    QStackedWidget, QTextBrowser,
     QVBoxLayout, QWidget,
 )
 
 APP_NAME = 'Mushaf'
-APP_VERSION = '4.0.5'  # محتوى مطابق لتطبيق الأندرويد 1.3.1
+APP_VERSION = '4.0.6'  # محتوى مطابق لتطبيق الأندرويد 1.3.1
 
 if getattr(sys, 'frozen', False):
     BASE = Path(getattr(sys, '_MEIPASS', Path(sys.executable).parent))
@@ -249,6 +251,60 @@ def svg_icon(name, color='#dff3ea', size=20):
     QSvgRenderer(QByteArray(svg.encode('utf-8'))).render(painter)
     painter.end()
     return QIcon(pm)
+
+
+MEMO_GAPS = [1, 3, 7, 14, 30, 60]  # أيام بين المراجعات: تتباعد كلما أُتقن المقطع
+MEMO_LEVELS = [0, 25, 50, 75, 100]  # نسبة الكلمات المخفية
+
+
+def ayah_audio_url(rid, s, a):
+    folder = EVERY_FOLDER.get(rid)
+    return f'https://everyayah.com/data/{folder}/{s:03d}{a:03d}.mp3' if folder else None
+
+
+def audio_file_name(url):
+    return hashlib.sha1(url.encode('utf-8')).hexdigest()[:20] + '.mp3'
+
+
+def full_refs():
+    return [(s['number'], a) for s in SURAHS for a in range(1, s['numberOfAyahs'] + 1)]
+
+
+def memo_word_hidden(s, a, i, pct):
+    """إخفاء ثابت لكل كلمة: نفس الكلمة تختفي في كل مرة يُعرض فيها المقطع."""
+    if pct >= 100:
+        return True
+    return ((i * 37 + a * 11 + s * 13) % 100) < pct
+
+
+def share_card_image(text, surah_label, ayah_no):
+    """صورة الآية للمشاركة: خط المصحف على خلفية ورقية وإطار ذهبي."""
+    width, pad = 1080, 110
+    doc = QTextDocument()
+    doc.setHtml('<html><body dir="rtl"><div align="center" style="font-family:\'Amiri Quran\'; '
+                'font-size:44pt; line-height:160%; color:#1d1d1b;">' + html.escape(text) + '</div></body></html>')
+    doc.setTextWidth(width - 2 * pad)
+    height = max(900, int(doc.size().height()) + 520)
+    img = QImage(width, height, QImage.Format.Format_ARGB32)
+    img.fill(QColor('#fbf7ec'))
+    p = QPainter(img)
+    p.setRenderHint(QPainter.RenderHint.Antialiasing)
+    p.setPen(QPen(QColor('#b8924a'), 6))
+    p.drawRect(36, 36, width - 72, height - 72)
+    p.setPen(QPen(QColor('#b8924a'), 2))
+    p.drawRect(56, 56, width - 112, height - 112)
+    p.setPen(QColor('#8a6d2f'))
+    p.setFont(QFont('Amiri Quran', 40))
+    p.drawText(QRect(0, 110, width, 110), Qt.AlignmentFlag.AlignCenter, surah_label)
+    p.translate(pad, 260)
+    doc.drawContents(p)
+    p.resetTransform()
+    p.setFont(QFont('Amiri Quran', 34))
+    p.drawText(QRect(0, height - 230, width, 80), Qt.AlignmentFlag.AlignCenter, '﴿ ' + ar(ayah_no) + ' ﴾')
+    p.setFont(QFont('Amiri Quran', 28))
+    p.drawText(QRect(0, height - 150, width, 60), Qt.AlignmentFlag.AlignCenter, 'القرآن الكريم')
+    p.end()
+    return img
 
 
 def _miniaudio():
@@ -481,6 +537,8 @@ class Main(QMainWindow):
         self.update_info = None
         self.update_busy = False
         self.upd_target = None
+        self.queue_list = False
+        self.dl = {'running': False}
         self.queue = []
         self.queue_index = -1
         self.playing = False
@@ -756,6 +814,14 @@ class Main(QMainWindow):
             self.settings.value('tafsir', 'ar.muyassar', type=str)), 0))
         self.tp_book.currentIndexChanged.connect(self.on_tp_book)
         tpl.addWidget(self.tp_book)
+        tools = QHBoxLayout()
+        btn_mn = QPushButton('معاني الكلمات')
+        btn_mn.clicked.connect(self.open_meanings_for_selected)
+        btn_share_ayah = QPushButton('مشاركة الآية')
+        btn_share_ayah.clicked.connect(self.share_selected_ayah)
+        tools.addWidget(btn_mn)
+        tools.addWidget(btn_share_ayah)
+        tpl.addLayout(tools)
         self.tp_browser = QTextBrowser()
         self.tp_browser.setOpenExternalLinks(False)
         tpl.addWidget(self.tp_browser, 1)
@@ -973,11 +1039,15 @@ class Main(QMainWindow):
 
     # ---------- التلاوة ----------
     def audio_queue_for_page(self, start=None):
-        """قائمة ملفات الصفحة (من آية البداية إن وُجدت): ملف لكل آية (حفص) أو لكل سورة (الروايات)."""
-        rid = self.current_reciter()
+        """قائمة ملفات الصفحة (من آية البداية إن وُجدت)."""
         items = self.book.ayahs_on_page(self.page)
         if start is not None:
             items = [it for it in items if (it[0], it[1]) >= start]
+        return self.queue_for_items(items)
+
+    def queue_for_items(self, items):
+        """ملف لكل آية (حفص) أو لكل سورة (الروايات) للآيات المعطاة."""
+        rid = self.current_reciter()
         if self.riwaya_id in RIW_RECITERS:
             entry = next((e for e in RIW_RECITERS[self.riwaya_id] if e[0] == rid), None)
             if entry is None:
@@ -990,10 +1060,12 @@ class Main(QMainWindow):
                 if s not in seen:
                     seen.append(s)
             return [(f'{base}{s:03d}.mp3', (s, None)) for s in seen]
-        folder = EVERY_FOLDER.get(rid)
-        if not folder:
-            return []
-        return [(f'https://everyayah.com/data/{folder}/{s:03d}{a:03d}.mp3', (s, a)) for s, a, _t in items]
+        out = []
+        for s, a, _t in items:
+            url = ayah_audio_url(rid, s, a)
+            if url:
+                out.append((url, (s, a)))
+        return out
 
     def toggle_play(self):
         if self.playing:
@@ -1010,6 +1082,7 @@ class Main(QMainWindow):
         start = (s, a) if s and a else None
         if start is not None and self.book.page_of(s, a) != self.page:
             self.go_page(self.book.page_of(s, a))
+        self.queue_list = False
         self.queue = self.audio_queue_for_page(start)
         if not self.queue:
             self.play_status.setText('لا توجد تلاوة لهذا القارئ')
@@ -1019,7 +1092,7 @@ class Main(QMainWindow):
         self.play_index(0)
 
     def audio_cache_dir(self):
-        base = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.CacheLocation) or str(BASE)
+        base = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppDataLocation) or str(BASE)
         path = Path(base) / 'audio'
         path.mkdir(parents=True, exist_ok=True)
         return path
@@ -1048,7 +1121,7 @@ class Main(QMainWindow):
     def play_index(self, i):
         if i >= len(self.queue):
             # نهاية صفحة: ينتقل للصفحة التالية ويكمل التلاوة
-            if self.playing and self.page < TOTAL_PAGES:
+            if self.playing and not self.queue_list and self.page < TOTAL_PAGES:
                 self._auto_turn = True
                 try:
                     self.go_page(self.page + 1)
@@ -1094,6 +1167,7 @@ class Main(QMainWindow):
         self.play_token += 1
         self.playing = False
         self.queue = []
+        self.queue_list = False
         self.queue_index = -1
         self.highlight = None
         self.engine.stop()
@@ -1392,66 +1466,512 @@ class Main(QMainWindow):
         btn.setText(f'{ar(data["c"][key])} / {ar(maximum)}')
 
     # ---------- وضع الحفظ ----------
+    # ---------- وضع الحفظ ----------
     def build_memo(self):
         w = QWidget()
         lay = QVBoxLayout(w)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(12)
-        lay.addWidget(heading('وضع الحفظ', 'اختر السورة والآيات، وفعّل الإخفاء لتختبر حفظك'))
+        lay.addWidget(heading('وضع الحفظ'))
+        self.memo_shown = set()
+        self.memo_all_hidden = False
         bar = card()
-        bl = QHBoxLayout(bar)
-        bl.setContentsMargins(14, 10, 14, 10)
+        bl = QVBoxLayout(bar)
+        bl.setContentsMargins(14, 12, 14, 12)
+        bl.setSpacing(10)
+        row = QHBoxLayout()
         self.memo_surah = QComboBox()
         for s in SURAHS:
             self.memo_surah.addItem(f'{s["number"]}. {s["name"]}', s['number'])
-        self.memo_from = QSpinBox()
-        self.memo_to = QSpinBox()
-        self.memo_hide = QCheckBox('إخفاء النص للاختبار')
+        self.memo_from = QComboBox()
+        self.memo_to = QComboBox()
+        self.memo_repeat = QComboBox()
+        for n in (1, 3, 5, 10):
+            self.memo_repeat.addItem(ar(n), n)
+        self.memo_repeat.setCurrentIndex(1)
+        self.memo_level = QComboBox()
+        for lv, label in zip(MEMO_LEVELS, ('بدون إخفاء', 'ربع الكلمات', 'نصف الكلمات', 'ثلاثة أرباع', 'كل الكلمات')):
+            self.memo_level.addItem(label, lv)
         self.memo_surah.currentIndexChanged.connect(self.on_memo_surah)
-        for sp in (self.memo_from, self.memo_to):
-            sp.valueChanged.connect(lambda _v: self.render_memo())
-        self.memo_hide.toggled.connect(lambda _c: self.render_memo())
-        bl.addWidget(QLabel('السورة'))
-        bl.addWidget(self.memo_surah, 2)
-        bl.addWidget(QLabel('من آية'))
-        bl.addWidget(self.memo_from)
-        bl.addWidget(QLabel('إلى آية'))
-        bl.addWidget(self.memo_to)
-        bl.addStretch(1)
-        bl.addWidget(self.memo_hide)
+        for cb in (self.memo_from, self.memo_to, self.memo_level):
+            cb.currentIndexChanged.connect(self.on_memo_change)
+        for label, widget in (('السورة', self.memo_surah), ('من آية', self.memo_from), ('إلى آية', self.memo_to),
+                              ('التكرار', self.memo_repeat), ('إخفاء الكلمات', self.memo_level)):
+            row.addWidget(QLabel(label))
+            row.addWidget(widget, 2 if widget is self.memo_surah else 1)
+        bl.addLayout(row)
+        acts = QHBoxLayout()
+        btn_hide = QPushButton('إخفاء/إظهار النص')
+        btn_hide.clicked.connect(self.on_memo_hide)
+        btn_play = QPushButton('تشغيل مع التكرار')
+        btn_play.clicked.connect(self.memo_play)
+        btn_save = QPushButton('حفظت هذا المقطع')
+        btn_save.clicked.connect(self.memo_save_range)
+        for b in (btn_hide, btn_play, btn_save):
+            acts.addWidget(b)
+        acts.addStretch(1)
+        bl.addLayout(acts)
+        self.memo_status = QLabel()
+        self.memo_status.setObjectName('muted')
+        bl.addWidget(self.memo_status)
         lay.addWidget(bar)
+
+        self.memo_review = card()
+        rv = QVBoxLayout(self.memo_review)
+        rv.setContentsMargins(14, 12, 14, 12)
+        rv.setSpacing(8)
+        title = QLabel('مراجعة اليوم')
+        title.setStyleSheet('font-weight:700; font-size:15px;')
+        rv.addWidget(title)
+        self.memo_review_list = QVBoxLayout()
+        rv.addLayout(self.memo_review_list)
+        self.memo_review_note = QLabel()
+        self.memo_review_note.setObjectName('muted')
+        rv.addWidget(self.memo_review_note)
+        lay.addWidget(self.memo_review)
+
         self.memo_browser = QTextBrowser()
+        self.memo_browser.setOpenLinks(False)
+        self.memo_browser.anchorClicked.connect(self.on_memo_anchor)
         lay.addWidget(self.memo_browser, 1)
         self.on_memo_surah(0)
+        self.render_memo_review()
         return w
 
     def on_memo_surah(self, _idx):
         s = self.memo_surah.currentData() or 1
         count = SURAHS[s - 1]['numberOfAyahs']
-        for sp, val in ((self.memo_from, 1), (self.memo_to, count)):
-            sp.blockSignals(True)
-            sp.setRange(1, count)
-            sp.setValue(val)
-            sp.blockSignals(False)
+        for cb, val in ((self.memo_from, 1), (self.memo_to, count)):
+            cb.blockSignals(True)
+            cb.clear()
+            for n in range(1, count + 1):
+                cb.addItem(ar(n), n)
+            cb.setCurrentIndex(val - 1)
+            cb.blockSignals(False)
+        self.on_memo_change()
+
+    def on_memo_change(self, _i=0):
+        self.memo_shown.clear()
         self.render_memo()
 
-    def render_memo(self):
-        if not hasattr(self, 'memo_from'):
-            return
+    def on_memo_hide(self):
+        self.memo_all_hidden = not self.memo_all_hidden
+        self.on_memo_change()
+
+    def memo_range(self):
         s = self.memo_surah.currentData() or 1
-        lo, hi = sorted((self.memo_from.value(), self.memo_to.value()))
-        hide = self.memo_hide.isChecked()
+        lo, hi = sorted((self.memo_from.currentData() or 1, self.memo_to.currentData() or 1))
+        return s, lo, hi
+
+    def set_memo_range(self, s, lo, hi):
+        idx = self.memo_surah.findData(s)
+        self.memo_surah.setCurrentIndex(max(idx, 0))
+        self.memo_from.setCurrentIndex(lo - 1)
+        self.memo_to.setCurrentIndex(hi - 1)
+        self.on_memo_change()
+
+    def render_memo(self):
+        if not hasattr(self, 'memo_browser'):
+            return
+        s, lo, hi = self.memo_range()
+        pct = 100 if self.memo_all_hidden else (self.memo_level.currentData() or 0)
         parts = []
         for a in range(lo, hi + 1):
-            text = AYAH_TEXT.get((s, a), '')
-            if hide:
-                text = ' '.join('•••' for _ in text.split())
-            parts.append(f'{html.escape(text)} <span style="font-size:14pt">﴿{ar(a)}﴾</span> ')
+            words = AYAH_TEXT.get((s, a), '').split()
+            ws = []
+            for i, word in enumerate(words):
+                revealed = (s, a, -1) in self.memo_shown or (s, a, i) in self.memo_shown
+                esc = html.escape(word)
+                if memo_word_hidden(s, a, i, pct) and not revealed:
+                    ws.append(f'<a href="w:{s}:{a}:{i}" style="text-decoration:none;">'
+                              f'<span style="background-color:#d9d2bd; color:#d9d2bd;">{esc}</span></a>')
+                else:
+                    ws.append(esc)
+            parts.append(f'{" ".join(ws)} <a href="a:{s}:{a}" style="text-decoration:none; color:#8a6d2f;">'
+                         f'﴿{ar(a)}﴾</a> ')
         body = ''.join(parts) or 'لا توجد آيات'
         self.memo_browser.setHtml(
-            f'<html><body dir="rtl" style="font-family:\'Amiri Quran\'; font-size:24pt; line-height:200%;">'
+            '<html><body dir="rtl" style="font-family:\'Amiri Quran\'; font-size:24pt; line-height:200%;">'
             f'<p align="center"><b>{html.escape(SURAHS[s - 1]["name"])}</b></p>'
             f'<p align="center" dir="rtl">{body}</p></body></html>')
+
+    def on_memo_anchor(self, url):
+        text = url.toString() if hasattr(url, 'toString') else str(url)
+        parts = text.split(':')
+        try:
+            if parts[0] == 'w':
+                self.memo_shown.add((int(parts[1]), int(parts[2]), int(parts[3])))
+            elif parts[0] == 'a':
+                self.memo_shown.add((int(parts[1]), int(parts[2]), -1))
+            else:
+                return
+        except (ValueError, IndexError):
+            return
+        self.render_memo()
+
+    def memo_progress(self):
+        try:
+            data = json.loads(self.settings.value('memo_progress', '{}', type=str))
+            return data if isinstance(data, dict) else {}
+        except ValueError:
+            return {}
+
+    def save_memo_progress(self, prog):
+        self.settings.setValue('memo_progress', json.dumps(prog, ensure_ascii=False))
+
+    def memo_save_range(self):
+        s, lo, hi = self.memo_range()
+        prog = self.memo_progress()
+        key = f'{s}:{lo}-{hi}'
+        if key in prog:
+            self.memo_status.setText('المقطع موجود في المراجعة')
+        else:
+            tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+            prog[key] = {'s': s, 'from': lo, 'to': hi, 'step': 0, 'due': tomorrow.isoformat()}
+            self.save_memo_progress(prog)
+            self.memo_status.setText('أُضيف المقطع إلى المراجعة')
+        self.render_memo_review()
+
+    def render_memo_review(self):
+        if not hasattr(self, 'memo_review_list'):
+            return
+        while self.memo_review_list.count():
+            item = self.memo_review_list.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        prog = self.memo_progress()
+        today = datetime.date.today().isoformat()
+        items = sorted(prog.items(), key=lambda kv: str(kv[1].get('due', '')))
+        due = [(k, v) for k, v in items if str(v.get('due', '')) <= today]
+        later = len(items) - len(due)
+        for k, v in due:
+            row = QWidget()
+            rl = QHBoxLayout(row)
+            rl.setContentsMargins(0, 0, 0, 0)
+            name = SURAHS[int(v['s']) - 1]['name']
+            rl.addWidget(QLabel(f'{name} · {ar(v["from"])} - {ar(v["to"])}'), 1)
+            for label, act in (('أتقنتها', 'ok'), ('أعيدها', 'again'), ('فتح', 'open')):
+                b = QPushButton(label)
+                b.clicked.connect(lambda _c=False, key=k, a=act: self.memo_review_action(key, a))
+                rl.addWidget(b)
+            self.memo_review_list.addWidget(row)
+        if not items:
+            note = 'لا توجد مقاطع محفوظة'
+        elif not due:
+            note = 'لا توجد مراجعة اليوم'
+        else:
+            note = ''
+        if later:
+            note = (note + ' · ' if note else '') + f'مراجعات قادمة: {ar(later)}'
+        self.memo_review_note.setText(note)
+
+    def memo_review_action(self, key, act):
+        prog = self.memo_progress()
+        item = prog.get(key)
+        if not item:
+            return
+        if act == 'open':
+            self.set_memo_range(int(item['s']), int(item['from']), int(item['to']))
+            return
+        today = datetime.date.today()
+        if act == 'ok':
+            item['step'] = min(len(MEMO_GAPS) - 1, int(item.get('step', 0)) + 1)
+            item['due'] = (today + datetime.timedelta(days=MEMO_GAPS[item['step']])).isoformat()
+        else:
+            item['step'] = 0
+            item['due'] = (today + datetime.timedelta(days=1)).isoformat()
+        self.save_memo_progress(prog)
+        self.render_memo_review()
+
+    def memo_play(self):
+        s, lo, hi = self.memo_range()
+        base = self.queue_for_items([(s, a, None) for a in range(lo, hi + 1)])
+        if not base:
+            self.memo_status.setText('لا توجد تلاوة لهذا القارئ')
+            return
+        if any(label[1] is None for _url, label in base):
+            self.memo_status.setText('لا تتوفر تلاوة مقطعية لهذا القارئ')
+            return
+        repeat = self.memo_repeat.currentData() or 1
+        self.stop_play()
+        self.queue = base * repeat
+        self.queue_list = True
+        self.playing = True
+        self.btn_play.setText('⏸  إيقاف مؤقت')
+        self.memo_status.setText('')
+        self.play_index(0)
+
+    # ---------- مشاركة الآية كصورة ----------
+    def share_selected_ayah(self):
+        if self.sel_ayah is None:
+            return
+        s, a = self.sel_ayah
+        text = AYAH_TEXT.get((s, a), '')
+        if not text:
+            return
+        img = share_card_image(text, SURAHS[s - 1]['name'], a)
+        dlg = QDialog(self)
+        dlg.setWindowTitle('مشاركة الآية')
+        dlg.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        lay = QVBoxLayout(dlg)
+        preview = QLabel()
+        preview.setPixmap(QPixmap.fromImage(img).scaledToWidth(560, Qt.TransformationMode.SmoothTransformation))
+        preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lay.addWidget(preview)
+        status = QLabel()
+        status.setObjectName('muted')
+        lay.addWidget(status)
+        row = QHBoxLayout()
+        b_share = QPushButton('مشاركة')
+        b_save = QPushButton('تنزيل')
+        b_close = QPushButton('إغلاق')
+        row.addStretch(1)
+        for b in (b_share, b_save, b_close):
+            row.addWidget(b)
+        lay.addLayout(row)
+
+        def share():
+            QGuiApplication.clipboard().setImage(img)
+            status.setText('نُسخت الصورة إلى الحافظة')
+
+        def save():
+            downloads = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DownloadLocation) or str(Path.home())
+            default = str(Path(downloads) / f'ayah-{s}-{a}.png')
+            path, _f = QFileDialog.getSaveFileName(dlg, 'تنزيل الصورة', default, 'PNG (*.png)')
+            if not path:
+                return
+            if not path.lower().endswith('.png'):
+                path += '.png'
+            status.setText(f'تم الحفظ: {path}' if img.save(path, 'PNG') else 'تعذّر الحفظ')
+
+        b_share.clicked.connect(share)
+        b_save.clicked.connect(save)
+        b_close.clicked.connect(dlg.accept)
+        dlg.exec()
+
+    def open_meanings_for_selected(self):
+        if self.sel_ayah is None:
+            return
+        idx = self.mn_combo.findData(self.sel_ayah[0])
+        if idx >= 0:
+            self.mn_combo.setCurrentIndex(idx)
+        self.show_view('meanings')
+
+    # ---------- تحميل التلاوات للاستماع بدون إنترنت ----------
+    def build_dl_card(self):
+        c = card()
+        lay = QVBoxLayout(c)
+        lay.setContentsMargins(20, 18, 20, 18)
+        lay.setSpacing(10)
+        title = QLabel('تحميل التلاوات للاستماع بدون إنترنت')
+        title.setStyleSheet('font-weight:700; font-size:15px;')
+        lay.addWidget(title)
+        self.dl_reciter = QComboBox()
+        for rid, name, _folder in HAFS_RECITERS:
+            self.dl_reciter.addItem(name, rid)
+        saved = self.settings.value('dl_reciter', 'ar.alafasy', type=str)
+        self.dl_reciter.setCurrentIndex(max(self.dl_reciter.findData(saved), 0))
+        self.dl_reciter.currentIndexChanged.connect(self.on_dl_reciter)
+        self.dl_full = QRadioButton('المصحف كاملاً')
+        self.dl_one = QRadioButton('سورة محددة')
+        self.dl_full.setChecked(True)
+        group = QButtonGroup(self)
+        group.addButton(self.dl_full)
+        group.addButton(self.dl_one)
+        self.dl_surah = QComboBox()
+        for s in SURAHS:
+            self.dl_surah.addItem(f'{s["number"]}. {s["name"]}', s['number'])
+        scope = QHBoxLayout()
+        for widget in (self.dl_full, self.dl_one, self.dl_surah):
+            scope.addWidget(widget)
+        scope_w = QWidget()
+        scope_w.setLayout(scope)
+        self.dl_target = QComboBox()
+        self.dl_target.addItem('داخل التطبيق', 'app')
+        self.dl_target.addItem('مجلد على الجهاز', 'folder')
+        form = QFormLayout()
+        form.addRow('القارئ', self.dl_reciter)
+        form.addRow('المدى', scope_w)
+        form.addRow('التخزين', self.dl_target)
+        lay.addLayout(form)
+        self.dl_estimate = QLabel()
+        self.dl_estimate.setObjectName('muted')
+        lay.addWidget(self.dl_estimate)
+        self.dl_full.toggled.connect(self.update_dl_estimate)
+        self.dl_surah.currentIndexChanged.connect(self.update_dl_estimate)
+        btns = QHBoxLayout()
+        self.dl_start = QPushButton('بدء التحميل')
+        self.dl_start.clicked.connect(self.start_dl)
+        self.dl_cancel = QPushButton('إيقاف')
+        self.dl_cancel.setEnabled(False)
+        self.dl_cancel.clicked.connect(self.cancel_dl)
+        self.dl_delete = QPushButton('حذف تحميلات هذا القارئ')
+        self.dl_delete.clicked.connect(self.delete_dl)
+        for b in (self.dl_start, self.dl_cancel, self.dl_delete):
+            btns.addWidget(b)
+        btns.addStretch(1)
+        lay.addLayout(btns)
+        self.dl_bar = QProgressBar()
+        self.dl_bar.setVisible(False)
+        lay.addWidget(self.dl_bar)
+        self.dl_status = QLabel()
+        self.dl_status.setObjectName('muted')
+        lay.addWidget(self.dl_status)
+        self.dl_stored = QLabel()
+        self.dl_stored.setObjectName('muted')
+        lay.addWidget(self.dl_stored)
+        self.update_dl_estimate()
+        self.refresh_dl_stored()
+        return c
+
+    def on_dl_reciter(self, _i=0):
+        if self.dl_reciter.currentData():
+            self.settings.setValue('dl_reciter', self.dl_reciter.currentData())
+        self.refresh_dl_stored()
+
+    def dl_refs(self):
+        if self.dl_full.isChecked():
+            return full_refs()
+        s = self.dl_surah.currentData() or 1
+        return [(s, a) for a in range(1, SURAHS[s - 1]['numberOfAyahs'] + 1)]
+
+    def update_dl_estimate(self, *_args):
+        if not hasattr(self, 'dl_estimate'):
+            return
+        self.dl_surah.setEnabled(self.dl_one.isChecked())
+        refs = self.dl_refs()
+        mb = len(refs) * 0.1
+        size = 'أقل من ميجابايت' if mb < 1 else f'نحو {ar(round(mb))} ميجابايت'
+        scope = 'المصحف كاملاً' if self.dl_full.isChecked() else f'سورة {SURAHS[(self.dl_surah.currentData() or 1) - 1]["name"]}'
+        self.dl_estimate.setText(f'{scope}: {ar(len(refs))} آية، حجم تقريبي {size}')
+
+    def start_dl(self):
+        if self.dl.get('running'):
+            return
+        rid = self.dl_reciter.currentData()
+        root = None
+        if self.dl_target.currentData() == 'folder':
+            root = self.settings.value('dl_folder', '', type=str)
+            if not root or not Path(root).is_dir():
+                root = QFileDialog.getExistingDirectory(self, 'اختر المجلد', str(Path.home()))
+                if not root:
+                    return
+                self.settings.setValue('dl_folder', root)
+        queue = deque()
+        for s, a in self.dl_refs():
+            url = ayah_audio_url(rid, s, a)
+            if url:
+                queue.append((url, rid, s, a))
+        self.dl = {'running': True, 'cancel': False, 'queue': queue, 'active': 0, 'total': len(queue),
+                   'done': 0, 'saved': 0, 'skipped': 0, 'failed': 0, 'root': root, 'final': ''}
+        self.dl_bar.setRange(0, max(1, len(queue)))
+        self.dl_bar.setValue(0)
+        self.dl_bar.setVisible(True)
+        self.dl_start.setEnabled(False)
+        self.dl_cancel.setEnabled(True)
+        self.dl_next()
+
+    def dl_next(self):
+        d = self.dl
+        while d.get('running') and not d['cancel'] and d['queue'] and d['active'] < 6:
+            url, rid, s, a = d['queue'].popleft()
+            path = self.audio_cache_dir() / audio_file_name(url)
+            if path.exists() and path.stat().st_size > 2000:
+                d['skipped'] += 1
+                d['done'] += 1
+                self.dl_copy_to_folder(path, rid, s, a)
+                continue
+            d['active'] += 1
+            reply = self.nam.get(QNetworkRequest(QUrl(url)))
+            reply.finished.connect(lambda r=reply, p=path, i=rid, x=s, y=a: self.dl_done(r, p, i, x, y))
+        self.update_dl_status()
+        if d.get('running') and d['active'] == 0 and (not d['queue'] or d['cancel']):
+            self.dl_finish()
+
+    def dl_done(self, reply, path, rid, s, a):
+        d = self.dl
+        ok = reply.error() == QNetworkReply.NetworkError.NoError
+        data = bytes(reply.readAll()) if ok else b''
+        reply.deleteLater()
+        d['active'] -= 1
+        d['done'] += 1
+        if len(data) > 2000:
+            tmp = path.with_suffix('.part')
+            tmp.write_bytes(data)
+            tmp.replace(path)
+            d['saved'] += 1
+            self.dl_copy_to_folder(path, rid, s, a)
+        else:
+            d['failed'] += 1
+        self.dl_next()
+
+    def dl_copy_to_folder(self, path, rid, s, a):
+        root = self.dl.get('root')
+        if not root:
+            return
+        try:
+            dest = Path(root) / rid / str(s)
+            dest.mkdir(parents=True, exist_ok=True)
+            target = dest / f'{a}.mp3'
+            if not target.exists():
+                target.write_bytes(path.read_bytes())
+        except OSError:
+            self.dl['failed'] += 1
+
+    def cancel_dl(self):
+        if self.dl.get('running'):
+            self.dl['cancel'] = True
+            self.dl['queue'].clear()
+            self.dl_cancel.setEnabled(False)
+            self.dl_next()
+
+    def dl_finish(self):
+        d = self.dl
+        d['running'] = False
+        d['final'] = 'تم إيقاف التحميل' if d['cancel'] else 'انتهى التحميل'
+        self.dl_start.setEnabled(True)
+        self.dl_cancel.setEnabled(False)
+        self.update_dl_status()
+        self.refresh_dl_stored()
+
+    def update_dl_status(self):
+        d = self.dl
+        if not d.get('total'):
+            return
+        self.dl_bar.setValue(d['done'])
+        prefix = d.get('final') and d['final'] + ' · '
+        self.dl_status.setText(f'{prefix or ""}{ar(d["done"])} من {ar(d["total"])} · محفوظ {ar(d["saved"])} · '
+                               f'موجود {ar(d["skipped"])} · فشل {ar(d["failed"])}')
+
+    def delete_dl(self):
+        if self.dl.get('running'):
+            return
+        rid = self.dl_reciter.currentData()
+        cache = self.audio_cache_dir()
+        n = 0
+        for s, a in full_refs():
+            url = ayah_audio_url(rid, s, a)
+            p = cache / audio_file_name(url)
+            if url and p.exists():
+                p.unlink()
+                n += 1
+        self.dl_status.setText(f'حُذف {ar(n)} ملف من التطبيق')
+        self.refresh_dl_stored()
+
+    def refresh_dl_stored(self):
+        if not hasattr(self, 'dl_stored'):
+            return
+        rid = self.dl_reciter.currentData()
+        cache = self.audio_cache_dir()
+        per = {}
+        total = 0
+        for s, a in full_refs():
+            url = ayah_audio_url(rid, s, a)
+            if url and (cache / audio_file_name(url)).exists():
+                total += 1
+                per[s] = per.get(s, 0) + 1
+        complete = sum(1 for s, n in per.items() if n >= SURAHS[s - 1]['numberOfAyahs'])
+        self.dl_stored.setText(f'داخل التطبيق: {ar(total)} آية، {ar(complete)} سورة مكتملة لهذا القارئ')
 
     # ---------- الورد اليومي ----------
     def build_wird(self):
@@ -1734,6 +2254,7 @@ class Main(QMainWindow):
         cl3.addWidget(btn_reset)
         lay.addWidget(c3)
         lay.addStretch(1)
+        lay.addWidget(self.build_dl_card())
         scroll.setWidget(inner)
         return scroll
 
