@@ -37,6 +37,12 @@ function Invoke-SirajSign([string]$File) {
     if ($LASTEXITCODE -ne 0) { throw "Signature verification failed: $File" }
 }
 
+function Invoke-SirajSmoke([string]$File, [string[]]$Arguments, [string]$Label) {
+    # GUI executables may return control to PowerShell before exiting unless Start-Process -Wait is used.
+    $Process = Start-Process -FilePath $File -ArgumentList $Arguments -NoNewWindow -Wait -PassThru
+    if ($Process.ExitCode -ne 0) { throw "$Label failed with exit code $($Process.ExitCode)" }
+}
+
 foreach ($Path in @($Build, $Dist, $UpdaterDist, $Release)) {
     if (Test-Path $Path) { Remove-Item $Path -Recurse -Force }
     New-Item -ItemType Directory -Path $Path | Out-Null
@@ -58,10 +64,8 @@ $Exe = Join-Path $Dist "Siraj\Siraj.exe"
 if (-not (Test-Path $Exe)) { throw "Siraj.exe was not created" }
 
 Write-Host "Running packaged smoke tests"
-& $Exe --selftest
-if ($LASTEXITCODE -ne 0) { throw "Packaged self-test failed" }
-& $Exe --audiotest
-if ($LASTEXITCODE -ne 0) { throw "Packaged audio test failed" }
+Invoke-SirajSmoke $Exe @("--selftest") "Packaged self-test"
+Invoke-SirajSmoke $Exe @("--audiotest") "Packaged audio test"
 
 $UpdaterExe = Join-Path $UpdaterDist "SirajPortableUpdater.exe"
 Invoke-SirajSign $Exe
@@ -102,8 +106,7 @@ $PortableSmokeFlag = Join-Path $PortableSmoke "$PortableName\portable.flag"
 if (-not (Test-Path $PortableSmokeExe) -or -not (Test-Path $PortableSmokeFlag)) {
     throw "Portable ZIP is missing Siraj.exe or portable.flag"
 }
-& $PortableSmokeExe --selftest
-if ($LASTEXITCODE -ne 0) { throw "Portable ZIP self-test failed" }
+Invoke-SirajSmoke $PortableSmokeExe @("--selftest") "Portable ZIP self-test"
 Remove-Item $PortableSmoke -Recurse -Force
 # لا نرفع المجلد غير المضغوط كأثر إضافي ولا نمرره خطأً إلى GitHub Release.
 Remove-Item $PortableDir -Recurse -Force
@@ -138,16 +141,15 @@ if ($SigningEnabled) {
 
 # تثبيت صامت فعلي في مسار مؤقت ثم تشغيل النسخة المثبّتة وإلغاء تثبيتها.
 $InstallerSmoke = Join-Path $Build "installer-smoke"
-& $Installer /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /NOICONS "/DIR=$InstallerSmoke" | Out-Host
-if ($LASTEXITCODE -ne 0) { throw "Installer smoke installation failed" }
+Invoke-SirajSmoke $Installer @(
+    "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-", "/NOICONS", "/DIR=$InstallerSmoke"
+) "Installer smoke installation"
 $InstalledExe = Join-Path $InstallerSmoke "Siraj.exe"
 if (-not (Test-Path $InstalledExe)) { throw "Installer did not install Siraj.exe" }
-& $InstalledExe --selftest
-if ($LASTEXITCODE -ne 0) { throw "Installed application self-test failed" }
+Invoke-SirajSmoke $InstalledExe @("--selftest") "Installed application self-test"
 $Uninstaller = Join-Path $InstallerSmoke "unins000.exe"
 if (-not (Test-Path $Uninstaller)) { throw "Installer did not create an uninstaller" }
-& $Uninstaller /VERYSILENT /SUPPRESSMSGBOXES /NORESTART | Out-Host
-if ($LASTEXITCODE -ne 0) { throw "Uninstaller smoke test failed" }
+Invoke-SirajSmoke $Uninstaller @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART") "Uninstaller smoke test"
 for ($Attempt = 0; $Attempt -lt 20 -and (Test-Path $InstalledExe); $Attempt++) {
     Start-Sleep -Milliseconds 250
 }
