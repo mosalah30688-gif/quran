@@ -18,7 +18,6 @@ from pathlib import Path
 
 from PySide6.QtCore import QByteArray, QObject, QPropertyAnimation, QSettings, QSize, QStandardPaths, Qt, QTimer, QUrl, Signal
 from PySide6.QtSvg import QSvgRenderer
-import miniaudio
 from PySide6.QtGui import QAction, QColor, QDesktopServices, QFont, QFontDatabase, QGuiApplication, QIcon, QKeySequence, QPainter, QPixmap, QShortcut
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PySide6.QtWidgets import (
@@ -29,7 +28,7 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = 'Mushaf'
-APP_VERSION = '4.0.3'  # محتوى مطابق لتطبيق الأندرويد 1.3.1
+APP_VERSION = '4.0.4'  # محتوى مطابق لتطبيق الأندرويد 1.3.1
 
 if getattr(sys, 'frozen', False):
     BASE = Path(getattr(sys, '_MEIPASS', Path(sys.executable).parent))
@@ -252,6 +251,12 @@ def svg_icon(name, color='#dff3ea', size=20):
     return QIcon(pm)
 
 
+def _miniaudio():
+    """تحميل miniaudio عند أول تشغيل فقط: الإقلاع ما يعتمدش على الوحدة الأصلية."""
+    import miniaudio
+    return miniaudio
+
+
 class AudioEngine(QObject):
     """يفك ملف MP3 ويشغّله على جهاز الصوت (miniaudio): مستقل عن Qt Multimedia وFFmpeg."""
     RATE = 44100
@@ -276,8 +281,9 @@ class AudioEngine(QObject):
     def play(self, path):
         self.stop()
         self.error = ''
-        self.src = miniaudio.stream_file(str(path), output_format=miniaudio.SampleFormat.SIGNED16,
-                                         nchannels=2, sample_rate=self.RATE, frames_to_read=self.CHUNK)
+        ma = _miniaudio()
+        self.src = ma.stream_file(str(path), output_format=ma.SampleFormat.SIGNED16,
+                                  nchannels=2, sample_rate=self.RATE, frames_to_read=self.CHUNK)
         next(self.src)
         self.gen = self._callback()
         next(self.gen)
@@ -286,8 +292,8 @@ class AudioEngine(QObject):
         self._done = False
         self.paused = False
         try:
-            self.dev = miniaudio.PlaybackDevice(output_format=miniaudio.SampleFormat.SIGNED16,
-                                                nchannels=2, sample_rate=self.RATE)
+            self.dev = ma.PlaybackDevice(output_format=ma.SampleFormat.SIGNED16,
+                                         nchannels=2, sample_rate=self.RATE)
             self.dev.start(self.gen)
             self.null_mode = False
         except Exception as exc:
@@ -1904,6 +1910,10 @@ def run_audiotest(app, win):
 
 
 def main():
+    import faulthandler
+    faulthandler.enable()  # يطبع مكان الانهيار لو حصل انهيار أصلي (لتشخيص ويندوز)
+    if '--selftest' in sys.argv:
+        print('stage: start', file=sys.stderr, flush=True)
     for stream in (sys.stdout, sys.stderr):  # الكونسول على ويندوز cp1252: ما نطبعش عربي بدون تحويل
         if stream is not None and hasattr(stream, 'reconfigure'):
             stream.reconfigure(encoding='utf-8', errors='replace')
