@@ -30,7 +30,7 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = 'Mushaf'
-APP_VERSION = '4.0.6'  # محتوى مطابق لتطبيق الأندرويد 1.3.1
+APP_VERSION = '4.0.7'  # محتوى مطابق لتطبيق الأندرويد 1.3.1
 
 if getattr(sys, 'frozen', False):
     BASE = Path(getattr(sys, '_MEIPASS', Path(sys.executable).parent))
@@ -2363,8 +2363,14 @@ def _hard_exit(code):
     sys.stderr.flush()
     if sys.platform.startswith('win'):
         import ctypes
-        k32 = ctypes.windll.kernel32
-        k32.TerminateProcess(k32.GetCurrentProcess(), code)
+        from ctypes import wintypes
+        k32 = ctypes.WinDLL('kernel32', use_last_error=True)
+        k32.GetCurrentProcess.restype = wintypes.HANDLE
+        k32.GetCurrentProcess.argtypes = []
+        k32.TerminateProcess.restype = wintypes.BOOL
+        k32.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
+        if k32.TerminateProcess(k32.GetCurrentProcess(), code):
+            os._exit(code)  # لا يُصل إليه عادةً: TerminateProcess ينهي العملية
     os._exit(code)
 
 
