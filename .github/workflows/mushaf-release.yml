@@ -20,7 +20,7 @@ jobs:
       - name: System libraries
         run: |
           sudo apt-get update
-          sudo apt-get install -y libfuse2 libegl1 libxkbcommon0 libxkbcommon-x11-0 libxcb-cursor0 libgl1 libnss3 libxss1 libasound2t64 libpulse0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0
+          sudo apt-get install -y libfuse2 libegl1 libxkbcommon0 libxkbcommon-x11-0 libxcb-cursor0 libgl1 libnss3 libxss1 libasound2t64 libpulse0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0 libxcb-xkb1 libxcb-xinerama0 libxcb-randr0 libxkbcommon-x11-0 libxcb-glx0
       - name: Version
         id: ver
         run: |
@@ -29,6 +29,14 @@ jobs:
           else
             echo "version=dev-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
           fi
+      - name: UI test (offscreen)
+        working-directory: mushaf_app
+        env:
+          QT_QPA_PLATFORM: offscreen
+          SHOTS: ${{ runner.temp }}/shots
+        run: |
+          python3 -m pip install -q -r requirements.txt
+          python3 tests/ui_test.py
       - name: Build AppImage
         working-directory: mushaf_app
         run: bash ./build_appimage.sh "${{ steps.ver.outputs.version }}"
@@ -36,7 +44,9 @@ jobs:
         working-directory: mushaf_app
         env:
           QT_QPA_PLATFORM: offscreen
-        run: ./Mushaf-${{ steps.ver.outputs.version }}-x86_64.AppImage --appimage-extract-and-run --selftest
+        run: |
+          ./Mushaf-${{ steps.ver.outputs.version }}-x86_64.AppImage --appimage-extract-and-run --selftest
+          ./Mushaf-${{ steps.ver.outputs.version }}-x86_64.AppImage --appimage-extract-and-run --audiotest
       - uses: actions/upload-artifact@v4
         with:
           name: linux-appimage
@@ -79,7 +89,9 @@ jobs:
       - name: Self-test Windows build
         working-directory: mushaf_app
         shell: bash
-        run: ./"dist/Mushaf-${{ steps.ver.outputs.version }}/mushaf.exe" --selftest
+        run: |
+          ./"dist/Mushaf-${{ steps.ver.outputs.version }}/mushaf.exe" --selftest
+          ./"dist/Mushaf-${{ steps.ver.outputs.version }}/mushaf.exe" --audiotest
       - name: Zip portable build
         working-directory: mushaf_app/dist
         shell: bash

@@ -8,6 +8,12 @@ rm -rf build dist AppDir
 python3 -m PyInstaller --noconfirm --windowed --name mushaf \
   --add-data "data:data" --add-data "fonts:fonts" --add-data "icon.png:." main.py
 bash ./prune_bundle.sh dist/mushaf
+# تحقق: مكتبات Qt الخاصة بـ X11 لازم تكون كاملة، وإلا البرنامج مش هيفتح
+if find dist/mushaf -name "libqxcb.so" -print -quit | xargs -r -I{} ldd {} | grep -q "not found"; then
+  echo "مكتبات X11 ناقصة في الحزمة:" >&2
+  find dist/mushaf -name "libqxcb.so" -exec ldd {} \; | grep "not found" >&2
+  exit 1
+fi
 mkdir -p AppDir/usr/bin
 cp -r dist/mushaf/* AppDir/usr/bin/
 cp packaging/AppRun AppDir/AppRun && chmod +x AppDir/AppRun

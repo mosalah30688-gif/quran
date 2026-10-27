@@ -6,15 +6,18 @@
 اختبار:  python3 main.py --selftest
 """
 import datetime
+import hashlib
 import html
 import json
 import os
 import re
 import sys
+import time
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QPropertyAnimation, QSettings, Qt, QTimer, QUrl, Signal
-from PySide6.QtGui import QAction, QColor, QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
+from PySide6.QtCore import QByteArray, QObject, QPropertyAnimation, QSettings, QSize, QStandardPaths, Qt, QTimer, QUrl, Signal
+from PySide6.QtSvg import QSvgRenderer
+from PySide6.QtGui import QAction, QColor, QFont, QFontDatabase, QGuiApplication, QIcon, QKeySequence, QPainter, QPixmap, QShortcut
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PySide6.QtWidgets import (
@@ -25,7 +28,7 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = 'Mushaf'
-APP_VERSION = '4.0.0'  # محتوى مطابق لتطبيق الأندرويد 1.3.1
+APP_VERSION = '4.0.1'  # محتوى مطابق لتطبيق الأندرويد 1.3.1
 
 if getattr(sys, 'frozen', False):
     BASE = Path(getattr(sys, '_MEIPASS', Path(sys.executable).parent))
@@ -174,7 +177,7 @@ THEMES = {
 
 def qss(t):
     return f"""
-    QWidget {{ color: {t['text']}; font-size: 14px; }}
+    QWidget {{ color: {t['text']}; font-family: 'Noto Sans Arabic'; font-size: 14px; }}
     QMainWindow, QWidget#root {{ background: {t['bg']}; }}
     QWidget#sidebar {{ background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 {t['side']}, stop:1 {t['side_hi']}); }}
     QLabel#brand {{ color: #ffffff; font-size: 22px; font-weight: 700; padding: 18px 16px 4px 16px; }}
@@ -216,6 +219,56 @@ def qss(t):
     QCheckBox {{ spacing: 8px; }}
     QMessageBox {{ background: {t['card']}; }}
     """
+
+
+ICON_SVG = {
+    'book': '<path d="M2 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H2z"/><path d="M22 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z"/>',
+    'tafsir': '<path d="M4 4h12a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2z"/><path d="M8 9h6M8 13h6"/>',
+    'search': '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+    'words': '<path d="M3 6h9M7.5 4v2M5 6c.8 3 2.5 5.5 5 7M10 6c-.8 3-2.5 5.5-5 7M13 20l4-10 4 10M14.5 16.5h5"/>',
+    'tajweed': '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+    'adhkar': '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="3.5" r="1.4"/><circle cx="12" cy="20.5" r="1.4"/><circle cx="3.5" cy="12" r="1.4"/><circle cx="20.5" cy="12" r="1.4"/>',
+    'memo': '<path d="M4 20l4-1L19 8l-3-3L5 16z"/>',
+    'wird': '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+    'bookmarks': '<path d="M6 3h12v18l-6-4-6 4z"/>',
+    'stats': '<path d="M5 20V12M12 20V6M19 20V10"/>',
+    'settings': '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8.5" stroke-dasharray="3 3"/>',
+    'play': '<path d="M7 5l12 7-12 7z" fill="{c}"/>',
+}
+
+
+def svg_icon(name, color='#dff3ea', size=20):
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="{size * 2}" height="{size * 2}" '
+           f'fill="none" stroke="{color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+           + ICON_SVG[name].replace('{c}', color) + '</svg>')
+    pm = QPixmap(size * 2, size * 2)
+    pm.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pm)
+    QSvgRenderer(QByteArray(svg.encode('utf-8'))).render(painter)
+    painter.end()
+    return QIcon(pm)
+
+
+class PageBrowser(QTextBrowser):
+    """عرض الصفحة: عجلة الماوس عند الحافة تقلب الصفحة (مع فاصل زمني لمنع التقليب المتكرر)."""
+
+    def __init__(self, on_turn):
+        super().__init__()
+        self._on_turn = on_turn
+        self._last_turn = -1e9  # وقت آخر تقليب (ثوانٍ)
+
+    def wheelEvent(self, event):  # noqa: N802
+        bar = self.verticalScrollBar()
+        dy = event.angleDelta().y()
+        at_end = (dy < 0 and bar.value() >= bar.maximum()) or (dy > 0 and bar.value() <= bar.minimum())
+        if dy and at_end:
+            now = time.monotonic()
+            if now - self._last_turn > 0.65:
+                self._last_turn = now
+                self._on_turn(1 if dy < 0 else -1)
+            event.accept()
+            return
+        super().wheelEvent(event)
 
 
 def card():
@@ -284,15 +337,14 @@ class Main(QMainWindow):
         self.playing = False
         self.highlight = None
 
-        self.resize(1440, 900)
-        self.setMinimumSize(1080, 700)
+        avail = QGuiApplication.primaryScreen().availableGeometry()
+        self.setMinimumSize(min(1000, avail.width() - 40), min(620, avail.height() - 80))
+        self.resize(min(1440, int(avail.width() * 0.94)), min(900, int(avail.height() * 0.9)))
+        self.move(avail.center() - self.rect().center())
         self.build_ui()
         self.apply_theme()
         self.show_view('reader')
         self.render_page()
-        geo = self.settings.value('geometry')
-        if geo is not None:
-            self.restoreGeometry(geo)
 
         QShortcut(QKeySequence('PgDown'), self, activated=lambda: self.go_page(self.page + 1))
         QShortcut(QKeySequence('PgUp'), self, activated=lambda: self.go_page(self.page - 1))
@@ -301,6 +353,11 @@ class Main(QMainWindow):
         QShortcut(QKeySequence('Ctrl+0'), self, activated=lambda: self.set_font(22))
         QShortcut(QKeySequence('Ctrl+='), self, activated=lambda: self.set_font(self.font_pt + 2))
         QShortcut(QKeySequence('Ctrl+-'), self, activated=lambda: self.set_font(self.font_pt - 2))
+        # الأسهم: يسار = الصفحة التالية، يمين = السابقة (اتجاه القراءة العربي وعكس أزرار الشاشة)
+        for key, step in (('Left', 1), ('Right', -1)):
+            sc = QShortcut(QKeySequence(key), self.views['reader'])
+            sc.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
+            sc.activated.connect(lambda d=step: self.go_page(self.page + d))
 
     # ---------- بناء الواجهة ----------
     def build_ui(self):
@@ -328,19 +385,21 @@ class Main(QMainWindow):
         self.views = {}
         self.nav_buttons = {}
         nav_items = [
-            ('reader', '📖', 'المصحف'),
-            ('tafsir', '📚', 'التفسير'),
-            ('search', '🔍', 'البحث في القرآن'),
-            ('meanings', '🔤', 'معاني الكلمات'),
-            ('tajweed', '🎨', 'أحكام التجويد'),
-            ('adhkar', '📿', 'الأذكار'),
-            ('memo', '🧠', 'وضع الحفظ'),
-            ('wird', '🌿', 'الورد اليومي'),
-            ('bookmarks', '⭐', 'المحفوظات'),
-            ('stats', '📊', 'الإحصائيات'),
+            ('reader', 'book', 'المصحف'),
+            ('tafsir', 'tafsir', 'التفسير'),
+            ('search', 'search', 'البحث في القرآن'),
+            ('meanings', 'words', 'معاني الكلمات'),
+            ('tajweed', 'tajweed', 'أحكام التجويد'),
+            ('adhkar', 'adhkar', 'الأذكار'),
+            ('memo', 'memo', 'وضع الحفظ'),
+            ('wird', 'wird', 'الورد اليومي'),
+            ('bookmarks', 'bookmarks', 'المحفوظات'),
+            ('stats', 'stats', 'الإحصائيات'),
         ]
         for key, icon, label in nav_items:
-            b = QPushButton(f'{icon}   {label}')
+            b = QPushButton(label)
+            b.setIcon(svg_icon(icon))
+            b.setIconSize(QSize(20, 20))
             b.setObjectName('nav')
             b.setCheckable(True)
             b.clicked.connect(lambda _c=False, k=key: self.show_view(k))
@@ -348,7 +407,9 @@ class Main(QMainWindow):
             self.nav_buttons[key] = b
             sl.addWidget(b)
         sl.addStretch(1)
-        b = QPushButton('⚙️   الإعدادات')
+        b = QPushButton('الإعدادات')
+        b.setIcon(svg_icon('settings'))
+        b.setIconSize(QSize(20, 20))
         b.setObjectName('nav')
         b.setCheckable(True)
         b.clicked.connect(lambda: self.show_view('settings'))
@@ -450,7 +511,7 @@ class Main(QMainWindow):
         self.page_info.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lay.addWidget(self.page_info)
 
-        self.browser = QTextBrowser()
+        self.browser = PageBrowser(lambda d: self.go_page(self.page + d))
         self.browser.setObjectName('mushaf')
         self.browser.setOpenExternalLinks(False)
         self.browser.setFrameShape(QTextBrowser.Shape.NoFrame)
@@ -462,7 +523,7 @@ class Main(QMainWindow):
         self.btn_play = QPushButton('▶  تلاوة الصفحة')
         self.btn_play.setObjectName('primary')
         self.btn_play.clicked.connect(self.toggle_play)
-        self.btn_stop = QPushButton('⏹')
+        self.btn_stop = QPushButton('إيقاف')
         self.btn_stop.clicked.connect(lambda: self.stop_play('أوقفت التلاوة'))
         self.reciter_combo = QComboBox()
         self.reciter_combo.setMinimumWidth(260)
@@ -631,6 +692,33 @@ class Main(QMainWindow):
         self.btn_play.setText('⏸  إيقاف مؤقت')
         self.play_index(0)
 
+    def audio_cache_dir(self):
+        base = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.CacheLocation) or str(BASE)
+        path = Path(base) / 'audio'
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    def local_audio(self, url, on_ready, on_fail):
+        """ينزّل ملف التلاوة عبر شبكة Qt إلى الكاش (لو مش موجود) ويرجع مساره المحلي."""
+        path = self.audio_cache_dir() / (hashlib.sha1(url.encode('utf-8')).hexdigest()[:20] + '.mp3')
+        if path.exists() and path.stat().st_size > 2000:
+            on_ready(path)
+            return
+        reply = self.nam.get(QNetworkRequest(QUrl(url)))
+        reply.finished.connect(lambda: self._audio_downloaded(reply, path, on_ready, on_fail))
+
+    def _audio_downloaded(self, reply, path, on_ready, on_fail):
+        data = bytes(reply.readAll()) if reply.error() == QNetworkReply.NetworkError.NoError else b''
+        err = reply.errorString()
+        reply.deleteLater()
+        if len(data) > 2000:
+            tmp = path.with_suffix('.part')
+            tmp.write_bytes(data)
+            tmp.replace(path)
+            on_ready(path)
+        else:
+            on_fail(err or 'ملف فارغ')
+
     def play_index(self, i):
         if i >= len(self.queue):
             self.stop_play('انتهت تلاوة الصفحة')
@@ -638,15 +726,33 @@ class Main(QMainWindow):
         self.queue_index = i
         url, label = self.queue[i]
         self.highlight = label if label and label[1] is not None else None
-        self.player.setSource(QUrl(url))
-        self.player.play()
         if label[1] is None:
-            self.play_status.setText(f'تلاوة سورة {SURAHS[label[0] - 1]["name"]}')
+            title = f'تلاوة سورة {SURAHS[label[0] - 1]["name"]}'
         else:
-            self.play_status.setText(f'{SURAHS[label[0] - 1]["name"]} · الآية {ar(label[1])}')
+            title = f'{SURAHS[label[0] - 1]["name"]} · الآية {ar(label[1])}'
+        self.play_status.setText(title + ' · جارٍ التحميل…')
         self.render_page()
+        self.play_token = getattr(self, 'play_token', 0) + 1
+        token = self.play_token
+        self.local_audio(url, lambda p: self._start_file(p, token, i, title),
+                         lambda msg: self._audio_failed(token, msg))
+        if i + 1 < len(self.queue):  # تحميل مسبق للآية التالية لتشغيل متصل
+            self.local_audio(self.queue[i + 1][0], lambda _p: None, lambda _m: None)
+
+    def _start_file(self, path, token, i, title):
+        if token != getattr(self, 'play_token', 0) or not self.playing:
+            return
+        self.player.setSource(QUrl.fromLocalFile(str(path)))
+        self.player.play()
+        self.play_status.setText(title)
+
+    def _audio_failed(self, token, msg):
+        if token != getattr(self, 'play_token', 0) or not self.playing:
+            return
+        self.stop_play(f'تعذّر تحميل التلاوة ({msg}) — تأكد من الاتصال بالإنترنت')
 
     def stop_play(self, message=''):
+        self.play_token = getattr(self, 'play_token', 0) + 1
         self.playing = False
         self.queue = []
         self.queue_index = -1
@@ -1342,16 +1448,64 @@ def run_selftest(app, win):
     QTimer.singleShot(60000, lambda: finish(False, {'error': 'timeout'}))
 
 
+def run_audiotest(app, win):
+    """يشغّل التلاوة من الواجهة نفسها (حفص: ملف لكل آية، ورش الحصري: ملف لكل سورة) ويتأكد إن الوقت بيتقدم."""
+    import json as _json
+    results = {}
+    cases = [('hafs', 'quran-simple', 0), ('warsh', 'warsh', 1)]
+    state = {'i': 0, 'started': 0.0}
+
+    def finish(ok):
+        print(_json.dumps({'ok': ok, **results}, ensure_ascii=False), flush=True)
+        os._exit(0 if ok else 1)
+
+    def next_case():
+        if state['i'] >= len(cases):
+            finish(all(v.get('ok') for v in results.values()))
+            return
+        name, riwaya, reciter = cases[state['i']]
+        win.stop_play()
+        idx = win.riwaya_combo.findData(riwaya)
+        win.riwaya_combo.setCurrentIndex(idx)
+        win.reciter_combo.setCurrentIndex(reciter)
+        win.go_page(2)
+        win.toggle_play()
+        state['started'] = time.monotonic()
+        poll(name)
+
+    def poll(name):
+        pos = win.player.position()
+        err = win.play_status.text()
+        if pos > 1500:
+            results[name] = {'ok': True, 'position_ms': pos, 'status': win.play_status.text()}
+            state['i'] += 1
+            QTimer.singleShot(300, next_case)
+        elif time.monotonic() - state['started'] > 25:
+            results[name] = {'ok': False, 'position_ms': pos, 'status': err, 'error': str(win.player.errorString())}
+            state['i'] += 1
+            QTimer.singleShot(300, next_case)
+        else:
+            QTimer.singleShot(250, lambda: poll(name))
+
+    QTimer.singleShot(500, next_case)
+    QTimer.singleShot(120000, lambda: finish(False))
+
+
 def main():
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
     app.setOrganizationName('mosalah30688')
     app.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
     QFontDatabase.addApplicationFont(str(FONTS / 'AmiriQuran-arabic.woff2'))
+    for name in ('NotoSansArabic-Regular.ttf', 'NotoSansArabic-Bold.ttf'):
+        QFontDatabase.addApplicationFont(str(FONTS / name))
+    app.setFont(QFont('Noto Sans Arabic', 11))
     win = Main()
     win.show()
     if '--selftest' in sys.argv or os.environ.get('MUSHAF_SELFTEST') == '1':
         run_selftest(app, win)
+    if '--audiotest' in sys.argv:
+        run_audiotest(app, win)
     return app.exec()
 
 

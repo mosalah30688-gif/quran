@@ -61,6 +61,25 @@ try:
     check('page 1 text', 'الفاتحة' in win.browser.toPlainText().replace('ٱ', 'ا') or len(win.browser.toPlainText()) > 100)
     win.go_page(2)
     check('next page', win.page == 2)
+    # الأسهم: يسار = التالية، يمين = السابقة
+    from PySide6.QtTest import QTest
+    win.browser.setFocus()
+    app.processEvents()
+    QTest.keyClick(win.browser, Qt.Key.Key_Left)
+    check('left arrow -> next page', win.page == 3)
+    QTest.keyClick(win.browser, Qt.Key.Key_Right)
+    check('right arrow -> previous page', win.page == 2)
+    # عجلة الماوس عند الحافة السفلية تقلب الصفحة
+    from PySide6.QtCore import QPoint, QPointF
+    from PySide6.QtGui import QWheelEvent
+    bar = win.browser.verticalScrollBar()
+    bar.setValue(bar.maximum())
+    wheel = QWheelEvent(QPointF(10, 10), QPointF(10, 10), QPoint(0, 0), QPoint(0, -120),
+                        Qt.MouseButton.NoButton, Qt.KeyboardModifier.NoModifier,
+                        Qt.ScrollPhase.NoScrollPhase, False)
+    app.sendEvent(win.browser.viewport(), wheel)
+    check('wheel at bottom -> next page', win.page == 3)
+    win.go_page(1)
     win.combo_surah.setCurrentIndex(1)  # البقرة
     check('surah jump to 2 -> page 2', win.page == 2 and win.combo_surah.currentData() == 2)
     win.combo_juz.setCurrentIndex(4)
