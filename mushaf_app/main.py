@@ -1428,8 +1428,10 @@ def run_selftest(app, win):
     """وضع الاختبار: يتأكد إن الصفحة اتعرضت والقوائم اتملت، ويطبع النتيجة ويقفل فوراً."""
     def finish(ok, info):
         import json as _json
-        print(_json.dumps({'ok': ok, **info}, ensure_ascii=False), flush=True)
-        os._exit(0 if ok else 1)
+        try:
+            print(_json.dumps({'ok': ok, **info}), flush=True)
+        finally:
+            os._exit(0 if ok else 1)
 
     def check():
         text = win.browser.toPlainText()
@@ -1456,8 +1458,10 @@ def run_audiotest(app, win):
     state = {'i': 0, 'started': 0.0}
 
     def finish(ok):
-        print(_json.dumps({'ok': ok, **results}, ensure_ascii=False), flush=True)
-        os._exit(0 if ok else 1)
+        try:
+            print(_json.dumps({'ok': ok, **results}), flush=True)
+        finally:
+            os._exit(0 if ok else 1)
 
     def next_case():
         if state['i'] >= len(cases):
@@ -1492,6 +1496,9 @@ def run_audiotest(app, win):
 
 
 def main():
+    for stream in (sys.stdout, sys.stderr):  # الكونسول على ويندوز cp1252: ما نطبعش عربي بدون تحويل
+        if stream is not None and hasattr(stream, 'reconfigure'):
+            stream.reconfigure(encoding='utf-8', errors='replace')
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
     app.setOrganizationName('mosalah30688')
