@@ -41,12 +41,35 @@
     ['ar.miqbas', 'تنوير المقباس'],
   ];
 
+  // قراء الروايات الثلاث. النوع:
+  //  ayah: ملف لكل آية من everyayah (ترقيم الرواية نفسه)، ويعمل تتبع الآية والصفحات
+  //  surah: ملف لكل سورة (mp3quran)، بلا توقيت للآيات، فتعمل السورة كاملة ثم تتوقف
+  const RIW_RECITERS = {
+    warsh: [
+      ['warsh_abdulbasit', 'عبدالباسط عبدالصمد', { type: 'ayah', base: 'https://everyayah.com/data/warsh/warsh_Abdul_Basit_128kbps/' }],
+      ['warsh_husary', 'محمود خليل الحصري', { type: 'surah', base: 'https://cdn.mp3quran.net/audio/mahmoud-husary/r3/' }],
+    ],
+    qalun: [
+      ['qalun_husary', 'محمود خليل الحصري', { type: 'surah', base: 'https://cdn.mp3quran.net/audio/mahmoud-husary/r5/' }],
+      ['qalun_hudhaify', 'علي الحذيفي', { type: 'surah', base: 'https://cdn.mp3quran.net/audio/ali-hudhaifi/r2/' }],
+    ],
+    duri: [
+      ['duri_husary', 'محمود خليل الحصري', { type: 'surah', base: 'https://cdn.mp3quran.net/audio/mahmoud-husary/r4/' }],
+    ],
+  };
+  // قارئ الرواية الحالي (أو null إن لم يكن الاختيار متاحاً لهذه الرواية)
+  const riwEntry = () => (RIW_RECITERS[settings.riwaya] || []).find(([id]) => id === settings.reciter) || null;
+  const riwAudioOk = () => isRiw() && !!riwEntry();
+  const riwSurahOnly = () => isRiw() && riwEntry()?.[2].type === 'surah';
+
   const DEFAULTS = {
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
     translation: '', size: 26, tajweed: false, dark: false,
   };
-  const VIEW_TITLES = { reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', wird: 'الورد', search: 'البحث', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق' };
+  const VIEW_TITLES = { reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', wird: 'الورد', stats: 'الإحصائيات', adhkar: 'الأذكار', search: 'البحث', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق', tajweed: 'أحكام التجويد', meanings: 'المعاني' };
   const Cap = window.Capacitor || null;
+  // نسخة سطح المكتب تفتح بـ ?desktop=1: الواجهة تملى الشاشة
+  if (new URLSearchParams(location.search).has('desktop')) document.documentElement.classList.add('desktop');
 
   // قواعد التجويد بحسب رموز مصدر quran-tajweed في alquran.cloud (الاسم، الشرح)
   const TJ_RULES = {
@@ -146,6 +169,8 @@
     if (name !== curView && !opts.back) { navStack.push(curView); if (navStack.length > 30) navStack.shift(); }
     curView = name;
     $$('#tabs button').forEach((b) => b.classList.toggle('active', b.dataset.view === name));
+    $$('.tab-group').forEach((g) => g.querySelector('.group-btn').classList.toggle('active', !!g.querySelector(`[data-view="${name}"]`)));
+    $('#tabs button.active')?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
     $$('section.view').forEach((s) => s.classList.toggle('active', s.id === 'view-' + name));
     if (name === 'reader') updateChrome(); else $('#topTitle').textContent = VIEW_TITLES[name] || '';
     // زر الرجوع يظهر في كل الأقسام ما عدا المصحف
@@ -153,33 +178,59 @@
     if (name === 'bookmarks') renderBookmarks();
     if (name === 'tafsir') renderTafsirView();
     if (name === 'wird') renderWird();
+    if (name === 'stats') renderStats();
+    if (name === 'adhkar') renderAdhkarHome();
+    if (name === 'tajweed') renderTajweedView();
+    if (name === 'settings') syncIndexSelects();
+    if (name === 'meanings') renderMeaningsView();
+    if (name === 'memo') renderMemoReview();
     $('#content').scrollTop = 0;
   }
   function popView() { showView(navStack.pop() || 'reader', { back: true }); }
   $('#backBtn').addEventListener('click', () => handleBack());
+  $('#settingsBtn').addEventListener('click', () => showView('settings'));
   function closeSide() { document.body.classList.remove('side-open'); }
 
+  // القوائم المنسدلة للشريط: تفتح وتقفل، وتقفل عند اختيار تبويب أو الضغط بره أو Esc
+  function setGroupOpen(group, open) {
+    group.querySelector('.group-menu').hidden = !open;
+    group.querySelector('.group-btn').setAttribute('aria-expanded', String(open));
+  }
+  function closeGroups() { $$('.tab-group').forEach((g) => setGroupOpen(g, false)); }
   $('#tabs').addEventListener('click', (e) => {
+    const gb = e.target.closest('.group-btn');
+    if (gb) {
+      const g = gb.closest('.tab-group');
+      const open = g.querySelector('.group-menu').hidden;
+      closeGroups();
+      if (open) setGroupOpen(g, true);
+      return;
+    }
+    // نوع من الأذكار: يفتح الأذكار مباشرة بدون صفحة اختيار وسيطة
+    const cat = e.target.closest('[data-cat]');
+    if (cat) { closeGroups(); showView('adhkar'); openAdhkarCat(cat.dataset.cat); closeSide(); return; }
     const b = e.target.closest('button[data-view]');
     if (!b) return;
+    closeGroups();
     showView(b.dataset.view);
     closeSide();
   });
-  $('#menuBtn').addEventListener('click', () => document.body.classList.toggle('side-open'));
+  document.addEventListener('click', (e) => { if (!e.target.closest('.tab-group')) closeGroups(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeGroups(); });
   $('#backdrop').addEventListener('click', closeSide);
 
   function applyTheme() {
     document.body.classList.toggle('dark', !!settings.dark);
-    $('#themeBtn').textContent = settings.dark ? '☀️' : '🌙';
+    if ($('#setDark')) $('#setDark').checked = !!settings.dark;
   }
-  $('#themeBtn').addEventListener('click', () => { settings.dark = !settings.dark; saveSettings(); applyTheme(); });
+  $('#setDark').addEventListener('change', (e) => { settings.dark = e.target.checked; saveSettings(); applyTheme(); });
 
   // ---------- الفهرس: سورة / جزء / آية ----------
   async function loadSurahs() {
     try {
       surahs = (await getJSON(API + '/surah')).data;
     } catch {
-      $('#indexList').innerHTML = '<div class="muted" style="padding:10px">تعذر تحميل الفهرس. تحقق من الاتصال بالإنترنت.</div>';
+      toast('تعذر تحميل الفهرس. تحقق من الاتصال بالإنترنت.');
       return;
     }
     $('#memoSurah').innerHTML = surahs.map((s) => `<option value="${s.number}">${s.number}. ${esc(s.name)}</option>`).join('');
@@ -188,79 +239,76 @@
     setupDownloadUI();
   }
 
-  function renderIndex() {
-    const seg = index.mode;
-    $$('#indexSeg button').forEach((b) => b.classList.toggle('on', b.dataset.mode === seg));
-    $('#indexSearchWrap').style.display = seg === 'surah' ? 'block' : 'none';
-    const list = $('#indexList');
-    if (!surahs.length) return;
-    const curS = state.sel ? state.sel.s : 1;
-    const curJuz = state.sel ? state.sel.juz : 0;
-
-    if (seg === 'surah') {
-      const raw = $('#indexSearch').value.trim();
-      const term = raw.toLowerCase();
-      const items = surahs.filter((s) =>
-        !term || String(s.number) === term || s.englishName.toLowerCase().includes(term) ||
-        s.englishNameTranslation.toLowerCase().includes(term) || s.name.includes(raw));
-      list.innerHTML = items.map((s) => `
-        <div class="idx ${s.number === curS ? 'current' : ''}" data-s="${s.number}" data-a="1">
-          <div class="n">${s.number}</div>
-          <div>
-            <div class="t">${esc(s.name)}</div>
-            <div class="s">${esc(s.englishName)} · ${s.numberOfAyahs} آية · ${s.revelationType === 'Meccan' ? 'مكية' : 'مدنية'}</div>
-          </div>
-          <div class="badge">جـ ${juzOf(s.number, 1)}</div>
-        </div>`).join('') || '<div class="muted" style="padding:10px">لا توجد نتائج.</div>';
-    } else if (seg === 'juz') {
-      list.innerHTML = JUZ_START.map(([s, a], i) => `
-        <div class="idx ${curJuz === i + 1 ? 'current' : ''}" data-s="${s}" data-a="${a}">
-          <div class="n">${i + 1}</div>
-          <div>
-            <div class="t">الجزء ${toArabicDigits(i + 1)}</div>
-            <div class="s">يبدأ من ${esc(surahName(s))} آية ${a}</div>
-          </div>
-          <div class="badge"></div>
-        </div>`).join('');
-    } else {
-      const sel = index.surah;
-      const count = surahs[sel - 1]?.numberOfAyahs || 0;
-      let grid = '';
-      for (let a = 1; a <= count; a++) {
-        grid += `<button data-a="${a}" class="${state.sel && state.sel.s === sel && state.sel.n === a ? 'current' : ''}">${toArabicDigits(a)}</button>`;
-      }
-      list.innerHTML = `
-        <select id="ayahSurahSel">
-          ${surahs.map((s) => `<option value="${s.number}" ${s.number === sel ? 'selected' : ''}>${s.number}. ${esc(s.name)}</option>`).join('')}
-        </select>
-        <div class="muted" style="padding:0 10px 6px">${count} آية</div>
-        <div class="ayah-grid" id="ayahGrid">${grid}</div>`;
-    }
+  // الفهرس: ثلاث قوائم منسدلة (السورة، الجزء، الآية) تنتقل للموضع المختار
+  function fillAyahNums(surahNo) {
+    const count = surahs[surahNo - 1]?.numberOfAyahs || 0;
+    $('#idxAyahNum').innerHTML = Array.from({ length: count }, (_, i) => `<option value="${i + 1}">${toArabicDigits(i + 1)}</option>`).join('');
   }
-
-  $('#indexSeg').addEventListener('click', (e) => {
-    const b = e.target.closest('button[data-mode]');
-    if (!b) return;
-    index.mode = b.dataset.mode;
-    renderIndex();
+  function syncIndexSelects() {
+    if (!surahs.length) return;
+    const cur = state.sel || { s: 1, n: 1, juz: 1 };
+    $('#idxSurah').value = String(cur.s);
+    $('#idxJuz').value = String(cur.juz || 1);
+    fillAyahNums(cur.s);
+    $('#idxAyahNum').value = String(cur.n);
+  }
+  function renderIndex() {
+    if (!surahs.length) return;
+    const sOpts = surahs.map((x) => `<option value="${x.number}">${x.number}. ${esc(x.name)}</option>`).join('');
+    $('#idxSurah').innerHTML = sOpts;
+    $('#idxJuz').innerHTML = JUZ_START.map((_, i) => `<option value="${i + 1}">الجزء ${toArabicDigits(i + 1)}</option>`).join('');
+    syncIndexSelects();
+  }
+  $('#idxSurah').addEventListener('change', (e) => { fillAyahNums(Number(e.target.value)); goToAyah(Number(e.target.value), 1); closeSide(); });
+  $('#idxJuz').addEventListener('change', (e) => {
+    const [s, a] = JUZ_START[Number(e.target.value) - 1];
+    goToAyah(s, a); closeSide();
   });
-  $('#indexSearch').addEventListener('input', renderIndex);
-  $('#indexList').addEventListener('click', (e) => {
-    const g = e.target.closest('#ayahGrid button');
-    if (g) { goToAyah(index.surah, Number(g.dataset.a)); closeSide(); return; }
-    const item = e.target.closest('.idx[data-s]');
-    if (item) { goToAyah(Number(item.dataset.s), Number(item.dataset.a)); closeSide(); }
-  });
-  $('#indexList').addEventListener('change', (e) => {
-    if (e.target.id === 'ayahSurahSel') { index.surah = Number(e.target.value); renderIndex(); }
+  $('#idxAyahNum').addEventListener('change', (e) => {
+    goToAyah(Number($('#idxSurah').value), Number(e.target.value)); closeSide();
   });
 
   // ---------- تحميل الصفحات ----------
   // الصفحة = آيات من إصدارات متعددة (نص + تلاوة + تفسير + ترجمة اختيارية)
+  // الروايات الثلاث (ورش وقالون والدوري): نص كل آية مع صفحتها من ملف quran-riwayat.json
+  const RIW_IDS = ['warsh', 'qalun', 'duri'];
+  const isRiw = () => RIW_IDS.includes(settings.riwaya);
+  let riwAll = null;
+  let riwPages = {};
+  async function loadRiwaya(id) {
+    if (!riwAll) {
+      const res = await fetch('quran-riwayat.json');
+      if (!res.ok) throw new Error('riwaya');
+      riwAll = (await res.json()).riwayat || {};
+    }
+    if (!riwPages[id]) {
+      const byPage = {};
+      (riwAll[id] || []).forEach((row, idx) => {
+        const [s, a, pg, text] = row;
+        (byPage[pg] = byPage[pg] || []).push({ s, n: a, g: 1000000 + idx, page: pg, text: clean(text) });
+      });
+      riwPages[id] = byPage;
+    }
+    return riwPages[id];
+  }
+
   async function loadPage(p) {
     if (p < 1 || p > TOTAL_PAGES) return null;
     const key = p + '|' + [settings.riwaya, settings.reciter, settings.tafsir, settings.translation, settings.tajweed].join('|');
     if (pageCache.has(key)) return pageCache.get(key);
+    if (isRiw()) {
+      const byPage = await loadRiwaya(settings.riwaya);
+      const re = riwEntry();
+      const urlOf = (x) => {
+        if (!re) return null;
+        if (re[2].only && !re[2].only.includes(x.s)) return null; // سور غير مسجلة لهذا القارئ
+        if (re[2].type === 'surah') return re[2].base + String(x.s).padStart(3, '0') + '.mp3';
+        return re[2].base + String(x.s).padStart(3, '0') + String(x.n).padStart(3, '0') + '.mp3';
+      };
+      const obj = { p, ayahs: (byPage[p] || []).map((x) => ({ ...x, juz: juzOf(x.s, x.n), html: esc(x.text), audio: urlOf(x), tafsir: '', tr: '' })) };
+      pageCache.set(key, obj);
+      return obj;
+    }
 
     const ids = [settings.riwaya, settings.reciter, settings.tafsir];
     if (settings.translation) ids.push(settings.translation);
@@ -304,6 +352,14 @@
     const pg = await loadPage(p);
     return pg.ayahs.find((x) => x.s === s && x.n === a) || null;
   }
+  // البحث عن آية في رواية ورش بترقيمها ومن صفحاتها (لا من API حفص)
+  async function findRiwAyah(s, a) {
+    await loadRiwaya('warsh');
+    const row = (riwAll.warsh || []).find((r) => r[0] === s && r[1] === a);
+    if (!row) return null;
+    const pg = await loadPage(row[2]);
+    return pg.ayahs.find((x) => x.s === s && x.n === a) || null;
+  }
 
   // ---------- عرض الصفحة ----------
   async function showPage(p, opts = {}) {
@@ -328,6 +384,7 @@
 
     renderPage(opts.dir);
     updateChrome();
+    recordRead(p);
     if (opts.save !== false) saveLast();
   }
 
@@ -663,6 +720,7 @@
   }
 
   async function playAyah(a) {
+    if (isRiw() && !riwAudioOk()) { toast('اختر قارئاً لهذه الرواية من الإعدادات'); return; }
     if (!a) { stopPlayback(); return; }
     play.cur = a;
     const local = await localAudioUrl(settings.reciter, a.s, a.n).catch(() => null);
@@ -694,13 +752,16 @@
 
   // بدء تشغيل السورة من آية محددة حتى نهايتها
   async function startSurahPlay(s, n) {
-    const first = await findAyah(s, n);
+    if (isRiw() && !riwAudioOk()) { toast('اختر قارئاً لهذه الرواية من الإعدادات'); return; }
+    const first = isRiw() ? await findRiwAyah(s, n) : await findAyah(s, n);
+    if (riwSurahOnly()) toast('تلاوة السورة كاملة (لا يتوفر توقيت للآيات مع هذا القارئ)');
     if (!first) return;
     const label = `سورة ${surahNameShort(s)}`;
     play.label = label;
     play.repeatCount = 1; play.repeatLeft = 1;
     play.follow = true;
     play.nextFn = async (cur) => {
+      if (riwSurahOnly()) return null; // ملف السورة كاملة: لا آية تالية
       const pg = await loadPage(cur.page);
       const idx = pg.ayahs.findIndex((x) => x.g === cur.g);
       let cand = idx >= 0 && idx + 1 < pg.ayahs.length ? pg.ayahs[idx + 1] : null;
@@ -711,6 +772,7 @@
       return cand && cand.s === cur.s ? cand : null;
     };
     play.prevFn = async (cur) => {
+      if (riwSurahOnly()) return null;
       const pg = await loadPage(cur.page);
       const idx = pg.ayahs.findIndex((x) => x.g === cur.g);
       let cand = idx > 0 ? pg.ayahs[idx - 1] : null;
@@ -726,6 +788,7 @@
 
   // تشغيل من مصفوفة (للحفظ)
   function startListPlay(list, label, repeat) {
+    if (isRiw()) { toast('التلاوة متاحة لرواية حفص فقط حالياً'); return; }
     let i = 0;
     play.label = label;
     play.repeatCount = repeat; play.repeatLeft = repeat;
@@ -752,6 +815,13 @@
     if (state.pg) markSelection();
     $$('.ayah.playing').forEach((el) => el.classList.remove('playing'));
   }
+
+  // تسجيل غير متوفر لآية (مثلاً نقص في الملف): ننتقل للآية التالية بدل التوقف
+  audio.addEventListener('error', async () => {
+    if (!play.active || !play.cur || !audio.getAttribute('src')) return;
+    toast('لا يتوفر تسجيل لهذا المقطع مع القارئ المختار');
+    playAyah(await play.nextFn(play.cur).catch(() => null));
+  });
 
   audio.addEventListener('ended', async () => {
     if (!play.active || !play.cur) return;
@@ -799,16 +869,26 @@
 
   // ---------- الحفظ ----------
   async function fetchSurahForMemo(n) {
-    const ids = [settings.riwaya, settings.reciter, settings.tafsir];
+    // وضع الرواية: آيات الرواية نفسها من quran-riwayat.json (بترقيمها وصفحاتها)
+    if (isRiw()) {
+      await loadRiwaya(settings.riwaya);
+      return (riwAll[settings.riwaya] || []).map((r, idx) => ({ r, idx })).filter((x) => x.r[0] === n).map(({ r, idx }) => ({
+        s: n, n: r[1], g: 1000000 + idx, page: r[2],
+        html: esc(clean(r[3])), audio: null, tafsir: '', tr: '',
+      }));
+    }
+    const riwId = settings.riwaya;
+    const recId = settings.reciter;
+    const ids = [riwId, recId, settings.tafsir].filter(Boolean);
     if (settings.translation) ids.push(settings.translation);
     const json = await getJSON(`${API}/surah/${n}/editions/${ids.join(',')}`);
     const byId = {};
     json.data.forEach((ed) => { byId[ed.edition.identifier] = ed; });
-    const base = byId[settings.riwaya];
+    const base = byId[riwId];
     return base.ayahs.map((a, i) => ({
       s: n, n: a.numberInSurah, g: a.number, page: a.page,
       html: esc(clean(a.text)),
-      audio: byId[settings.reciter]?.ayahs[i]?.audio || null,
+      audio: recId ? (byId[recId]?.ayahs[i]?.audio || null) : null,
       tafsir: byId[settings.tafsir]?.ayahs[i]?.text || '',
       tr: settings.translation ? (byId[settings.translation]?.ayahs[i]?.text || '') : '',
     }));
@@ -825,19 +905,106 @@
       const start = Math.min(from, all.length), end = Math.min(Math.max(to, start), all.length);
       memo.ayahs = all.slice(start - 1, end);
       memo.label = `حفظ ${surahNameShort(n)} ${start}-${end}`;
+      memo.s = n; memo.start = start; memo.end = end;
       renderMemo();
     } catch {
       box.innerHTML = '<div class="muted">تعذر التحميل.</div>';
     }
   }
 
+  // إخفاء الكلمات: اختيار ثابت لكل كلمة حتى لا تتغير عند إعادة العرض
+  const MEMO_PCT = [0, 25, 50, 75, 100];
+  function memoWordHidden(s, n, i, pct) {
+    if (pct >= 100) return true;
+    return ((i * 37 + n * 11 + s * 13) % 100) < pct;
+  }
   function renderMemo() {
-    $('#memoText').innerHTML = memo.ayahs.map((a) => `
+    const level = Number($('#memoLevel').value) || 0;
+    const pct = MEMO_PCT[level];
+    $('#memoText').innerHTML = memo.ayahs.map((a) => {
+      if (pct === 0) {
+        return `
       <div class="ayah ${memo.hidden ? 'hidden-text' : ''}" data-g="${a.g}">
         <span class="txt">${a.html}</span>
         <span class="end">${toArabicDigits(a.n)}</span>
-      </div>`).join('') || '<div class="muted">حدد مقطعاً ثم اضغط تحميل.</div>';
+      </div>`;
+      }
+      const words = plainAyah(a.html).split(' ').filter(Boolean);
+      const html = words.map((w, i) => `<span class="mw-w ${memoWordHidden(a.s, a.n, i, pct) ? 'h' : ''}">${esc(w)}</span>`).join(' ');
+      return `
+      <div class="ayah" data-g="${a.g}">
+        <span class="txt">${html}</span>
+        <span class="end">${toArabicDigits(a.n)}</span>
+      </div>`;
+    }).join('') || '<div class="muted">حدد مقطعاً ثم اضغط تحميل.</div>';
   }
+  $('#memoLevel').addEventListener('change', renderMemo);
+
+  // المراجعة المتباعدة: كل مقطع يُحفظ يعود بعد يوم، ثم كلما أُتقن تتباعد المدة
+  const MEMO_GAPS = [1, 3, 7, 14, 30, 60];
+  const MEMO_PROG_KEY = 'memo-progress';
+  const memoKey = (s, a, b) => `${s}:${a}-${b}`;
+  const addDaysKey = (key, n) => { const d = new Date(key + 'T12:00:00'); d.setDate(d.getDate() + n); return dateKey(d); };
+  function getMemoProgress() { return store.get(MEMO_PROG_KEY, {}); }
+  function saveMemoProgress(p) { store.set(MEMO_PROG_KEY, p); }
+
+  $('#btnMemoSaved').addEventListener('click', () => {
+    if (!memo.ayahs.length || !memo.s) return toast('حمّل المقطع أولاً');
+    const prog = getMemoProgress();
+    const k = memoKey(memo.s, memo.start, memo.end);
+    if (!prog[k]) prog[k] = { s: memo.s, from: memo.start, to: memo.end, step: 0, due: addDaysKey(todayKey(), 1) };
+    saveMemoProgress(prog);
+    toast('سيعود المقطع للمراجعة غداً');
+    renderMemoReview();
+  });
+
+  function renderMemoReview() {
+    const prog = getMemoProgress();
+    const today = todayKey();
+    const items = Object.entries(prog).map(([k, v]) => ({ k, ...v }));
+    const due = items.filter((x) => x.due <= today).sort((a, b) => a.due.localeCompare(b.due));
+    const later = items.length - due.length;
+    const rows = due.map((x) => `
+      <div class="wird-line" data-k="${esc(x.k)}">
+        <span>${esc(surahNameShort(x.s))} ${toArabicDigits(x.from)}-${toArabicDigits(x.to)}</span>
+        <span class="row">
+          <button class="btn small" data-act="ok">أتقنتها</button>
+          <button class="btn small ghost" data-act="again">أعيدها</button>
+          <button class="btn small ghost" data-act="open">فتح</button>
+        </span>
+      </div>`).join('');
+    $('#memoDue').innerHTML = due.length
+      ? rows + (later ? `<div style="margin-top:8px">مراجعات قادمة: ${toArabicDigits(later)}</div>` : '')
+      : (items.length ? `لا توجد مراجعة اليوم. المراجعات القادمة: ${toArabicDigits(later)}` : 'لم تُحفظ مقاطع بعد. بعد الحفظ اضغط "حفظت هذا المقطع".');
+  }
+  $('#memoDue').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-act]');
+    if (!btn) return;
+    const row = btn.closest('[data-k]');
+    const prog = getMemoProgress();
+    const item = prog[row.dataset.k];
+    if (!item) return;
+    if (btn.dataset.act === 'ok') {
+      item.step = Math.min(MEMO_GAPS.length - 1, (item.step || 0) + 1);
+      item.due = addDaysKey(todayKey(), MEMO_GAPS[item.step]);
+      saveMemoProgress(prog);
+      renderMemoReview();
+    } else if (btn.dataset.act === 'again') {
+      item.step = 0;
+      item.due = addDaysKey(todayKey(), 1);
+      saveMemoProgress(prog);
+      renderMemoReview();
+    } else if (btn.dataset.act === 'open') {
+      $('#memoSurah').value = String(item.s);
+      $('#memoFrom').value = String(item.from);
+      $('#memoTo').value = String(item.to);
+      loadMemo();
+    }
+  });
+  $('#memoText').addEventListener('click', (e) => {
+    const w = e.target.closest('.mw-w.h');
+    if (w) { w.classList.toggle('shown'); return; }
+  });
   $('#btnMemoLoad').addEventListener('click', loadMemo);
   $('#btnMemoHide').addEventListener('click', () => { memo.hidden = !memo.hidden; renderMemo(); });
   $('#btnMemoPlay').addEventListener('click', () => {
@@ -891,12 +1058,20 @@
   });
 
   // ---------- الإعدادات ----------
+  // قائمة القراء تتبع الرواية: ورش تعرض قراء ورش فقط، وحفص تعرض قراء حفص
+  function syncReciters() {
+    const list = isRiw() ? RIW_RECITERS[settings.riwaya] : RECITERS;
+    if (!list || !list.some(([id]) => id === settings.reciter)) settings.reciter = list ? list[0][0] : DEFAULTS.reciter;
+    const opts = list.map(([id, name]) => `<option value=\"${id}\">${name}</option>`).join('');
+    $('#setReciter').innerHTML = opts;
+    $('#playReciter').innerHTML = opts;
+    $('#setReciter').value = settings.reciter;
+    $('#playReciter').value = settings.reciter;
+  }
+
   function fillSettings() {
     $('#setRiwaya').value = settings.riwaya;
-    $('#setReciter').innerHTML = RECITERS.map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
-    $('#setReciter').value = settings.reciter;
-    $('#playReciter').innerHTML = RECITERS.map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
-    $('#playReciter').value = settings.reciter;
+    syncReciters();
     $('#setTafsir').innerHTML = TAFSIRS.map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
     $('#setTafsir').value = settings.tafsir;
     $('#setTranslation').value = settings.translation;
@@ -913,7 +1088,9 @@
 
   function onSettingChange(key, value) {
     settings[key] = value;
+    if (key === 'riwaya') syncReciters();
     saveSettings();
+    document.body.classList.toggle('riw', isRiw());
     if (key === 'reciter') { $('#setReciter').value = value; $('#playReciter').value = value; }
     if (key === 'tafsir') { $('#setTafsir').value = value; $('#tfBook').value = value; }
     if (key === 'translation') { $('#setTranslation').value = value; $('#tfTrans').value = value; }
@@ -1017,6 +1194,24 @@
     location.reload();
   });
   renderUpdateCard();
+
+  // فحص هادئ عند فتح التطبيق: لو فيه نسخة كاملة أحدث يظهر بانر بدل ما المستخدم يدوّر على الزر
+  async function silentUpdateCheck() {
+    try {
+      if (!hasNativePlugin('ApkUpdater')) return;
+      const mres = await fetch(UPDATE_BASE + 'manifest.json?t=' + Date.now(), { cache: 'no-store' });
+      if (!mres.ok) return;
+      const m = await mres.json();
+      if (!m.apk || !m.apk.url || !m.apk.version) return;
+      const nv = await nativeCall('ApkUpdater', 'getVersion').then((r) => r.version).catch(() => null);
+      if (!nv || !newerVersion(m.apk.version, nv)) return;
+      $('#updBannerText').textContent = 'فيه تحديث جديد للتطبيق (' + m.apk.version + ')';
+      $('#updBannerBtn').onclick = () => { $('#updBanner').hidden = true; showView('settings'); checkForUpdate(); };
+      $('#updBannerX').onclick = () => { $('#updBanner').hidden = true; };
+      $('#updBanner').hidden = false;
+    } catch (e) { /* بلا إنترنت أو بلا ملف: نتجاهل بهدوء */ }
+  }
+  silentUpdateCheck();
 
   // مصدر الملفات: everyayah.com (يسمح بالتحميل من المتصفح) - لكل آية ملف مستقل
   const OFFLINE_SRC = {
@@ -1353,6 +1548,12 @@
     showView('reader');
   });
 
+  // ---------- تدبر: أحكام التجويد ----------
+  function renderTajweedView() {
+    $('#tjList').innerHTML = Object.values(TJ_RULES).map(([name, desc]) =>
+      `<div class="card"><strong>${esc(name)}</strong><div class="muted" style="margin-top:4px">${esc(desc)}</div></div>`).join('');
+  }
+
   // ---------- معاني الكلمات (من الموسوعة القرآنية) ----------
   let meanData = null;
   let meanToken = 0;
@@ -1385,6 +1586,34 @@
     });
   }
   $('#btnMeanings').addEventListener('click', showMeaningsPanel);
+  let mnToken = 0;
+  function renderMeaningsView() {
+    const sel = $('#mnSurah');
+    if (!sel.options.length) sel.innerHTML = surahs.map((x) => `<option value="${x.number}">${x.number}. ${esc(x.name)}</option>`).join('');
+    if (state.sel) sel.value = String(state.sel.s);
+    renderMeaningsList();
+  }
+  function renderMeaningsList() {
+    const s = Number($('#mnSurah').value) || 1;
+    const info = surahs[s - 1];
+    const out = $('#mnList');
+    if (!info) return;
+    const token = ++mnToken;
+    out.innerHTML = '<div class="muted">جاري التحميل...</div>';
+    loadMeanings().then((all) => {
+      if (token !== mnToken) return;
+      let html = '';
+      for (let n = 1; n <= info.numberOfAyahs; n++) {
+        const items = all[`${s}:${n}`];
+        if (!items || !items.length) continue;
+        html += `<div class="card"><strong>${esc(info.name)} - الآية ${toArabicDigits(n)}</strong>` +
+          items.map(([book, words]) => `<div class="pop-label">${esc(book)}</div>` +
+            words.map(([t, m]) => `<div class="mw"><b>${esc(t)}</b>${esc(m)}</div>`).join('')).join('') + '</div>';
+      }
+      out.innerHTML = html || '<div class="muted">لا توجد معانٍ مسجلة لهذه السورة.</div>';
+    }).catch(() => { if (token === mnToken) out.innerHTML = '<div class="muted">تعذّر تحميل المعاني، حاول مرة أخرى.</div>'; });
+  }
+  $('#mnSurah').addEventListener('change', renderMeaningsList);
   $('#meanClose').addEventListener('click', () => $('#meanPanel').classList.remove('show'));
 
   // ---------- مشاركة الآية كصورة ----------
@@ -1485,6 +1714,123 @@
     try { await navigator.share({ files: [file], title: 'آية من القرآن الكريم' }); }
     catch (e) { if (e && e.name !== 'AbortError') toast('تعذّرت المشاركة، استخدم التنزيل'); }
   });
+
+  // ---------- الأذكار ----------
+  let adhkarCats = null;
+  const ADH_KEY = 'adhkar-counts';
+  async function loadAdhkar() {
+    if (adhkarCats) return adhkarCats;
+    const res = await fetch('adhkar.json');
+    if (!res.ok) throw new Error('adhkar');
+    adhkarCats = (await res.json()).categories || [];
+    return adhkarCats;
+  }
+  // العدادات تبدأ من جديد كل يوم
+  function getAdhCounts() {
+    const s = store.get(ADH_KEY, null);
+    if (!s || s.day !== todayKey()) return { day: todayKey(), c: {} };
+    return s;
+  }
+  // الشاشة الأولى للأذكار: تعليمات فقط، والاختيار يكون من قائمة "أذكارك"
+  function renderAdhkarHome() {
+    $('#adhkarCat').hidden = true;
+    $('#adhkarHome').hidden = false;
+    $('#adhkarHome').innerHTML = '<div class="card muted">اختر نوع الأذكار من قائمة «أذكارك» في الشريط.</div>';
+  }
+  function renderAdhkarMenu(cats) {
+    $('#adhkarMenu').innerHTML = cats.map((c) => `<button data-view="adhkar" data-cat="${esc(c.id)}"><span class="ic">📿</span>${esc(c.name)}</button>`).join('');
+  }
+  loadAdhkar().then(renderAdhkarMenu).catch(() => { $('#adhkarMenu').innerHTML = '<div class="muted" style="padding:8px">تعذّر تحميل الأذكار.</div>'; });
+  function openAdhkarCat(id) {
+    const cat = (adhkarCats || []).find((c) => c.id === id);
+    if (!cat) return;
+    const counts = getAdhCounts();
+    $('#adhkarHome').hidden = true;
+    $('#adhkarCat').hidden = false;
+    $('#adhkarCat').innerHTML = `
+      <div class="card">
+        <div class="row" style="justify-content:space-between">
+          <strong>${esc(cat.name)}</strong>
+        </div>
+      </div>
+      ${cat.items.map((it, i) => {
+        const key = id + ':' + i;
+        const n = Math.min(it.count, counts.c[key] || 0);
+        const done = n >= it.count;
+        return `<div class="card adh-item ${done ? 'done' : ''}" data-key="${esc(key)}" data-count="${it.count}">
+          <div>${esc(clean(it.text))}</div>
+          <div class="row" style="justify-content:space-between;margin-top:8px">
+            <button class="btn small adh-count" data-act="count">${toArabicDigits(n)} / ${toArabicDigits(it.count)}</button>
+            <span class="muted">${done ? 'تم' : ''}</span>
+          </div>
+        </div>`;
+      }).join('')}`;
+  }
+  $('#adhkarHome').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-cat]');
+    if (b) openAdhkarCat(b.dataset.cat);
+  });
+  $('#adhkarCat').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-act="count"]');
+    if (!b) return;
+    const card = b.closest('[data-key]');
+    const key = card.dataset.key, max = Number(card.dataset.count);
+    const counts = getAdhCounts();
+    const cur = counts.c[key] || 0;
+    // عند الإتمام: الضغطة التالية تعيد العداد للصفر
+    counts.c[key] = cur >= max ? 0 : cur + 1;
+    store.set(ADH_KEY, counts);
+    openAdhkarCat(key.split(':')[0]);
+  });
+
+  // ---------- إحصائيات القراءة ----------
+  // كل صفحة يفتحها القارئ تُسجَّل في يوم فتحها، مرة واحدة لكل يوم
+  const STATS_KEY = 'stats';
+  const dayKeyAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return dateKey(d); };
+  function getStats() { const s = store.get(STATS_KEY, null); return s && s.days ? s : { days: {} }; }
+  function recordRead(p) {
+    const st = getStats();
+    const k = todayKey();
+    const arr = st.days[k] || [];
+    if (arr.includes(p)) return;
+    arr.push(p);
+    st.days[k] = arr;
+    store.set(STATS_KEY, st);
+    if (curView === 'stats') renderStats();
+  }
+  function renderStats() {
+    const st = getStats();
+    const count = (k) => (st.days[k] || []).length;
+    const today = count(todayKey());
+    let week = 0;
+    for (let i = 0; i < 7; i++) week += count(dayKeyAgo(i));
+    const readDays = Object.keys(st.days).filter((k) => count(k) > 0).length;
+    // السلسلة: أيام متتالية فيها قراءة حتى اليوم، واليوم الحالي لا يكسرها إن لم يُقرأ بعد
+    let streak = 0;
+    let i = today > 0 ? 0 : 1;
+    while (count(dayKeyAgo(i)) > 0 && streak < 3650) { streak++; i++; }
+    const unique = new Set();
+    Object.values(st.days).forEach((arr) => arr.forEach((p) => unique.add(p)));
+
+    $('#stDay').textContent = toArabicDigits(today);
+    $('#stWeek').textContent = toArabicDigits(week);
+    $('#stDays').textContent = toArabicDigits(readDays);
+    $('#stStreak').textContent = toArabicDigits(streak) + ' يوم';
+    $('#stUnique').textContent = toArabicDigits(unique.size) + ' من ' + toArabicDigits(TOTAL_PAGES);
+
+    const vals = [];
+    for (let j = 6; j >= 0; j--) vals.push({ k: dayKeyAgo(j), n: count(dayKeyAgo(j)), j });
+    const max = Math.max(1, ...vals.map((v) => v.n));
+    $('#stBars').innerHTML = vals.map((v) => {
+      const d = new Date(v.k + 'T12:00:00');
+      const label = d.toLocaleDateString('ar-EG', { weekday: 'short' });
+      return `<div class="bar-col">
+        <span class="bar-n">${toArabicDigits(v.n)}</span>
+        <div class="bar" style="height:${Math.max(2, (v.n / max) * 100)}%"></div>
+        <span class="bar-d">${label}</span>
+      </div>`;
+    }).join('');
+  }
 
   // ---------- الورد اليومي وتتبع الختمة ----------
   // البيانات: الورد المختار، والصفحة التالية في الختمة، وعدد صفحات كل يوم، والختمات المكتملة
@@ -1637,6 +1983,7 @@
 
   // ---------- التشغيل الأولي ----------
   applyTheme();
+  document.body.classList.toggle('riw', isRiw());
   fillSettings();
   renderBookmarks();
   renderLast();

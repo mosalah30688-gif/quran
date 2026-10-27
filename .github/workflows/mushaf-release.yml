@@ -17,6 +17,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+      - name: Sync web app from root files (same source as Android)
+        run: bash scripts/build-www.sh
       - name: System libraries
         run: |
           sudo apt-get update
@@ -56,6 +58,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+      - name: Sync web app from root files (same source as Android)
+        run: bash scripts/build-www.sh
       - name: Version
         id: ver
         shell: bash
