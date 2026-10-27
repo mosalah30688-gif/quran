@@ -1,0 +1,1359 @@
+#!/usr/bin/env python3
+"""المصحف - تطبيق سطح المكتب (Qt أصلي) بنفس مميزات تطبيق الأندرويد 1.3.1.
+
+الملفات كلها محلية، والتلاوة والتفسير من الإنترنت كما في الأندرويد.
+تشغيل:   python3 main.py
+اختبار:  python3 main.py --selftest
+"""
+import datetime
+import html
+import json
+import os
+import re
+import sys
+from pathlib import Path
+
+from PySide6.QtCore import QObject, QPropertyAnimation, QSettings, Qt, QTimer, QUrl, Signal
+from PySide6.QtGui import QAction, QColor, QFont, QFontDatabase, QIcon, QKeySequence, QShortcut
+from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
+from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
+from PySide6.QtWidgets import (
+    QApplication, QButtonGroup, QCheckBox, QComboBox, QFileDialog, QFormLayout, QFrame,
+    QGraphicsOpacityEffect, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem,
+    QMainWindow, QMessageBox, QPushButton, QScrollArea, QSpinBox, QStackedWidget, QTextBrowser,
+    QVBoxLayout, QWidget,
+)
+
+APP_NAME = 'Mushaf'
+APP_VERSION = '4.0.0'  # محتوى مطابق لتطبيق الأندرويد 1.3.1
+
+if getattr(sys, 'frozen', False):
+    BASE = Path(getattr(sys, '_MEIPASS', Path(sys.executable).parent))
+else:
+    BASE = Path(__file__).resolve().parent
+DATA = BASE / 'data'
+FONTS = BASE / 'fonts'
+ICON = BASE / 'icon.png'
+
+ARABIC_DIGITS = str.maketrans('0123456789', '٠١٢٣٤٥٦٧٨٩')
+
+
+def ar(n):
+    return str(n).translate(ARABIC_DIGITS)
+
+
+def load(name):
+    return json.loads((DATA / name).read_text(encoding='utf-8'))
+
+
+SURAHS = load('surahs.json')
+JUZ_START = [tuple(x) for x in load('juz.json')]
+TAJWEED = load('tajweed.json')
+MEANINGS = load('quran-meanings.json')['ayahs']
+ADHKAR = load('adhkar.json')['categories']
+SEARCH_AYAHS = load('quran-search.json')['ayahs']
+RIW_DATA = load('quran-riwayat.json')['riwayat']
+HAFS = load('hafs.json')
+AYAH_TEXT = {(s, a): t for s, a, _p, t in HAFS['uthmani']}
+
+TOTAL_PAGES = 604
+
+HAFS_EDITIONS = [
+    ('quran-uthmani', 'حفص عن عاصم - الرسم العثماني'),
+    ('quran-simple', 'حفص - رسم إملائي مبسط'),
+    ('quran-uthmani-min', 'حفص - عثماني مختصر'),
+    ('quran-tajweed', 'حفص - بألوان أحكام التجويد'),
+]
+OTHER_RIWAYAT = [
+    ('warsh', 'ورش عن نافع'),
+    ('qalun', 'قالون عن نافع'),
+    ('duri', 'الدوري عن أبي عمرو'),
+]
+RIWAYA_NAMES = dict(HAFS_EDITIONS + OTHER_RIWAYAT)
+
+# قراء حفص (everyayah: ملف لكل آية) - نفس مصادر تطبيق الأندرويد
+HAFS_RECITERS = [
+    ('ar.alafasy', 'مشاري العفاسي', 'Alafasy_128kbps'),
+    ('ar.abdurrahmaansudais', 'عبدالرحمن السديس', 'Abdurrahmaan_As-Sudais_192kbps'),
+    ('ar.husary', 'محمود خليل الحصري', 'Husary_128kbps'),
+    ('ar.husarymujawwad', 'الحصري (المجوّد)', 'Husary_128kbps_Mujawwad'),
+    ('ar.hudhaify', 'علي الحذيفي', 'Hudhaify_128kbps'),
+    ('ar.shaatree', 'أبو بكر الشاطري', 'Abu_Bakr_Ash-Shaatree_128kbps'),
+    ('ar.hanirifai', 'هاني الرفاعي', 'Hani_Rifai_192kbps'),
+    ('ar.ibrahimakhbar', 'إبراهيم الأخضر', 'Ibrahim_Akhdar_32kbps'),
+    ('ar.aymanswoaid', 'أيمن سويد', 'Ayman_Sowaid_64kbps'),
+    ('ar.abdullahbasfar', 'عبدالله بصفر', 'Abdullah_Basfar_192kbps'),
+]
+# قراء الروايات الثلاث: ayah = ملف لكل آية، surah = ملف لكل سورة (mp3quran)
+RIW_RECITERS = {
+    'warsh': [
+        ('warsh_abdulbasit', 'عبدالباسط عبدالصمد', 'ayah', 'https://everyayah.com/data/warsh/warsh_Abdul_Basit_128kbps/'),
+        ('warsh_husary', 'محمود خليل الحصري', 'surah', 'https://cdn.mp3quran.net/audio/mahmoud-husary/r3/'),
+    ],
+    'qalun': [
+        ('qalun_husary', 'محمود خليل الحصري', 'surah', 'https://cdn.mp3quran.net/audio/mahmoud-husary/r5/'),
+        ('qalun_hudhaify', 'علي الحذيفي', 'surah', 'https://cdn.mp3quran.net/audio/ali-hudhaifi/r2/'),
+    ],
+    'duri': [
+        ('duri_husary', 'محمود خليل الحصري', 'surah', 'https://cdn.mp3quran.net/audio/mahmoud-husary/r4/'),
+    ],
+}
+EVERY_FOLDER = {rid: folder for rid, _n, folder in HAFS_RECITERS}
+
+TAFSIR_EDITIONS = [
+    ('ar.muyassar', 'التفسير الميسر (مجمع الملك فهد)'),
+    ('ar.jalalayn', 'تفسير الجلالين'),
+    ('ar.waseet', 'التفسير الوسيط'),
+    ('ar.baghawi', 'تفسير البغوي'),
+    ('ar.qurtubi', 'تفسير القرطبي'),
+    ('ar.miqbas', 'تنوير المقباس'),
+]
+
+_DIACRITICS = re.compile('[\u0610-\u061a\u064b-\u065f\u0670\u06d6-\u06ed\u0640]')
+
+
+def norm(text):
+    """تطبيع للبحث: بدون تشكيل ولا تطويل، والألفات والياء والتاء المربوطة موحّدة."""
+    t = _DIACRITICS.sub('', text)
+    return t.translate(str.maketrans('أإآٱىة', 'ااااية'))
+
+
+SEARCH_INDEX = [(s, a, norm(t), t) for s, a, t in SEARCH_AYAHS]
+
+
+def riwaya_rows(rid):
+    if rid == 'quran-simple':
+        return HAFS['simple']
+    if rid in ('quran-uthmani', 'quran-uthmani-min', 'quran-tajweed'):
+        return HAFS['uthmani']
+    return RIW_DATA[rid]
+
+
+class Book:
+    """فهرس الرواية: من الصفحة إلى آياتها، ومن الآية إلى صفحتها."""
+
+    def __init__(self, rid):
+        self.rid = rid
+        self.by_page = {}
+        self.where = {}
+        for row in riwaya_rows(rid):
+            s, a, page, text = row
+            self.by_page.setdefault(page, []).append((s, a, text))
+            self.where[(s, a)] = page
+        self.max_page = TOTAL_PAGES
+
+    def page_of(self, s, a):
+        while a >= 1:
+            if (s, a) in self.where:
+                return self.where[(s, a)]
+            a -= 1
+        return 1
+
+    def ayahs_on_page(self, page):
+        return self.by_page.get(page, [])
+
+
+def juz_of(s, a):
+    idx = 0
+    for i, (js, ja) in enumerate(JUZ_START):
+        if (js, ja) <= (s, a):
+            idx = i
+    return idx + 1
+
+
+# ---------- الألوان والتصميم ----------
+THEMES = {
+    'light': dict(bg='#eef3ef', side='#0f3d32', side_hi='#15614d', card='#ffffff', text='#1d2a26',
+                  muted='#6b7b75', brand='#0f7a5c', brand_hi='#14996f', line='#d7e2dc',
+                  paper='#fbf6e6', paper_line='#b8985a', hover='#e4ece8', danger='#b3261e'),
+    'dark': dict(bg='#0c1210', side='#07110e', side_hi='#12332a', card='#16201d', text='#e6ede9',
+                 muted='#8fa19a', brand='#22a77c', brand_hi='#2fc092', line='#26332f',
+                 paper='#1d1c14', paper_line='#8c7440', hover='#1d2a26', danger='#ef6a60'),
+}
+
+
+def qss(t):
+    return f"""
+    QWidget {{ color: {t['text']}; font-size: 14px; }}
+    QMainWindow, QWidget#root {{ background: {t['bg']}; }}
+    QWidget#sidebar {{ background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 {t['side']}, stop:1 {t['side_hi']}); }}
+    QLabel#brand {{ color: #ffffff; font-size: 22px; font-weight: 700; padding: 18px 16px 4px 16px; }}
+    QLabel#brandSub {{ color: #bfe6d8; font-size: 12px; padding: 0 16px 14px 16px; }}
+    QPushButton#nav {{ background: transparent; color: #cfe9df; border: none; border-radius: 12px;
+                      padding: 11px 16px; text-align: right; font-size: 15px; margin: 2px 12px; }}
+    QPushButton#nav:hover {{ background: rgba(255,255,255,0.08); }}
+    QPushButton#nav:checked {{ background: {t['brand']}; color: #ffffff; font-weight: 700; }}
+    QLabel#pageTitle {{ font-size: 24px; font-weight: 700; }}
+    QLabel#pageSub {{ color: {t['muted']}; font-size: 13px; }}
+    QFrame#card {{ background: {t['card']}; border: 1px solid {t['line']}; border-radius: 16px; }}
+    QLabel#muted {{ color: {t['muted']}; }}
+    QLabel#stat {{ font-size: 34px; font-weight: 800; color: {t['brand']}; }}
+    QTextBrowser#mushaf {{ background: {t['paper']}; border: 2px solid {t['paper_line']};
+                          border-radius: 18px; padding: 26px 34px; }}
+    QTextBrowser {{ background: {t['card']}; border: 1px solid {t['line']}; border-radius: 16px; padding: 14px; }}
+    QComboBox, QSpinBox, QLineEdit {{ background: {t['card']}; border: 1px solid {t['line']};
+                                     border-radius: 10px; padding: 7px 12px; min-height: 26px; }}
+    QComboBox:focus, QSpinBox:focus, QLineEdit:focus {{ border: 1px solid {t['brand']}; }}
+    QComboBox QAbstractItemView {{ background: {t['card']}; border: 1px solid {t['line']};
+                                  selection-background-color: {t['brand']}; selection-color: #ffffff; }}
+    QComboBox::drop-down {{ border: none; width: 22px; }}
+    QPushButton {{ background: {t['card']}; border: 1px solid {t['line']}; border-radius: 10px;
+                  padding: 8px 16px; font-size: 14px; }}
+    QPushButton:hover {{ background: {t['hover']}; }}
+    QPushButton:disabled {{ color: {t['muted']}; }}
+    QPushButton#primary {{ background: {t['brand']}; color: #ffffff; border: none; font-weight: 700; }}
+    QPushButton#primary:hover {{ background: {t['brand_hi']}; }}
+    QPushButton#danger {{ color: {t['danger']}; }}
+    QListWidget {{ background: {t['card']}; border: 1px solid {t['line']}; border-radius: 14px; padding: 6px; }}
+    QListWidget::item {{ padding: 10px; border-radius: 8px; }}
+    QListWidget::item:selected {{ background: {t['brand']}; color: #ffffff; }}
+    QListWidget::item:hover {{ background: {t['hover']}; }}
+    QScrollArea {{ background: transparent; border: none; }}
+    QScrollBar:vertical {{ background: transparent; width: 10px; margin: 2px; }}
+    QScrollBar::handle:vertical {{ background: {t['line']}; border-radius: 5px; min-height: 30px; }}
+    QScrollBar::add-line, QScrollBar::sub-line {{ height: 0; }}
+    QGroupBox {{ font-weight: 700; }}
+    QCheckBox {{ spacing: 8px; }}
+    QMessageBox {{ background: {t['card']}; }}
+    """
+
+
+def card():
+    f = QFrame()
+    f.setObjectName('card')
+    return f
+
+
+def heading(title, sub=''):
+    box = QWidget()
+    lay = QVBoxLayout(box)
+    lay.setContentsMargins(0, 0, 0, 8)
+    lay.setSpacing(2)
+    t = QLabel(title)
+    t.setObjectName('pageTitle')
+    lay.addWidget(t)
+    if sub:
+        s = QLabel(sub)
+        s.setObjectName('pageSub')
+        lay.addWidget(s)
+    return box
+
+
+def fade_in(widget):
+    effect = QGraphicsOpacityEffect(widget)
+    widget.setGraphicsEffect(effect)
+    anim = QPropertyAnimation(effect, b'opacity', widget)
+    anim.setDuration(220)
+    anim.setStartValue(0.0)
+    anim.setEndValue(1.0)
+    anim.finished.connect(lambda: widget.setGraphicsEffect(None))
+    anim.start()
+    widget._fade_anim = anim
+
+
+class Main(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle('المصحف')
+        if ICON.exists():
+            self.setWindowIcon(QIcon(str(ICON)))
+        self.settings = QSettings('mosalah30688', APP_NAME)
+        self.theme_name = self.settings.value('theme', 'light', type=str)
+        if self.theme_name not in THEMES:
+            self.theme_name = 'light'
+        self.font_pt = self.settings.value('font_pt', 22, type=int)
+        riwaya = self.settings.value('riwaya', 'quran-uthmani', type=str)
+        if riwaya not in RIWAYA_NAMES:
+            riwaya = 'quran-uthmani'
+        self.riwaya_id = riwaya
+        self.book = Book(riwaya)
+        self.page = min(max(self.settings.value('page', 1, type=int), 1), TOTAL_PAGES)
+        self.last_counted = None
+
+        self.nam = QNetworkAccessManager(self)
+        self.tafsir_cache = {}
+        self.tafsir_key = None
+        self.player = QMediaPlayer(self)
+        self.audio = QAudioOutput(self)
+        self.audio.setVolume(1.0)
+        self.player.setAudioOutput(self.audio)
+        self.player.mediaStatusChanged.connect(self.on_media_status)
+        self.player.errorOccurred.connect(self.on_media_error)
+        self.queue = []
+        self.queue_index = -1
+        self.playing = False
+        self.highlight = None
+
+        self.resize(1440, 900)
+        self.setMinimumSize(1080, 700)
+        self.build_ui()
+        self.apply_theme()
+        self.show_view('reader')
+        self.render_page()
+        geo = self.settings.value('geometry')
+        if geo is not None:
+            self.restoreGeometry(geo)
+
+        QShortcut(QKeySequence('PgDown'), self, activated=lambda: self.go_page(self.page + 1))
+        QShortcut(QKeySequence('PgUp'), self, activated=lambda: self.go_page(self.page - 1))
+        QShortcut(QKeySequence('Ctrl+P'), self, activated=self.toggle_play)
+        QShortcut(QKeySequence('Ctrl+F'), self, activated=lambda: self.show_view('search'))
+        QShortcut(QKeySequence('Ctrl+0'), self, activated=lambda: self.set_font(22))
+        QShortcut(QKeySequence('Ctrl+='), self, activated=lambda: self.set_font(self.font_pt + 2))
+        QShortcut(QKeySequence('Ctrl+-'), self, activated=lambda: self.set_font(self.font_pt - 2))
+
+    # ---------- بناء الواجهة ----------
+    def build_ui(self):
+        root = QWidget()
+        root.setObjectName('root')
+        self.setCentralWidget(root)
+        row = QHBoxLayout(root)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(0)
+
+        side = QWidget()
+        side.setObjectName('sidebar')
+        side.setFixedWidth(248)
+        sl = QVBoxLayout(side)
+        sl.setContentsMargins(0, 0, 0, 12)
+        brand = QLabel('المصحف')
+        brand.setObjectName('brand')
+        sub = QLabel(f'الإصدار {APP_VERSION} · تطبيق سطح المكتب')
+        sub.setObjectName('brandSub')
+        sl.addWidget(brand)
+        sl.addWidget(sub)
+
+        self.nav_group = QButtonGroup(self)
+        self.nav_group.setExclusive(True)
+        self.views = {}
+        self.nav_buttons = {}
+        nav_items = [
+            ('reader', '📖', 'المصحف'),
+            ('tafsir', '📚', 'التفسير'),
+            ('search', '🔍', 'البحث في القرآن'),
+            ('meanings', '🔤', 'معاني الكلمات'),
+            ('tajweed', '🎨', 'أحكام التجويد'),
+            ('adhkar', '📿', 'الأذكار'),
+            ('memo', '🧠', 'وضع الحفظ'),
+            ('wird', '🌿', 'الورد اليومي'),
+            ('bookmarks', '⭐', 'المحفوظات'),
+            ('stats', '📊', 'الإحصائيات'),
+        ]
+        for key, icon, label in nav_items:
+            b = QPushButton(f'{icon}   {label}')
+            b.setObjectName('nav')
+            b.setCheckable(True)
+            b.clicked.connect(lambda _c=False, k=key: self.show_view(k))
+            self.nav_group.addButton(b)
+            self.nav_buttons[key] = b
+            sl.addWidget(b)
+        sl.addStretch(1)
+        b = QPushButton('⚙️   الإعدادات')
+        b.setObjectName('nav')
+        b.setCheckable(True)
+        b.clicked.connect(lambda: self.show_view('settings'))
+        self.nav_group.addButton(b)
+        self.nav_buttons['settings'] = b
+        sl.addWidget(b)
+        row.addWidget(side)
+
+        right = QWidget()
+        rl = QVBoxLayout(right)
+        rl.setContentsMargins(26, 20, 26, 16)
+        rl.setSpacing(14)
+        self.stack = QStackedWidget()
+        rl.addWidget(self.stack, 1)
+        row.addWidget(right, 1)
+
+        self.views['reader'] = self.build_reader()
+        self.views['tafsir'] = self.build_tafsir()
+        self.views['search'] = self.build_search()
+        self.views['meanings'] = self.build_meanings()
+        self.views['tajweed'] = self.build_tajweed()
+        self.views['adhkar'] = self.build_adhkar()
+        self.views['memo'] = self.build_memo()
+        self.views['wird'] = self.build_wird()
+        self.views['bookmarks'] = self.build_bookmarks()
+        self.views['stats'] = self.build_stats()
+        self.views['settings'] = self.build_settings()
+        for w in self.views.values():
+            self.stack.addWidget(w)
+        self.statusBar().setSizeGripEnabled(False)
+
+    def show_view(self, name):
+        self.stack.setCurrentWidget(self.views[name])
+        self.nav_buttons[name].setChecked(True)
+        fade_in(self.views[name])
+        if name == 'reader':
+            self.sync_index()
+        elif name == 'tafsir':
+            self.load_tafsir()
+        elif name == 'meanings':
+            self.render_meanings()
+        elif name == 'tajweed':
+            self.render_tajweed()
+        elif name == 'adhkar':
+            self.show_adhkar(self.adh_cat)
+        elif name == 'memo':
+            self.render_memo()
+        elif name == 'wird':
+            self.render_wird()
+        elif name == 'bookmarks':
+            self.render_bookmarks()
+        elif name == 'stats':
+            self.render_stats()
+        elif name == 'search':
+            self.search_input.setFocus()
+
+    # ---------- المصحف ----------
+    def build_reader(self):
+        w = QWidget()
+        lay = QVBoxLayout(w)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(12)
+
+        bar = card()
+        bl = QHBoxLayout(bar)
+        bl.setContentsMargins(14, 10, 14, 10)
+        self.btn_next = QPushButton('التالية ›')
+        self.btn_prev = QPushButton('‹ السابقة')
+        self.btn_next.clicked.connect(lambda: self.go_page(self.page + 1))
+        self.btn_prev.clicked.connect(lambda: self.go_page(self.page - 1))
+        self.page_label = QLabel()
+        self.page_label.setObjectName('pageSub')
+        self.page_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.combo_surah = QComboBox()
+        for s in SURAHS:
+            self.combo_surah.addItem(f'{s["number"]}. {s["name"]}', s['number'])
+        self.combo_surah.currentIndexChanged.connect(self.on_surah_index)
+        self.combo_juz = QComboBox()
+        for i in range(len(JUZ_START)):
+            self.combo_juz.addItem(f'الجزء {ar(i + 1)}', i)
+        self.combo_juz.currentIndexChanged.connect(self.on_juz)
+        self.combo_ayah = QComboBox()
+        self.combo_ayah.setMinimumWidth(90)
+        self.combo_ayah.currentIndexChanged.connect(self.on_ayah)
+        self.btn_mark = QPushButton('☆ حفظ الصفحة')
+        self.btn_mark.clicked.connect(self.toggle_bookmark)
+        bl.addWidget(self.btn_prev)
+        bl.addWidget(self.btn_next)
+        bl.addSpacing(10)
+        bl.addWidget(self.combo_surah, 2)
+        bl.addWidget(self.combo_juz, 1)
+        bl.addWidget(self.combo_ayah, 0)
+        bl.addStretch(1)
+        bl.addWidget(self.btn_mark)
+        lay.addWidget(bar)
+
+        self.page_info = QLabel()
+        self.page_info.setObjectName('pageSub')
+        self.page_info.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lay.addWidget(self.page_info)
+
+        self.browser = QTextBrowser()
+        self.browser.setObjectName('mushaf')
+        self.browser.setOpenExternalLinks(False)
+        self.browser.setFrameShape(QTextBrowser.Shape.NoFrame)
+        lay.addWidget(self.browser, 1)
+
+        player = card()
+        pl = QHBoxLayout(player)
+        pl.setContentsMargins(14, 10, 14, 10)
+        self.btn_play = QPushButton('▶  تلاوة الصفحة')
+        self.btn_play.setObjectName('primary')
+        self.btn_play.clicked.connect(self.toggle_play)
+        self.btn_stop = QPushButton('⏹')
+        self.btn_stop.clicked.connect(lambda: self.stop_play('أوقفت التلاوة'))
+        self.reciter_combo = QComboBox()
+        self.reciter_combo.setMinimumWidth(260)
+        self.reciter_combo.currentIndexChanged.connect(self.on_reciter_change)
+        self.play_status = QLabel('')
+        self.play_status.setObjectName('muted')
+        pl.addWidget(self.btn_play)
+        pl.addWidget(self.btn_stop)
+        pl.addWidget(self.reciter_combo)
+        pl.addStretch(1)
+        pl.addWidget(self.play_status)
+        lay.addWidget(player)
+        self.populate_reciters()
+        return w
+
+    def populate_reciters(self):
+        self.reciter_combo.blockSignals(True)
+        self.reciter_combo.clear()
+        for rid, name in self.reciter_options():
+            self.reciter_combo.addItem(name, rid)
+        saved = self.settings.value(f'reciter:{self.riwaya_id}', '', type=str)
+        idx = self.reciter_combo.findData(saved)
+        self.reciter_combo.setCurrentIndex(idx if idx >= 0 else 0)
+        self.reciter_combo.blockSignals(False)
+
+    def reciter_options(self):
+        if self.riwaya_id in RIW_RECITERS:
+            return [(rid, name) for rid, name, _t, _b in RIW_RECITERS[self.riwaya_id]]
+        return [(rid, name) for rid, name, _f in HAFS_RECITERS]
+
+    def current_reciter(self):
+        return self.reciter_combo.currentData()
+
+    def on_reciter_change(self, _idx):
+        rid = self.current_reciter()
+        if rid:
+            self.settings.setValue(f'reciter:{self.riwaya_id}', rid)
+
+    def go_page(self, p):
+        p = min(max(p, 1), TOTAL_PAGES)
+        if p == self.page:
+            return
+        self.page = p
+        self.settings.setValue('page', p)
+        if self.playing:
+            self.stop_play()
+        if self.last_counted != p:
+            self.last_counted = p
+            self.count_page_visit()
+        self.render_page()
+        self.sync_index()
+
+    def render_page(self):
+        page = self.page
+        items = self.book.ayahs_on_page(page)
+        t = THEMES[self.theme_name]
+        parts = []
+        last = None
+        for s, a, text in items:
+            if a == 1 and s != last:
+                parts.append(f'<p align="center" style="font-size:{self.font_pt + 6}pt; font-weight:bold; '
+                             f'color:{t["brand"]}; margin-top:6px;">{html.escape(SURAHS[s - 1]["name"])}</p>')
+                last = s
+            hl = self.highlight == (s, a)
+            style = (f'background-color:{t["brand"]}; color:#ffffff; border-radius:8px;' if hl else '')
+            parts.append(f'<span style="{style}">{html.escape(text)}</span> '
+                         f'<span style="font-size:{max(self.font_pt - 9, 10)}pt; color:{t["brand"]};">'
+                         f'﴿{ar(a)}﴾</span> ')
+        body = ''.join(parts) or '<p align="center">لا توجد آيات في هذه الصفحة</p>'
+        self.browser.setHtml(
+            f'<html><body dir="rtl" style="font-family:\'Amiri Quran\'; font-size:{self.font_pt}pt; '
+            f'line-height:200%; color:{t["text"]};"><p align="center" dir="rtl">{body}</p></body></html>')
+        first = items[0] if items else (1, 1, '')
+        self.page_label.setText(f'صفحة {ar(page)} من {ar(TOTAL_PAGES)}')
+        self.page_info.setText(f'الجزء {ar(juz_of(first[0], first[1]))}  ·  '
+                               f'{SURAHS[first[0] - 1]["name"]}  ·  {RIWAYA_NAMES[self.riwaya_id]}')
+        self.btn_prev.setEnabled(page > 1)
+        self.btn_next.setEnabled(page < TOTAL_PAGES)
+        self.update_mark_button()
+
+    def set_font(self, value):
+        self.font_pt = min(max(value, 14), 44)
+        self.settings.setValue('font_pt', self.font_pt)
+        if hasattr(self, 'font_spin'):
+            self.font_spin.blockSignals(True)
+            self.font_spin.setValue(self.font_pt)
+            self.font_spin.blockSignals(False)
+        self.render_page()
+
+    def sync_index(self):
+        items = self.book.ayahs_on_page(self.page)
+        if not items:
+            return
+        s, a, _t = items[0]
+        for combo, value in ((self.combo_surah, s), (self.combo_juz, juz_of(s, a) - 1)):
+            combo.blockSignals(True)
+            combo.setCurrentIndex(combo.findData(value) if combo is self.combo_surah else value)
+            combo.blockSignals(False)
+        self.fill_ayah_combo(s, a)
+
+    def fill_ayah_combo(self, s, current):
+        self.combo_ayah.blockSignals(True)
+        self.combo_ayah.clear()
+        for n in range(1, SURAHS[s - 1]['numberOfAyahs'] + 1):
+            self.combo_ayah.addItem(ar(n), n)
+        self.combo_ayah.setCurrentIndex(max(current - 1, 0))
+        self.combo_ayah.blockSignals(False)
+
+    def on_surah_index(self, idx):
+        s = self.combo_surah.itemData(idx)
+        if s is None:
+            return
+        self.fill_ayah_combo(s, 1)
+        self.go_page(self.book.page_of(s, 1))
+
+    def on_juz(self, idx):
+        if idx < 0:
+            return
+        s, a = JUZ_START[idx]
+        self.go_page(self.book.page_of(s, a))
+
+    def on_ayah(self, idx):
+        if idx < 0:
+            return
+        s = self.combo_surah.currentData()
+        self.go_page(self.book.page_of(s, idx + 1))
+
+    # ---------- التلاوة ----------
+    def audio_queue_for_page(self):
+        """قائمة الملفات للصفحة: ملف لكل آية (everyayah) أو لكل سورة (mp3quran)."""
+        rid = self.current_reciter()
+        items = self.book.ayahs_on_page(self.page)
+        if self.riwaya_id in RIW_RECITERS:
+            entry = next((e for e in RIW_RECITERS[self.riwaya_id] if e[0] == rid), None)
+            if entry is None:
+                return []
+            _id, _name, kind, base = entry
+            if kind == 'ayah':
+                return [(f'{base}{s:03d}{a:03d}.mp3', (s, a)) for s, a, _t in items]
+            seen = []
+            for s, _a, _t in items:
+                if s not in seen:
+                    seen.append(s)
+            return [(f'{base}{s:03d}.mp3', (s, None)) for s in seen]
+        folder = EVERY_FOLDER.get(rid)
+        if not folder:
+            return []
+        return [(f'https://everyayah.com/data/{folder}/{s:03d}{a:03d}.mp3', (s, a)) for s, a, _t in items]
+
+    def toggle_play(self):
+        if self.playing and self.player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
+            self.player.pause()
+            self.btn_play.setText('▶  متابعة التلاوة')
+            self.play_status.setText('متوقفة مؤقتاً')
+            return
+        if self.playing:
+            self.player.play()
+            self.btn_play.setText('⏸  إيقاف مؤقت')
+            return
+        self.queue = self.audio_queue_for_page()
+        if not self.queue:
+            self.play_status.setText('لا توجد تلاوة لهذا القارئ في هذه الرواية')
+            return
+        self.playing = True
+        self.queue_index = 0
+        self.btn_play.setText('⏸  إيقاف مؤقت')
+        self.play_index(0)
+
+    def play_index(self, i):
+        if i >= len(self.queue):
+            self.stop_play('انتهت تلاوة الصفحة')
+            return
+        self.queue_index = i
+        url, label = self.queue[i]
+        self.highlight = label if label and label[1] is not None else None
+        self.player.setSource(QUrl(url))
+        self.player.play()
+        if label[1] is None:
+            self.play_status.setText(f'تلاوة سورة {SURAHS[label[0] - 1]["name"]}')
+        else:
+            self.play_status.setText(f'{SURAHS[label[0] - 1]["name"]} · الآية {ar(label[1])}')
+        self.render_page()
+
+    def stop_play(self, message=''):
+        self.playing = False
+        self.queue = []
+        self.queue_index = -1
+        self.highlight = None
+        self.player.stop()
+        self.btn_play.setText('▶  تلاوة الصفحة')
+        self.play_status.setText(message)
+        self.render_page()
+
+    def on_media_status(self, status):
+        if self.playing and status == QMediaPlayer.MediaStatus.EndOfMedia:
+            self.play_index(self.queue_index + 1)
+
+    def on_media_error(self, *_args):
+        if self.playing:
+            self.stop_play('تعذّر تشغيل الصوت، تأكد من الاتصال بالإنترنت')
+
+    # ---------- الرواية والإعدادات ----------
+    def on_riwaya(self, idx):
+        rid = self.riwaya_combo.itemData(idx)
+        if not rid or rid == self.riwaya_id:
+            return
+        if self.playing:
+            self.stop_play()
+        self.riwaya_id = rid
+        self.settings.setValue('riwaya', rid)
+        self.book = Book(rid)
+        self.page = min(self.page, TOTAL_PAGES)
+        self.populate_reciters()
+        self.render_page()
+        self.sync_index()
+
+    # ---------- التفسير ----------
+    def build_tafsir(self):
+        w = QWidget()
+        lay = QVBoxLayout(w)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(12)
+        lay.addWidget(heading('التفسير', 'تفسير الآية من الإنترنت، ويُحفظ مؤقتاً أثناء التشغيل'))
+        bar = card()
+        bl = QHBoxLayout(bar)
+        bl.setContentsMargins(14, 10, 14, 10)
+        self.tf_surah = QComboBox()
+        for s in SURAHS:
+            self.tf_surah.addItem(f'{s["number"]}. {s["name"]}', s['number'])
+        self.tf_surah.currentIndexChanged.connect(self.on_tf_surah)
+        self.tf_ayah = QSpinBox()
+        self.tf_ayah.setRange(1, 286)
+        self.tf_ayah.valueChanged.connect(lambda _v: self.load_tafsir())
+        self.tf_book = QComboBox()
+        for eid, name in TAFSIR_EDITIONS:
+            self.tf_book.addItem(name, eid)
+        self.tf_book.setCurrentIndex(max(self.tf_book.findData(
+            self.settings.value('tafsir', 'ar.muyassar', type=str)), 0))
+        self.tf_book.currentIndexChanged.connect(self.on_tf_book)
+        btn_prev = QPushButton('‹ السابقة')
+        btn_prev.clicked.connect(lambda: self.tf_ayah.setValue(self.tf_ayah.value() - 1))
+        btn_next = QPushButton('التالية ›')
+        btn_next.clicked.connect(lambda: self.tf_ayah.setValue(self.tf_ayah.value() + 1))
+        bl.addWidget(QLabel('السورة'))
+        bl.addWidget(self.tf_surah, 2)
+        bl.addWidget(QLabel('الآية'))
+        bl.addWidget(self.tf_ayah)
+        bl.addWidget(self.tf_book, 2)
+        bl.addWidget(btn_prev)
+        bl.addWidget(btn_next)
+        lay.addWidget(bar)
+        self.tf_browser = QTextBrowser()
+        self.tf_browser.setOpenExternalLinks(False)
+        lay.addWidget(self.tf_browser, 1)
+        return w
+
+    def on_tf_surah(self, _idx):
+        s = self.tf_surah.currentData() or 1
+        self.tf_ayah.blockSignals(True)
+        self.tf_ayah.setRange(1, SURAHS[s - 1]['numberOfAyahs'])
+        self.tf_ayah.setValue(1)
+        self.tf_ayah.blockSignals(False)
+        self.load_tafsir()
+
+    def on_tf_book(self, _idx):
+        self.settings.setValue('tafsir', self.tf_book.currentData())
+        self.load_tafsir()
+
+    def load_tafsir(self):
+        if not hasattr(self, 'tf_ayah'):
+            return
+        s = self.tf_surah.currentData() or 1
+        a = self.tf_ayah.value()
+        edition = self.tf_book.currentData()
+        key = (edition, s, a)
+        self.tf_key = key
+        t = THEMES[self.theme_name]
+        head = (f'<p align="center" style="font-family:\'Amiri Quran\'; font-size:26pt; line-height:200%;">'
+                f'{html.escape(AYAH_TEXT.get((s, a), ""))} <span style="font-size:14pt; color:{t["brand"]}">'
+                f'﴿{ar(a)}﴾</span></p><p align="center" style="color:{t["muted"]}">'
+                f'{html.escape(SURAHS[s - 1]["name"])} · الآية {ar(a)}</p>')
+        if key in self.tafsir_cache:
+            self.show_tafsir(head, self.tafsir_cache[key])
+            return
+        self.tf_browser.setHtml(f'<html><body dir="rtl">{head}<p align="center">جارٍ تحميل التفسير…</p></body></html>')
+        req = QNetworkRequest(QUrl(f'https://api.alquran.cloud/v1/ayah/{s}:{a}/{edition}'))
+        reply = self.nam.get(req)
+        reply.finished.connect(lambda: self.on_tafsir_reply(reply, key, head))
+
+    def on_tafsir_reply(self, reply, key, head):
+        text = None
+        if reply.error() == QNetworkReply.NetworkError.NoError:
+            try:
+                text = json.loads(bytes(reply.readAll()).decode('utf-8'))['data']['text']
+            except (ValueError, KeyError, TypeError):
+                text = None
+        reply.deleteLater()
+        if text is None:
+            if key == self.tf_key:
+                self.tf_browser.setHtml(f'<html><body dir="rtl">{head}<p align="center">تعذّر تحميل التفسير، '
+                                        'تأكد من الاتصال بالإنترنت.</p></body></html>')
+            return
+        self.tafsir_cache[key] = text
+        if key == self.tf_key:
+            self.show_tafsir(head, text)
+
+    def show_tafsir(self, head, text):
+        self.tf_browser.setHtml(
+            f'<html><body dir="rtl">{head}<h3>{html.escape(self.tf_book.currentText())}</h3>'
+            f'<p style="font-size:16pt; line-height:190%;">{html.escape(text)}</p></body></html>')
+
+    # ---------- البحث ----------
+    def build_search(self):
+        w = QWidget()
+        lay = QVBoxLayout(w)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(12)
+        lay.addWidget(heading('البحث في القرآن', 'اكتب كلمة أو عبارة (بدون تشكيل)، وانقر النتيجة لتفتح صفحتها'))
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText('ابحث…')
+        self.search_input.returnPressed.connect(self.run_search)
+        self.search_input.textChanged.connect(lambda _t: self.run_search())
+        lay.addWidget(self.search_input)
+        self.search_status = QLabel('')
+        self.search_status.setObjectName('muted')
+        lay.addWidget(self.search_status)
+        self.search_results = QListWidget()
+        self.search_results.itemActivated.connect(self.open_search_result)
+        self.search_results.itemDoubleClicked.connect(self.open_search_result)
+        lay.addWidget(self.search_results, 1)
+        return w
+
+    def run_search(self):
+        q = norm(self.search_input.text().strip())
+        self.search_results.clear()
+        if not q:
+            self.search_status.setText('')
+            return
+        found = 0
+        for s, a, n, text in SEARCH_INDEX:
+            if q in n:
+                found += 1
+                item = QListWidgetItem(f'{SURAHS[s - 1]["name"]} · {ar(a)}    {text}')
+                item.setData(Qt.ItemDataRole.UserRole, (s, a))
+                self.search_results.addItem(item)
+                if found >= 300:
+                    break
+        self.search_status.setText(f'{ar(found)} نتيجة' + (' (أول 300 فقط)' if found >= 300 else ''))
+
+    def open_search_result(self, item):
+        if item is None:
+            return
+        s, a = item.data(Qt.ItemDataRole.UserRole)
+        self.go_page(self.book.page_of(s, a))
+        self.show_view('reader')
+
+    # ---------- المعاني ----------
+    def build_meanings(self):
+        w = QWidget()
+        lay = QVBoxLayout(w)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(12)
+        lay.addWidget(heading('معاني الكلمات', 'من كتب غريب القرآن والمعاني المعتمدة في التطبيق'))
+        self.mn_combo = QComboBox()
+        for s in SURAHS:
+            self.mn_combo.addItem(f'{s["number"]}. {s["name"]}', s['number'])
+        self.mn_combo.currentIndexChanged.connect(lambda _i: self.render_meanings())
+        lay.addWidget(self.mn_combo)
+        self.mn_browser = QTextBrowser()
+        self.mn_browser.setOpenExternalLinks(False)
+        lay.addWidget(self.mn_browser, 1)
+        return w
+
+    def render_meanings(self):
+        s = self.mn_combo.currentData() or 1
+        info = SURAHS[s - 1]
+        parts = []
+        for n in range(1, info['numberOfAyahs'] + 1):
+            books = MEANINGS.get(f'{s}:{n}')
+            if not books:
+                continue
+            parts.append(f'<h3>{html.escape(info["name"])} - الآية {ar(n)}</h3>')
+            for book, words in books:
+                parts.append(f'<p style="color:#888">{html.escape(book)}</p>')
+                for word, meaning in words:
+                    parts.append(f'<p><b>{html.escape(word)}</b> {html.escape(meaning)}</p>')
+        body = ''.join(parts) or '<p>لا توجد معانٍ مسجلة لهذه السورة.</p>'
+        self.mn_browser.setHtml(f'<html><body dir="rtl">{body}</body></html>')
+
+    # ---------- أحكام التجويد ----------
+    def build_tajweed(self):
+        w = QWidget()
+        lay = QVBoxLayout(w)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(12)
+        lay.addWidget(heading('أحكام التجويد', 'القواعد السبعة عشر مع شرح مختصر لكل حكم'))
+        self.tj_browser = QTextBrowser()
+        lay.addWidget(self.tj_browser, 1)
+        return w
+
+    def render_tajweed(self):
+        t = THEMES[self.theme_name]
+        rows = ''.join(
+            f'<p style="margin-bottom:14px"><b style="font-size:16pt; color:{t["brand"]}">{html.escape(name)}</b>'
+            f'<br><span>{html.escape(desc)}</span></p>'
+            for name, desc in TAJWEED.values())
+        self.tj_browser.setHtml(f'<html><body dir="rtl">{rows}</body></html>')
+
+    # ---------- الأذكار ----------
+    def build_adhkar(self):
+        w = QWidget()
+        lay = QHBoxLayout(w)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(16)
+        self.adh_cat = 0
+        self.adh_list = QListWidget()
+        self.adh_list.setFixedWidth(260)
+        for i, cat in enumerate(ADHKAR):
+            self.adh_list.addItem(f'{cat["name"]}')
+        self.adh_list.setCurrentRow(0)
+        self.adh_list.currentRowChanged.connect(self.show_adhkar)
+        lay.addWidget(self.adh_list)
+        right = QWidget()
+        rl = QVBoxLayout(right)
+        rl.setContentsMargins(0, 0, 0, 0)
+        self.adh_title = QLabel()
+        self.adh_title.setObjectName('pageTitle')
+        rl.addWidget(self.adh_title)
+        self.adh_scroll = QScrollArea()
+        self.adh_scroll.setWidgetResizable(True)
+        self.adh_inner = QWidget()
+        self.adh_items = QVBoxLayout(self.adh_inner)
+        self.adh_items.setSpacing(12)
+        self.adh_scroll.setWidget(self.adh_inner)
+        rl.addWidget(self.adh_scroll, 1)
+        lay.addWidget(right, 1)
+        return w
+
+    def adhkar_state(self):
+        raw = self.settings.value('adhkar', '{}', type=str)
+        try:
+            data = json.loads(raw)
+        except ValueError:
+            data = {}
+        today = datetime.date.today().isoformat()
+        if data.get('day') != today:
+            data = {'day': today, 'c': {}}
+        return data
+
+    def save_adhkar(self, data):
+        self.settings.setValue('adhkar', json.dumps(data, ensure_ascii=False))
+
+    def show_adhkar(self, idx):
+        if idx < 0:
+            return
+        self.adh_cat = idx
+        cat = ADHKAR[idx]
+        self.adh_title.setText(cat['name'])
+        while self.adh_items.count():
+            item = self.adh_items.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        state = self.adhkar_state()
+        for i, it in enumerate(cat['items']):
+            key = f'{idx}:{i}'
+            n = min(it['count'], state['c'].get(key, 0))
+            c = card()
+            row = QHBoxLayout(c)
+            row.setContentsMargins(18, 14, 18, 14)
+            text = QLabel(it['text'])
+            text.setWordWrap(True)
+            text.setStyleSheet("font-family: 'Amiri Quran'; font-size: 19px; line-height: 170%;")
+            btn = QPushButton(f'{ar(n)} / {ar(it["count"])}')
+            btn.setMinimumWidth(110)
+            btn.clicked.connect(lambda _c=False, k=key, mx=it['count'], b=btn: self.bump_adhkar(k, mx, b))
+            row.addWidget(text, 1)
+            row.addWidget(btn)
+            self.adh_items.addWidget(c)
+        self.adh_items.addStretch(1)
+
+    def bump_adhkar(self, key, maximum, btn):
+        data = self.adhkar_state()
+        cur = data['c'].get(key, 0)
+        data['c'][key] = 0 if cur >= maximum else cur + 1
+        self.save_adhkar(data)
+        btn.setText(f'{ar(data["c"][key])} / {ar(maximum)}')
+
+    # ---------- وضع الحفظ ----------
+    def build_memo(self):
+        w = QWidget()
+        lay = QVBoxLayout(w)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(12)
+        lay.addWidget(heading('وضع الحفظ', 'اختر السورة والآيات، وفعّل الإخفاء لتختبر حفظك'))
+        bar = card()
+        bl = QHBoxLayout(bar)
+        bl.setContentsMargins(14, 10, 14, 10)
+        self.memo_surah = QComboBox()
+        for s in SURAHS:
+            self.memo_surah.addItem(f'{s["number"]}. {s["name"]}', s['number'])
+        self.memo_from = QSpinBox()
+        self.memo_to = QSpinBox()
+        self.memo_hide = QCheckBox('إخفاء النص للاختبار')
+        self.memo_surah.currentIndexChanged.connect(self.on_memo_surah)
+        for sp in (self.memo_from, self.memo_to):
+            sp.valueChanged.connect(lambda _v: self.render_memo())
+        self.memo_hide.toggled.connect(lambda _c: self.render_memo())
+        bl.addWidget(QLabel('السورة'))
+        bl.addWidget(self.memo_surah, 2)
+        bl.addWidget(QLabel('من آية'))
+        bl.addWidget(self.memo_from)
+        bl.addWidget(QLabel('إلى آية'))
+        bl.addWidget(self.memo_to)
+        bl.addStretch(1)
+        bl.addWidget(self.memo_hide)
+        lay.addWidget(bar)
+        self.memo_browser = QTextBrowser()
+        lay.addWidget(self.memo_browser, 1)
+        self.on_memo_surah(0)
+        return w
+
+    def on_memo_surah(self, _idx):
+        s = self.memo_surah.currentData() or 1
+        count = SURAHS[s - 1]['numberOfAyahs']
+        for sp, val in ((self.memo_from, 1), (self.memo_to, count)):
+            sp.blockSignals(True)
+            sp.setRange(1, count)
+            sp.setValue(val)
+            sp.blockSignals(False)
+        self.render_memo()
+
+    def render_memo(self):
+        if not hasattr(self, 'memo_from'):
+            return
+        s = self.memo_surah.currentData() or 1
+        lo, hi = sorted((self.memo_from.value(), self.memo_to.value()))
+        hide = self.memo_hide.isChecked()
+        parts = []
+        for a in range(lo, hi + 1):
+            text = AYAH_TEXT.get((s, a), '')
+            if hide:
+                text = ' '.join('•••' for _ in text.split())
+            parts.append(f'{html.escape(text)} <span style="font-size:14pt">﴿{ar(a)}﴾</span> ')
+        body = ''.join(parts) or 'لا توجد آيات'
+        self.memo_browser.setHtml(
+            f'<html><body dir="rtl" style="font-family:\'Amiri Quran\'; font-size:24pt; line-height:200%;">'
+            f'<p align="center"><b>{html.escape(SURAHS[s - 1]["name"])}</b></p>'
+            f'<p align="center" dir="rtl">{body}</p></body></html>')
+
+    # ---------- الورد اليومي ----------
+    def build_wird(self):
+        w = QWidget()
+        lay = QVBoxLayout(w)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(14)
+        lay.addWidget(heading('الورد اليومي', 'حدد عدد الصفحات كل يوم، والورد بيكمل من حيث وقفت'))
+        c = card()
+        cl = QFormLayout(c)
+        cl.setContentsMargins(20, 18, 20, 18)
+        self.wird_target = QSpinBox()
+        self.wird_target.setRange(1, 60)
+        self.wird_target.setValue(self.settings.value('wird_target', 5, type=int))
+        self.wird_target.valueChanged.connect(self.on_wird_target)
+        cl.addRow('عدد الصفحات في اليوم', self.wird_target)
+        lay.addWidget(c)
+        ci = card()
+        il = QVBoxLayout(ci)
+        il.setContentsMargins(20, 18, 20, 18)
+        self.wird_text = QLabel()
+        self.wird_text.setWordWrap(True)
+        self.wird_text.setStyleSheet('font-size: 18px; font-weight: 600;')
+        il.addWidget(self.wird_text)
+        lay.addWidget(ci)
+        row = QHBoxLayout()
+        self.btn_wird_read = QPushButton('📖 ابدأ ورد اليوم')
+        self.btn_wird_read.setObjectName('primary')
+        self.btn_wird_read.clicked.connect(self.start_wird)
+        self.btn_wird_done = QPushButton('✔ تم الورد')
+        self.btn_wird_done.clicked.connect(self.finish_wird)
+        self.btn_wird_reset = QPushButton('↺ ابدأ من أول القرآن')
+        self.btn_wird_reset.clicked.connect(self.reset_wird)
+        row.addWidget(self.btn_wird_read)
+        row.addWidget(self.btn_wird_done)
+        row.addWidget(self.btn_wird_reset)
+        row.addStretch(1)
+        lay.addLayout(row)
+        lay.addStretch(1)
+        return w
+
+    def wird_range(self):
+        start = self.settings.value('wird_next', 0, type=int) or self.page
+        start = min(max(start, 1), TOTAL_PAGES)
+        end = min(start + self.wird_target.value() - 1, TOTAL_PAGES)
+        return start, end
+
+    def render_wird(self):
+        self.wird_target.blockSignals(True)
+        self.wird_target.setValue(self.settings.value('wird_target', 5, type=int))
+        self.wird_target.blockSignals(False)
+        start, end = self.wird_range()
+        done_today = self.settings.value('wird_day', '', type=str) == datetime.date.today().isoformat()
+        self.btn_wird_done.setEnabled(not done_today)
+        head = 'أنجزت ورد اليوم ✔' if done_today else 'ورد اليوم'
+        self.wird_text.setText(f'{head}: من صفحة {ar(start)} إلى صفحة {ar(end)} ({ar(end - start + 1)} صفحات)')
+
+    def on_wird_target(self, value):
+        self.settings.setValue('wird_target', value)
+        self.render_wird()
+
+    def start_wird(self):
+        start, _end = self.wird_range()
+        self.go_page(start)
+        self.show_view('reader')
+
+    def finish_wird(self):
+        _start, end = self.wird_range()
+        nxt = end + 1 if end < TOTAL_PAGES else 1
+        self.settings.setValue('wird_next', nxt)
+        self.settings.setValue('wird_day', datetime.date.today().isoformat())
+        self.settings.setValue('wird_count', self.settings.value('wird_count', 0, type=int) + 1)
+        self.render_wird()
+
+    def reset_wird(self):
+        self.settings.setValue('wird_next', 1)
+        self.settings.setValue('wird_day', '')
+        self.render_wird()
+
+    # ---------- المحفوظات ----------
+    def bookmarks(self):
+        raw = self.settings.value('bookmarks', '[]', type=str)
+        try:
+            return sorted(set(int(p) for p in json.loads(raw)))
+        except ValueError:
+            return []
+
+    def save_bookmarks(self, marks):
+        self.settings.setValue('bookmarks', json.dumps(sorted(set(marks))))
+
+    def toggle_bookmark(self):
+        marks = self.bookmarks()
+        if self.page in marks:
+            marks.remove(self.page)
+        else:
+            marks.append(self.page)
+        self.save_bookmarks(marks)
+        self.update_mark_button()
+
+    def update_mark_button(self):
+        if hasattr(self, 'btn_mark'):
+            self.btn_mark.setText('★ الصفحة محفوظة' if self.page in self.bookmarks() else '☆ حفظ الصفحة')
+
+    def page_title(self, page):
+        items = self.book.ayahs_on_page(page)
+        if not items:
+            return f'صفحة {ar(page)}'
+        s, a, _t = items[0]
+        return f'صفحة {ar(page)} · الجزء {ar(juz_of(s, a))} · {SURAHS[s - 1]["name"]}'
+
+    def build_bookmarks(self):
+        w = QWidget()
+        lay = QVBoxLayout(w)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(12)
+        lay.addWidget(heading('المحفوظات', 'الصفحات التي حفظتها من المصحف'))
+        self.bm_list = QListWidget()
+        self.bm_list.itemActivated.connect(self.open_bookmark)
+        self.bm_list.itemDoubleClicked.connect(self.open_bookmark)
+        lay.addWidget(self.bm_list, 1)
+        row = QHBoxLayout()
+        btn_open = QPushButton('فتح الصفحة')
+        btn_open.setObjectName('primary')
+        btn_open.clicked.connect(lambda: self.open_bookmark(self.bm_list.currentItem()))
+        btn_del = QPushButton('حذف المحدد')
+        btn_del.setObjectName('danger')
+        btn_del.clicked.connect(self.delete_bookmark)
+        row.addWidget(btn_open)
+        row.addWidget(btn_del)
+        row.addStretch(1)
+        lay.addLayout(row)
+        self.bm_empty = QLabel('لا توجد صفحات محفوظة بعد. اضغط "☆ حفظ الصفحة" من شاشة المصحف.')
+        self.bm_empty.setObjectName('muted')
+        lay.addWidget(self.bm_empty)
+        return w
+
+    def render_bookmarks(self):
+        self.bm_list.clear()
+        for page in self.bookmarks():
+            item = QListWidgetItem(self.page_title(page))
+            item.setData(Qt.ItemDataRole.UserRole, page)
+            self.bm_list.addItem(item)
+        self.bm_empty.setVisible(self.bm_list.count() == 0)
+
+    def open_bookmark(self, item):
+        if item is None:
+            return
+        self.go_page(item.data(Qt.ItemDataRole.UserRole))
+        self.show_view('reader')
+
+    def delete_bookmark(self):
+        item = self.bm_list.currentItem()
+        if item is None:
+            return
+        page = item.data(Qt.ItemDataRole.UserRole)
+        self.save_bookmarks([p for p in self.bookmarks() if p != page])
+        self.render_bookmarks()
+        self.update_mark_button()
+
+    # ---------- الإحصائيات ----------
+    def days(self):
+        raw = self.settings.value('days', '{}', type=str)
+        try:
+            return json.loads(raw)
+        except ValueError:
+            return {}
+
+    def count_page_visit(self):
+        days = self.days()
+        key = datetime.date.today().isoformat()
+        days[key] = days.get(key, 0) + 1
+        self.settings.setValue('days', json.dumps(days))
+
+    def streak(self, days):
+        day = datetime.date.today()
+        if days.get(day.isoformat(), 0) == 0:
+            day -= datetime.timedelta(days=1)
+        count = 0
+        while days.get(day.isoformat(), 0) > 0:
+            count += 1
+            day -= datetime.timedelta(days=1)
+        return count
+
+    def build_stats(self):
+        w = QWidget()
+        lay = QVBoxLayout(w)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(14)
+        lay.addWidget(heading('الإحصائيات', 'تُحسب صفحات القراءة عند التنقل بين صفحات المصحف'))
+        grid = QHBoxLayout()
+        grid.setSpacing(14)
+        self.st_cards = {}
+        for key, caption in (('today', 'صفحات اليوم'), ('total', 'إجمالي الصفحات'),
+                             ('streak', 'أيام متتالية'), ('adhkar', 'أذكار مكتملة اليوم'),
+                             ('bookmarks', 'صفحات محفوظة'), ('wird', 'أوراد مكتملة')):
+            c = card()
+            cl = QVBoxLayout(c)
+            cl.setContentsMargins(18, 18, 18, 18)
+            value = QLabel('٠')
+            value.setObjectName('stat')
+            value.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            cap = QLabel(caption)
+            cap.setObjectName('muted')
+            cap.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            cl.addWidget(value)
+            cl.addWidget(cap)
+            self.st_cards[key] = value
+            grid.addWidget(c, 1)
+        lay.addLayout(grid)
+        lay.addStretch(1)
+        return w
+
+    def render_stats(self):
+        days = self.days()
+        counts = self.adhkar_state()
+        done = 0
+        for idx, cat in enumerate(ADHKAR):
+            for i, it in enumerate(cat['items']):
+                if counts['c'].get(f'{idx}:{i}', 0) >= it['count']:
+                    done += 1
+        self.st_cards['today'].setText(ar(days.get(datetime.date.today().isoformat(), 0)))
+        self.st_cards['total'].setText(ar(sum(days.values())))
+        self.st_cards['streak'].setText(ar(self.streak(days)))
+        self.st_cards['adhkar'].setText(ar(done))
+        self.st_cards['bookmarks'].setText(ar(len(self.bookmarks())))
+        self.st_cards['wird'].setText(ar(self.settings.value('wird_count', 0, type=int)))
+
+    # ---------- الإعدادات ----------
+    def build_settings(self):
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        inner = QWidget()
+        lay = QVBoxLayout(inner)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(14)
+        lay.addWidget(heading('الإعدادات', 'المظهر، والرواية والقارئ، والتفسير'))
+
+        c1 = card()
+        f1 = QFormLayout(c1)
+        f1.setContentsMargins(20, 18, 20, 18)
+        self.theme_combo = QComboBox()
+        self.theme_combo.addItem('فاتح', 'light')
+        self.theme_combo.addItem('داكن', 'dark')
+        self.theme_combo.setCurrentIndex(self.theme_combo.findData(self.theme_name))
+        self.theme_combo.currentIndexChanged.connect(self.on_theme_change)
+        self.font_spin = QSpinBox()
+        self.font_spin.setRange(14, 44)
+        self.font_spin.setValue(self.font_pt)
+        self.font_spin.valueChanged.connect(self.set_font)
+        f1.addRow('الوضع', self.theme_combo)
+        f1.addRow('حجم خط المصحف', self.font_spin)
+        lay.addWidget(c1)
+
+        c2 = card()
+        f2 = QFormLayout(c2)
+        f2.setContentsMargins(20, 18, 20, 18)
+        self.riwaya_combo = QComboBox()
+        for rid, name in HAFS_EDITIONS + OTHER_RIWAYAT:
+            self.riwaya_combo.addItem(name, rid)
+        self.riwaya_combo.setCurrentIndex(self.riwaya_combo.findData(self.riwaya_id))
+        self.riwaya_combo.currentIndexChanged.connect(self.on_riwaya)
+        self.tafsir_hint = QLabel('يمكنك اختيار كتاب التفسير من شاشة التفسير.')
+        self.tafsir_hint.setObjectName('muted')
+        f2.addRow('الرواية والرسم', self.riwaya_combo)
+        f2.addRow('', self.tafsir_hint)
+        lay.addWidget(c2)
+
+        c3 = card()
+        cl3 = QVBoxLayout(c3)
+        cl3.setContentsMargins(20, 18, 20, 18)
+        about = QLabel(f'المصحف - تطبيق سطح المكتب الإصدار {APP_VERSION}\n'
+                       'نفس مميزات تطبيق الأندرويد 1.3.1: الروايات، القراء والتلاوة، التفسير، البحث، '
+                       'الحفظ، الورد، المحفوظات، الإحصائيات، الأذكار، وأحكام التجويد.')
+        about.setWordWrap(True)
+        cl3.addWidget(about)
+        btn_reset = QPushButton('مسح بيانات الإحصائيات والمحفوظات')
+        btn_reset.setObjectName('danger')
+        btn_reset.clicked.connect(self.clear_user_data)
+        cl3.addWidget(btn_reset)
+        lay.addWidget(c3)
+        lay.addStretch(1)
+        scroll.setWidget(inner)
+        return scroll
+
+    def on_theme_change(self, _idx):
+        self.theme_name = self.theme_combo.currentData()
+        self.settings.setValue('theme', self.theme_name)
+        self.apply_theme()
+        self.render_page()
+
+    def clear_user_data(self):
+        answer = QMessageBox.question(self, 'تأكيد', 'هيتم مسح الإحصائيات والمحفوظات والورد والأذكار. متأكد؟')
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        for key in ('days', 'bookmarks', 'adhkar', 'wird_count', 'wird_next', 'wird_day'):
+            self.settings.remove(key)
+        self.render_page()
+
+    def apply_theme(self):
+        self.setStyleSheet(qss(THEMES[self.theme_name]))
+        self.render_page()
+
+    def closeEvent(self, event):  # noqa: N802
+        self.settings.setValue('geometry', self.saveGeometry())
+        super().closeEvent(event)
+
+
+def run_selftest(app, win):
+    """وضع الاختبار: يتأكد إن الصفحة اتعرضت والقوائم اتملت، ويطبع النتيجة ويقفل فوراً."""
+    def finish(ok, info):
+        import json as _json
+        print(_json.dumps({'ok': ok, **info}, ensure_ascii=False), flush=True)
+        os._exit(0 if ok else 1)
+
+    def check():
+        text = win.browser.toPlainText()
+        info = {
+            'page': win.page,
+            'textLength': len(text),
+            'surahs': win.combo_surah.count(),
+            'reciters': win.reciter_combo.count(),
+            'riwaya': win.riwaya_id,
+            'hasMushaf': 'الفاتح' in text or '﴿' in text or 'ال' in text,
+        }
+        ok = info['textLength'] > 200 and info['surahs'] == 114 and info['reciters'] >= 1
+        finish(ok, info)
+
+    QTimer.singleShot(600, check)
+    QTimer.singleShot(60000, lambda: finish(False, {'error': 'timeout'}))
+
+
+def main():
+    app = QApplication(sys.argv)
+    app.setApplicationName(APP_NAME)
+    app.setOrganizationName('mosalah30688')
+    app.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+    QFontDatabase.addApplicationFont(str(FONTS / 'AmiriQuran-arabic.woff2'))
+    win = Main()
+    win.show()
+    if '--selftest' in sys.argv or os.environ.get('MUSHAF_SELFTEST') == '1':
+        run_selftest(app, win)
+    return app.exec()
+
+
+if __name__ == '__main__':
+    sys.exit(main())
