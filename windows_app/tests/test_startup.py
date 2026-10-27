@@ -13,9 +13,9 @@ import main as app_main  # noqa: E402
 class StartupStreamTests(unittest.TestCase):
     def test_windowed_executable_without_console_gets_log_streams(self):
         original_stdout, original_stderr = sys.stdout, sys.stderr
-        created_stream = None
-        try:
-            with tempfile.TemporaryDirectory() as temp:
+        with tempfile.TemporaryDirectory() as temp:
+            created_stream = None
+            try:
                 log_dir = Path(temp) / "UserData" / "logs"
                 log_path = log_dir / "siraj-startup.log"
                 sys.stdout = None
@@ -28,10 +28,11 @@ class StartupStreamTests(unittest.TestCase):
                 created_stream.write("double-click startup diagnostic\n")
                 created_stream.flush()
                 self.assertIn("double-click startup diagnostic", log_path.read_text(encoding="utf-8"))
-        finally:
-            if created_stream is not None:
-                created_stream.close()
-            sys.stdout, sys.stderr = original_stdout, original_stderr
+            finally:
+                # Windows لا يسمح بحذف TemporaryDirectory والملف ما زال مفتوحًا.
+                if created_stream is not None:
+                    created_stream.close()
+                sys.stdout, sys.stderr = original_stdout, original_stderr
 
 
 if __name__ == "__main__":
