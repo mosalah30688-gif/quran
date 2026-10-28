@@ -8,10 +8,12 @@ android/captures/
 .DS_Store
 *.log
 .venv/
+.local-libs/
 windows_app/build/
 windows_app/dist/
 windows_app/updater-dist/
 windows_app/release/
 windows_app/*.spec
 windows_app/UserData/
+windows_app/data/tafsir-offline.sqlite3
 __pycache__/

@@ -6,12 +6,16 @@
   "scripts": {
     "build:www": "bash scripts/build-www.sh",
     "android:sync": "bash scripts/build-www.sh && npx cap sync android",
-    "android:apk": "bash scripts/build-apk.sh"
+    "android:apk": "bash scripts/build-apk.sh",
+    "postinstall": "node scripts/patch-capacitor-cli-tar.js"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.2",
     "@capacitor/app": "^6.0.3",
-    "@capacitor/cli": "^6.2.2",
+    "@capacitor/cli": "6.2.2",
     "@capacitor/core": "^6.2.2"
+  },
+  "overrides": {
+    "tar": "7.5.22"
   }
 }

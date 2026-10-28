@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "snapshot": "2026-10-28",
+  "source": "https://alquran.cloud",
+  "api": "https://api.alquran.cloud/v1",
+  "usage_terms": "https://alquran.cloud/terms-and-conditions",
+  "files": {
+    "ar.muyassar.json": {
+      "url": "https://api.alquran.cloud/v1/quran/ar.muyassar",
+      "bytes": 3249863,
+      "sha256": "e409898887a10a92de554b364c12c56a59b9030f2b07df94578040af234b7153",
+      "edition": {
+        "identifier": "ar.muyassar",
+        "language": "ar",
+        "name": "تفسير المیسر",
+        "englishName": "King Fahad Quran Complex",
+        "format": "text",
+        "type": "tafsir"
+      }
+    },
+    "ar.jalalayn.json": {
+      "url": "https://api.alquran.cloud/v1/quran/ar.jalalayn",
+      "bytes": 2657604,
+      "sha256": "cdb6fcfd63c28c5488a9d94fde6843e54ca7ed8ff02d9d46963c516bfdc322ea",
+      "edition": {
+        "identifier": "ar.jalalayn",
+        "language": "ar",
+        "name": "تفسير الجلالين",
+        "englishName": "Jalal ad-Din al-Mahalli and Jalal ad-Din as-Suyuti",
+        "format": "text",
+        "type": "tafsir"
+      }
+    },
+    "ar.baghawi.json": {
+      "url": "https://api.alquran.cloud/v1/quran/ar.baghawi",
+      "bytes": 8375860,
+      "sha256": "fffa574559bd0f9fd2deae77ee1bae4f09437114481e350f4f32e6e0964f390f",
+      "edition": {
+        "identifier": "ar.baghawi",
+        "language": "ar",
+        "name": "تفسير البغوي",
+        "englishName": "Tafseer Al-Baghawi",
+        "format": "text",
+        "type": "tafsir"
+      }
+    },
+    "ar.qurtubi.json": {
+      "url": "https://api.alquran.cloud/v1/quran/ar.qurtubi",
+      "bytes": 20472574,
+      "sha256": "8d8da6fc5090eb9ddd8a47e16b1b5c3cc162583ab9c827f5a474d0bef50b6dec",
+      "edition": {
+        "identifier": "ar.qurtubi",
+        "language": "ar",
+        "name": "تفسير القرطبي",
+        "englishName": "Tafseer Al Qurtubi",
+        "format": "text",
+        "type": "tafsir"
+      }
+    },
+    "ar.miqbas.json": {
+      "url": "https://api.alquran.cloud/v1/quran/ar.miqbas",
+      "bytes": 28728563,
+      "sha256": "6023531c10caa37679b8a7c9d35961091302bcaf7d7f0f5bc2c739b2bafd7ee8",
+      "edition": {
+        "identifier": "ar.miqbas",
+        "language": "ar",
+        "name": "تنوير المقباس من تفسير بن عباس",
+        "englishName": "Tafseer Tanwir al-Miqbas",
+        "format": "text",
+        "type": "tafsir"
+      }
+    }
+  }
+}

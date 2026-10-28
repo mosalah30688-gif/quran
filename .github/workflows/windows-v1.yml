@@ -5,6 +5,7 @@ on:
   push:
     tags:
       - "siraj-windows-v*"
+      - "siraj-windows-patch-v*"
 
 concurrency:
   group: siraj-windows-${{ github.ref }}
@@ -18,7 +19,7 @@ permissions:
 jobs:
   build-windows:
     runs-on: windows-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       PYTHONUTF8: "1"
       PYTHONIOENCODING: "utf-8"
@@ -49,14 +50,15 @@ jobs:
           WINDOWS_UPDATE_SIGNING_SEED: ${{ secrets.WINDOWS_UPDATE_SIGNING_SEED }}
         run: |
           $IsRelease = "${{ github.ref_type }}" -eq "tag"
-          if ($IsRelease -and (
+          $IsPatch = $IsRelease -and "${{ github.ref_name }}".StartsWith("siraj-windows-patch-v")
+          if ($IsRelease -and -not $IsPatch -and (
               [string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_PFX_BASE64) -or
               [string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_PFX_PASSWORD)
           )) {
-            throw "Stable releases require WINDOWS_SIGNING_PFX_BASE64 and WINDOWS_SIGNING_PFX_PASSWORD"
+            throw "Full Windows releases require WINDOWS_SIGNING_PFX_BASE64 and WINDOWS_SIGNING_PFX_PASSWORD"
           }
           if ($IsRelease -and [string]::IsNullOrWhiteSpace($env:WINDOWS_UPDATE_SIGNING_SEED)) {
-            throw "Stable releases require WINDOWS_UPDATE_SIGNING_SEED"
+            throw "Tagged full or patch releases require WINDOWS_UPDATE_SIGNING_SEED"
           }
           if (-not [string]::IsNullOrWhiteSpace($env:WINDOWS_UPDATE_SIGNING_SEED)) {
             python -c "import os,base64; from nacl.signing import SigningKey; seed=base64.b64decode(os.environ['WINDOWS_UPDATE_SIGNING_SEED']); expected=open('windows_app/assets/update_public_key.txt').read().strip(); assert SigningKey(seed).verify_key.encode().hex()==expected, 'Update signing seed does not match embedded public key'"
@@ -72,13 +74,29 @@ jobs:
         run: |
           $Version = python -c "import sys; sys.path.insert(0,'windows_app'); import version; print(version.APP_VERSION)"
           if ("${{ github.ref_type }}" -eq "tag") {
-            $TagVersion = "${{ github.ref_name }}" -replace '^siraj-windows-v',''
+            $TagVersion = "${{ github.ref_name }}" `
+              -replace '^siraj-windows-patch-v','' `
+              -replace '^siraj-windows-v',''
             if ($TagVersion -ne $Version) { throw "Tag $TagVersion does not match app version $Version" }
+            if ("${{ github.ref_name }}" -like 'siraj-windows-patch-v*') {
+              python -c "from packaging.version import Version; assert Version('$Version') > Version('1.1.0'), 'Patch releases require a version newer than transitional 1.1.0'"
+            }
           }
 
       - name: Update and portable-mode unit tests
         shell: pwsh
         run: python -m unittest discover -s windows_app/tests -p "test_*.py" -v
+
+      - name: Verify locked content provenance and approved live editions
+        shell: pwsh
+        run: |
+          python scripts/verify_data_provenance.py
+          python scripts/verify_asset_provenance.py
+          python scripts/generate_alquran_data.py --verify
+          python scripts/generate_quranpedia_data.py --verify
+          python scripts/generate_adhkar_data.py --verify
+          python scripts/audit_alquran_editions.py --verify
+          python scripts/verify_audio_sources.py
 
       - name: Full UI regression test
         shell: pwsh
@@ -94,6 +112,19 @@ jobs:
           SIRAJ_SIGN_CERT_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
         run: windows_app\packaging\build_windows.ps1
 
+      - name: Bundle corresponding source for LGPL components
+        shell: pwsh
+        run: |
+          $Version = python -c "import sys; sys.path.insert(0,'windows_app'); import version; print(version.APP_VERSION)"
+          $SourceName = "Siraj-Quran-$Version-windows-corresponding-source.zip"
+          python scripts/prepare_corresponding_sources.py `
+            --platform windows `
+            --version $Version `
+            --cache "$env:RUNNER_TEMP\siraj-source-cache" `
+            --output "windows_app\release\$SourceName"
+          $Hash = (Get-FileHash "windows_app\release\$SourceName" -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$Hash  $SourceName" | Out-File -FilePath windows_app/release/SHA256SUMS.txt -Append -Encoding ascii
+
       - name: Generate CycloneDX SBOM
         shell: pwsh
         run: |
@@ -104,7 +135,7 @@ jobs:
           $ReleaseDirs = @(Get-ChildItem windows_app/release -Directory)
           if ($ReleaseDirs.Count -ne 0) { throw "Release directory must contain final files only" }
           $ReleaseFiles = @(Get-ChildItem windows_app/release -File)
-          if ($ReleaseFiles.Count -ne 3) { throw "Expected portable ZIP, checksums and SBOM only" }
+          if ($ReleaseFiles.Count -ne 4) { throw "Expected portable ZIP, corresponding source, checksums and SBOM only" }
 
       - name: Upload UI screenshots
         if: always()
@@ -131,10 +162,12 @@ jobs:
           retention-days: 30
 
   publish-release:
-    if: startsWith(github.ref, 'refs/tags/siraj-windows-v')
+    if: >-
+      startsWith(github.ref, 'refs/tags/siraj-windows-v') ||
+      startsWith(github.ref, 'refs/tags/siraj-windows-patch-v')
     needs: build-windows
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -148,8 +181,21 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install manifest signing dependency
-        run: python -m pip install PyNaCl==1.6.2
+      - name: Enforce explicit audit approval before creating a Draft
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git show origin/main:audit/RELEASE_GATE.json > "$RUNNER_TEMP/RELEASE_GATE.json"
+          RELEASE_COMMIT="$(git rev-list -n 1 "$GITHUB_REF_NAME")"
+          git merge-base --is-ancestor "$RELEASE_COMMIT" origin/main
+          python scripts/check_release_gate.py \
+            --gate "$RUNNER_TEMP/RELEASE_GATE.json" \
+            --tag "$GITHUB_REF_NAME" \
+            --commit "$RELEASE_COMMIT"
+
+      - name: Install update signing and verification dependencies
+        run: python -m pip install PyNaCl==1.6.2 packaging==26.3
 
       - name: Download tested artifacts
         uses: actions/download-artifact@v4
@@ -157,74 +203,113 @@ jobs:
           name: siraj-windows-portable
           path: release
 
-      - name: Generate signed update manifest and release notes
+      - name: Prepare signed full or patch draft assets
         shell: bash
         env:
           WINDOWS_UPDATE_SIGNING_SEED: ${{ secrets.WINDOWS_UPDATE_SIGNING_SEED }}
         run: |
           set -euo pipefail
-          VERSION="${GITHUB_REF_NAME#siraj-windows-v}"
-          PORTABLE="release/Siraj-Quran-${VERSION}-windows-portable-x64.zip"
+          VERSION="${GITHUB_REF_NAME#siraj-windows-patch-v}"
+          VERSION="${VERSION#siraj-windows-v}"
           BASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}"
-          cat > release-notes.md <<EOF
+          rm -rf publish
+          mkdir publish
+
+          if [[ "$GITHUB_REF_NAME" == siraj-windows-patch-v* ]]; then
+            PATCH="publish/Siraj-Quran-${VERSION}-windows.sirajpatch"
+            python scripts/generate_signed_patch.py \
+              --product siraj-quran-windows \
+              --version "$VERSION" \
+              --app-dir windows_app \
+              --notes "ترقيع صغير موقّع لسراج Windows؛ لا يغيّر المحرك الأصلي." \
+              --output "$PATCH"
+            python scripts/generate_patch_channel.py \
+              --product siraj-quran-windows \
+              --version "$VERSION" \
+              --patch "$PATCH" \
+              --base-url "$BASE_URL" \
+              --notes "ترقيع صغير موقّع لسراج Windows." \
+              --output publish/patch-stable.json
+            PATCH_PATH="$PATCH" python - <<'PY'
+          import json, os, sys, tempfile
+          from pathlib import Path
+          sys.path.insert(0, 'windows_app')
+          import patch_runtime
+          import update_security
+          public = Path('windows_app/assets/update_public_key.txt')
+          channel = json.load(open('publish/patch-stable.json', encoding='utf-8'))
+          assert update_security.verify_update_manifest(channel, public)
+          with tempfile.TemporaryDirectory() as folder:
+              manifest = patch_runtime.install_patch_archive(
+                  Path(os.environ['PATCH_PATH']), product='siraj-quran-windows', runtime_api=1,
+                  bundled_version='1.1.0', public_key_path=public,
+                  patch_root=Path(folder) / 'patches')
+              assert manifest['version'] == channel['version']
+          PY
+            (cd publish && sha256sum "$(basename "$PATCH")" patch-stable.json > SHA256SUMS.txt)
+            cp release/SBOM.cdx.json publish/SBOM.cdx.json
+            cat > release-notes.md <<EOF
+          # سراج ${VERSION} — ترقيع Windows موقّع
+
+          - ترقيع صغير بعد الحزمة الانتقالية الكاملة 1.1.0.
+          - لا يحتوي مثبتًا ولا يستبدل ملفات runtime الأصلية.
+          - تتحقق النسخة الانتقالية من Ed25519 وSHA-256 لكل ملف قبل تشغيله، مع رجوع آمن للنسخة المضمّنة.
+          - هذا Draft فقط؛ لا تُفعّل قناة التحديث قبل المراجعة والترقية الصريحة.
+          EOF
+            echo "DRAFT_TITLE=سراج ${VERSION} — ترقيع Windows" >> "$GITHUB_ENV"
+          else
+            PORTABLE="release/Siraj-Quran-${VERSION}-windows-portable-x64.zip"
+            python scripts/generate_windows_update_manifest.py \
+              --version "$VERSION" \
+              --portable "$PORTABLE" \
+              --base-url "$BASE_URL" \
+              --notes "حزمة سراج Windows الكاملة الموقعة." \
+              --output publish/stable.json
+            cp release/* publish/
+            cat > release-notes.md <<EOF
           # سراج ${VERSION} — قرآن كريم لويندوز
 
-          نسخة Portable فقط: واجهة عربية متجاوبة، فهرس منسدل، نسخ وتظليل، وخطوط قراءة متعددة.
+          نسخة Portable فقط؛ لا يوجد مثبت.
 
-          - Windows 10 و11 — x64
+          - Windows 10 و11 — x64.
           - فك ZIP كاملًا ثم شغّل Siraj.exe.
-          - تحفظ النسخة بياناتها داخل مجلد UserData ولا تحتاج إلى تثبيت.
-          - راجع SHA256SUMS.txt للتحقق من الملف.
+          - تحفظ النسخة بياناتها داخل UserData بجوار البرنامج.
+          - حزمة corresponding-source المرفقة تحتوي مصادر Qt/PySide المطابقة لحقوق LGPL.
+          - هذا Draft فقط؛ لا تُنشر القناة المستقرة تلقائيًا.
           EOF
-          python scripts/generate_windows_update_manifest.py \
-            --version "$VERSION" \
-            --portable "$PORTABLE" \
-            --base-url "$BASE_URL" \
-            --notes "الإصدار الأول من سراج وفق خطة Windows الجديدة." \
-            --output release/stable.json
+            echo "DRAFT_TITLE=سراج ${VERSION} — Windows Portable" >> "$GITHUB_ENV"
+          fi
+
           python - <<'PY'
-          import json, sys
+          import json, pathlib, sys
           sys.path.insert(0, 'scripts')
           from update_signing import verify_manifest
-          manifest = json.load(open('release/stable.json', encoding='utf-8'))
-          public_key = open('windows_app/assets/update_public_key.txt', encoding='ascii').read()
+          public_key = pathlib.Path('windows_app/assets/update_public_key.txt').read_text(encoding='ascii')
+          manifests = list(pathlib.Path('publish').glob('*stable.json'))
+          assert len(manifests) == 1, manifests
+          manifest = json.loads(manifests[0].read_text(encoding='utf-8'))
           assert verify_manifest(manifest, public_key), 'Generated update manifest signature is invalid'
           PY
 
-      - name: Create draft release with all assets
+      - name: Attest the complete Draft asset set
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: publish/*
+
+      - name: Create draft release only
         shell: bash
         run: |
           set -euo pipefail
+          # لا يحوّل هذا المسار الـDraft إلى إصدار عام ولا يحدّث قناة main.
+          # الترقية العامة لها workflow صريح منفصل بعد التدقيق.
           if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" release/* --clobber --repo "$GITHUB_REPOSITORY"
-            gh release edit "$GITHUB_REF_NAME" --draft --title "سراج ${GITHUB_REF_NAME#siraj-windows-v} — Windows" --notes-file release-notes.md --repo "$GITHUB_REPOSITORY"
+            test "$(gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)" = true
+            gh release upload "$GITHUB_REF_NAME" publish/* --clobber --repo "$GITHUB_REPOSITORY"
+            gh release edit "$GITHUB_REF_NAME" --draft --title "$DRAFT_TITLE" --notes-file release-notes.md --repo "$GITHUB_REPOSITORY"
           else
-            gh release create "$GITHUB_REF_NAME" release/* \
+            gh release create "$GITHUB_REF_NAME" publish/* \
               --draft \
-              --title "سراج ${GITHUB_REF_NAME#siraj-windows-v} — Windows" \
+              --title "$DRAFT_TITLE" \
               --notes-file release-notes.md \
               --repo "$GITHUB_REPOSITORY"
-          fi
-
-      # ننشر الأصول أولًا ثم نعلنها في القناة؛ وبهذا لا يرى أي عميل رابطًا إلى Draft غير متاح.
-      - name: Publish complete release
-        shell: bash
-        run: |
-          gh release edit "$GITHUB_REF_NAME" --draft=false --latest --repo "$GITHUB_REPOSITORY"
-
-      - name: Update stable channel on main
-        shell: bash
-        run: |
-          set -euo pipefail
-          cp release/stable.json "$RUNNER_TEMP/stable.json"
-          git fetch origin main
-          git checkout -B main origin/main
-          mkdir -p update/windows
-          cp "$RUNNER_TEMP/stable.json" update/windows/stable.json
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add update/windows/stable.json
-          if ! git diff --cached --quiet; then
-            git commit -m "تحديث قناة سراج Windows إلى ${GITHUB_REF_NAME#siraj-windows-v} [skip ci]"
-            git push origin HEAD:main
           fi

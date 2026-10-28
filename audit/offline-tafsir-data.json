@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "data_version": "2026.10.28",
+  "asset": {
+    "name": "Siraj-Tafsir-Offline-2026.10.28.sqlite3",
+    "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-tafsir-data-v2026.10.28/Siraj-Tafsir-Offline-2026.10.28.sqlite3",
+    "bytes": 728866816,
+    "sha256": "66ce7736d44679a2b6fc536635a556881d8c7f98bad47fa5622a155700c1900c"
+  },
+  "output": "mushaf_app/data/tafsir-offline.sqlite3",
+  "format": {
+    "schema": 1,
+    "codec": "zlib-json-list-v1",
+    "chunk_size": 16,
+    "editions": 78,
+    "quranpedia_editions": 73,
+    "alquran_editions": 5,
+    "source_ayah_rows": 344605,
+    "nonempty_ayah_texts": 344410,
+    "chunks": 30173,
+    "plain_text_bytes": 3482276123
+  },
+  "sources": {
+    "quranpedia": {
+      "name": "الموسوعة القرآنية Quranpedia.net",
+      "url": "https://quranpedia.net",
+      "book_dump_version": "2026-08-10",
+      "manifest_snapshot": "2026-10-28",
+      "license": "https://quranpedia.net/dumps/LICENSE.md",
+      "attribution": "Classical works are shared heritage; digitization, structuring, verification, and metadata by Quranpedia.net."
+    },
+    "alquran_cloud": {
+      "name": "AlQuran Cloud",
+      "url": "https://alquran.cloud",
+      "snapshot": "2026-10-28",
+      "terms": "https://alquran.cloud/terms-and-conditions"
+    }
+  },
+  "generated_by": "scripts/build_offline_tafsir.py"
+}

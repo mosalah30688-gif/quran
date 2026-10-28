@@ -1,7 +1,12 @@
-name: "Siraj Linux — build and test AppImage"
+name: "Siraj Linux — AppImage build and regression tests"
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - "siraj-linux-v*"
+      - "siraj-linux-patch-v*"
+      - "siraj-linux-test-v*"
 
 concurrency:
   group: siraj-linux-${{ github.ref }}
@@ -13,13 +18,9 @@ permissions:
   attestations: write
 
 jobs:
-  build-linux-appimage:
+  build-linux:
     runs-on: ubuntu-22.04
-    timeout-minutes: 45
-    env:
-      PYTHONUTF8: "1"
-      PYTHONIOENCODING: "utf-8"
-      LANG: "C.UTF-8"
+    timeout-minutes: 90
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -31,13 +32,17 @@ jobs:
           cache: pip
           cache-dependency-path: mushaf_app/requirements.txt
 
-      - name: Install Linux runtime and validation tools
+      - name: Download and verify the locked offline tafsir store
+        run: python scripts/fetch_offline_tafsir_data.py
+
+      - name: Install AppImage and smoke-test system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            appstream desktop-file-utils libasound2 libegl1 libgl1 libnss3 libpulse0 libxss1 \
-            libxcb-cursor0 libxcb-glx0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 \
-            libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 libxcb-xkb1 libxkbcommon-x11-0 \
+          sudo apt-get install -y --no-install-recommends \
+            appstream file desktop-file-utils libegl1 libgl1 libxkbcommon-x11-0 \
+            libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
+            libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 \
+            libxcb-xinput0 libxcb-xkb1 libfontconfig1 libfreetype6 libdbus-1-3 \
             xauth xdotool xvfb
 
       - name: Install Python dependencies and audit them
@@ -48,12 +53,39 @@ jobs:
           python -m pip_audit -r mushaf_app/requirements.txt --progress-spinner off
 
       - name: Validate version, source and packaging tests
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          python -m py_compile mushaf_app/main.py mushaf_app/runtime.py mushaf_app/version.py mushaf_app/tests/test_*.py
+          python -m py_compile mushaf_app/main.py mushaf_app/offline_tafsir.py mushaf_app/runtime.py mushaf_app/version.py mushaf_app/tests/test_*.py
           python -m unittest discover -s mushaf_app/tests -p "test_*.py" -v
           VERSION="$(PYTHONPATH=mushaf_app python -c 'from version import APP_VERSION; print(APP_VERSION)')"
           test "$VERSION" = "$(PYTHONPATH=windows_app python -c 'from version import APP_VERSION; print(APP_VERSION)')"
+          echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
+          if [[ "$REF_TYPE" == "tag" ]]; then
+            TAG_VERSION="$REF_NAME"
+            TAG_VERSION="${TAG_VERSION#siraj-linux-patch-v}"
+            TAG_VERSION="${TAG_VERSION#siraj-linux-test-v}"
+            TAG_VERSION="${TAG_VERSION#siraj-linux-v}"
+            test "$TAG_VERSION" = "$VERSION"
+            if [[ "$REF_NAME" == siraj-linux-patch-v* ]]; then
+              python -c "from packaging.version import Version; assert Version('$VERSION') > Version('4.1.0'), 'Patch releases require a version newer than Linux 4.1.0'"
+            fi
+          fi
           echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> "$GITHUB_ENV"
+
+      - name: Verify locked content provenance and approved live editions
+        run: |
+          python scripts/verify_data_provenance.py
+          python scripts/verify_asset_provenance.py
+          python scripts/generate_alquran_data.py --verify
+          python scripts/generate_quranpedia_data.py --verify
+          python scripts/generate_quranpedia_tafsir_catalog.py --verify
+          python scripts/fetch_offline_tafsir_data.py --verify
+          python scripts/build_offline_tafsir.py --verify
+          python scripts/generate_adhkar_data.py --verify
+          python scripts/audit_alquran_editions.py --verify
+          python scripts/verify_audio_sources.py
 
       - name: Full Linux UI regression test
         env:
@@ -74,44 +106,101 @@ jobs:
           XDG_CACHE_HOME: ${{ runner.temp }}/siraj-selftest/cache
           XDG_STATE_HOME: ${{ runner.temp }}/siraj-selftest/state
         run: |
-          APPIMAGE="$(find release -maxdepth 1 -type f -name 'Siraj-Quran-*-linux-x86_64.AppImage' -print -quit)"
-          test -n "$APPIMAGE"
-          APPIMAGE_EXTRACT_AND_RUN=1 "$APPIMAGE" --selftest
-          APPIMAGE_EXTRACT_AND_RUN=1 "$APPIMAGE" --audiotest
+          APPIMAGE="release/Siraj-Quran-${APP_VERSION}-linux-x86_64.AppImage"
+          "$APPIMAGE" --selftest
+          "$APPIMAGE" --audiotest
 
-      - name: Double-click smoke test under X11
+      - name: Smoke test the raw AppImage under Xvfb
+        working-directory: mushaf_app
+        run: xvfb-run -a bash ./packaging/smoke_appimage.sh "release/Siraj-Quran-${APP_VERSION}-linux-x86_64.AppImage"
+
+      - name: Verify AppImage identity and payload
         working-directory: mushaf_app
         run: |
-          APPIMAGE="$(find release -maxdepth 1 -type f -name 'Siraj-Quran-*-linux-x86_64.AppImage' -print -quit)"
-          xvfb-run -a -s "-screen 0 1440x900x24" bash packaging/smoke_appimage.sh "$APPIMAGE"
+          APPIMAGE="release/Siraj-Quran-${APP_VERSION}-linux-x86_64.AppImage"
+          test -x "$APPIMAGE"
+          test -f release/SHA256SUMS.txt
+          test "$(find release -mindepth 1 -maxdepth 1 -type f | wc -l)" -eq 2
+          test "$(find release -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 0
+          echo "$(awk '{print $1}' release/SHA256SUMS.txt)  $APPIMAGE" | sha256sum --check --strict
+          FILE_INFO="$(file "$APPIMAGE")"
+          echo "$FILE_INFO"
+          grep -Fq 'ELF 64-bit LSB' <<< "$FILE_INFO"
+          rm -rf "$RUNNER_TEMP/siraj-appimage-extract"
+          mkdir -p "$RUNNER_TEMP/siraj-appimage-extract"
+          cd "$RUNNER_TEMP/siraj-appimage-extract"
+          "$GITHUB_WORKSPACE/mushaf_app/$APPIMAGE" --appimage-extract >/dev/null
+          test -x squashfs-root/AppRun
+          test -f squashfs-root/usr/bin/siraj
+          test -f squashfs-root/com.mosalah30688.siraj.quran.desktop
+          test -f squashfs-root/usr/share/metainfo/com.mosalah30688.siraj.quran.appdata.xml
+          test -f squashfs-root/usr/share/doc/siraj/THIRD_PARTY_NOTICES.md
+          find squashfs-root/usr/bin -type f -name tafsir-offline.sqlite3 -size 728866816c -print -quit | grep -q .
+          test -d squashfs-root/usr/share/doc/siraj/licenses
+          find squashfs-root/usr/share/doc/siraj/licenses -type f -print -quit | grep -q .
+          desktop-file-validate squashfs-root/com.mosalah30688.siraj.quran.desktop
+          grep -q '<id>com.mosalah30688.siraj.quran</id>' squashfs-root/usr/share/metainfo/com.mosalah30688.siraj.quran.appdata.xml
 
-      - name: Inspect AppImage contents and metadata
-        working-directory: mushaf_app
+      - name: Inventory bundled binary licenses and source packages
+        run: |
+          python scripts/collect_linux_bundle_licenses.py \
+            --toc mushaf_app/build/siraj/COLLECT-00.toc \
+            --bundle-root mushaf_app/dist/siraj \
+            --output mushaf_app/binary-license-report \
+            --fail-unmapped-system
+          test -s mushaf_app/binary-license-report/inventory.json
+          test -s mushaf_app/binary-license-report/debian-source-packages.txt
+          python -c "import json; value=json.load(open('mushaf_app/binary-license-report/inventory.json')); assert not value['unmapped']"
+
+      - name: Download exact Ubuntu corresponding source packages
+        shell: bash
         run: |
           set -euo pipefail
-          APPIMAGE="$(find release -maxdepth 1 -type f -name 'Siraj-Quran-*-linux-x86_64.AppImage' -print -quit)"
-          rm -rf squashfs-root
-          "$APPIMAGE" --appimage-extract >/dev/null
-          test -x squashfs-root/AppRun
-          test -x squashfs-root/usr/bin/siraj
-          test -f squashfs-root/com.mosalah30688.siraj.quran.desktop
-          test -f squashfs-root/com.mosalah30688.siraj.quran.png
-          test -f squashfs-root/usr/share/doc/siraj/LICENSE
-          test -f squashfs-root/usr/share/doc/siraj/THIRD_PARTY_NOTICES.md
-          desktop-file-validate squashfs-root/com.mosalah30688.siraj.quran.desktop
-          appstreamcli validate --no-net squashfs-root/usr/share/metainfo/com.mosalah30688.siraj.quran.appdata.xml
-          if find squashfs-root \( -iname 'UserData' -o -iname '*.AppImage' \) -print -quit | grep -q .; then
-            echo "AppImage contains generated user data or a nested AppImage" >&2
-            exit 1
+          if [[ -f /etc/apt/sources.list ]]; then
+            sudo sed -i 's/^# *deb-src/deb-src/' /etc/apt/sources.list
           fi
-          LIB_REPORT="$(find squashfs-root -type f -name '*.so*' -print0 | xargs -0 -r ldd 2>/dev/null || true)"
-          if grep -q 'not found' <<<"$LIB_REPORT"; then
-            echo "AppImage contains an unresolved shared-library dependency" >&2
-            grep 'not found' <<<"$LIB_REPORT" >&2
-            exit 1
+          if [[ -d /etc/apt/sources.list.d ]]; then
+            while IFS= read -r -d '' file; do
+              if grep -q '^Types: deb$' "$file"; then
+                sudo sed -i 's/^Types: deb$/Types: deb deb-src/' "$file"
+              fi
+            done < <(find /etc/apt/sources.list.d -type f -name '*.sources' -print0)
           fi
-          (cd release && sha256sum --check SHA256SUMS.txt)
-          rm -rf squashfs-root
+          sudo apt-get update
+          SOURCE_DIR="$RUNNER_TEMP/siraj-debian-source"
+          rm -rf "$SOURCE_DIR"
+          mkdir -p "$SOURCE_DIR"
+          export SOURCE_DIR
+          # Variables intentionally expand inside each bash -c worker.
+          # shellcheck disable=SC2016
+          xargs -r -P 4 -n 1 bash -c '
+            set -euo pipefail
+            lock="$1"
+            package="${lock%%=*}"
+            version="${lock#*=}"
+            destination="$SOURCE_DIR/$package"
+            mkdir -p "$destination"
+            cd "$destination"
+            apt-get source --download-only "$package=$version"
+            find . -maxdepth 1 -type f -print -quit | grep -q .
+          ' _ < mushaf_app/binary-license-report/debian-source-packages.txt
+          python scripts/verify_debian_source_locks.py \
+            --locks mushaf_app/binary-license-report/debian-source-packages.txt \
+            --source-dir "$SOURCE_DIR"
+
+      - name: Bundle corresponding source for LGPL components
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(PYTHONPATH=mushaf_app python -c 'from version import APP_VERSION; print(APP_VERSION)')"
+          SOURCE_NAME="Siraj-Quran-${VERSION}-linux-corresponding-source.zip"
+          python scripts/prepare_corresponding_sources.py \
+            --platform linux \
+            --version "$VERSION" \
+            --cache "$RUNNER_TEMP/siraj-source-cache" \
+            --debian-source-dir "$RUNNER_TEMP/siraj-debian-source" \
+            --output "mushaf_app/release/$SOURCE_NAME"
+          (cd mushaf_app/release && sha256sum "$SOURCE_NAME" >> SHA256SUMS.txt)
 
       - name: Generate CycloneDX SBOM
         run: |
@@ -119,8 +208,34 @@ jobs:
             --output-format JSON \
             --output-reproducible \
             --output-file mushaf_app/release/SBOM.cdx.json
-          test "$(find mushaf_app/release -mindepth 1 -maxdepth 1 -type f | wc -l)" -eq 3
+          test "$(find mushaf_app/release -mindepth 1 -maxdepth 1 -type f | wc -l)" -eq 4
           test "$(find mushaf_app/release -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 0
+
+      - name: Generate signed test update channel
+        if: startsWith(github.ref, 'refs/tags/siraj-linux-test-v')
+        env:
+          SIRAJ_UPDATE_SIGNING_SEED: ${{ secrets.WINDOWS_UPDATE_SIGNING_SEED }}
+        run: |
+          set -euo pipefail
+          test -n "$SIRAJ_UPDATE_SIGNING_SEED"
+          VERSION="${GITHUB_REF_NAME#siraj-linux-test-v}"
+          APPIMAGE="mushaf_app/release/Siraj-Quran-${VERSION}-linux-x86_64.AppImage"
+          BASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}"
+          python scripts/generate_linux_update_manifest.py \
+            --version "$VERSION" \
+            --appimage "$APPIMAGE" \
+            --base-url "$BASE_URL" \
+            --notes "سراج ${VERSION}: دمج 78 تفسيرًا محليًا للعمل دون إنترنت." \
+            --output mushaf_app/release/stable.json
+          python - <<'PY'
+          import json, os, pathlib, sys
+          sys.path.insert(0, 'scripts')
+          from update_signing import verify_manifest
+          public = pathlib.Path('mushaf_app/assets/update_public_key.txt').read_text(encoding='ascii')
+          manifest = json.loads(pathlib.Path('mushaf_app/release/stable.json').read_text(encoding='utf-8'))
+          assert verify_manifest(manifest, public)
+          assert manifest['available'] is True and manifest['version'] == os.environ['GITHUB_REF_NAME'].removeprefix('siraj-linux-test-v')
+          PY
 
       - name: Upload Linux UI screenshots
         if: always()
@@ -136,6 +251,7 @@ jobs:
         with:
           subject-path: |
             mushaf_app/release/*.AppImage
+            mushaf_app/release/*-corresponding-source.zip
             mushaf_app/release/SHA256SUMS.txt
             mushaf_app/release/SBOM.cdx.json
 
@@ -146,3 +262,158 @@ jobs:
           path: mushaf_app/release/*
           if-no-files-found: error
           retention-days: 30
+
+  publish-draft:
+    if: >-
+      startsWith(github.ref, 'refs/tags/siraj-linux-v') ||
+      startsWith(github.ref, 'refs/tags/siraj-linux-patch-v')
+    needs: build-linux
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up update signer
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Enforce explicit audit approval before creating a Draft
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git show origin/main:audit/RELEASE_GATE.json > "$RUNNER_TEMP/RELEASE_GATE.json"
+          RELEASE_COMMIT="$(git rev-list -n 1 "$GITHUB_REF_NAME")"
+          git merge-base --is-ancestor "$RELEASE_COMMIT" origin/main
+          python scripts/check_release_gate.py \
+            --gate "$RUNNER_TEMP/RELEASE_GATE.json" \
+            --tag "$GITHUB_REF_NAME" \
+            --commit "$RELEASE_COMMIT"
+
+      - name: Install update signing and verification dependencies
+        run: python -m pip install PyNaCl==1.6.2 packaging==26.3
+
+      - name: Download tested artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: siraj-linux-appimage
+          path: release
+
+      - name: Prepare signed full or patch draft assets
+        shell: bash
+        env:
+          SIRAJ_UPDATE_SIGNING_SEED: ${{ secrets.WINDOWS_UPDATE_SIGNING_SEED }}
+        run: |
+          set -euo pipefail
+          test -n "$SIRAJ_UPDATE_SIGNING_SEED"
+          VERSION="${GITHUB_REF_NAME#siraj-linux-patch-v}"
+          VERSION="${VERSION#siraj-linux-v}"
+          BASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}"
+          rm -rf publish
+          mkdir publish
+
+          if [[ "$GITHUB_REF_NAME" == siraj-linux-patch-v* ]]; then
+            PATCH="publish/Siraj-Quran-${VERSION}-linux.sirajpatch"
+            python scripts/generate_signed_patch.py \
+              --product siraj-quran-linux \
+              --version "$VERSION" \
+              --app-dir mushaf_app \
+              --notes "ترقيع صغير موقّع لسراج Linux؛ لا يغيّر المحرك الأصلي." \
+              --output "$PATCH"
+            python scripts/generate_patch_channel.py \
+              --product siraj-quran-linux \
+              --version "$VERSION" \
+              --patch "$PATCH" \
+              --base-url "$BASE_URL" \
+              --notes "ترقيع صغير موقّع لسراج Linux." \
+              --output publish/patch-stable.json
+            PATCH_PATH="$PATCH" python - <<'PY'
+          import json, os, sys, tempfile
+          from pathlib import Path
+          sys.path.insert(0, 'mushaf_app')
+          import patch_runtime
+          import update_security
+          public = Path('mushaf_app/assets/update_public_key.txt')
+          channel = json.load(open('publish/patch-stable.json', encoding='utf-8'))
+          assert update_security.verify_update_manifest(channel, public)
+          with tempfile.TemporaryDirectory() as folder:
+              manifest = patch_runtime.install_patch_archive(
+                  Path(os.environ['PATCH_PATH']), product='siraj-quran-linux', runtime_api=1,
+                  bundled_version='1.1.0', public_key_path=public,
+                  patch_root=Path(folder) / 'patches')
+              assert manifest['version'] == channel['version']
+          PY
+            (cd publish && sha256sum "$(basename "$PATCH")" patch-stable.json > SHA256SUMS.txt)
+            cp release/SBOM.cdx.json publish/SBOM.cdx.json
+            cat > release-notes.md <<EOF
+          # سراج ${VERSION} — ترقيع Linux موقّع
+
+          - ترقيع صغير بعد الحزمة الانتقالية الكاملة 1.1.0.
+          - لا يستبدل AppImage أو مكتبات runtime الأصلية.
+          - تتحقق النسخة الانتقالية من Ed25519 وSHA-256 لكل ملف قبل تشغيله، مع رجوع آمن للنسخة المضمّنة.
+          - هذا Draft فقط؛ لا تُفعّل قناة التحديث قبل المراجعة والترقية الصريحة.
+          EOF
+            echo "DRAFT_TITLE=سراج ${VERSION} — ترقيع Linux" >> "$GITHUB_ENV"
+          else
+            APPIMAGE="release/Siraj-Quran-${VERSION}-linux-x86_64.AppImage"
+            python scripts/generate_linux_update_manifest.py \
+              --version "$VERSION" \
+              --appimage "$APPIMAGE" \
+              --base-url "$BASE_URL" \
+              --notes "حزمة سراج Linux AppImage الكاملة." \
+              --output publish/stable.json
+            cp release/* publish/
+            cat > release-notes.md <<EOF
+          # سراج ${VERSION} — قرآن كريم لنظام Linux
+
+          - AppImage لنظام x86_64، مبني على Ubuntu 22.04.
+          - حزمة corresponding-source المرفقة تحتوي المصادر المطابقة للمكونات الخاضعة لـLGPL/GPL.
+          - راجع SHA256SUMS.txt وSBOM.cdx.json.
+          - هذا Draft فقط؛ لا تُنشر القناة المستقرة تلقائيًا.
+          EOF
+            echo "DRAFT_TITLE=سراج ${VERSION} — Linux AppImage" >> "$GITHUB_ENV"
+          fi
+
+          python - <<'PY'
+          import json, pathlib, sys
+          sys.path.insert(0, 'scripts')
+          from update_signing import verify_manifest
+          public_key = pathlib.Path('mushaf_app/assets/update_public_key.txt').read_text(encoding='ascii')
+          manifests = list(pathlib.Path('publish').glob('*stable.json'))
+          assert len(manifests) == 1, manifests
+          manifest = json.loads(manifests[0].read_text(encoding='utf-8'))
+          assert verify_manifest(manifest, public_key), 'Generated update manifest signature is invalid'
+          PY
+
+      - name: Attest the complete Draft asset set
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: publish/*
+
+      - name: Create draft release only
+        shell: bash
+        run: |
+          set -euo pipefail
+          # لا يحوّل هذا المسار الـDraft إلى إصدار عام ولا يحدّث قناة main.
+          # الترقية العامة لها workflow صريح منفصل بعد التدقيق.
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            test "$(gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)" = true
+            gh release upload "$GITHUB_REF_NAME" publish/* --clobber --repo "$GITHUB_REPOSITORY"
+            gh release edit "$GITHUB_REF_NAME" --draft --title "$DRAFT_TITLE" --notes-file release-notes.md --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$GITHUB_REF_NAME" publish/* \
+              --draft \
+              --title "$DRAFT_TITLE" \
+              --notes-file release-notes.md \
+              --repo "$GITHUB_REPOSITORY"
+          fi

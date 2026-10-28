@@ -2,6 +2,7 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $AppRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$RepoRoot = (Resolve-Path (Join-Path $AppRoot "..")).Path
 $Build = Join-Path $AppRoot "build"
 $Dist = Join-Path $AppRoot "dist"
 $UpdaterDist = Join-Path $AppRoot "updater-dist"
@@ -99,6 +100,19 @@ $PortableName = "Siraj-Quran-$Version-windows-portable-x64"
 $PortableDir = Join-Path $Release $PortableName
 Copy-Item (Join-Path $Dist "Siraj") $PortableDir -Recurse
 Copy-Item $UpdaterExe $PortableDir
+Copy-Item (Join-Path $RepoRoot "LICENSE") (Join-Path $PortableDir "LICENSE.txt")
+Copy-Item (Join-Path $AppRoot "THIRD_PARTY_NOTICES.md") (Join-Path $PortableDir "THIRD_PARTY_NOTICES.md")
+
+$LicensesDir = Join-Path $PortableDir "licenses"
+& python (Join-Path $RepoRoot "scripts\collect_python_licenses.py") `
+    --requirements (Join-Path $AppRoot "requirements.txt") `
+    --output $LicensesDir `
+    --fail-missing
+if ($LASTEXITCODE -ne 0) { throw "Collecting Python dependency licenses failed" }
+$FontLicenses = Join-Path $LicensesDir "fonts"
+New-Item -ItemType Directory -Path $FontLicenses -Force | Out-Null
+Copy-Item (Join-Path $AppRoot "fonts\*.txt") $FontLicenses
+
 New-Item -ItemType File -Path (Join-Path $PortableDir "portable.flag") | Out-Null
 @"
 سراج — قرآن كريم
@@ -129,10 +143,18 @@ $PortableSmoke = Join-Path $Build "portable-zip-smoke"
 New-Item -ItemType Directory -Path $PortableSmoke -Force | Out-Null
 & $SevenZip x -y "-o$PortableSmoke" $PortableZip | Out-Host
 if ($LASTEXITCODE -ne 0) { throw "Portable ZIP extraction smoke test failed" }
-$PortableSmokeExe = Join-Path $PortableSmoke "$PortableName\Siraj.exe"
-$PortableSmokeFlag = Join-Path $PortableSmoke "$PortableName\portable.flag"
-if (-not (Test-Path $PortableSmokeExe) -or -not (Test-Path $PortableSmokeFlag)) {
-    throw "Portable ZIP is missing Siraj.exe or portable.flag"
+$PortableSmokeRoot = Join-Path $PortableSmoke $PortableName
+$PortableSmokeExe = Join-Path $PortableSmokeRoot "Siraj.exe"
+$PortableSmokeFlag = Join-Path $PortableSmokeRoot "portable.flag"
+$PortableSmokeNotices = Join-Path $PortableSmokeRoot "THIRD_PARTY_NOTICES.md"
+$PortableSmokeLicenses = Join-Path $PortableSmokeRoot "licenses\inventory.json"
+if (
+    -not (Test-Path $PortableSmokeExe) -or
+    -not (Test-Path $PortableSmokeFlag) -or
+    -not (Test-Path $PortableSmokeNotices) -or
+    -not (Test-Path $PortableSmokeLicenses)
+) {
+    throw "Portable ZIP is missing the executable, portable marker, notices, or license inventory"
 }
 Invoke-SirajSmoke $PortableSmokeExe @("--selftest") "Portable ZIP self-test"
 Remove-Item $PortableSmoke -Recurse -Force

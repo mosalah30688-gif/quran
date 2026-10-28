@@ -1,0 +1,189 @@
+{
+  "schema": 1,
+  "fetched_at": "2026-10-27T23:15:44Z",
+  "api_url": "https://www.mp3quran.net/api/v3/reciters?language=ar",
+  "api_response_sha256": "fa5e713c5a69fa23cf58d1bdaea085f894ef3b4ec496976d7ee4d1aa0c5eef2f",
+  "note": "MP3Quran moshaf id 52, not timing/read id 51, explicitly identifies Abdulbasit r2 as complete Warsh. Playback uses complete surah files and does not depend on ayah timing data.",
+  "records": [
+    {
+      "server": "https://cdn.mp3quran.net/audio/abdulbasit-abdulsamad/r2/",
+      "reciter_id": 51,
+      "reciter": "عبدالباسط عبدالصمد",
+      "moshaf_id": 52,
+      "name": "ورش عن نافع - مرتل",
+      "rewaya_id": 2,
+      "surah_total": 114,
+      "surah_list": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114",
+      "probes": [
+        {
+          "surah": 1,
+          "url": "https://cdn.mp3quran.net/audio/abdulbasit-abdulsamad/r2/001.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/238089",
+          "sample_bytes": 1024,
+          "sample_sha256": "74d73961600e4efc31580f03ba61f5ec9983b49e75e6e9543a0bf3b4434d272d"
+        },
+        {
+          "surah": 2,
+          "url": "https://cdn.mp3quran.net/audio/abdulbasit-abdulsamad/r2/002.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/40338138",
+          "sample_bytes": 1024,
+          "sample_sha256": "27d3f503327a9d31625df68bf31f1b3eb96d7dd0a4d4f04c4bd064bb4b8b8638"
+        },
+        {
+          "surah": 114,
+          "url": "https://cdn.mp3quran.net/audio/abdulbasit-abdulsamad/r2/114.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/202136",
+          "sample_bytes": 1024,
+          "sample_sha256": "af1cf7142e7d7aa0fb8076a521555c6aa5306e0e416c6d80fe26a400d727b979"
+        }
+      ]
+    },
+    {
+      "server": "https://cdn.mp3quran.net/audio/mahmoud-husary/r3/",
+      "reciter_id": 118,
+      "reciter": "محمود خليل الحصري",
+      "moshaf_id": 120,
+      "name": "ورش عن نافع - مرتل",
+      "rewaya_id": 2,
+      "surah_total": 114,
+      "surah_list": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114",
+      "probes": [
+        {
+          "surah": 1,
+          "url": "https://cdn.mp3quran.net/audio/mahmoud-husary/r3/001.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/473723",
+          "sample_bytes": 1024,
+          "sample_sha256": "95d87f93427150f2448d3aa40926c5e04ea4491a74bbf31cea11d08800119c80"
+        },
+        {
+          "surah": 2,
+          "url": "https://cdn.mp3quran.net/audio/mahmoud-husary/r3/002.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/99486582",
+          "sample_bytes": 1024,
+          "sample_sha256": "9530401d1c272412e35a92b1b24a5122e08f22cc9d650e70ae2399a97925b072"
+        },
+        {
+          "surah": 114,
+          "url": "https://cdn.mp3quran.net/audio/mahmoud-husary/r3/114.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/438192",
+          "sample_bytes": 1024,
+          "sample_sha256": "5daa2096930bb9f1327d2ba47aa683041d9f203936221c781a132019fd6de846"
+        }
+      ]
+    },
+    {
+      "server": "https://cdn.mp3quran.net/audio/mahmoud-husary/r5/",
+      "reciter_id": 118,
+      "reciter": "محمود خليل الحصري",
+      "moshaf_id": 270,
+      "name": "قالون عن نافع - مرتل",
+      "rewaya_id": 5,
+      "surah_total": 114,
+      "surah_list": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114",
+      "probes": [
+        {
+          "surah": 1,
+          "url": "https://cdn.mp3quran.net/audio/mahmoud-husary/r5/001.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/850752",
+          "sample_bytes": 1024,
+          "sample_sha256": "a17cedf4eccd29eb17b509b6770e0fcc47f55a48873a2e1ccdd62660246d7af0"
+        },
+        {
+          "surah": 2,
+          "url": "https://cdn.mp3quran.net/audio/mahmoud-husary/r5/002.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/168398468",
+          "sample_bytes": 1024,
+          "sample_sha256": "2a1e938f836390412f3fe6fe69405605a04bdb24bb551640dd4aa6e05357181a"
+        },
+        {
+          "surah": 114,
+          "url": "https://cdn.mp3quran.net/audio/mahmoud-husary/r5/114.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/835284",
+          "sample_bytes": 1024,
+          "sample_sha256": "2244fe2803ac2893e0cb0f3d79ee336caa8735cfbc09bde4d993e32cedd38ff1"
+        }
+      ]
+    },
+    {
+      "server": "https://cdn.mp3quran.net/audio/ali-hudhaifi/r2/",
+      "reciter_id": 74,
+      "reciter": "علي بن عبدالرحمن الحذيفي",
+      "moshaf_id": 75,
+      "name": "قالون عن نافع - مرتل",
+      "rewaya_id": 5,
+      "surah_total": 114,
+      "surah_list": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114",
+      "probes": [
+        {
+          "surah": 1,
+          "url": "https://cdn.mp3quran.net/audio/ali-hudhaifi/r2/001.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/945359",
+          "sample_bytes": 1024,
+          "sample_sha256": "db6fe392397b3ca9686f37c525779320e32f59eb377b48536e418e0458fbd0ba"
+        },
+        {
+          "surah": 2,
+          "url": "https://cdn.mp3quran.net/audio/ali-hudhaifi/r2/002.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/117436017",
+          "sample_bytes": 1024,
+          "sample_sha256": "de788314e3fc52909afc9d79574deed4f5f93ef0afdf624b06ad15f31302a8dc"
+        },
+        {
+          "surah": 114,
+          "url": "https://cdn.mp3quran.net/audio/ali-hudhaifi/r2/114.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/666994",
+          "sample_bytes": 1024,
+          "sample_sha256": "d4e252f3053ad91f1e109a040f08b70bffdf6d57bf41467b66ad14d16a466d66"
+        }
+      ]
+    },
+    {
+      "server": "https://cdn.mp3quran.net/audio/mahmoud-husary/r4/",
+      "reciter_id": 118,
+      "reciter": "محمود خليل الحصري",
+      "moshaf_id": 269,
+      "name": "الدوري عن أبي عمرو - مرتل",
+      "rewaya_id": 13,
+      "surah_total": 114,
+      "surah_list": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114",
+      "probes": [
+        {
+          "surah": 1,
+          "url": "https://cdn.mp3quran.net/audio/mahmoud-husary/r4/001.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/819407",
+          "sample_bytes": 1024,
+          "sample_sha256": "47e8cf423eecb8658517fe5a36c4eeca0994b4f5a90892adb2cea504547bce4d"
+        },
+        {
+          "surah": 2,
+          "url": "https://cdn.mp3quran.net/audio/mahmoud-husary/r4/002.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/165554674",
+          "sample_bytes": 1024,
+          "sample_sha256": "acb5957111199819a3c490fa08e85b99691e755fc7a91fa83af5858870e6b053"
+        },
+        {
+          "surah": 114,
+          "url": "https://cdn.mp3quran.net/audio/mahmoud-husary/r4/114.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/960669",
+          "sample_bytes": 1024,
+          "sample_sha256": "68e0132887f0961fd1c1a505ed497daecdbf7338e74a24735e0848663f57f04c"
+        }
+      ]
+    }
+  ]
+}

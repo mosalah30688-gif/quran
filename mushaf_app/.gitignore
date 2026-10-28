@@ -2,9 +2,11 @@ __pycache__/
 build/
 dist/
 AppDir/
+binary-license-report/
 release/
 squashfs-root/
 *.AppImage
 appimagetool*
 runtime-*-x86_64
+data/tafsir-offline.sqlite3
 *.spec

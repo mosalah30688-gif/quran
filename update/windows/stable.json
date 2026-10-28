@@ -3,14 +3,9 @@
   "product": "siraj-quran-windows",
   "channel": "stable",
   "available": false,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "published_at": null,
   "minimum_windows": "10.0.17763",
-  "release_notes": "الإصدار الأول من خطة Windows الجديدة قيد الإعداد والاختبار.",
-  "assets": {},
-  "signature": {
-    "algorithm": "ed25519",
-    "key_id": "siraj-update-2026-01",
-    "value": "US2OkN3SSE6fbN3/jKhkVljGrxtH/EpIsurXOJPh3aTkfsd1SVNWwgWDPPFuOe5F3Ry04ywVJ9ZTib48FOpJCA=="
-  }
+  "release_notes": "الحزمة الانتقالية الكاملة 1.1.0 قيد الاختبار وتدقيق المحتوى؛ لم تُنشر قناة مستقرة عامة.",
+  "assets": {}
 }

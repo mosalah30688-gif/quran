@@ -1,0 +1,198 @@
+{
+  "schema": 1,
+  "reviewed_at": "2026-10-28",
+  "delivery": "Live API display; these tafsir and translation corpora are not bundled in Siraj releases.",
+  "provider": "AlQuran Cloud / Islamic Network",
+  "provider_terms": {
+    "url": "https://alquran.cloud/terms-and-conditions",
+    "last_updated": "2026-06-14",
+    "basis": "Translations are contributed by rights-holders or sourced from public-domain editions; translator attribution is required when republishing."
+  },
+  "tafsirs": [
+    {
+      "identifier": "ar.muyassar",
+      "provider_metadata": {
+        "identifier": "ar.muyassar",
+        "language": "ar",
+        "name": "تفسير المیسر",
+        "englishName": "King Fahad Quran Complex",
+        "format": "text",
+        "type": "tafsir",
+        "direction": "rtl"
+      },
+      "display": "التفسير الميسر (مجمع الملك فهد)",
+      "author_or_owner": "نخبة من العلماء — مجمع الملك فهد لطباعة المصحف الشريف",
+      "rights_basis": "The official Quran Complex developer platform offers this content to developers, researchers, and publishers for use in applications and research.",
+      "evidence": "https://qurancomplex.gov.sa/quran-dev/"
+    },
+    {
+      "identifier": "ar.jalalayn",
+      "provider_metadata": {
+        "identifier": "ar.jalalayn",
+        "language": "ar",
+        "name": "تفسير الجلالين",
+        "englishName": "Jalal ad-Din al-Mahalli and Jalal ad-Din as-Suyuti",
+        "format": "text",
+        "type": "tafsir",
+        "direction": "rtl"
+      },
+      "display": "تفسير الجلالين",
+      "author_or_owner": "جلال الدين المحلي (ت 864هـ) وجلال الدين السيوطي (ت 911هـ)",
+      "rights_basis": "Public-domain classical underlying work; displayed on demand from the provider and not bundled."
+    },
+    {
+      "identifier": "ar.baghawi",
+      "provider_metadata": {
+        "identifier": "ar.baghawi",
+        "language": "ar",
+        "name": "تفسير البغوي",
+        "englishName": "Tafseer Al-Baghawi",
+        "format": "text",
+        "type": "tafsir",
+        "direction": "rtl"
+      },
+      "display": "تفسير البغوي",
+      "author_or_owner": "الحسين بن مسعود البغوي (ت 516هـ)",
+      "rights_basis": "Public-domain classical underlying work; displayed on demand from the provider and not bundled."
+    },
+    {
+      "identifier": "ar.qurtubi",
+      "provider_metadata": {
+        "identifier": "ar.qurtubi",
+        "language": "ar",
+        "name": "تفسير القرطبي",
+        "englishName": "Tafseer Al Qurtubi",
+        "format": "text",
+        "type": "tafsir",
+        "direction": "rtl"
+      },
+      "display": "تفسير القرطبي",
+      "author_or_owner": "محمد بن أحمد القرطبي (ت 671هـ)",
+      "rights_basis": "Public-domain classical underlying work; displayed on demand from the provider and not bundled."
+    },
+    {
+      "identifier": "ar.miqbas",
+      "provider_metadata": {
+        "identifier": "ar.miqbas",
+        "language": "ar",
+        "name": "تنوير المقباس من تفسير بن عباس",
+        "englishName": "Tafseer Tanwir al-Miqbas",
+        "format": "text",
+        "type": "tafsir",
+        "direction": "rtl"
+      },
+      "display": "تنوير المقباس",
+      "author_or_owner": "منسوب لابن عباس، جمعه الفيروزآبادي (ت 817هـ)",
+      "rights_basis": "Public-domain classical underlying work; displayed on demand from the provider and not bundled. Attribution is not a scholarly endorsement."
+    }
+  ],
+  "translations": [
+    {
+      "identifier": "en.sahih",
+      "translator_or_publisher": "Saheeh International",
+      "provider_metadata": {
+        "identifier": "en.sahih",
+        "language": "en",
+        "name": "Saheeh International",
+        "englishName": "Saheeh International",
+        "format": "text",
+        "type": "translation",
+        "direction": "ltr"
+      },
+      "rights_basis": "AlQuran Cloud terms section IV: contributed by the rights-holder or sourced from a public-domain edition; displayed with the edition identifier and translator attribution."
+    },
+    {
+      "identifier": "fr.hamidullah",
+      "translator_or_publisher": "Muhammad Hamidullah",
+      "provider_metadata": {
+        "identifier": "fr.hamidullah",
+        "language": "fr",
+        "name": "Hamidullah",
+        "englishName": "Muhammad Hamidullah",
+        "format": "text",
+        "type": "translation",
+        "direction": "ltr"
+      },
+      "rights_basis": "AlQuran Cloud terms section IV: contributed by the rights-holder or sourced from a public-domain edition; displayed with the edition identifier and translator attribution."
+    },
+    {
+      "identifier": "ur.jalandhry",
+      "translator_or_publisher": "Fateh Muhammad Jalandhry",
+      "provider_metadata": {
+        "identifier": "ur.jalandhry",
+        "language": "ur",
+        "name": "جالندہری",
+        "englishName": "Fateh Muhammad Jalandhry",
+        "format": "text",
+        "type": "translation",
+        "direction": "rtl"
+      },
+      "rights_basis": "AlQuran Cloud terms section IV: contributed by the rights-holder or sourced from a public-domain edition; displayed with the edition identifier and translator attribution."
+    },
+    {
+      "identifier": "tr.diyanet",
+      "translator_or_publisher": "Diyanet Isleri",
+      "provider_metadata": {
+        "identifier": "tr.diyanet",
+        "language": "tr",
+        "name": "Diyanet İşleri",
+        "englishName": "Diyanet Isleri",
+        "format": "text",
+        "type": "translation",
+        "direction": "ltr"
+      },
+      "rights_basis": "AlQuran Cloud terms section IV: contributed by the rights-holder or sourced from a public-domain edition; displayed with the edition identifier and translator attribution."
+    }
+  ],
+  "blocked": [
+    {
+      "identifier": "ar.waseet",
+      "provider_metadata": {
+        "identifier": "ar.waseet",
+        "language": "ar",
+        "name": "الـتـفـسـيـر الـوسـيـط",
+        "englishName": "Tafseer Al-Waseet",
+        "format": "text",
+        "type": "tafsir",
+        "direction": "rtl"
+      },
+      "reason": "modern tafsir; no edition-specific permission was established"
+    },
+    {
+      "identifier": "id.indonesian",
+      "provider_metadata": {
+        "identifier": "id.indonesian",
+        "language": "id",
+        "name": "Bahasa Indonesia",
+        "englishName": "Unknown",
+        "format": "text",
+        "type": "translation",
+        "direction": "ltr"
+      },
+      "reason": "provider metadata identifies the translator as Unknown, so required attribution cannot be completed"
+    }
+  ],
+  "snapshots": {
+    "editions.json.gz": {
+      "url": "https://api.alquran.cloud/v1/edition",
+      "response_bytes": 58532,
+      "response_sha256": "aebe1b594921b5c652d8a3104900024a0bc83a14048dbddc8b5197603ce40c13",
+      "snapshot_bytes": 10311,
+      "snapshot_sha256": "ae4e297a7c6364fcabc7d98750dc32a89afa61e3244109935d3764cf212b490c"
+    },
+    "alquran-terms.html.gz": {
+      "url": "https://alquran.cloud/terms-and-conditions",
+      "response_bytes": 114534,
+      "response_sha256": "32fa04005102c3bdd5e61accacddea32a467dc7f62268bf2d88b18776c93825d",
+      "snapshot_bytes": 20887,
+      "snapshot_sha256": "9c15b7c1df16715fcb133d38fda371251819c167dffdad8cd8f8851a987e73aa"
+    },
+    "quran-complex-developers.html.gz": {
+      "url": "https://qurancomplex.gov.sa/quran-dev/",
+      "response_bytes": 534806,
+      "response_sha256": "83ad1a67e7cd0edce8380975c85dc2dee4f450e90145871a21c8d9e756cb5aea",
+      "snapshot_bytes": 97806,
+      "snapshot_sha256": "9b36e02f6d9e46f161e95ed0637d7bb563a02860b7e236c0d9acc7268bf09e4f"
+    }
+  }
+}

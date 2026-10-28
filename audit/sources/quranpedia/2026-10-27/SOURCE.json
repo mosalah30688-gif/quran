@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "dump_version": "2026-10-27",
+  "generated_at": "2026-10-27T03:32:15+00:00",
+  "manifest_url": "https://quranpedia.net/dumps/manifest.json",
+  "manifest_bytes": 104416,
+  "manifest_sha256": "024e61cc20ba272a7f7b100967c49865e3085030b1414479ac8ef07cdd7e0f18",
+  "license_url": "https://quranpedia.net/dumps/LICENSE.md",
+  "files": {
+    "meanings.json.gz": {
+      "url": "https://quranpedia.net/dumps/meanings.json.gz",
+      "bytes": 748519,
+      "sha256": "f32b339f2592d681a7bda2f9d182d11f1f25a1bde93574c2ad32a2e5f465bc8f",
+      "built_at": "2026-10-24T02:36:02+00:00"
+    },
+    "mushafs-4.json.gz": {
+      "url": "https://quranpedia.net/dumps/mushafs-4.json.gz",
+      "bytes": 422507,
+      "sha256": "1a41d83903baf9af576b5e247bac35e8137e1783e7a895bf8b80c54a31c81603",
+      "built_at": "2026-10-27T03:31:31+00:00"
+    },
+    "mushafs-7.json.gz": {
+      "url": "https://quranpedia.net/dumps/mushafs-7.json.gz",
+      "bytes": 418528,
+      "sha256": "719a9bc4e85b8ed46df8888622efd4447758d506bc4e2cec79e507bf41df10b0",
+      "built_at": "2026-10-27T03:31:31+00:00"
+    },
+    "mushafs-6.json.gz": {
+      "url": "https://quranpedia.net/dumps/mushafs-6.json.gz",
+      "bytes": 421957,
+      "sha256": "d3a2f1b68bd31844d0b833279baa0e8275ecea8fda36eb0ef547630682366e16",
+      "built_at": "2026-10-27T03:31:31+00:00"
+    }
+  },
+  "transformation": {
+    "script": "scripts/generate_quranpedia_data.py",
+    "description": "Select word/book pairs from the official meanings service dump and flatten official mushafs 4 (Warsh), 7 (Qalun), and 6 (Duri) while preserving their numbering, page, and text."
+  },
+  "outputs": {
+    "quran-meanings.json": {
+      "bytes": 2577563,
+      "sha256": "d9cf1c2e5c27d25c213c84b046df1b2af07cdbefa72eb0be1d2e9014166c03c3"
+    },
+    "quran-riwayat.json": {
+      "bytes": 4404077,
+      "sha256": "4424377bf32f609bf1f10b595bd17695add15f4b1cc241012f6fef00df4bd640"
+    }
+  }
+}

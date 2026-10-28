@@ -68,8 +68,10 @@ def shot(name):
 try:
     # المصحف
     check('reader has 114 surahs', win.combo_surah.count() == 114)
-    check('reader keeps all 16 Android Hafs reciters', len(M.HAFS_RECITERS) == 16)
+    check('reader exposes 17 audited Hafs reciters', len(M.HAFS_RECITERS) == 17)
     check('reader has 30 juz', win.combo_juz.count() == 30)
+    check('Hafs audio uses audited Islamic Network CDN', M.ayah_audio_url('ar.alafasy', 2, 255).startswith('https://cdn.islamic.network/'))
+    check('tajweed icon is a palette not music notes', 'M9 18V5' not in M.ICON_SVG['tajweed'])
     check('page 1 text', 'الفاتحة' in win.browser.toPlainText().replace('ٱ', 'ا') or len(win.browser.toPlainText()) > 100)
     win.go_page(2)
     check('next page', win.page == 2)
@@ -110,9 +112,11 @@ try:
     app.processEvents()
     check('warsh loaded', win.riwaya_id == 'warsh' and win.reciter_combo.count() == 2)
     check('warsh page text', len(win.browser.toPlainText()) > 100)
+    check('other riwayat keeps expanded navigation', win.sidebar.width() == 228)
     win.riwaya_combo.setCurrentIndex(win.riwaya_combo.findData('quran-simple'))
     app.processEvents()
-    check('hafs simple loaded', win.riwaya_id == 'quran-simple' and win.reciter_combo.count() == 16)
+    check('hafs simple loaded', win.riwaya_id == 'quran-simple' and win.reciter_combo.count() == 17)
+    check('Hafs uses wide compact navigation', win.sidebar.width() == 76)
     # التلاوة (ملف لكل آية، أول قارئ حفص)
     win.reciter_combo.setCurrentIndex(0)
     win.toggle_play()
@@ -124,11 +128,17 @@ try:
     check('pause toggles', 'متوقفة' in win.play_status.text() or win.play_status.text() != '')
     win.stop_play('أوقفت التلاوة')
     check('stop resets', not win.playing)
-    # ورش (ملف لكل آية)
+    # ورش (ملف كامل لكل سورة من مصدر MP3Quran المدقق)
     win.riwaya_combo.setCurrentIndex(win.riwaya_combo.findData('warsh'))
     win.reciter_combo.setCurrentIndex(0)
     queue = win.audio_queue_for_page()
-    check('warsh ayah queue', len(queue) > 0 and 'warsh_Abdul_Basit' in queue[0][0])
+    check(
+        'warsh MP3Quran surah queue',
+        len(queue) > 0
+        and queue[0][1][1] is None
+        and queue[0][0].startswith('https://cdn.mp3quran.net/audio/abdulbasit-abdulsamad/r2/')
+        and queue[0][0].endswith('.mp3'),
+    )
     # قالون (ملف لكل سورة)
     win.riwaya_combo.setCurrentIndex(win.riwaya_combo.findData('qalun'))
     queue = win.audio_queue_for_page()
@@ -149,17 +159,50 @@ try:
     page_text = win.browser.toPlainText()
     check('basmala before first ayah', 'ٱلرَّحِيمِ' in page_text)
     check('basmala shown once on Baqarah page', page_text.count('بِسْمِ') == 1)
+    check('Hafs uses Shamela-style bracketed surah title', '[سورة البقرة]' in page_text)
+    check('Hafs uses compact ayah rosette', '۝١' in page_text)
     raw_baqarah = win.book.texts[(2, 1)]
-    check('basmala detached from first ayah text', not M.display_ayah_text(2, 1, raw_baqarah).startswith('بِسْمِ'))
+    check('basmala detached from first ayah text', not M.display_ayah_text(2, 1, raw_baqarah, True).startswith('بِسْمِ'))
+    check('non-Hafs display source is untouched', M.display_ayah_text(2, 1, raw_baqarah, False).startswith('بِسْمِ'))
     simple_first = next(row[3] for row in M.HAFS['simple'] if row[0] == 2 and row[1] == 1)
-    check('basmala detached in simple script too', not M.display_ayah_text(2, 1, simple_first).startswith('بِسْمِ'))
+    check('basmala detached in simple script too', not M.display_ayah_text(2, 1, simple_first, True).startswith('بِسْمِ'))
+    all_hafs_firsts = [
+        (s, a, text)
+        for rows in (M.HAFS['uthmani'], M.HAFS['simple'], M.TAJWEED_QURAN)
+        for s, a, _page, text in rows
+        if a == 1 and s not in (1, 9)
+    ]
+    check('all Hafs surah starts deduplicate basmala', all(
+        not M.display_ayah_text(s, a, text, True).startswith('بِسْمِ')
+        for s, a, text in all_hafs_firsts
+    ))
     check('compact line spacing', 'line-height:125%' in win.browser.toHtml().replace(' ', ''))
-    # الترجمات الخمس المحفوظة من Android تظهر تحت الآية وتُزامن بين الإعدادات والتفسير.
+    saved_font = win.font_pt
+    saved_size = win.size()
+    win.resize(1920, 900)
+    win.set_font(18)
+    win.go_page(win.book.page_of(15, 1))
+    app.processEvents()
+    check('Hijr page has exactly one displayed basmala', win.browser.toPlainText().count('بِسْمِ') == 1)
+    blocks = []
+    block = win.browser.document().begin()
+    while block.isValid():
+        if block.text().strip():
+            blocks.append(block)
+        block = block.next()
+    check('Hijr page is one continuous compact paragraph', len(blocks) == 3)
+    flow_block = max(blocks, key=lambda item: len(item.text()))
+    check('Hijr page matches three-line Shamela layout at 1920px', flow_block.layout().lineCount() == 3)
+    win.resize(saved_size)
+    win.set_font(saved_font)
+    win.go_page(2)
+    app.processEvents()
+    # الترجمات الأربع ذات الإسناد المعتمد تظهر تحت الآية وتُزامن بين الإعدادات والتفسير.
     win.translation_cache[('en.sahih', 2, 1)] = 'Alif, Lam, Meem.'
     win.translation_attempted.add(('en.sahih', 2))
     win.translation_combo.setCurrentIndex(win.translation_combo.findData('en.sahih'))
     app.processEvents()
-    check('five Android translation choices kept', len(M.TRANSLATION_EDITIONS) == 6)
+    check('four approved translation choices plus disabled option', len(M.TRANSLATION_EDITIONS) == 5)
     check('translation rendered under ayah', 'Alif, Lam, Meem.' in win.browser.toPlainText())
     check('translation selection synced', win.tf_translation.currentData() == 'en.sahih')
     win.translation_combo.setCurrentIndex(0)
@@ -250,8 +293,13 @@ try:
     win.memo_repeat.setCurrentIndex(0)
     win.memo_play()
     check('memo play queue', win.queue_list and len(win.queue) == 3 and win.playing)
-    win.stop_play()
-    check('memo play stopped', not win.playing and not win.queue_list)
+    check('memo pause and stop controls enabled', win.btn_memo_pause.isEnabled() and win.btn_memo_stop.isEnabled())
+    win.memo_pause_resume()
+    check('memo pause works', win.engine.paused and 'استئناف' in win.btn_memo_pause.text())
+    win.memo_pause_resume()
+    check('memo resume works', not win.engine.paused)
+    win.memo_stop()
+    check('memo full stop works', not win.playing and not win.queue_list and not win.btn_memo_stop.isEnabled())
     import tempfile
     tmp_dir = tempfile.mkdtemp()
     win.settings.setValue('dl_folder', tmp_dir)
@@ -267,10 +315,17 @@ try:
     check('download copies to folder', (Path(tmp_dir) / 'ar.alafasy' / '112' / '1.mp3').exists())
     win.delete_dl()
     check('download delete', not (cache / M.audio_file_name(M.ayah_audio_url('ar.alafasy', 112, 1))).exists())
-    # الورد
+    # تتبع الختمة تلقائياً بلا هدف صفحات
+    M.set_khatma_pointer(win.settings, 40)
+    win.go_page(40)
+    win.show_view('reader')
+    win.reading_pending_page = 40
+    result = win.commit_reading_page()
+    check('khatma records reading automatically', result and result['advanced'])
     win.show_view('wird')
-    win.finish_wird()
-    check('wird completed', win.settings.value('wird_count', 0, type=int) >= 1)
+    check('khatma pointer advanced', M.khatma_progress(win.settings, win.page)['pointer'] == 41)
+    check('khatma has no daily target control', not hasattr(win, 'wird_target'))
+    check('khatma reminder controls', win.reminder_enabled is not None and win.reminder_time is not None)
     shot('wird')
     # الإحصائيات
     win.show_view('stats')

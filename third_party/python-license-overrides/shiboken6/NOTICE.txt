@@ -1,0 +1,16 @@
+Shiboken6 6.12.0
+----------------
+Copyright (C) The Qt Company Ltd. and other contributors.
+
+Siraj selects the GNU Lesser General Public License version 3.0 only
+(LGPL-3.0-only) option for the unmodified runtime library. The accompanying
+LGPL-3.0 and GPL-3.0 texts apply to this component, not to Siraj's original
+MIT-licensed code.
+
+Upstream licensing information:
+https://doc.qt.io/qtforpython-6/licenses.html
+
+The release must ship the exact corresponding source and third-party license
+materials, or a legally sufficient written source offer controlled by the
+distributor. See THIRD_PARTY_NOTICES.md and the release's corresponding-source
+asset.

@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "dump_version": "2026-10-24",
+  "manifest_snapshot": "2026-10-28",
+  "generated_at": "2026-10-28T03:32:15+00:00",
+  "manifest_url": "https://quranpedia.net/dumps/manifest.json",
+  "manifest_bytes": 104416,
+  "manifest_sha256": "b2c68ad5858458d3d8523e1bec37409d658cc9a115152003b5f671372ade6c9d",
+  "license_url": "https://quranpedia.net/dumps/LICENSE.md",
+  "files": {
+    "tafsir.json.gz": {
+      "url": "https://quranpedia.net/dumps/tafsir.json.gz",
+      "bytes": 3117600,
+      "sha256": "fb717bb447af2ab59b9f47bd4fcfb07b726b84284bf573d927e06e738ab4bf33",
+      "built_at": "2026-10-24T02:33:22+00:00"
+    }
+  },
+  "selection": {
+    "source_book_count": 149,
+    "selected_book_count": 73,
+    "maximum_author_death_hijri": 1350,
+    "alquran_equivalent_ids": [
+      2,
+      261,
+      272,
+      363
+    ],
+    "duplicate_or_compilation_ids": [
+      6,
+      206,
+      273,
+      284,
+      295,
+      331,
+      332,
+      347,
+      351,
+      542,
+      27756,
+      27769,
+      27783
+    ],
+    "excluded_title_prefixes": [
+      "جهود ",
+      "آراء "
+    ]
+  },
+  "transformation": {
+    "script": "scripts/generate_quranpedia_tafsir_catalog.py",
+    "description": "Union the official per-ayah tafsir metadata; retain licensed classical primary works whose recorded author death is no later than 1350 AH; remove modern compilations and duplicate editions. This metadata controls the full offline text store built from the matching official per-book dumps."
+  },
+  "outputs": {
+    "mushaf_app/data/tafsir-catalog.json": {
+      "bytes": 14386,
+      "sha256": "47b76e098df4bbb780a26e984063deb0c3d995393743740df9066a6f1dc8434a"
+    },
+    "windows_app/data/tafsir-catalog.json": {
+      "bytes": 14386,
+      "sha256": "47b76e098df4bbb780a26e984063deb0c3d995393743740df9066a6f1dc8434a"
+    }
+  }
+}

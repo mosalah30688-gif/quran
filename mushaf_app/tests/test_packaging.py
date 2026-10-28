@@ -19,7 +19,9 @@ class LinuxPackagingTests(unittest.TestCase):
     def test_linux_identity_matches_siraj_product(self):
         linux = load_version(HERE / "version.py", "linux_version")
         windows = load_version(ROOT / "windows_app" / "version.py", "windows_version")
+        # Windows is still not built or published, but shared source metadata stays aligned.
         self.assertEqual(linux.APP_VERSION, windows.APP_VERSION)
+        self.assertGreater(tuple(map(int, linux.APP_VERSION.split("."))), (4, 0, 7))
         self.assertEqual(linux.APP_NAME_AR, "سراج")
         self.assertEqual(linux.APP_DESCRIPTION_AR, "قرآن كريم")
 

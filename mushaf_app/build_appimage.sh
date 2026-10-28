@@ -25,14 +25,21 @@ RUNTIME_URL="https://github.com/AppImage/type2-runtime/releases/download/${RUNTI
 RELEASE_DATE="${SOURCE_DATE_EPOCH:+$(date -u -d "@${SOURCE_DATE_EPOCH}" +%F)}"
 RELEASE_DATE="${RELEASE_DATE:-$(date -u +%F)}"
 
-rm -rf build dist AppDir release squashfs-root
+rm -rf build dist AppDir release squashfs-root binary-license-report
 python3 -m PyInstaller --noconfirm --clean --windowed --name siraj \
   --add-data "data:data" \
   --add-data "fonts:fonts" \
   --add-data "icon.png:." \
+  --add-data "assets:assets" \
   --hidden-import _cffi_backend \
-  main.py
+  --hidden-import main \
+  launcher.py
 bash ./prune_bundle.sh dist/siraj
+python3 ../scripts/collect_linux_bundle_licenses.py \
+  --toc build/siraj/COLLECT-00.toc \
+  --bundle-root dist/siraj \
+  --output binary-license-report \
+  --fail-unmapped-system
 
 # لا يجوز أن تعتمد حزمة Qt على مكتبة مفقودة وقت البناء.
 QXCB="$(find dist/siraj -type f -name 'libqxcb.so' -print -quit)"
@@ -68,6 +75,13 @@ sed -e "s/@VERSION@/${VERSION}/g" -e "s/@RELEASE_DATE@/${RELEASE_DATE}/g" \
   "packaging/${APPDATA}.in" > "AppDir/usr/share/metainfo/${APPDATA}"
 cp ../LICENSE AppDir/usr/share/doc/siraj/LICENSE
 cp THIRD_PARTY_NOTICES.md AppDir/usr/share/doc/siraj/THIRD_PARTY_NOTICES.md
+python3 ../scripts/collect_python_licenses.py \
+  --requirements mushaf_app/requirements.txt \
+  --output mushaf_app/AppDir/usr/share/doc/siraj/licenses/python \
+  --fail-missing
+mkdir -p AppDir/usr/share/doc/siraj/licenses/fonts
+cp fonts/*.txt AppDir/usr/share/doc/siraj/licenses/fonts/
+cp -a binary-license-report AppDir/usr/share/doc/siraj/licenses/linux-binaries
 
 if command -v desktop-file-validate >/dev/null 2>&1; then
   desktop-file-validate "AppDir/${DESKTOP}"

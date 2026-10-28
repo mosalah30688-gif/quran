@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "repository": "https://github.com/asellam/HisnElMuslim",
+  "commit": "872764ca013116c905f7fc9c3dc972c27cd37d4a",
+  "files": {
+    "hisn.json": {
+      "bytes": 193750,
+      "sha256": "b30a448ef40184b0422c40bd3c372bf2b25bfb5b0539fd3699e6b4fba9459d80"
+    },
+    "LICENSE.md": {
+      "bytes": 1072,
+      "sha256": "65b11add3112689b4a61aa53fb127705522c19eb1a809556a67410e2a335ef00",
+      "license": "MIT"
+    },
+    "audit/sources/adhkar-curation-1.1.0.json": {
+      "bytes": 24285,
+      "sha256": "da2b78e64527ea018d1f2868b3ef984d7b1910f667f9db5e12fbc83a47c89c32"
+    }
+  },
+  "output": {
+    "bytes": 46613,
+    "sha256": "52e0c5fb07d6e1b2cbb06f1e54f5945ae6345202fedad4fc4c4a0e0349c46df9",
+    "items": 50
+  },
+  "note": "Automated traceability is complete; scholarly approval remains a separate human gate."
+}
