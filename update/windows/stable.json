@@ -2,10 +2,22 @@
   "schema": 1,
   "product": "siraj-quran-windows",
   "channel": "stable",
-  "available": false,
-  "version": "1.1.0",
-  "published_at": null,
+  "available": true,
+  "version": "4.1.1",
+  "published_at": "2026-10-28T20:10:47Z",
   "minimum_windows": "10.0.17763",
-  "release_notes": "الحزمة الانتقالية الكاملة 1.1.0 قيد الاختبار وتدقيق المحتوى؛ لم تُنشر قناة مستقرة عامة.",
-  "assets": {}
+  "release_notes": "حزمة سراج Windows Portable الكاملة؛ قناة التحديث موقعة بـ Ed25519.",
+  "assets": {
+    "portable": {
+      "file_name": "Siraj-Quran-4.1.1-windows-portable-x64.zip",
+      "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-windows-v4.1.1/Siraj-Quran-4.1.1-windows-portable-x64.zip",
+      "size": 706276831,
+      "sha256": "849e5bb6fa698df827beab0221eb934709d52cd741714137eccc221af4e4219b"
+    }
+  },
+  "signature": {
+    "algorithm": "ed25519",
+    "key_id": "siraj-update-2026-01",
+    "value": "MXQG5Yq4cF0CUzRxv7Qe0jwYIp/QdpWFc5mLCt1Wx5gi1dmSjDdRXe1fIa2JjGozc5OSlfZGWJA62fivp301Cw=="
+  }
 }

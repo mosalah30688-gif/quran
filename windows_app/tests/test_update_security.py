@@ -8,6 +8,7 @@ REPO = HERE.parent
 sys.path.insert(0, str(HERE))
 
 from update_security import verify_update_manifest  # noqa: E402
+from version import APP_VERSION  # noqa: E402
 
 
 class UpdateSecurityTests(unittest.TestCase):
@@ -22,6 +23,22 @@ class UpdateSecurityTests(unittest.TestCase):
             self.assertIs(self.manifest.get("available"), False)
             self.assertEqual(self.manifest.get("assets"), {})
             self.assertFalse(verify_update_manifest(self.manifest, self.key))
+
+    def test_stable_channel_publishes_the_current_portable_package(self):
+        asset = self.manifest["assets"]["portable"]
+        self.assertIs(self.manifest["available"], True)
+        self.assertEqual(self.manifest["product"], "siraj-quran-windows")
+        self.assertEqual(self.manifest["channel"], "stable")
+        self.assertEqual(self.manifest["version"], APP_VERSION)
+        self.assertEqual(asset["file_name"], f"Siraj-Quran-{APP_VERSION}-windows-portable-x64.zip")
+        self.assertEqual(
+            asset["url"],
+            f"https://github.com/mosalah30688-gif/quran/releases/download/"
+            f"siraj-windows-v{APP_VERSION}/{asset['file_name']}",
+        )
+        self.assertGreater(asset["size"], 100 * 1024 * 1024)
+        self.assertEqual(len(asset["sha256"]), 64)
+        self.assertTrue(verify_update_manifest(self.manifest, self.key))
 
     def test_modified_version_is_rejected(self):
         self.manifest["version"] = "99.0.0"
