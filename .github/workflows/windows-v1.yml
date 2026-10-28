@@ -256,7 +256,7 @@ jobs:
               --version "$VERSION" \
               --portable "$PORTABLE" \
               --base-url "$BASE_URL" \
-              --notes "حزمة سراج Windows الكاملة الموقعة." \
+              --notes "حزمة سراج Windows Portable الكاملة؛ قناة التحديث موقعة بـ Ed25519." \
               --output publish/stable.json
             cp release/* publish/
             cat > release-notes.md <<EOF
@@ -268,6 +268,7 @@ jobs:
           - فك ZIP كاملًا ثم شغّل Siraj.exe.
           - تحفظ النسخة بياناتها داخل UserData بجوار البرنامج.
           - حزمة corresponding-source المرفقة تحتوي مصادر Qt/PySide المطابقة لحقوق LGPL.
+          - ملفات EXE بلا Authenticode وفق سياسة المشروع؛ قناة التحديث نفسها موقعة بـ Ed25519.
           - هذا Draft فقط؛ لا تُنشر القناة المستقرة تلقائيًا.
           EOF
             echo "DRAFT_TITLE=سراج ${VERSION} — Windows Portable" >> "$GITHUB_ENV"
