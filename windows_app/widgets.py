@@ -16,6 +16,13 @@ from PySide6.QtWidgets import (
 )
 
 
+class NoWheelComboBox(QComboBox):
+    """قائمة فهرس لا تتغير قيمتها بالتحويم والعجلة."""
+
+    def wheelEvent(self, event):  # noqa: N802
+        event.accept()
+
+
 class FlowLayout(QLayout):
     """تخطيط يلف الأدوات تلقائيًا عند تصغير النافذة مثل شريط أوامر حديث."""
 
@@ -131,7 +138,7 @@ class IndexPopup(QFrame):
         header.addWidget(close)
         outer.addLayout(header, 0, 0, 1, 3)
 
-        self.combo_surah = QComboBox()
+        self.combo_surah = NoWheelComboBox()
         self.combo_surah.setObjectName("indexCombo")
         self.combo_surah.setEditable(True)
         self.combo_surah.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
@@ -141,12 +148,12 @@ class IndexPopup(QFrame):
             self.combo_surah.completer().setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
             self.combo_surah.completer().setFilterMode(Qt.MatchFlag.MatchContains)
 
-        self.combo_juz = QComboBox()
+        self.combo_juz = NoWheelComboBox()
         self.combo_juz.setObjectName("indexCombo")
         for index in range(juz_count):
             self.combo_juz.addItem(f"الجزء {arabic_number(index + 1)}", index)
 
-        self.combo_ayah = QComboBox()
+        self.combo_ayah = NoWheelComboBox()
         self.combo_ayah.setObjectName("indexCombo")
 
         for col, (label, combo) in enumerate(

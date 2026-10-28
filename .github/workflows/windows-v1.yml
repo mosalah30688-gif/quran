@@ -6,6 +6,7 @@ on:
     tags:
       - "siraj-windows-v*"
       - "siraj-windows-patch-v*"
+      - "siraj-windows-test-v*"
 
 concurrency:
   group: siraj-windows-${{ github.ref }}
@@ -19,7 +20,7 @@ permissions:
 jobs:
   build-windows:
     runs-on: windows-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     env:
       PYTHONUTF8: "1"
       PYTHONIOENCODING: "utf-8"
@@ -34,6 +35,10 @@ jobs:
           cache: pip
           cache-dependency-path: windows_app/requirements.txt
 
+      - name: Download and verify the locked offline tafsir store
+        shell: pwsh
+        run: python scripts/fetch_offline_tafsir_data.py --output windows_app/data/tafsir-offline.sqlite3
+
       - name: Install Python dependencies
         shell: pwsh
         run: |
@@ -42,31 +47,17 @@ jobs:
           python -m pip install pip-audit cyclonedx-bom==7.5.0
           python -m pip_audit -r windows_app/requirements.txt --progress-spinner off
 
-      - name: Prepare Authenticode certificate
+      - name: Validate update-channel signing key when publishing
         shell: pwsh
         env:
-          WINDOWS_SIGNING_PFX_BASE64: ${{ secrets.WINDOWS_SIGNING_PFX_BASE64 }}
-          WINDOWS_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
           WINDOWS_UPDATE_SIGNING_SEED: ${{ secrets.WINDOWS_UPDATE_SIGNING_SEED }}
         run: |
-          $IsRelease = "${{ github.ref_type }}" -eq "tag"
-          $IsPatch = $IsRelease -and "${{ github.ref_name }}".StartsWith("siraj-windows-patch-v")
-          if ($IsRelease -and -not $IsPatch -and (
-              [string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_PFX_BASE64) -or
-              [string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_PFX_PASSWORD)
-          )) {
-            throw "Full Windows releases require WINDOWS_SIGNING_PFX_BASE64 and WINDOWS_SIGNING_PFX_PASSWORD"
-          }
-          if ($IsRelease -and [string]::IsNullOrWhiteSpace($env:WINDOWS_UPDATE_SIGNING_SEED)) {
-            throw "Tagged full or patch releases require WINDOWS_UPDATE_SIGNING_SEED"
+          $IsPublishTag = "${{ github.ref_type }}" -eq "tag" -and -not "${{ github.ref_name }}".StartsWith("siraj-windows-test-v")
+          if ($IsPublishTag -and [string]::IsNullOrWhiteSpace($env:WINDOWS_UPDATE_SIGNING_SEED)) {
+            throw "Stable full or patch releases require WINDOWS_UPDATE_SIGNING_SEED"
           }
           if (-not [string]::IsNullOrWhiteSpace($env:WINDOWS_UPDATE_SIGNING_SEED)) {
             python -c "import os,base64; from nacl.signing import SigningKey; seed=base64.b64decode(os.environ['WINDOWS_UPDATE_SIGNING_SEED']); expected=open('windows_app/assets/update_public_key.txt').read().strip(); assert SigningKey(seed).verify_key.encode().hex()==expected, 'Update signing seed does not match embedded public key'"
-          }
-          if (-not [string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_PFX_BASE64)) {
-            $Path = Join-Path $env:RUNNER_TEMP "siraj-signing.pfx"
-            [IO.File]::WriteAllBytes($Path, [Convert]::FromBase64String($env:WINDOWS_SIGNING_PFX_BASE64))
-            "SIRAJ_SIGN_CERT_PATH=$Path" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           }
 
       - name: Validate version and tag
@@ -76,6 +67,7 @@ jobs:
           if ("${{ github.ref_type }}" -eq "tag") {
             $TagVersion = "${{ github.ref_name }}" `
               -replace '^siraj-windows-patch-v','' `
+              -replace '^siraj-windows-test-v','' `
               -replace '^siraj-windows-v',''
             if ($TagVersion -ne $Version) { throw "Tag $TagVersion does not match app version $Version" }
             if ("${{ github.ref_name }}" -like 'siraj-windows-patch-v*') {
@@ -94,6 +86,9 @@ jobs:
           python scripts/verify_asset_provenance.py
           python scripts/generate_alquran_data.py --verify
           python scripts/generate_quranpedia_data.py --verify
+          python scripts/generate_quranpedia_tafsir_catalog.py --verify
+          python scripts/fetch_offline_tafsir_data.py --output windows_app/data/tafsir-offline.sqlite3 --verify
+          python scripts/build_offline_tafsir.py --output windows_app/data/tafsir-offline.sqlite3 --verify
           python scripts/generate_adhkar_data.py --verify
           python scripts/audit_alquran_editions.py --verify
           python scripts/verify_audio_sources.py
@@ -106,10 +101,8 @@ jobs:
           SIRAJ_PORTABLE: "1"
         run: python windows_app/tests/ui_test.py
 
-      - name: Build and double-click test the portable package
+      - name: Build and double-click test the unsigned portable package
         shell: pwsh
-        env:
-          SIRAJ_SIGN_CERT_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
         run: windows_app\packaging\build_windows.ps1
 
       - name: Bundle corresponding source for LGPL components

@@ -11,6 +11,7 @@ import array
 import hashlib
 from collections import deque
 import html
+from html.parser import HTMLParser
 import json
 import os
 import re
@@ -35,6 +36,7 @@ from PySide6.QtWidgets import (
 )
 
 try:
+    from .offline_tafsir import OfflineTafsirStore
     from .patch_runtime import install_patch_archive
     from .reading_tracker import (
         TOTAL_PAGES, clear_tracking, estimated_finish, habit_average, khatma_progress,
@@ -49,6 +51,7 @@ try:
     from .version import APP_DESCRIPTION_AR, APP_NAME_AR, APP_VERSION, PUBLISHER
     from .widgets import FlowLayout, IndexPopup
 except ImportError:  # تشغيل الملف مباشرة أثناء التطوير وداخل PyInstaller
+    from offline_tafsir import OfflineTafsirStore
     from patch_runtime import install_patch_archive
     from reading_tracker import (
         TOTAL_PAGES, clear_tracking, estimated_finish, habit_average, khatma_progress,
@@ -103,6 +106,7 @@ SEARCH_AYAHS = load('quran-search.json')['ayahs']
 RIW_DATA = load('quran-riwayat.json')['riwayat']
 HAFS = load('hafs.json')
 TAJWEED_QURAN = load('quran-tajweed.json')
+TAFSIR_CATALOG = load('tafsir-catalog.json')
 AYAH_TEXT = {(s, a): t for s, a, _p, t in HAFS['uthmani']}
 
 HAFS_EDITIONS = [
@@ -168,6 +172,15 @@ TAFSIR_EDITIONS = [
     ('ar.qurtubi', 'تفسير القرطبي'),
     ('ar.miqbas', 'تنوير المقباس'),
 ]
+QURANPEDIA_TAFSIR_EDITIONS = [
+    (
+        book['edition'],
+        f"{book['name']} — {book['author']} (ت {ar(book['author_death_hijri'])}هـ)",
+    )
+    for book in TAFSIR_CATALOG['books']
+]
+ALL_TAFSIR_EDITIONS = TAFSIR_EDITIONS + QURANPEDIA_TAFSIR_EDITIONS
+TAFSIR_METADATA = {book['edition']: book for book in TAFSIR_CATALOG['books']}
 
 TRANSLATION_EDITIONS = [
     ('', 'بدون ترجمة'),
@@ -178,6 +191,99 @@ TRANSLATION_EDITIONS = [
 ]
 
 _DIACRITICS = re.compile('[\u0610-\u061a\u064b-\u065f\u0670\u06d6-\u06ed\u0640]')
+
+
+class _TafsirTextExtractor(HTMLParser):
+    BLOCKS = {'address', 'blockquote', 'br', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'p', 'tr'}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.parts = []
+        self.ignored_depth = 0
+
+    def handle_starttag(self, tag, attrs):
+        if tag in {'script', 'style'}:
+            self.ignored_depth += 1
+        elif not self.ignored_depth and tag in self.BLOCKS:
+            self.parts.append('\n')
+        if not self.ignored_depth and tag == 'li':
+            self.parts.append('• ')
+
+    def handle_endtag(self, tag):
+        if tag in {'script', 'style'} and self.ignored_depth:
+            self.ignored_depth -= 1
+        elif not self.ignored_depth and tag in self.BLOCKS:
+            self.parts.append('\n')
+
+    def handle_data(self, data):
+        if not self.ignored_depth:
+            self.parts.append(data)
+
+    def text(self):
+        value = ''.join(self.parts).replace('\r', '\n').replace('\xa0', ' ')
+        lines = [re.sub(r'[ \t]+', ' ', line).strip() for line in value.split('\n')]
+        output = []
+        for line in lines:
+            if line:
+                output.append(line)
+            elif output and output[-1] != '':
+                output.append('')
+        return '\n'.join(output).strip()
+
+
+def tafsir_fragment_text(value):
+    parser = _TafsirTextExtractor()
+    try:
+        parser.feed(str(value or ''))
+        parser.close()
+    except (ValueError, AssertionError):
+        return re.sub(r'<[^>]+>', ' ', str(value or '')).strip()
+    return parser.text()
+
+
+def parse_tafsir_payload(edition, payload):
+    if str(edition).startswith('qp:'):
+        content = payload.get('content') if isinstance(payload, dict) else None
+        if not isinstance(content, list):
+            return None
+        segments = []
+        seen = set()
+        for item in content:
+            text = tafsir_fragment_text(item.get('text') if isinstance(item, dict) else '')
+            if text and text not in seen:
+                seen.add(text)
+                segments.append(text)
+        return '\n\n'.join(segments) if segments else 'لا يوجد نص خاص بهذه الآية في هذا الكتاب.'
+    try:
+        return str(payload['data']['text']).strip() or None
+    except (KeyError, TypeError):
+        return None
+
+
+def tafsir_request(edition, surah, ayah):
+    if str(edition).startswith('qp:'):
+        book_id = int(str(edition).split(':', 1)[1])
+        url = f"{TAFSIR_CATALOG['api_base']}/ayah/{surah}/{ayah}/book/{book_id}"
+    else:
+        url = f'https://api.alquran.cloud/v1/ayah/{surah}:{ayah}/{edition}'
+    request = QNetworkRequest(QUrl(url))
+    request.setRawHeader(
+        QByteArray(b'User-Agent'),
+        QByteArray(f'Siraj-Quran/{APP_VERSION} live-tafsir-fallback'.encode('ascii')),
+    )
+    return request
+
+
+def populate_tafsir_books(combo):
+    for edition, name in TAFSIR_EDITIONS:
+        combo.addItem(name, edition)
+    combo.insertSeparator(combo.count())
+    for edition, name in QURANPEDIA_TAFSIR_EDITIONS:
+        combo.addItem(name, edition)
+    combo.setMaxVisibleItems(22)
+    combo.setMinimumContentsLength(28)
+    combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+    combo.setToolTip('اختر تفسيرًا؛ جميع النصوص الموثقة مدمجة محليًا وتعمل دون إنترنت')
 
 
 def norm(text):
@@ -376,30 +482,132 @@ def qss(t):
     """
 
 
+# Fluent-inspired 3D vectors authored for Siraj. They remain crisp at 20 px,
+# use layered highlights/shadows instead of external image assets, and keep the
+# original application icon completely unchanged.
 ICON_SVG = {
-    'book': '<path d="M2 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H2z"/><path d="M22 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z"/>',
-    'tafsir': '<path d="M4 4h12a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2z"/><path d="M8 9h6M8 13h6"/>',
-    'search': '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
-    'words': '<path d="M3 6h9M7.5 4v2M5 6c.8 3 2.5 5.5 5 7M10 6c-.8 3-2.5 5.5-5 7M13 20l4-10 4 10M14.5 16.5h5"/>',
-    'tajweed': '<path d="M12 3a9 9 0 1 0 0 18h1.5a2.5 2.5 0 0 0 0-5H12a2 2 0 0 1 0-4h3.5A5.5 5.5 0 0 0 21 6.5C19.2 4.3 15.9 3 12 3z"/><circle cx="7" cy="10" r="1" fill="{c}"/><circle cx="9" cy="6.5" r="1" fill="{c}"/><circle cx="14" cy="6.5" r="1" fill="{c}"/>',
-    'adhkar': '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="3.5" r="1.4"/><circle cx="12" cy="20.5" r="1.4"/><circle cx="3.5" cy="12" r="1.4"/><circle cx="20.5" cy="12" r="1.4"/>',
-    'memo': '<path d="M4 20l4-1L19 8l-3-3L5 16z"/>',
-    'wird': '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
-    'bookmarks': '<path d="M6 3h12v18l-6-4-6 4z"/>',
-    'stats': '<path d="M5 20V12M12 20V6M19 20V10"/>',
-    'settings': '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8.5" stroke-dasharray="3 3"/>',
-    'play': '<path d="M7 5l12 7-12 7z" fill="{c}"/>',
+    'book': '''
+        <path d="M3.1 5.2h7.1c1.15 0 1.8.55 1.8 1.55V21c-.55-1.05-1.35-1.5-2.55-1.5H3.1z" fill="#063f36" opacity=".38" transform="translate(.45 .7)"/>
+        <path d="M2.5 3.5h7.1c1.2 0 2.05.58 2.4 1.5v14.4c-.72-.82-1.5-1.2-2.65-1.2H2.5z" fill="url(#gEmerald)" stroke="#063e36" stroke-width=".75"/>
+        <path d="M21.5 3.5h-7.1c-1.2 0-2.05.58-2.4 1.5v14.4c.72-.82 1.5-1.2 2.65-1.2h6.85z" fill="url(#gBlue)" stroke="#164675" stroke-width=".75"/>
+        <path d="M4 5h5.3c.8 0 1.45.34 1.7.82v10.7c-.5-.3-1.05-.45-1.75-.45H4z" fill="url(#gPaper)"/>
+        <path d="M20 5h-5.3c-.8 0-1.45.34-1.7.82v10.7c.5-.3 1.05-.45 1.75-.45H20z" fill="url(#gPaper)"/>
+        <path d="M6 7.1h3.6M6 9.3h3.9M14.4 7.1H18M14.1 9.3H18" stroke="#b59a66" stroke-width=".7" stroke-linecap="round" opacity=".8"/>
+        <path d="M12 5v14.35" stroke="#d3b059" stroke-width="1.05"/><path d="M3.2 4.1h6" stroke="#fff" stroke-width=".7" opacity=".48"/>
+    ''',
+    'tafsir': '''
+        <path d="M2.7 6.5c3.1-1.3 6.4-1 9.3 1.1 2.9-2.1 6.2-2.4 9.3-1.1v12.8c-3.2-1.1-6.3-.65-9.3 1.35-3-2-6.1-2.45-9.3-1.35z" fill="#102d4a" opacity=".34" transform="translate(.35 .65)"/>
+        <path d="M2.2 4.8c3.25-1.35 6.7-.95 9.8 1.2v12.8c-3.1-2.05-6.35-2.45-9.8-1.15z" fill="url(#gPaper)" stroke="#7e6945" stroke-width=".7"/>
+        <path d="M21.8 4.8c-3.25-1.35-6.7-.95-9.8 1.2v12.8c3.1-2.05 6.35-2.45 9.8-1.15z" fill="url(#gPaper)" stroke="#7e6945" stroke-width=".7"/>
+        <path d="M12 6v12.8" stroke="#ad8c45" stroke-width="1"/>
+        <path d="M4.4 7.3c2-.55 3.7-.35 5.45.55M4.4 9.7c1.85-.48 3.55-.3 5.25.5M14.15 7.85c1.75-.9 3.45-1.1 5.45-.55M14.35 10.2c1.7-.8 3.4-.98 5.25-.5" fill="none" stroke="#5d7793" stroke-width=".75" stroke-linecap="round"/>
+        <path d="M17.7 12.15l1.1 1.45 1.85-.25-.95 1.6.8 1.68-1.82-.4-1.2 1.4-.18-1.85-1.73-.72 1.7-.75z" fill="url(#gGold)" stroke="#9b6716" stroke-width=".45"/>
+        <path d="M3.5 5.2c2.5-.85 4.8-.55 7 .85" stroke="#fff" stroke-width=".65" opacity=".55"/>
+    ''',
+    'search': '''
+        <ellipse cx="10.1" cy="10.1" rx="7.2" ry="7.2" fill="#071d30" opacity=".35" transform="translate(.6 .85)"/>
+        <circle cx="9.7" cy="9.6" r="6.65" fill="url(#gGlass)" stroke="url(#gMetal)" stroke-width="2"/>
+        <path d="M14.6 14.5l2.05 2.05" stroke="#39556d" stroke-width="2.25" stroke-linecap="round"/>
+        <path d="M16.2 16.05l4.4 4.4c.55.55.55 1.45 0 2s-1.45.55-2 0l-4.4-4.4z" fill="url(#gGold)" stroke="#7d531a" stroke-width=".7"/>
+        <path d="M5.8 6.2c1.65-1.65 4.15-2.15 6.25-1.1" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round" opacity=".82"/>
+        <circle cx="7.1" cy="6.3" r=".75" fill="#fff" opacity=".65"/>
+    ''',
+    'words': '''
+        <path d="M3.1 4h10.7a2.2 2.2 0 0 1 2.2 2.2v5.3a2.2 2.2 0 0 1-2.2 2.2H8l-3.45 2.55.75-2.55H3.1A2.2 2.2 0 0 1 .9 11.5V6.2A2.2 2.2 0 0 1 3.1 4z" fill="#10253c" opacity=".3" transform="translate(.5 .65)"/>
+        <path d="M2.6 2.8h10.7A2.2 2.2 0 0 1 15.5 5v5.3a2.2 2.2 0 0 1-2.2 2.2H7.5l-3.45 2.55.75-2.55H2.6a2.2 2.2 0 0 1-2.2-2.2V5a2.2 2.2 0 0 1 2.2-2.2z" fill="url(#gBlue)" stroke="#164675" stroke-width=".7"/>
+        <path d="M10.4 12.2h9a2.2 2.2 0 0 1 2.2 2.2v3.35a2.2 2.2 0 0 1-2.2 2.2h-1.8l.55 2.1-3-2.1h-4.75a2.2 2.2 0 0 1-2.2-2.2V14.4a2.2 2.2 0 0 1 2.2-2.2z" fill="url(#gEmerald)" stroke="#075044" stroke-width=".7"/>
+        <path d="M3.6 5.7h8.7M3.6 8.4h6.2M11.2 15.3h7.4M11.2 17.4h5.2" stroke="#fff" stroke-width="1" stroke-linecap="round" opacity=".9"/>
+        <path d="M2.2 3.6h9" stroke="#fff" stroke-width=".65" opacity=".42"/>
+    ''',
+    'tajweed': '''
+        <path d="M12.1 2.2c-5.65 0-10.2 4.1-10.2 9.25 0 5.75 5.2 10.1 11.05 10.1h1.35c1.7 0 2.95-1.1 2.95-2.55 0-1.65-1.2-2.55-2.75-2.55h-1.2c-1.15 0-1.9-.8-1.9-1.75 0-1.05.85-1.85 2.05-1.85h2.8c3.35 0 5.85-2.15 5.85-5.05 0-3.25-4.05-5.6-10-5.6z" fill="#40276b" opacity=".35" transform="translate(.35 .65)"/>
+        <path d="M11.8 1.3c-5.65 0-10.2 4.1-10.2 9.25 0 5.75 5.2 10.1 11.05 10.1H14c1.7 0 2.95-1.1 2.95-2.55 0-1.65-1.2-2.55-2.75-2.55H13c-1.15 0-1.9-.8-1.9-1.75 0-1.05.85-1.85 2.05-1.85h2.8c3.35 0 5.85-2.15 5.85-5.05 0-3.25-4.05-5.6-10-5.6z" fill="url(#gViolet)" stroke="#48236c" stroke-width=".7"/>
+        <circle cx="6.1" cy="7.1" r="1.65" fill="#ff515b" stroke="#9d1720" stroke-width=".45"/><circle cx="10.2" cy="4.9" r="1.65" fill="#ffba36" stroke="#a56400" stroke-width=".45"/><circle cx="14.5" cy="5" r="1.65" fill="#48d17d" stroke="#16733e" stroke-width=".45"/><circle cx="18" cy="8" r="1.65" fill="#50bfff" stroke="#176a9d" stroke-width=".45"/>
+        <circle cx="5.6" cy="6.55" r=".52" fill="#fff" opacity=".75"/><circle cx="9.7" cy="4.35" r=".52" fill="#fff" opacity=".75"/><circle cx="14" cy="4.45" r=".52" fill="#fff" opacity=".75"/>
+        <path d="M17.6 14.2l4.55 6.15" stroke="#6b4219" stroke-width="1.8" stroke-linecap="round"/><path d="M16.2 12.55l2.65 2.3-1.8 1.5-2.35-2.65z" fill="url(#gGold)" stroke="#7f5315" stroke-width=".5"/>
+    ''',
+    'adhkar': '''
+        <path d="M12 2.15c-5.4 0-9.45 4.25-9.45 9.5 0 4.55 3.25 8.3 7.55 9.2" fill="none" stroke="#173d34" stroke-width="2.15" opacity=".42" transform="translate(.45 .55)"/>
+        <path d="M12 1.45c-5.4 0-9.45 4.25-9.45 9.5 0 4.55 3.25 8.3 7.55 9.2" fill="none" stroke="#d1aa52" stroke-width="1.15"/>
+        <g fill="url(#gBead)" stroke="#075044" stroke-width=".5"><circle cx="12" cy="2" r="1.75"/><circle cx="6.8" cy="3.5" r="1.75"/><circle cx="3.35" cy="7.55" r="1.75"/><circle cx="3.15" cy="12.9" r="1.75"/><circle cx="6.2" cy="17.3" r="1.75"/><circle cx="10.85" cy="19.75" r="1.75"/></g>
+        <g fill="#fff" opacity=".62"><circle cx="11.45" cy="1.45" r=".45"/><circle cx="6.25" cy="2.95" r=".45"/><circle cx="2.8" cy="7" r=".45"/><circle cx="2.6" cy="12.35" r=".45"/></g>
+        <path d="M12.2 19.8c2.8-.45 5.35-2.15 6.7-4.45" stroke="#d1aa52" stroke-width="1.15" fill="none"/>
+        <path d="M18.9 14.5l1.2 2.45-1.05 1.15 1.55 3.75-2.2.8-1.5-3.75-1.5-.15.35-2.7z" fill="url(#gGold)" stroke="#7e5215" stroke-width=".55"/>
+    ''',
+    'memo': '''
+        <path d="M4.2 2.4h11.9l4 4v14.8H4.2z" fill="#193247" opacity=".32" transform="translate(.55 .7)"/>
+        <path d="M3.5 1.5h11.9l4 4v14.8H3.5z" fill="url(#gPaper)" stroke="#806b47" stroke-width=".7"/>
+        <path d="M15.4 1.5v4h4" fill="#e5ce9e" stroke="#806b47" stroke-width=".55"/>
+        <path d="M6 7.1h9.8M6 10h8.2M6 12.9h6.2" stroke="#7d91a2" stroke-width=".85" stroke-linecap="round"/>
+        <path d="M7.25 18.6l1-3.1 8.55-8.55 2.35 2.35-8.55 8.55z" fill="url(#gEmerald)" stroke="#075044" stroke-width=".65"/>
+        <path d="M16.8 6.95l1.2-1.2c.5-.5 1.25-.5 1.75 0l.6.6c.5.5.5 1.25 0 1.75l-1.2 1.2z" fill="url(#gGold)" stroke="#805317" stroke-width=".55"/>
+        <path d="M7.25 18.6l3.35-.75-2.35-2.35z" fill="#f1c79b" stroke="#805317" stroke-width=".45"/><path d="M18.2 6.15l1.75 1.75" stroke="#fff" stroke-width=".55" opacity=".72"/>
+    ''',
+    'wird': '''
+        <path d="M3.1 4.8h17.8v17H3.1z" rx="2" fill="#102d3f" opacity=".32" transform="translate(.45 .65)"/>
+        <rect x="2.4" y="3.7" width="19.2" height="17.1" rx="2.2" fill="url(#gPaper)" stroke="#745e3d" stroke-width=".7"/>
+        <path d="M2.4 5.9c0-1.2 1-2.2 2.2-2.2h14.8c1.2 0 2.2 1 2.2 2.2v3H2.4z" fill="url(#gBlue)"/>
+        <path d="M7 1.8v4.1M17 1.8v4.1" stroke="#d8b45f" stroke-width="2.1" stroke-linecap="round"/><path d="M7 1.8v2" stroke="#fff" stroke-width=".65" opacity=".62"/>
+        <path d="M6.5 14.3l3.2 3.15 7.8-7.3" fill="none" stroke="url(#gEmerald)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M3.2 4.6h16" stroke="#fff" stroke-width=".65" opacity=".4"/>
+    ''',
+    'bookmarks': '''
+        <path d="M3.3 5.2h15.4c1.3 0 2.35 1.05 2.35 2.35v12.1H5.65A2.35 2.35 0 0 1 3.3 17.3z" fill="#142e43" opacity=".34" transform="translate(.5 .65)"/>
+        <path d="M2.6 3.9H18c1.3 0 2.35 1.05 2.35 2.35v12.1H4.95A2.35 2.35 0 0 1 2.6 16z" fill="url(#gBlue)" stroke="#164675" stroke-width=".7"/>
+        <path d="M4.5 5.7h12.1c.9 0 1.65.75 1.65 1.65V16H5.8c-.5 0-.95.12-1.3.35z" fill="url(#gPaper)"/>
+        <path d="M7.1 7.5h7.6M7.1 9.7h6.1" stroke="#8c9eab" stroke-width=".75" stroke-linecap="round"/>
+        <path d="M12.5 3.1h4.45v10.1l-2.22-1.55-2.23 1.55z" fill="url(#gRed)" stroke="#8f1e2f" stroke-width=".65"/><path d="M13.2 3.75h2.75" stroke="#fff" stroke-width=".55" opacity=".55"/>
+        <path d="M3.2 4.5h8" stroke="#fff" stroke-width=".65" opacity=".35"/>
+    ''',
+    'stats': '''
+        <path d="M2.3 20.7h19.5" stroke="#152c3d" stroke-width="1.7" stroke-linecap="round" opacity=".45" transform="translate(.25 .5)"/>
+        <rect x="3.1" y="12" width="4.8" height="8.1" rx="1.25" fill="url(#gBlue)" stroke="#164675" stroke-width=".6"/>
+        <rect x="9.6" y="5.3" width="4.8" height="14.8" rx="1.25" fill="url(#gEmerald)" stroke="#075044" stroke-width=".6"/>
+        <rect x="16.1" y="8.7" width="4.8" height="11.4" rx="1.25" fill="url(#gGold)" stroke="#815417" stroke-width=".6"/>
+        <path d="M4.1 13h2.7M10.6 6.4h2.7M17.1 9.8h2.7" stroke="#fff" stroke-width=".85" stroke-linecap="round" opacity=".64"/>
+        <path d="M2.3 20.1h19.5" stroke="#d8b45f" stroke-width="1" stroke-linecap="round"/>
+        <path d="M4 9.2l4-3.15 3.7 1.2 5.2-4" fill="none" stroke="#ef5b6c" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M16.3 2.9l1.85-.7-.2 1.95" fill="none" stroke="#ef5b6c" stroke-width="1.2"/>
+    ''',
+    'update': '''
+        <path d="M3.2 13.1a8.9 8.9 0 0 0 15.25 5.45l1.75 1.65.7-6.25-6.25.7 1.72 1.62A6.05 6.05 0 0 1 6.1 12.75z" fill="#102d3f" opacity=".34" transform="translate(.45 .65)"/>
+        <path d="M20.8 10.9A8.9 8.9 0 0 0 5.55 5.45L3.8 3.8l-.7 6.25 6.25-.7-1.72-1.62A6.05 6.05 0 0 1 17.9 11.25z" fill="url(#gBlue)" stroke="#164675" stroke-width=".65"/>
+        <path d="M3.2 12.75a8.9 8.9 0 0 0 15.25 5.8l1.75 1.65.7-6.25-6.25.7 1.72 1.62A6.05 6.05 0 0 1 6.1 12.75z" fill="url(#gEmerald)" stroke="#075044" stroke-width=".65"/>
+        <path d="M12 5.9v8.25M8.85 11.05 12 14.25l3.15-3.2" fill="none" stroke="#fff" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M17.1 5.15c1.25 1.05 2.1 2.4 2.45 3.85" fill="none" stroke="#fff" stroke-width=".7" stroke-linecap="round" opacity=".65"/>
+    ''',
+    'settings': '''
+        <path d="M9.6 2.2h4.8l.65 2.35c.62.2 1.2.45 1.75.78l2.15-1.2 3.4 3.4-1.2 2.15c.33.55.58 1.13.78 1.75l2.35.65v4.8l-2.35.65c-.2.62-.45 1.2-.78 1.75l1.2 2.15-3.4 3.4-2.15-1.2c-.55.33-1.13.58-1.75.78l-.65 2.35H9.6l-.65-2.35a9.2 9.2 0 0 1-1.75-.78l-2.15 1.2-3.4-3.4 1.2-2.15a9.2 9.2 0 0 1-.78-1.75l-2.35-.65v-4.8l2.35-.65c.2-.62.45-1.2.78-1.75l-1.2-2.15 3.4-3.4 2.15 1.2c.55-.33 1.13-.58 1.75-.78z" fill="#1a2d3d" opacity=".35" transform="scale(.82) translate(3.4 2.8)"/>
+        <path d="M9.6 1.1h4.8l.65 2.35c.62.2 1.2.45 1.75.78l2.15-1.2 3.4 3.4-1.2 2.15c.33.55.58 1.13.78 1.75l2.35.65v4.8l-2.35.65c-.2.62-.45 1.2-.78 1.75l1.2 2.15-3.4 3.4-2.15-1.2c-.55.33-1.13.58-1.75.78l-.65 2.35H9.6l-.65-2.35a9.2 9.2 0 0 1-1.75-.78l-2.15 1.2-3.4-3.4 1.2-2.15a9.2 9.2 0 0 1-.78-1.75l-2.35-.65v-4.8l2.35-.65c.2-.62.45-1.2.78-1.75l-1.2-2.15 3.4-3.4 2.15 1.2c.55-.33 1.13-.58 1.75-.78z" fill="url(#gMetal)" stroke="#304b61" stroke-width=".65" transform="scale(.82) translate(3.4 2.8)"/>
+        <circle cx="12" cy="12" r="5.25" fill="url(#gBlue)" stroke="#164675" stroke-width=".7"/><circle cx="12" cy="12" r="2.3" fill="url(#gGold)" stroke="#7c5016" stroke-width=".65"/>
+        <path d="M8.3 7.4a6.2 6.2 0 0 1 5.9-1.25" fill="none" stroke="#fff" stroke-width=".85" stroke-linecap="round" opacity=".68"/><circle cx="11.35" cy="11.35" r=".65" fill="#fff" opacity=".64"/>
+    ''',
+    'play': '''<path d="M6 3.7v16.6c0 1.1 1.2 1.75 2.15 1.18l12.1-8.3c.85-.58.85-1.78 0-2.36L8.15 2.52C7.2 1.95 6 2.6 6 3.7z" fill="url(#gEmerald)" stroke="#075044" stroke-width=".8"/><path d="M7.3 4.5l8.5 5.8" stroke="#fff" stroke-width=".8" opacity=".5"/>''',
 }
 
 
 def svg_icon(name, color='#dff3ea', size=20):
-    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="{size * 2}" height="{size * 2}" '
-           f'fill="none" stroke="{color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
-           + ICON_SVG[name].replace('{c}', color) + '</svg>')
+    defs = f'''
+      <defs>
+        <linearGradient id="gEmerald" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#62e2b1"/><stop offset=".48" stop-color="#18a87c"/><stop offset="1" stop-color="#08624f"/></linearGradient>
+        <linearGradient id="gBlue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#86d8ff"/><stop offset=".5" stop-color="#378fd6"/><stop offset="1" stop-color="#23518d"/></linearGradient>
+        <linearGradient id="gGold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0a6"/><stop offset=".48" stop-color="#e5ad3c"/><stop offset="1" stop-color="#a66516"/></linearGradient>
+        <linearGradient id="gRed" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff9a9d"/><stop offset=".48" stop-color="#e64f61"/><stop offset="1" stop-color="#9e263b"/></linearGradient>
+        <linearGradient id="gPaper" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#fffdf3"/><stop offset=".6" stop-color="#f4e8ca"/><stop offset="1" stop-color="#d7bd82"/></linearGradient>
+        <linearGradient id="gMetal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#eff8ff"/><stop offset=".35" stop-color="#9bb5c7"/><stop offset=".68" stop-color="#4d6e85"/><stop offset="1" stop-color="#c6d8e3"/></linearGradient>
+        <linearGradient id="gViolet" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d4a1ff"/><stop offset=".48" stop-color="#8f59cf"/><stop offset="1" stop-color="#54307e"/></linearGradient>
+        <linearGradient id="gTint" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".35" stop-color="{color}"/><stop offset="1" stop-color="#316352"/></linearGradient>
+        <radialGradient id="gGlass" cx=".32" cy=".25" r=".85"><stop stop-color="#effcff" stop-opacity=".92"/><stop offset=".45" stop-color="#8ee3ff" stop-opacity=".55"/><stop offset="1" stop-color="#2784c5" stop-opacity=".42"/></radialGradient>
+        <radialGradient id="gBead" cx=".3" cy=".25" r=".8"><stop stop-color="#a8ffe1"/><stop offset=".38" stop-color="#20b785"/><stop offset="1" stop-color="#08604d"/></radialGradient>
+      </defs>'''
+    svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="{size * 2}" height="{size * 2}">'
+        + defs + ICON_SVG[name].replace('{c}', color) + '</svg>'
+    )
     pm = QPixmap(size * 2, size * 2)
     pm.fill(Qt.GlobalColor.transparent)
     painter = QPainter(pm)
-    QSvgRenderer(QByteArray(svg.encode('utf-8'))).render(painter)
+    renderer = QSvgRenderer(QByteArray(svg.encode('utf-8')))
+    renderer.render(painter)
     painter.end()
     return QIcon(pm)
 
@@ -576,43 +784,39 @@ class AudioEngine(QObject):
         self.frames = 0
 
 
-class PageBrowser(QTextBrowser):
-    """عرض الصفحة: عجلة الماوس عند الحافة تقلب الصفحة (مع فاصل زمني لمنع التقليب المتكرر)."""
-
-    def __init__(self, on_turn):
-        super().__init__()
-        self._on_turn = on_turn
-        self._last_turn = -1e9  # وقت آخر تقليب (ثوانٍ)
-
-    def mousePressEvent(self, event):  # noqa: N802
-        if event.button() == Qt.MouseButton.LeftButton:
-            self._press = (event.position().x(), event.position().y(), time.monotonic())
-        super().mousePressEvent(event)
-
-    def mouseReleaseEvent(self, event):  # noqa: N802
-        super().mouseReleaseEvent(event)
-        press = getattr(self, '_press', None)
-        self._press = None
-        if not press or event.button() != Qt.MouseButton.LeftButton:
-            return
-        dx = event.position().x() - press[0]
-        dy = event.position().y() - press[1]
-        held = time.monotonic() - press[2]
-        if held < 0.35 and abs(dx) > 60 and abs(dx) > abs(dy) * 1.6:
-            cur = self.textCursor()
-            cur.clearSelection()
-            self.setTextCursor(cur)
-            self._on_turn(1 if dx > 0 else -1)
+class NoWheelComboBox(QComboBox):
+    """قائمة لا تغيّر الاختيار بعجلة الماوس/لوحة اللمس وهي مغلقة."""
 
     def wheelEvent(self, event):  # noqa: N802
-        bar = self.verticalScrollBar()
-        dy = event.angleDelta().y()
-        at_end = (dy < 0 and bar.value() >= bar.maximum()) or (dy > 0 and bar.value() <= bar.minimum())
-        if dy and at_end:
-            now = time.monotonic()
-            if now - self._last_turn > 0.65:
-                self._last_turn = now
-                self._on_turn(1 if dy < 0 else -1)
+        event.accept()
+
+
+class NoWheelSpinBox(QSpinBox):
+    """حقل رقمي لا يقفز بين القيم لمجرد مرور المؤشر فوقه."""
+
+    def wheelEvent(self, event):  # noqa: N802
+        event.accept()
+
+
+class NoWheelTimeEdit(QTimeEdit):
+    """حقل وقت يتطلب اختيارًا مقصودًا بدل تغيير اللمس العرضي."""
+
+    def wheelEvent(self, event):  # noqa: N802
+        event.accept()
+
+
+class PageBrowser(QTextBrowser):
+    """العجلة/لوحة اللمس تمرران الصفحة الحالية فقط؛ التقليب بالأسهم وحدها."""
+
+    def __init__(self, _on_turn=None):
+        super().__init__()
+
+    def wheelEvent(self, event):  # noqa: N802
+        pixel = event.pixelDelta()
+        if not pixel.isNull():
+            if pixel.y():
+                bar = self.verticalScrollBar()
+                bar.setValue(bar.value() - pixel.y())
             event.accept()
             return
         super().wheelEvent(event)
@@ -699,6 +903,7 @@ class Main(QMainWindow):
         self.riwaya_id = riwaya
         self.book = Book(riwaya)
         self.page = min(max(self.settings.value('page', 1, type=int), 1), TOTAL_PAGES)
+        self._rendered_page = None
         khatma_state(self.settings, self.page)  # ترحيل موضع الورد القديم من دون فرض هدف صفحات
         self.reading_pending_page = self.page
         self.reading_timer = QTimer(self)
@@ -710,9 +915,10 @@ class Main(QMainWindow):
         self.reminder_timer.timeout.connect(self.update_khatma_reminder)
 
         self.nam = QNetworkAccessManager(self)
+        self.offline_tafsir = OfflineTafsirStore(resource_file('data/tafsir-offline.sqlite3'))
         self.tafsir_cache = {}
         self.tafsir_key = None
-        valid_tafsirs = {edition for edition, _name in TAFSIR_EDITIONS}
+        valid_tafsirs = {edition for edition, _name in ALL_TAFSIR_EDITIONS}
         if self.settings.value('tafsir', 'ar.muyassar', type=str) not in valid_tafsirs:
             self.settings.setValue('tafsir', 'ar.muyassar')
         valid_translations = {edition for edition, _name in TRANSLATION_EDITIONS}
@@ -855,6 +1061,13 @@ class Main(QMainWindow):
         wl.addWidget(self.update_banner)
         sl.addWidget(wrap_banner)
         sl.addStretch(1)
+        self.btn_sidebar_update = QPushButton('التحديثات')
+        self.btn_sidebar_update.setIcon(svg_icon('update'))
+        self.btn_sidebar_update.setIconSize(QSize(22, 22))
+        self.btn_sidebar_update.setObjectName('nav')
+        self.btn_sidebar_update.setToolTip('فحص وتنزيل تحديثات سراج')
+        self.btn_sidebar_update.clicked.connect(self.open_updates)
+        sl.addWidget(self.btn_sidebar_update)
         b = QPushButton('الإعدادات')
         b.setIcon(svg_icon('settings'))
         b.setIconSize(QSize(20, 20))
@@ -911,6 +1124,8 @@ class Main(QMainWindow):
         for key, button in self.nav_buttons.items():
             button.setText('' if compact else self.nav_labels[key])
             button.setMinimumHeight(44 if compact else 40)
+        self.btn_sidebar_update.setText('' if compact else 'التحديثات')
+        self.btn_sidebar_update.setMinimumHeight(44 if compact else 40)
         margin = 12 if self.width() < 920 or reader_wide else 24
         self.content_layout.setContentsMargins(margin, 14, margin, 12)
 
@@ -978,15 +1193,15 @@ class Main(QMainWindow):
         self.btn_play.clicked.connect(self.toggle_play)
         self.btn_stop = QPushButton('إيقاف')
         self.btn_stop.clicked.connect(lambda: self.stop_play(''))
-        self.reciter_combo = QComboBox()
+        self.reciter_combo = NoWheelComboBox()
         self.reciter_combo.setMinimumWidth(180)
         self.reciter_combo.currentIndexChanged.connect(self.on_reciter_change)
-        self.play_surah = QComboBox()
+        self.play_surah = NoWheelComboBox()
         self.play_surah.setMinimumWidth(150)
         for s in SURAHS:
             self.play_surah.addItem(f'{s["number"]}. {s["name"]}', s['number'])
         self.play_surah.currentIndexChanged.connect(self.on_play_surah)
-        self.play_from = QComboBox()
+        self.play_from = NoWheelComboBox()
         self.play_from.setMinimumWidth(72)
         self.btn_mark = QPushButton('☆  علامة')
         self.btn_mark.clicked.connect(self.toggle_bookmark)
@@ -1067,9 +1282,8 @@ class Main(QMainWindow):
         hdr.addWidget(self.tp_title, 1)
         hdr.addWidget(btn_close)
         tpl.addLayout(hdr)
-        self.tp_book = QComboBox()
-        for eid, name in TAFSIR_EDITIONS:
-            self.tp_book.addItem(name, eid)
+        self.tp_book = NoWheelComboBox()
+        populate_tafsir_books(self.tp_book)
         self.tp_book.setCurrentIndex(max(self.tp_book.findData(
             self.settings.value('tafsir', 'ar.muyassar', type=str)), 0))
         self.tp_book.currentIndexChanged.connect(self.on_tp_book)
@@ -1214,8 +1428,58 @@ class Main(QMainWindow):
         if self.tp_frame.isVisible():
             self.load_tp()
 
+    def _sync_tafsir_book(self, edition, source_name):
+        if not edition:
+            return
+        self.settings.setValue('tafsir', edition)
+        for name in ('tp_book', 'tf_book'):
+            combo = getattr(self, name, None)
+            if combo is None or name == source_name or combo.currentData() == edition:
+                continue
+            index = combo.findData(edition)
+            if index >= 0:
+                combo.blockSignals(True)
+                combo.setCurrentIndex(index)
+                combo.blockSignals(False)
+
+    def _offline_tafsir_text(self, key):
+        handled, text = self.offline_tafsir.lookup(key[0], key[1], key[2])
+        if not handled:
+            return False, None
+        if not text:
+            text = 'لا يوجد نص خاص بهذه الآية في هذا الكتاب؛ فالمصدر لا يغطي جميع الآيات.'
+        self.tafsir_cache[key] = text
+        return True, text
+
+    def _tafsir_source_footer(self, edition):
+        t = THEMES[self.theme_name]
+        if str(edition).startswith('qp:'):
+            meta = TAFSIR_METADATA.get(edition, {})
+            detail = (
+                'الموسوعة القرآنية Quranpedia.net · '
+                f"نسخة بيانات الكتب {TAFSIR_CATALOG['selection']['book_dump_version']} · "
+                f"{html.escape(str(meta.get('author', '')))}"
+            )
+        else:
+            detail = 'AlQuran Cloud · لقطة محلية موثقة ٢٠٢٦-١٠-٢٨'
+        return (
+            f'<hr><p style="font-family:\'Noto Sans Arabic\'; font-size:10pt; '
+            f'line-height:150%; color:{t["muted"]};">المصدر الرقمي: {detail}. '
+            'النص مدمج محليًا للعمل دون إنترنت ويُعرض دون تغيير في المحتوى.</p>'
+        )
+
+    def _tafsir_document(self, inner):
+        family = html.escape(self.mushaf_font, quote=True)
+        return (
+            f"<html><body dir=\"rtl\" style=\"font-family:'{family}'; "
+            f'font-size:{self.font_pt}pt; line-height:185%; margin:10px;\">{inner}</body></html>'
+        )
+
+    def _tafsir_text_html(self, text):
+        return html.escape(str(text)).replace('\n', '<br>')
+
     def on_tp_book(self, _idx):
-        self.settings.setValue('tafsir', self.tp_book.currentData())
+        self._sync_tafsir_book(self.tp_book.currentData(), 'tp_book')
         self.load_tp()
 
     def load_tp(self):
@@ -1230,22 +1494,28 @@ class Main(QMainWindow):
         if key in self.tafsir_cache:
             self.show_tp(self.tafsir_cache[key])
             return
-        self.tp_browser.setHtml('<html><body dir="rtl"><p align="center">…</p></body></html>')
-        req = QNetworkRequest(QUrl(f'https://api.alquran.cloud/v1/ayah/{s}:{a}/{edition}'))
-        reply = self.nam.get(req)
+        handled, text = self._offline_tafsir_text(key)
+        if handled:
+            self.show_tp(text)
+            return
+        self.tp_browser.setHtml(self._tafsir_document('<p align="center">جارٍ تحميل التفسير…</p>'))
+        reply = self.nam.get(tafsir_request(edition, s, a))
         reply.finished.connect(lambda: self.on_tp_reply(reply, key))
 
     def on_tp_reply(self, reply, key):
         text = None
         if reply.error() == QNetworkReply.NetworkError.NoError:
             try:
-                text = json.loads(bytes(reply.readAll()).decode('utf-8'))['data']['text']
-            except (ValueError, KeyError, TypeError):
+                payload = json.loads(bytes(reply.readAll()).decode('utf-8'))
+                text = parse_tafsir_payload(key[0], payload)
+            except (ValueError, TypeError, UnicodeDecodeError):
                 text = None
         reply.deleteLater()
         if text is None:
             if key == getattr(self, 'tp_key', None):
-                self.tp_browser.setHtml('<html><body dir="rtl"><p align="center">تعذّر تحميل التفسير</p></body></html>')
+                self.tp_browser.setHtml(
+                    self._tafsir_document('<p align="center">تعذّر تحميل النسخة الاحتياطية الحية.</p>')
+                )
             return
         self.tafsir_cache[key] = text
         if key == getattr(self, 'tp_key', None):
@@ -1265,9 +1535,13 @@ class Main(QMainWindow):
                 translation = '<hr><p>تعذّر تحميل الترجمة المختارة.</p>'
             else:
                 translation = '<hr><p>جارٍ تحميل الترجمة…</p>'
-        self.tp_browser.setHtml(
-            f'<html><body dir="rtl"><p style="font-size:15pt; line-height:175%;">{html.escape(text)}</p>'
-            f'{translation}</body></html>')
+        edition = self.tp_book.currentData()
+        body = (
+            f'<p style="margin:0;">{self._tafsir_text_html(text)}</p>'
+            + self._tafsir_source_footer(edition)
+            + translation
+        )
+        self.tp_browser.setHtml(self._tafsir_document(body))
 
     def populate_reciters(self):
         self.reciter_combo.blockSignals(True)
@@ -1416,12 +1690,14 @@ class Main(QMainWindow):
             )
         bar = self.browser.verticalScrollBar()
         pos = bar.value()
+        page_changed = self._rendered_page != page
         family = html.escape(self.mushaf_font, quote=True)
         self.browser.setHtml(
             f"<html><body dir=\"rtl\" style=\"font-family:'{family}'; font-size:{fs}pt; "
             f'line-height:{flow_line_height}%; margin:0; padding:0; color:{reader_text};">{body}</body></html>'
         )
-        bar.setValue(pos)
+        bar.setValue(bar.minimum() if page_changed else pos)
+        self._rendered_page = page
         first = items[0] if items else (1, 1, '')
         self.page_label.setText(f'صفحة {ar(page)} من {ar(TOTAL_PAGES)}')
         self.page_info.setText(
@@ -1505,6 +1781,7 @@ class Main(QMainWindow):
             self.font_spin.setValue(self.font_pt)
             self.font_spin.blockSignals(False)
         self.render_page()
+        self.refresh_tafsir_typography()
 
     def set_mushaf_font(self, _index=None):
         if not hasattr(self, 'mushaf_font_combo'):
@@ -1514,6 +1791,17 @@ class Main(QMainWindow):
             self.mushaf_font = family
             self.settings.setValue('mushaf_font', family)
             self.render_page()
+            self.refresh_tafsir_typography()
+
+    def refresh_tafsir_typography(self):
+        if hasattr(self, 'tf_ayah'):
+            key = (self.tf_book.currentData(), self.tf_surah.currentData() or 1, self.tf_ayah.value())
+            if key in self.tafsir_cache:
+                self.load_tafsir()
+        if hasattr(self, 'tp_frame') and self.tp_frame.isVisible() and self.sel_ayah:
+            key = (self.tp_book.currentData(), *self.sel_ayah)
+            if key in self.tafsir_cache:
+                self.show_tp(self.tafsir_cache[key])
 
     def sync_index(self):
         items = self.book.ayahs_on_page(self.page)
@@ -1720,20 +2008,19 @@ class Main(QMainWindow):
         lay = QVBoxLayout(w)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(12)
-        lay.addWidget(heading('التفسير', 'تفسير الآية من الإنترنت، ويُحفظ مؤقتاً أثناء التشغيل'))
+        lay.addWidget(heading('التفسير', 'نصوص مدمجة محليًا تعمل دون إنترنت'))
         bar = card()
         bl = QHBoxLayout(bar)
         bl.setContentsMargins(14, 10, 14, 10)
-        self.tf_surah = QComboBox()
+        self.tf_surah = NoWheelComboBox()
         for s in SURAHS:
             self.tf_surah.addItem(f'{s["number"]}. {s["name"]}', s['number'])
         self.tf_surah.currentIndexChanged.connect(self.on_tf_surah)
-        self.tf_ayah = QSpinBox()
+        self.tf_ayah = NoWheelSpinBox()
         self.tf_ayah.setRange(1, 286)
         self.tf_ayah.valueChanged.connect(lambda _v: self.load_tafsir())
-        self.tf_book = QComboBox()
-        for eid, name in TAFSIR_EDITIONS:
-            self.tf_book.addItem(name, eid)
+        self.tf_book = NoWheelComboBox()
+        populate_tafsir_books(self.tf_book)
         self.tf_book.setCurrentIndex(max(self.tf_book.findData(
             self.settings.value('tafsir', 'ar.muyassar', type=str)), 0))
         self.tf_book.currentIndexChanged.connect(self.on_tf_book)
@@ -1753,7 +2040,7 @@ class Main(QMainWindow):
         translation_layout = QHBoxLayout(translation_bar)
         translation_layout.setContentsMargins(14, 8, 14, 8)
         translation_layout.addWidget(QLabel('الترجمة'))
-        self.tf_translation = QComboBox()
+        self.tf_translation = NoWheelComboBox()
         for edition, name in TRANSLATION_EDITIONS:
             self.tf_translation.addItem(name, edition)
         self.tf_translation.setCurrentIndex(max(self.tf_translation.findData(self.translation_id), 0))
@@ -1774,7 +2061,7 @@ class Main(QMainWindow):
         self.load_tafsir()
 
     def on_tf_book(self, _idx):
-        self.settings.setValue('tafsir', self.tf_book.currentData())
+        self._sync_tafsir_book(self.tf_book.currentData(), 'tf_book')
         self.load_tafsir()
 
     def load_tafsir(self):
@@ -1787,30 +2074,43 @@ class Main(QMainWindow):
         self.tf_key = key
         self.ensure_translations([(s, a, '')])
         t = THEMES[self.theme_name]
-        head = (f'<p align="center" style="font-family:\'Amiri Quran\'; font-size:26pt; line-height:200%;">'
-                f'{html.escape(AYAH_TEXT.get((s, a), ""))} <span style="font-size:14pt; color:{t["brand"]}">'
-                f'﴿{ar(a)}﴾</span></p><p align="center" style="color:{t["muted"]}">'
-                f'{html.escape(SURAHS[s - 1]["name"])} · الآية {ar(a)}</p>')
+        family = html.escape(self.mushaf_font, quote=True)
+        head = (
+            f'<p align="center" style="font-family:\'{family}\'; '
+            f'font-size:{min(self.font_pt + 6, 50)}pt; line-height:175%;">'
+            f'{html.escape(AYAH_TEXT.get((s, a), ""))} '
+            f'<span style="font-size:{max(self.font_pt - 2, 11)}pt; color:{t["brand"]}">'
+            f'﴿{ar(a)}﴾</span></p><p align="center" style="font-family:\'Noto Sans Arabic\'; '
+            f'font-size:11pt; color:{t["muted"]}">'
+            f'{html.escape(SURAHS[s - 1]["name"])} · الآية {ar(a)}</p>'
+        )
         if key in self.tafsir_cache:
             self.show_tafsir(head, self.tafsir_cache[key])
             return
-        self.tf_browser.setHtml(f'<html><body dir="rtl">{head}<p align="center">جارٍ تحميل التفسير…</p></body></html>')
-        req = QNetworkRequest(QUrl(f'https://api.alquran.cloud/v1/ayah/{s}:{a}/{edition}'))
-        reply = self.nam.get(req)
+        handled, text = self._offline_tafsir_text(key)
+        if handled:
+            self.show_tafsir(head, text)
+            return
+        self.tf_browser.setHtml(self._tafsir_document(head + '<p align="center">جارٍ تحميل التفسير…</p>'))
+        reply = self.nam.get(tafsir_request(edition, s, a))
         reply.finished.connect(lambda: self.on_tafsir_reply(reply, key, head))
 
     def on_tafsir_reply(self, reply, key, head):
         text = None
         if reply.error() == QNetworkReply.NetworkError.NoError:
             try:
-                text = json.loads(bytes(reply.readAll()).decode('utf-8'))['data']['text']
-            except (ValueError, KeyError, TypeError):
+                payload = json.loads(bytes(reply.readAll()).decode('utf-8'))
+                text = parse_tafsir_payload(key[0], payload)
+            except (ValueError, TypeError, UnicodeDecodeError):
                 text = None
         reply.deleteLater()
         if text is None:
             if key == self.tf_key:
-                self.tf_browser.setHtml(f'<html><body dir="rtl">{head}<p align="center">تعذّر تحميل التفسير، '
-                                        '</p></body></html>')
+                self.tf_browser.setHtml(
+                    self._tafsir_document(
+                        head + '<p align="center">تعذّر تحميل النسخة الاحتياطية الحية.</p>'
+                    )
+                )
             return
         self.tafsir_cache[key] = text
         if key == self.tf_key:
@@ -1832,10 +2132,15 @@ class Main(QMainWindow):
                 translation = '<hr><p align="center">تعذّر تحميل الترجمة المختارة.</p>'
             else:
                 translation = '<hr><p align="center">جارٍ تحميل الترجمة…</p>'
-        self.tf_browser.setHtml(
-            f'<html><body dir="rtl">{head}<h3>{html.escape(self.tf_book.currentText())}</h3>'
-            f'<p style="font-size:16pt; line-height:190%;">{html.escape(text)}</p>'
-            f'{translation}</body></html>')
+        edition = self.tf_book.currentData()
+        body = (
+            head
+            + f'<h3>{html.escape(self.tf_book.currentText())}</h3>'
+            + f'<p style="margin:0;">{self._tafsir_text_html(text)}</p>'
+            + self._tafsir_source_footer(edition)
+            + translation
+        )
+        self.tf_browser.setHtml(self._tafsir_document(body))
 
     # ---------- البحث ----------
     def build_search(self):
@@ -1889,7 +2194,7 @@ class Main(QMainWindow):
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(12)
         lay.addWidget(heading('معاني الكلمات', 'من كتب غريب القرآن والمعاني المعتمدة في التطبيق'))
-        self.mn_combo = QComboBox()
+        self.mn_combo = NoWheelComboBox()
         for s in SURAHS:
             self.mn_combo.addItem(f'{s["number"]}. {s["name"]}', s['number'])
         self.mn_combo.currentIndexChanged.connect(lambda _i: self.render_meanings())
@@ -2037,16 +2342,16 @@ class Main(QMainWindow):
         bl.setContentsMargins(14, 12, 14, 12)
         bl.setSpacing(10)
         row = QHBoxLayout()
-        self.memo_surah = QComboBox()
+        self.memo_surah = NoWheelComboBox()
         for s in SURAHS:
             self.memo_surah.addItem(f'{s["number"]}. {s["name"]}', s['number'])
-        self.memo_from = QComboBox()
-        self.memo_to = QComboBox()
-        self.memo_repeat = QComboBox()
+        self.memo_from = NoWheelComboBox()
+        self.memo_to = NoWheelComboBox()
+        self.memo_repeat = NoWheelComboBox()
         for n in (1, 3, 5, 10):
             self.memo_repeat.addItem(ar(n), n)
         self.memo_repeat.setCurrentIndex(1)
-        self.memo_level = QComboBox()
+        self.memo_level = NoWheelComboBox()
         for lv, label in zip(MEMO_LEVELS, ('بدون إخفاء', 'ربع الكلمات', 'نصف الكلمات', 'ثلاثة أرباع', 'كل الكلمات')):
             self.memo_level.addItem(label, lv)
         self.memo_surah.currentIndexChanged.connect(self.on_memo_surah)
@@ -2360,7 +2665,7 @@ class Main(QMainWindow):
         title = QLabel('تحميل التلاوات للاستماع بدون إنترنت')
         title.setStyleSheet('font-weight:700; font-size:15px;')
         lay.addWidget(title)
-        self.dl_reciter = QComboBox()
+        self.dl_reciter = NoWheelComboBox()
         for rid, name, _folder in HAFS_RECITERS:
             self.dl_reciter.addItem(name, rid)
         saved = self.settings.value('dl_reciter', 'ar.alafasy', type=str)
@@ -2372,7 +2677,7 @@ class Main(QMainWindow):
         group = QButtonGroup(self)
         group.addButton(self.dl_full)
         group.addButton(self.dl_one)
-        self.dl_surah = QComboBox()
+        self.dl_surah = NoWheelComboBox()
         for s in SURAHS:
             self.dl_surah.addItem(f'{s["number"]}. {s["name"]}', s['number'])
         scope = QHBoxLayout()
@@ -2380,7 +2685,7 @@ class Main(QMainWindow):
             scope.addWidget(widget)
         scope_w = QWidget()
         scope_w.setLayout(scope)
-        self.dl_target = QComboBox()
+        self.dl_target = NoWheelComboBox()
         self.dl_target.addItem('داخل التطبيق', 'app')
         self.dl_target.addItem('مجلد على الجهاز', 'folder')
         form = QFormLayout()
@@ -2596,7 +2901,7 @@ class Main(QMainWindow):
         self.btn_wird_read = QPushButton('📖 متابعة الختمة')
         self.btn_wird_read.setObjectName('primary')
         self.btn_wird_read.clicked.connect(self.start_wird)
-        self.khatma_page = QSpinBox()
+        self.khatma_page = NoWheelSpinBox()
         self.khatma_page.setRange(1, TOTAL_PAGES)
         self.khatma_page.setPrefix('صفحة المتابعة: ')
         self.btn_khatma_set = QPushButton('تصحيح الموضع')
@@ -2616,7 +2921,7 @@ class Main(QMainWindow):
         enabled, when = reminder_config(self.settings)
         self.reminder_enabled = QCheckBox('تنبيه داخل التطبيق وإشعار النظام')
         self.reminder_enabled.setChecked(enabled)
-        self.reminder_time = QTimeEdit()
+        self.reminder_time = NoWheelTimeEdit()
         self.reminder_time.setDisplayFormat('HH:mm')
         self.reminder_time.setTime(QTime.fromString(valid_time(when), 'HH:mm'))
         self.reminder_status = QLabel(self.settings.value('reminder/system_status', '', type=str))
@@ -2880,16 +3185,16 @@ class Main(QMainWindow):
         c1 = card()
         f1 = QFormLayout(c1)
         f1.setContentsMargins(20, 18, 20, 18)
-        self.theme_combo = QComboBox()
+        self.theme_combo = NoWheelComboBox()
         self.theme_combo.addItem('فاتح', 'light')
         self.theme_combo.addItem('داكن', 'dark')
         self.theme_combo.setCurrentIndex(self.theme_combo.findData(self.theme_name))
         self.theme_combo.currentIndexChanged.connect(self.on_theme_change)
-        self.font_spin = QSpinBox()
+        self.font_spin = NoWheelSpinBox()
         self.font_spin.setRange(14, 44)
         self.font_spin.setValue(self.font_pt)
         self.font_spin.valueChanged.connect(self.set_font)
-        self.mushaf_font_combo = QComboBox()
+        self.mushaf_font_combo = NoWheelComboBox()
         available = set(QFontDatabase.families())
         for family, label in MUSHAF_FONTS:
             if family in available or family in {'Amiri Quran', 'Amiri', 'Noto Naskh Arabic', 'Scheherazade New'}:
@@ -2905,12 +3210,12 @@ class Main(QMainWindow):
         c2 = card()
         f2 = QFormLayout(c2)
         f2.setContentsMargins(20, 18, 20, 18)
-        self.riwaya_combo = QComboBox()
+        self.riwaya_combo = NoWheelComboBox()
         for rid, name in HAFS_EDITIONS + OTHER_RIWAYAT:
             self.riwaya_combo.addItem(name, rid)
         self.riwaya_combo.setCurrentIndex(self.riwaya_combo.findData(self.riwaya_id))
         self.riwaya_combo.currentIndexChanged.connect(self.on_riwaya)
-        self.translation_combo = QComboBox()
+        self.translation_combo = NoWheelComboBox()
         for edition, name in TRANSLATION_EDITIONS:
             self.translation_combo.addItem(name, edition)
         self.translation_combo.setCurrentIndex(max(self.translation_combo.findData(self.translation_id), 0))
@@ -2963,6 +3268,12 @@ class Main(QMainWindow):
     def apply_theme(self):
         self.setStyleSheet(qss(THEMES[self.theme_name]))
         self.render_page()
+
+    def open_updates(self):
+        """يفتح صفحة الإعدادات ويفحص قناة التحديث الموقّعة مباشرةً."""
+        self.show_view('settings')
+        self.upd_status.setText('جارٍ فحص تحديثات سراج…')
+        QTimer.singleShot(0, lambda: self.check_updates(manual=True))
 
     def on_update_button(self):
         if self.update_info:
@@ -3244,6 +3555,7 @@ class Main(QMainWindow):
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.upd_target.parent)))
 
     def closeEvent(self, event):  # noqa: N802
+        self.offline_tafsir.close()
         self.settings.setValue('geometry', self.saveGeometry())
         super().closeEvent(event)
 
@@ -3276,6 +3588,8 @@ def run_selftest(app, win):
 
     def check():
         text = win.browser.toPlainText()
+        local_a, tafsir_a = win.offline_tafsir.lookup('ar.muyassar', 1, 1)
+        local_b, tafsir_b = win.offline_tafsir.lookup('qp:301', 2, 255)
         info = {
             'page': win.page,
             'textLength': len(text),
@@ -3283,8 +3597,16 @@ def run_selftest(app, win):
             'reciters': win.reciter_combo.count(),
             'riwaya': win.riwaya_id,
             'hasMushaf': 'الفاتح' in text or '﴿' in text or 'ال' in text,
+            'offlineTafsir': bool(local_a and tafsir_a and local_b and tafsir_b),
+            'tafsirEditions': len(win.offline_tafsir.editions),
         }
-        ok = info['textLength'] > 200 and info['surahs'] == 114 and info['reciters'] >= 1
+        ok = (
+            info['textLength'] > 200
+            and info['surahs'] == 114
+            and info['reciters'] >= 1
+            and info['offlineTafsir']
+            and info['tafsirEditions'] == len(ALL_TAFSIR_EDITIONS)
+        )
         finish(ok, info)
 
     QTimer.singleShot(600, check)
