@@ -10,8 +10,8 @@
     "sha256": "7ec9ac1ec85e7b3d5a3471f147ee3e0b333cc9545d1c1251ba39db80d74f0255"
   },
   "desktop": {
-    "version": "4.0.7",
+    "version": "4.1.1",
     "windows": "https://github.com/mosalah30688-gif/quran/releases/download/mushaf-v4.0.7/Mushaf-4.0.7-windows-portable.zip",
-    "linux": "https://github.com/mosalah30688-gif/quran/releases/download/mushaf-v4.0.7/Mushaf-4.0.7-x86_64.AppImage"
+    "linux": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-linux-test-v4.1.1/Siraj-Quran-4.1.1-linux-x86_64.AppImage"
   }
 }
