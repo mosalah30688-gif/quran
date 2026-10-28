@@ -6,6 +6,7 @@ on:
     tags:
       - "siraj-linux-v*"
       - "siraj-linux-patch-v*"
+      - "siraj-linux-test-v*"
 
 concurrency:
   group: siraj-linux-${{ github.ref }}
@@ -61,10 +62,11 @@ jobs:
           if [[ "$REF_TYPE" == "tag" ]]; then
             TAG_VERSION="$REF_NAME"
             TAG_VERSION="${TAG_VERSION#siraj-linux-patch-v}"
+            TAG_VERSION="${TAG_VERSION#siraj-linux-test-v}"
             TAG_VERSION="${TAG_VERSION#siraj-linux-v}"
             test "$TAG_VERSION" = "$VERSION"
             if [[ "$REF_NAME" == siraj-linux-patch-v* ]]; then
-              python -c "from packaging.version import Version; assert Version('$VERSION') > Version('1.1.0'), 'Patch releases require a version newer than transitional 1.1.0'"
+              python -c "from packaging.version import Version; assert Version('$VERSION') > Version('4.1.0'), 'Patch releases require a version newer than Linux 4.1.0'"
             fi
           fi
           echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> "$GITHUB_ENV"
@@ -75,6 +77,7 @@ jobs:
           python scripts/verify_asset_provenance.py
           python scripts/generate_alquran_data.py --verify
           python scripts/generate_quranpedia_data.py --verify
+          python scripts/generate_quranpedia_tafsir_catalog.py --verify
           python scripts/generate_adhkar_data.py --verify
           python scripts/audit_alquran_editions.py --verify
           python scripts/verify_audio_sources.py
@@ -115,7 +118,9 @@ jobs:
           test "$(find release -mindepth 1 -maxdepth 1 -type f | wc -l)" -eq 2
           test "$(find release -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 0
           echo "$(awk '{print $1}' release/SHA256SUMS.txt)  $APPIMAGE" | sha256sum --check --strict
-          file "$APPIMAGE" | grep -q 'ELF 64-bit LSB'
+          FILE_INFO="$(file "$APPIMAGE")"
+          echo "$FILE_INFO"
+          grep -Fq 'ELF 64-bit LSB' <<< "$FILE_INFO"
           rm -rf "$RUNNER_TEMP/siraj-appimage-extract"
           mkdir -p "$RUNNER_TEMP/siraj-appimage-extract"
           cd "$RUNNER_TEMP/siraj-appimage-extract"
