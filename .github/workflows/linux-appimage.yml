@@ -128,12 +128,12 @@ jobs:
           test -x squashfs-root/AppRun
           test -f squashfs-root/usr/bin/siraj
           test -f squashfs-root/com.mosalah30688.siraj.quran.desktop
-          test -f squashfs-root/com.mosalah30688.siraj.quran.appdata.xml
+          test -f squashfs-root/usr/share/metainfo/com.mosalah30688.siraj.quran.appdata.xml
           test -f squashfs-root/usr/share/doc/siraj/THIRD_PARTY_NOTICES.md
           test -d squashfs-root/usr/share/doc/siraj/licenses
           find squashfs-root/usr/share/doc/siraj/licenses -type f -print -quit | grep -q .
           desktop-file-validate squashfs-root/com.mosalah30688.siraj.quran.desktop
-          grep -q '<id>com.mosalah30688.siraj.quran</id>' squashfs-root/com.mosalah30688.siraj.quran.appdata.xml
+          grep -q '<id>com.mosalah30688.siraj.quran</id>' squashfs-root/usr/share/metainfo/com.mosalah30688.siraj.quran.appdata.xml
 
       - name: Inventory bundled binary licenses and source packages
         run: |
