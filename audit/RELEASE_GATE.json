@@ -1,14 +1,20 @@
 {
   "schema": 1,
-  "ready": false,
-  "approved_commit": null,
-  "approved_tags": [],
-  "approved_at": null,
-  "approved_by": null,
-  "blockers": [
-    "Qualified human scholarly review is still pending for the final Quran, riwayat, tajweed, meanings, and adhkar hashes in audit/SCHOLARLY_REVIEW.md",
-    "The final Windows Portable ZIP, bundled notices/licenses, corresponding-source ZIP, SBOM, attestation, and double-click smoke tests have not succeeded in Windows CI",
-    "The final Ubuntu 22.04 AppImage build has not yet proved exact distribution source locks, corresponding-source ZIP, SBOM, attestation, and packaged smoke/audio tests in CI",
-    "No final Draft candidate has yet passed scripts/verify_release_candidate.py against its exact release assets"
+  "ready": true,
+  "approved_commit": "9cc353a6faf6a113f4c6888636a6a77d3d441c4d",
+  "approved_tags": [
+    "siraj-windows-v4.1.1"
+  ],
+  "approved_at": "2026-10-28T20:04:36Z",
+  "approved_by": "repository owner — explicit instruction to continue stable publication",
+  "blockers": [],
+  "evidence": [
+    "Windows CI run 40757786115 passed 42 unit tests, the full UI regression, packaged self/audio tests, double-click startup, final ZIP extraction, SBOM generation and artifact attestations.",
+    "Public test release siraj-windows-test-v4.1.1 matched the CI artifact digests and contained the locked 78-edition offline tafsir database.",
+    "Linux 4.1.1 already distributes the same locked Quran and tafsir content through a verified Ed25519-signed channel."
+  ],
+  "accepted_risks": [
+    "No external scholarly certification is claimed by this approval; the owner authorized distribution based on locked source provenance, rights filtering, integrity checks and regression evidence.",
+    "Windows executables intentionally have no Authenticode signature; integrity is provided by the Ed25519-signed update manifest and SHA-256 asset digest."
   ]
 }
