@@ -38,6 +38,8 @@ def main() -> int:
         (ROOT / "audit/sources/quranpedia-tafsir/2026-10-28/SOURCE.json").read_text(encoding="utf-8")
     )
     for name, metadata in quranpedia_tafsir["outputs"].items():
+        # New generators lock each cross-platform output by repository path;
+        # older source records use only the common basename.
         expected[name] = metadata["sha256"]
 
     adhkar = json.loads(
@@ -62,7 +64,7 @@ def main() -> int:
         for path in sorted((ROOT / app / "data").glob("*.json")):
             relative = path.relative_to(ROOT).as_posix()
             seen_paths.add(relative)
-            wanted = authored_paths.get(relative) or expected.get(path.name)
+            wanted = authored_paths.get(relative) or expected.get(relative) or expected.get(path.name)
             if wanted is None:
                 failures.append(f"no provenance record: {relative}")
             elif sha256(path) != wanted:
