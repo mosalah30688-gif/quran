@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "kind": "siraj-patch-channel",
+  "product": "siraj-quran-linux",
+  "channel": "stable",
+  "available": false,
+  "version": "4.1.0",
+  "runtime_api": 1,
+  "published_at": null,
+  "release_notes": "قناة الترقيعات الصغيرة محجوبة حتى نشر حزمة توافق Linux الكاملة 4.1.0 واجتياز الاختبار.",
+  "assets": {}
+}
