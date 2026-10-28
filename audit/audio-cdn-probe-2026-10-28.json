@@ -1,0 +1,560 @@
+{
+  "schema": 1,
+  "checked_at": "2026-10-27T22:32:22Z",
+  "source": "https://cdn.islamic.network/quran/audio/",
+  "edition_registry": "https://api.alquran.cloud/v1/edition/format/audio",
+  "terms": "https://alquran.cloud/terms-and-conditions",
+  "samples": [
+    1,
+    262,
+    6236
+  ],
+  "reciter_count": 17,
+  "all_ok": true,
+  "reciters": [
+    {
+      "identifier": "ar.alafasy",
+      "name": "مشاري العفاسي",
+      "bitrate": 128,
+      "ok": true,
+      "checks": [
+        {
+          "ayah_global": 1,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 262,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.alafasy/262.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 6236,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.alafasy/6236.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        }
+      ]
+    },
+    {
+      "identifier": "ar.abdurrahmaansudais",
+      "name": "عبدالرحمن السديس",
+      "bitrate": 192,
+      "ok": true,
+      "checks": [
+        {
+          "ayah_global": 1,
+          "url": "https://cdn.islamic.network/quran/audio/192/ar.abdurrahmaansudais/1.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 262,
+          "url": "https://cdn.islamic.network/quran/audio/192/ar.abdurrahmaansudais/262.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 6236,
+          "url": "https://cdn.islamic.network/quran/audio/192/ar.abdurrahmaansudais/6236.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        }
+      ]
+    },
+    {
+      "identifier": "ar.mahermuaiqly",
+      "name": "ماهر المعيقلي",
+      "bitrate": 128,
+      "ok": true,
+      "checks": [
+        {
+          "ayah_global": 1,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.mahermuaiqly/1.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 262,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.mahermuaiqly/262.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 6236,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.mahermuaiqly/6236.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        }
+      ]
+    },
+    {
+      "identifier": "ar.husary",
+      "name": "محمود خليل الحصري",
+      "bitrate": 128,
+      "ok": true,
+      "checks": [
+        {
+          "ayah_global": 1,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.husary/1.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 262,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.husary/262.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 6236,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.husary/6236.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        }
+      ]
+    },
+    {
+      "identifier": "ar.husarymujawwad",
+      "name": "الحصري (المجوّد)",
+      "bitrate": 128,
+      "ok": true,
+      "checks": [
+        {
+          "ayah_global": 1,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.husarymujawwad/1.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 262,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.husarymujawwad/262.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 6236,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.husarymujawwad/6236.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        }
+      ]
+    },
+    {
+      "identifier": "ar.hudhaify",
+      "name": "علي الحذيفي",
+      "bitrate": 128,
+      "ok": true,
+      "checks": [
+        {
+          "ayah_global": 1,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.hudhaify/1.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 262,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.hudhaify/262.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 6236,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.hudhaify/6236.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        }
+      ]
+    },
+    {
+      "identifier": "ar.shaatree",
+      "name": "أبو بكر الشاطري",
+      "bitrate": 128,
+      "ok": true,
+      "checks": [
+        {
+          "ayah_global": 1,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.shaatree/1.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 262,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.shaatree/262.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 6236,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.shaatree/6236.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        }
+      ]
+    },
+    {
+      "identifier": "ar.abdulsamad",
+      "name": "عبدالباسط عبدالصمد",
+      "bitrate": 64,
+      "ok": true,
+      "checks": [
+        {
+          "ayah_global": 1,
+          "url": "https://cdn.islamic.network/quran/audio/64/ar.abdulsamad/1.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 262,
+          "url": "https://cdn.islamic.network/quran/audio/64/ar.abdulsamad/262.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "application/octet-stream",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 6236,
+          "url": "https://cdn.islamic.network/quran/audio/64/ar.abdulsamad/6236.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "application/octet-stream",
+          "bytes_read": 32
+        }
+      ]
+    },
+    {
+      "identifier": "ar.saoodshuraym",
+      "name": "سعود الشريم",
+      "bitrate": 64,
+      "ok": true,
+      "checks": [
+        {
+          "ayah_global": 1,
+          "url": "https://cdn.islamic.network/quran/audio/64/ar.saoodshuraym/1.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 262,
+          "url": "https://cdn.islamic.network/quran/audio/64/ar.saoodshuraym/262.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 6236,
+          "url": "https://cdn.islamic.network/quran/audio/64/ar.saoodshuraym/6236.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        }
+      ]
+    },
+    {
+      "identifier": "ar.muhammadayyoub",
+      "name": "محمد أيوب",
+      "bitrate": 128,
+      "ok": true,
+      "checks": [
+        {
+          "ayah_global": 1,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.muhammadayyoub/1.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 262,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.muhammadayyoub/262.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 6236,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.muhammadayyoub/6236.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        }
+      ]
+    },
+    {
+      "identifier": "ar.muhammadjibreel",
+      "name": "محمد جبريل",
+      "bitrate": 128,
+      "ok": true,
+      "checks": [
+        {
+          "ayah_global": 1,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.muhammadjibreel/1.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 262,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.muhammadjibreel/262.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 6236,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.muhammadjibreel/6236.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        }
+      ]
+    },
+    {
+      "identifier": "ar.abdullahbasfar",
+      "name": "عبدالله بصفر",
+      "bitrate": 64,
+      "ok": true,
+      "checks": [
+        {
+          "ayah_global": 1,
+          "url": "https://cdn.islamic.network/quran/audio/64/ar.abdullahbasfar/1.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 262,
+          "url": "https://cdn.islamic.network/quran/audio/64/ar.abdullahbasfar/262.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 6236,
+          "url": "https://cdn.islamic.network/quran/audio/64/ar.abdullahbasfar/6236.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        }
+      ]
+    },
+    {
+      "identifier": "ar.ahmedajamy",
+      "name": "أحمد العجمي",
+      "bitrate": 128,
+      "ok": true,
+      "checks": [
+        {
+          "ayah_global": 1,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.ahmedajamy/1.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "application/octet-stream",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 262,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.ahmedajamy/262.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "application/octet-stream",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 6236,
+          "url": "https://cdn.islamic.network/quran/audio/128/ar.ahmedajamy/6236.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "application/octet-stream",
+          "bytes_read": 32
+        }
+      ]
+    },
+    {
+      "identifier": "ar.hanirifai",
+      "name": "هاني الرفاعي",
+      "bitrate": 192,
+      "ok": true,
+      "checks": [
+        {
+          "ayah_global": 1,
+          "url": "https://cdn.islamic.network/quran/audio/192/ar.hanirifai/1.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 262,
+          "url": "https://cdn.islamic.network/quran/audio/192/ar.hanirifai/262.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 6236,
+          "url": "https://cdn.islamic.network/quran/audio/192/ar.hanirifai/6236.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        }
+      ]
+    },
+    {
+      "identifier": "ar.ibrahimakhbar",
+      "name": "إبراهيم الأخضر",
+      "bitrate": 32,
+      "ok": true,
+      "checks": [
+        {
+          "ayah_global": 1,
+          "url": "https://cdn.islamic.network/quran/audio/32/ar.ibrahimakhbar/1.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 262,
+          "url": "https://cdn.islamic.network/quran/audio/32/ar.ibrahimakhbar/262.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 6236,
+          "url": "https://cdn.islamic.network/quran/audio/32/ar.ibrahimakhbar/6236.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        }
+      ]
+    },
+    {
+      "identifier": "ar.aymanswoaid",
+      "name": "أيمن سويد",
+      "bitrate": 64,
+      "ok": true,
+      "checks": [
+        {
+          "ayah_global": 1,
+          "url": "https://cdn.islamic.network/quran/audio/64/ar.aymanswoaid/1.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 262,
+          "url": "https://cdn.islamic.network/quran/audio/64/ar.aymanswoaid/262.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 6236,
+          "url": "https://cdn.islamic.network/quran/audio/64/ar.aymanswoaid/6236.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        }
+      ]
+    },
+    {
+      "identifier": "ar.parhizgar",
+      "name": "شهريار پرهيزكار",
+      "bitrate": 48,
+      "ok": true,
+      "checks": [
+        {
+          "ayah_global": 1,
+          "url": "https://cdn.islamic.network/quran/audio/48/ar.parhizgar/1.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 262,
+          "url": "https://cdn.islamic.network/quran/audio/48/ar.parhizgar/262.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        },
+        {
+          "ayah_global": 6236,
+          "url": "https://cdn.islamic.network/quran/audio/48/ar.parhizgar/6236.mp3",
+          "ok": true,
+          "status": 206,
+          "content_type": "audio/mpeg",
+          "bytes_read": 32
+        }
+      ]
+    }
+  ]
+}

@@ -35,18 +35,15 @@
   const TAFSIRS = [
     ['ar.muyassar', 'التفسير الميسر (مجمع الملك فهد)'],
     ['ar.jalalayn', 'تفسير الجلالين'],
-    ['ar.waseet', 'التفسير الوسيط'],
     ['ar.baghawi', 'تفسير البغوي'],
     ['ar.qurtubi', 'تفسير القرطبي'],
     ['ar.miqbas', 'تنوير المقباس'],
   ];
 
-  // قراء الروايات الثلاث. النوع:
-  //  ayah: ملف لكل آية من everyayah (ترقيم الرواية نفسه)، ويعمل تتبع الآية والصفحات
-  //  surah: ملف لكل سورة (mp3quran)، بلا توقيت للآيات، فتعمل السورة كاملة ثم تتوقف
+  // قراء الروايات الثلاث من MP3Quran: ملف لكل سورة بلا توقيت للآيات، فتعمل السورة كاملة ثم تتوقف.
   const RIW_RECITERS = {
     warsh: [
-      ['warsh_abdulbasit', 'عبدالباسط عبدالصمد', { type: 'ayah', base: 'https://everyayah.com/data/warsh/warsh_Abdul_Basit_128kbps/' }],
+      ['warsh_abdulbasit', 'عبدالباسط عبدالصمد', { type: 'surah', base: 'https://cdn.mp3quran.net/audio/abdulbasit-abdulsamad/r2/' }],
       ['warsh_husary', 'محمود خليل الحصري', { type: 'surah', base: 'https://cdn.mp3quran.net/audio/mahmoud-husary/r3/' }],
     ],
     qalun: [
@@ -68,8 +65,6 @@
   };
   const VIEW_TITLES = { reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', wird: 'الورد', stats: 'الإحصائيات', adhkar: 'الأذكار', search: 'البحث', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق', tajweed: 'أحكام التجويد', meanings: 'المعاني' };
   const Cap = window.Capacitor || null;
-  // نسخة سطح المكتب تفتح بـ ?desktop=1: الواجهة تملى الشاشة
-  if (new URLSearchParams(location.search).has('desktop')) document.documentElement.classList.add('desktop');
 
   // قواعد التجويد بحسب رموز مصدر quran-tajweed في alquran.cloud (الاسم، الشرح)
   const TJ_RULES = {
@@ -105,6 +100,11 @@
   };
   const settings = Object.assign({}, DEFAULTS, store.get('settings', {}));
   const saveSettings = () => store.set('settings', settings);
+  // ترحيل آمن للطبعات التي حُجبت لعدم اكتمال سجل الحقوق، مع إبقاء بقية بيانات المستخدم.
+  if (!TAFSIRS.some(([id]) => id === settings.tafsir)) settings.tafsir = DEFAULTS.tafsir;
+  const allowedTranslations = new Set(['', 'en.sahih', 'fr.hamidullah', 'ur.jalandhry', 'tr.diyanet']);
+  if (!allowedTranslations.has(settings.translation)) settings.translation = '';
+  saveSettings();
 
   // ---------- الحالة ----------
   let surahs = [];
@@ -161,6 +161,26 @@
     return s.replace(/\[|\]/g, '');
   }
 
+  const HAFS_BASMALAS = [
+    'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ',
+    'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+  ];
+  const plainTajweed = (raw) => clean(raw).replace(/\[([a-z]+)(?::\d+)?\[([^\[\]]*)\]/g, '$2').replace(/\[|\]/g, '');
+  function displayHafsSource(surah, ayah, raw) {
+    // فصل بصري فقط: لا نغيّر استجابة المصدر ولا ترقيم الآية أو رابط التلاوة.
+    const source = clean(raw).trim();
+    if (ayah !== 1 || surah === 1 || surah === 9) return source;
+    const plain = plainTajweed(source);
+    if (!HAFS_BASMALAS.some((prefix) => plain.startsWith(prefix))) return source;
+    const words = source.split(/\s+/);
+    return words.slice(4).join(' ').trim();
+  }
+  function syncReaderLayout() {
+    const hafs = !isRiw();
+    document.body.classList.toggle('hafs-reader', hafs);
+    $('.wrap')?.classList.toggle('reader-wide', curView === 'reader' && hafs);
+  }
+
   // ---------- التنقل بين الأقسام ----------
   // سجل الأقسام: زر الرجوع يعيد خطوة واحدة للخلف داخل التطبيق
   const navStack = [];
@@ -184,6 +204,7 @@
     if (name === 'settings') syncIndexSelects();
     if (name === 'meanings') renderMeaningsView();
     if (name === 'memo') renderMemoReview();
+    syncReaderLayout();
     $('#content').scrollTop = 0;
   }
   function popView() { showView(navStack.pop() || 'reader', { back: true }); }
@@ -322,15 +343,18 @@
     const markupSrc = settings.riwaya === 'quran-tajweed' ? base : (withTajweed ? byId['quran-tajweed'] : null);
 
     const ayahs = base.map((a, i) => {
-      const markup = markupSrc ? markupSrc[i].text : null;
+      const s = a.surah.number;
+      const n = a.numberInSurah;
+      const displaySource = displayHafsSource(s, n, a.text);
+      const markup = markupSrc ? displayHafsSource(s, n, markupSrc[i].text) : null;
       return {
-        s: a.surah.number,
-        n: a.numberInSurah,
+        s,
+        n,
         g: a.number,
         page: p,
         juz: a.juz,
-        text: clean(a.text),
-        html: markup ? renderTajweed(markup) : esc(clean(a.text)),
+        text: plainTajweed(displaySource),
+        html: markup ? renderTajweed(markup) : esc(plainTajweed(displaySource)),
         audio: byId[settings.reciter]?.[i]?.audio || null,
         tafsir: byId[settings.tafsir]?.[i]?.text || '',
         tr: settings.translation ? (byId[settings.translation]?.[i]?.text || '') : '',
@@ -404,7 +428,9 @@
         openP = true;
         lastS = a.s;
       }
-      html += `<span class="ay" data-g="${a.g}">${a.html} <span class="end" data-act="tafsir" data-g="${a.g}" title="الآية">${toArabicDigits(a.n)}</span></span> `;
+      const marker = isRiw() ? toArabicDigits(a.n) : `۝${toArabicDigits(a.n)}`;
+      const markerClass = isRiw() ? 'end' : 'end hafs-end';
+      html += `<span class="ay" data-g="${a.g}">${a.html} <span class="${markerClass}" data-act="tafsir" data-g="${a.g}" title="الآية">${marker}</span></span> `;
     });
     if (openP) html += '</p>';
 
@@ -1091,6 +1117,7 @@
     if (key === 'riwaya') syncReciters();
     saveSettings();
     document.body.classList.toggle('riw', isRiw());
+    syncReaderLayout();
     if (key === 'reciter') { $('#setReciter').value = value; $('#playReciter').value = value; }
     if (key === 'tafsir') { $('#setTafsir').value = value; $('#tfBook').value = value; }
     if (key === 'translation') { $('#setTranslation').value = value; $('#tfTrans').value = value; }
@@ -1213,18 +1240,18 @@
   }
   silentUpdateCheck();
 
-  // مصدر الملفات: everyayah.com (يسمح بالتحميل من المتصفح) - لكل آية ملف مستقل
+  // مصدر تنزيل حفص هو CDN المعلن لخدمة AlQuran Cloud / Islamic Network؛ القيمة معدل البت لكل طبعة.
   const OFFLINE_SRC = {
-    'ar.alafasy': 'Alafasy_128kbps',
-    'ar.abdurrahmaansudais': 'Abdurrahmaan_As-Sudais_192kbps',
-    'ar.husary': 'Husary_128kbps',
-    'ar.husarymujawwad': 'Husary_128kbps_Mujawwad',
-    'ar.hudhaify': 'Hudhaify_128kbps',
-    'ar.shaatree': 'Abu_Bakr_Ash-Shaatree_128kbps',
-    'ar.hanirifai': 'Hani_Rifai_192kbps',
-    'ar.ibrahimakhbar': 'Ibrahim_Akhdar_32kbps',
-    'ar.aymanswoaid': 'Ayman_Sowaid_64kbps',
-    'ar.abdullahbasfar': 'Abdullah_Basfar_192kbps',
+    'ar.alafasy': 128,
+    'ar.abdurrahmaansudais': 192,
+    'ar.husary': 128,
+    'ar.husarymujawwad': 128,
+    'ar.hudhaify': 128,
+    'ar.shaatree': 128,
+    'ar.hanirifai': 192,
+    'ar.ibrahimakhbar': 32,
+    'ar.aymanswoaid': 64,
+    'ar.abdullahbasfar': 64,
   };
   const IDB_NAME = 'quran-offline';
   let dbPromise = null;
@@ -1331,6 +1358,12 @@
     return refs;
   }
 
+  function globalAyahNumber(s, n) {
+    let number = n;
+    for (let i = 0; i < s - 1; i++) number += Number(surahs[i]?.numberOfAyahs || 0);
+    return number;
+  }
+
   function updateEstimate() {
     const refs = refsForScope();
     const mb = refs.length * 0.1;
@@ -1342,8 +1375,8 @@
   async function runDownload() {
     if (dl.running) return;
     const reciter = $('#dlReciter').value;
-    const folder = OFFLINE_SRC[reciter];
-    if (!folder) return toast('هذا القارئ غير متاح للتحميل');
+    const bitrate = OFFLINE_SRC[reciter];
+    if (!bitrate) return toast('هذا القارئ غير متاح للتحميل');
     const target = $('#dlTarget').value;
     const refs = refsForScope();
     if (!refs.length) return;
@@ -1392,7 +1425,8 @@
           if (await hasLocal(target, root, reciter, r.s, r.n)) {
             skipped++;
           } else {
-            const res = await fetch(`https://everyayah.com/data/${folder}/${pad3(r.s)}${pad3(r.n)}.mp3`);
+            const ayahNumber = globalAyahNumber(r.s, r.n);
+            const res = await fetch(`https://cdn.islamic.network/quran/audio/${bitrate}/${reciter}/${ayahNumber}.mp3`);
             if (!res.ok) throw new Error('HTTP ' + res.status);
             const blob = await res.blob();
             if (target === 'folder') await saveToFolder(root, reciter, r.s, r.n, blob);
@@ -1984,6 +2018,7 @@
   // ---------- التشغيل الأولي ----------
   applyTheme();
   document.body.classList.toggle('riw', isRiw());
+  syncReaderLayout();
   fillSettings();
   renderBookmarks();
   renderLast();

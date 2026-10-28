@@ -2,6 +2,10 @@ __pycache__/
 build/
 dist/
 AppDir/
+binary-license-report/
+release/
+squashfs-root/
 *.AppImage
-appimagetool
+appimagetool*
+runtime-*-x86_64
 *.spec

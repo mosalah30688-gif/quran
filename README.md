@@ -25,7 +25,7 @@ npm run android:sync
 
 - **سراج**
 - الوصف: **قرآن كريم**
-- الإصدار الأول: `1.0.0`
+- الإصدار الانتقالي الحالي: `1.1.0`
 - Windows 10/11 x64
 
 الناتج:
@@ -34,12 +34,29 @@ npm run android:sync
 - تحفظ بياناتها في `UserData` بجوار البرنامج ولا تستخدم Registry للإعدادات.
 - تحديث مرتبط بـ GitHub Releases مع توقيع Manifest عبر Ed25519 وفحص الحجم وSHA-256.
 - توقيع Authenticode لملفات EXE إلزامي للإصدارات المستقرة.
+- `1.1.0` حزمة انتقالية كاملة؛ التحديثات العادية التالية حزم `.sirajpatch` صغيرة موقعة، والحزمة الكاملة للتحديث الرئيسي أو تغيير runtime/dependencies الأصلية.
 
 راجع [`windows_app/README.md`](windows_app/README.md) للتشغيل والبناء والتفاصيل.
 
-### Linux السابق
+### Linux — AppImage
 
-نسخة Qt/AppImage السابقة باقية مؤقتًا داخل `mushaf_app/`، وخط بنائها منفصل عن Windows الجديد.
+مسار Linux داخل `mushaf_app/` يحمل الهوية نفسها **سراج — قرآن كريم** وينتج:
+
+- `Siraj-Quran-4.1.0-linux-x86_64.AppImage`
+- `Siraj-Quran-4.1.0-linux-corresponding-source.zip`
+- `SHA256SUMS.txt`
+- `SBOM.cdx.json`
+
+يبني GitHub Actions الحزمة على Ubuntu 22.04، ثم يشغّل اختبارات الواجهة والبيانات والتلاوة من داخل AppImage، ويشغّل التطبيق بلا arguments تحت X11 افتراضي ويتحقق من ظهور نافذة «سراج» قبل رفع artifact باسم `siraj-linux-appimage`.
+
+بعد التنزيل يلزم منح الملف صلاحية التنفيذ مرة واحدة من **Properties → Permissions → Allow executing file as program** أو بالأمر:
+
+```bash
+chmod +x Siraj-Quran-4.1.0-linux-x86_64.AppImage
+./Siraj-Quran-4.1.0-linux-x86_64.AppImage
+```
+
+لا يُنشئ هذا المسار حزمة DEB/RPM أو مثبّتًا، ولا ينشر Release مستقرًا تلقائيًا. يظل النشر العام محجوبًا إلى حين اكتمال مراجعة تراخيص المحتوى والمراجعة العلمية.
 
 ## خصائص Windows الجديدة
 
@@ -47,20 +64,19 @@ npm run android:sync
 - فهرس سورة/جزء/آية منسدل لا يستهلك مساحة الصفحة.
 - Amiri Quran افتراضيًا، مع Amiri وNoto Naskh Arabic وScheherazade New وخطوط Windows المناسبة.
 - تحديد النص والنسخ، ونسخ الآية مع المرجع، وتظليل آيات دائم.
-- سطر مصحف متقارب دون فراغات مبالغ فيها.
-- البسملة تحت عنوان السورة، مع الحفاظ على ترقيم المصدر المختار وربطه بالتلاوة والتفسير.
+- عرض حفص واسع بأسلوب الشاملة: عنوان وبسملة في المنتصف، فقرة متصلة، أسطر متقاربة، وعلامات آيات زخرفية؛ عدد الأسطر يتجاوب مع عرض النافذة.
+- البسملة تظهر مرة واحدة تحت عنوان السورة؛ تُفصل للعرض من أول آية حفص عند وجودها مدمجة، مع بقاء نص المصدر وترقيمه وربط التلاوة والتفسير دون تغيير.
 - جميع خصائص Android الأساسية موجودة في مسار Windows.
 
 ## مصادر المحتوى
 
 يعتمد المشروع حاليًا على ملفات محلية وعلى خدمات مثل:
 
-- `api.alquran.cloud`
-- `everyayah.com`
+- `api.alquran.cloud` و`cdn.islamic.network`
 - `cdn.mp3quran.net`
 - `quranpedia.net`
 
-قبل الإصدار المستقر العام يجب استكمال توثيق رخص المصادر والمراجعة العلمية. راجع [`windows_app/THIRD_PARTY_NOTICES.md`](windows_app/THIRD_PARTY_NOTICES.md).
+سلسلة المنشأ والبصمات والمولدات موثقة في [`audit/DATA_PROVENANCE.md`](audit/DATA_PROVENANCE.md)، وسجل الحقوق والموانع في [`audit/THIRD_PARTY_REVIEW.md`](audit/THIRD_PARTY_REVIEW.md). ما زال الإصدار العام محجوبًا حتى الاعتماد العلمي البشري والبناء النهائي على Windows وUbuntu 22.04؛ راجع أيضًا [`windows_app/THIRD_PARTY_NOTICES.md`](windows_app/THIRD_PARTY_NOTICES.md).
 
 ## الترخيص
 

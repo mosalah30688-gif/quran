@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=سراج
+Name[en]=Siraj
+GenericName=قرآن كريم
+GenericName[en]=Quran Reader
+Comment=قراءة القرآن والروايات والتلاوات والتفسير والحفظ والأذكار
+Comment[en]=Quran reading, recitations, tafsir, memorization and adhkar
+Exec=siraj
+Icon=com.mosalah30688.siraj.quran
+Terminal=false
+Categories=Education;
+Keywords=قرآن;مصحف;تلاوة;تفسير;Quran;Islam;
+StartupNotify=true
+StartupWMClass=Siraj

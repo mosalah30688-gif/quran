@@ -1,0 +1,103 @@
+{
+  "schema": 1,
+  "retrieved_at": "2026-10-27T23:18:17Z",
+  "provider": "AlQuran Cloud / Islamic Network",
+  "terms": "https://alquran.cloud/terms-and-conditions",
+  "cdn_documentation": "https://alquran.cloud/cdn",
+  "sources": {
+    "quran-uthmani": {
+      "url": "https://api.alquran.cloud/v1/quran/quran-uthmani",
+      "snapshot": "audit/sources/alquran-cloud/2026-10-28/quran-uthmani.json.gz",
+      "response_bytes": 2109200,
+      "response_sha256": "0df03e1d6da4fc8138208fec1688f2b416f0dd4ebbd514179f3e5e0fbaf4195f",
+      "snapshot_bytes": 345350,
+      "snapshot_sha256": "277e30ffbd0e05bfe89d3b7070b5a92ea2446d62e6a10ea7aeee2701322b8cd5",
+      "compression": "gzip (mtime=0)",
+      "edition": {
+        "identifier": "quran-uthmani",
+        "language": "ar",
+        "name": "القرآن الكريم برسم العثماني (uthmani)",
+        "englishName": "Uthmani",
+        "format": "text",
+        "type": "quran"
+      }
+    },
+    "quran-simple": {
+      "url": "https://api.alquran.cloud/v1/quran/quran-simple",
+      "snapshot": "audit/sources/alquran-cloud/2026-10-28/quran-simple.json.gz",
+      "response_bytes": 2070157,
+      "response_sha256": "84889f681086b9d5a94222fbe4358cef77e15183c10baefda24f8f9ab9449402",
+      "snapshot_bytes": 333760,
+      "snapshot_sha256": "c504e23aa6d76491ee801f6b3899ed958b19fe46a59115341b602cc41e48f800",
+      "compression": "gzip (mtime=0)",
+      "edition": {
+        "identifier": "quran-simple",
+        "language": "ar",
+        "name": "القرآن الكريم المبسط (تشكيل بسيط) (simple)",
+        "englishName": "Simple",
+        "format": "text",
+        "type": "quran"
+      }
+    },
+    "quran-simple-clean": {
+      "url": "https://api.alquran.cloud/v1/quran/quran-simple-clean",
+      "snapshot": "audit/sources/alquran-cloud/2026-10-28/quran-simple-clean.json.gz",
+      "response_bytes": 1506861,
+      "response_sha256": "e9f87186120851fbf1e04813a423076850e1b6b9ad769a797117dca623aad4af",
+      "snapshot_bytes": 268442,
+      "snapshot_sha256": "1c822067446ddf9fc7b9d4dc346cb2b48b298e94a04481f0f10e44b823f23f49",
+      "compression": "gzip (mtime=0)",
+      "edition": {
+        "identifier": "quran-simple-clean",
+        "language": "ar",
+        "name": "القرآن الكريم المبسط (بدون تشكيل) (simple-clean)",
+        "englishName": "Simple Clean",
+        "format": "text",
+        "type": "quran"
+      }
+    },
+    "quran-tajweed": {
+      "url": "https://api.alquran.cloud/v1/quran/quran-tajweed",
+      "snapshot": "audit/sources/alquran-cloud/2026-10-28/quran-tajweed.json.gz",
+      "response_bytes": 2488551,
+      "response_sha256": "a80dca6b11351b1d79bea1523c3ff8af3289c6df5e3e48a2e1e11074c80ccb31",
+      "snapshot_bytes": 456649,
+      "snapshot_sha256": "1411120062f6784b90d6b68cb4410844acddab2d3211204f2a4e499caba1a58e",
+      "compression": "gzip (mtime=0)",
+      "edition": {
+        "identifier": "quran-tajweed",
+        "language": "ar",
+        "name": "القرآن الكريم المجود (ملون) (tajweed)",
+        "englishName": "Tajweed",
+        "format": "text",
+        "type": "quran"
+      }
+    }
+  },
+  "transformation": {
+    "script": "scripts/generate_alquran_data.py",
+    "description": "Flatten ordered surah/ayah API data, retain page metadata, strip only the leading BOM in quran-simple-clean search text, and derive surah and juz indexes."
+  },
+  "outputs": {
+    "hafs.json": {
+      "bytes": 2901570,
+      "sha256": "c1dee8c03d105421d4ff0068248822b1be1b41a1648c3d2eee682c07cf9144f6"
+    },
+    "quran-search.json": {
+      "bytes": 818799,
+      "sha256": "1c6ec288fb10a3e12bd3cc60b92df0e8c210da6dffcc9fd7557547844b77de7b"
+    },
+    "quran-tajweed.json": {
+      "bytes": 1824707,
+      "sha256": "441c118e0000083ddafff9987874f7b9c8710a936721caf52d1b11d94fa1f0b3"
+    },
+    "surahs.json": {
+      "bytes": 15848,
+      "sha256": "50d89cffe17484d592f184f1d88de13bdcd5b602f3f0fd83e13240996fb4eb4f"
+    },
+    "juz.json": {
+      "bytes": 283,
+      "sha256": "1dae7ba461511df0782ae9d02a7d5f54975b9da403848cabd70fb6b0ac176c04"
+    }
+  }
+}

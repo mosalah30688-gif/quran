@@ -23,23 +23,41 @@ from pathlib import Path
 
 from packaging.version import InvalidVersion, Version
 
-from PySide6.QtCore import QByteArray, QObject, QPropertyAnimation, QRect, QSize, QStandardPaths, Qt, QTimer, QUrl
+from PySide6.QtCore import QByteArray, QObject, QPropertyAnimation, QRect, QSize, QStandardPaths, Qt, QTime, QTimer, QUrl
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtGui import QColor, QDesktopServices, QFont, QFontDatabase, QGuiApplication, QIcon, QImage, QKeySequence, QPainter, QPen, QPixmap, QShortcut, QTextDocument
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PySide6.QtWidgets import (
-    QApplication, QButtonGroup, QComboBox, QFileDialog, QFormLayout, QFrame,
+    QApplication, QButtonGroup, QCheckBox, QComboBox, QFileDialog, QFormLayout, QFrame,
     QGraphicsOpacityEffect, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem,
     QDialog, QMainWindow, QMenu, QMessageBox, QProgressBar, QPushButton, QRadioButton, QScrollArea, QSpinBox,
-    QStackedWidget, QTextBrowser, QVBoxLayout, QWidget,
+    QStackedWidget, QSystemTrayIcon, QTextBrowser, QTimeEdit, QVBoxLayout, QWidget,
 )
 
 try:
+    from .patch_runtime import install_patch_archive
+    from .reading_tracker import (
+        TOTAL_PAGES, clear_tracking, estimated_finish, habit_average, khatma_progress,
+        khatma_state, reading_count, reading_counts, reading_streak, record_reading,
+        set_khatma_pointer, start_new_khatma,
+    )
+    from .reminder_scheduler import (
+        configure_system_reminder, reminder_config, save_reminder_config, valid_time,
+    )
     from .runtime import bundle_root, cache_dir, create_settings, mode_label
     from .update_security import verify_update_manifest
     from .version import APP_DESCRIPTION_AR, APP_NAME_AR, APP_VERSION, PUBLISHER
     from .widgets import FlowLayout, IndexPopup
 except ImportError:  # تشغيل الملف مباشرة أثناء التطوير وداخل PyInstaller
+    from patch_runtime import install_patch_archive
+    from reading_tracker import (
+        TOTAL_PAGES, clear_tracking, estimated_finish, habit_average, khatma_progress,
+        khatma_state, reading_count, reading_counts, reading_streak, record_reading,
+        set_khatma_pointer, start_new_khatma,
+    )
+    from reminder_scheduler import (
+        configure_system_reminder, reminder_config, save_reminder_config, valid_time,
+    )
     from runtime import bundle_root, cache_dir, create_settings, mode_label
     from update_security import verify_update_manifest
     from version import APP_DESCRIPTION_AR, APP_NAME_AR, APP_VERSION, PUBLISHER
@@ -47,10 +65,22 @@ except ImportError:  # تشغيل الملف مباشرة أثناء التطو�
 
 APP_NAME = 'SirajQuran'
 BASE = bundle_root()
-DATA = BASE / 'data'
-FONTS = BASE / 'fonts'
-ICON = BASE / 'assets' / 'siraj.png'
-ICON_ICO = BASE / 'assets' / 'siraj.ico'
+_PATCH_BASE = Path(os.environ['SIRAJ_PATCH_ROOT']).resolve() if os.environ.get('SIRAJ_PATCH_ROOT') else None
+
+
+def resource_file(relative):
+    """يفضّل الملف الموقّع في الترقيع، ثم يرجع إلى مورد الحزمة الكاملة."""
+    relative = Path(relative)
+    if _PATCH_BASE is not None:
+        candidate = _PATCH_BASE / relative
+        if candidate.is_file():
+            return candidate
+    return BASE / relative
+
+
+FONTS = (_PATCH_BASE / 'fonts') if _PATCH_BASE is not None and (_PATCH_BASE / 'fonts').is_dir() else BASE / 'fonts'
+ICON = resource_file('assets/siraj.png')
+ICON_ICO = resource_file('assets/siraj.ico')
 UPDATE_PUBLIC_KEY = BASE / 'assets' / 'update_public_key.txt'
 
 ARABIC_DIGITS = str.maketrans('0123456789', '٠١٢٣٤٥٦٧٨٩')
@@ -61,7 +91,7 @@ def ar(n):
 
 
 def load(name):
-    return json.loads((DATA / name).read_text(encoding='utf-8'))
+    return json.loads(resource_file(Path('data') / name).read_text(encoding='utf-8'))
 
 
 SURAHS = load('surahs.json')
@@ -74,8 +104,6 @@ RIW_DATA = load('quran-riwayat.json')['riwayat']
 HAFS = load('hafs.json')
 TAJWEED_QURAN = load('quran-tajweed.json')
 AYAH_TEXT = {(s, a): t for s, a, _p, t in HAFS['uthmani']}
-
-TOTAL_PAGES = 604
 
 HAFS_EDITIONS = [
     ('quran-uthmani', 'حفص عن عاصم - الرسم العثماني'),
@@ -90,29 +118,32 @@ OTHER_RIWAYAT = [
 ]
 RIWAYA_NAMES = dict(HAFS_EDITIONS + OTHER_RIWAYAT)
 
-# قراء حفص (everyayah: ملف لكل آية) - نفس مصادر تطبيق الأندرويد
+# قراء حفص المتاحون آيةً بآية من CDN شبكة Islamic Network/AlQuran Cloud.
+# الحقل الثالث هو معدل البت المنشور فعلياً لذلك الإصدار؛ القائمة تضم 17 صوتاً
+# مختلفاً (أكثر من القائمة الأصلية ذات 16 صوتاً)، من دون تكرار نسخ -2.
 HAFS_RECITERS = [
-    ('ar.alafasy', 'مشاري العفاسي', 'Alafasy_128kbps'),
-    ('ar.abdurrahmaansudais', 'عبدالرحمن السديس', 'Abdurrahmaan_As-Sudais_192kbps'),
-    ('ar.mahermuaiqly', 'ماهر المعيقلي', 'MaherAlMuaiqly128kbps'),
-    ('ar.husary', 'محمود خليل الحصري', 'Husary_128kbps'),
-    ('ar.husarymujawwad', 'الحصري (المجوّد)', 'Husary_128kbps_Mujawwad'),
-    ('ar.hudhaify', 'علي الحذيفي', 'Hudhaify_128kbps'),
-    ('ar.shaatree', 'أبو بكر الشاطري', 'Abu_Bakr_Ash-Shaatree_128kbps'),
-    ('ar.abdulsamad', 'عبدالباسط عبدالصمد', 'Abdul_Basit_Murattal_192kbps'),
-    ('ar.saoodshuraym', 'سعود الشريم', 'Saood_ash-Shuraym_128kbps'),
-    ('ar.muhammadayyoub', 'محمد أيوب', 'Muhammad_Ayyoub_128kbps'),
-    ('ar.muhammadjibreel', 'محمد جبريل', 'Muhammad_Jibreel_128kbps'),
-    ('ar.abdullahbasfar', 'عبدالله بصفر', 'Abdullah_Basfar_192kbps'),
-    ('ar.ahmedajamy', 'أحمد العجمي', 'Ahmed_ibn_Ali_al-Ajamy_128kbps_ketaballah.net'),
-    ('ar.hanirifai', 'هاني الرفاعي', 'Hani_Rifai_192kbps'),
-    ('ar.ibrahimakhbar', 'إبراهيم الأخضر', 'Ibrahim_Akhdar_32kbps'),
-    ('ar.aymanswoaid', 'أيمن سويد', 'Ayman_Sowaid_64kbps'),
+    ('ar.alafasy', 'مشاري العفاسي', 128),
+    ('ar.abdurrahmaansudais', 'عبدالرحمن السديس', 192),
+    ('ar.mahermuaiqly', 'ماهر المعيقلي', 128),
+    ('ar.husary', 'محمود خليل الحصري', 128),
+    ('ar.husarymujawwad', 'الحصري (المجوّد)', 128),
+    ('ar.hudhaify', 'علي الحذيفي', 128),
+    ('ar.shaatree', 'أبو بكر الشاطري', 128),
+    ('ar.abdulsamad', 'عبدالباسط عبدالصمد', 64),
+    ('ar.saoodshuraym', 'سعود الشريم', 64),
+    ('ar.muhammadayyoub', 'محمد أيوب', 128),
+    ('ar.muhammadjibreel', 'محمد جبريل', 128),
+    ('ar.abdullahbasfar', 'عبدالله بصفر', 64),
+    ('ar.ahmedajamy', 'أحمد العجمي', 128),
+    ('ar.hanirifai', 'هاني الرفاعي', 192),
+    ('ar.ibrahimakhbar', 'إبراهيم الأخضر', 32),
+    ('ar.aymanswoaid', 'أيمن سويد', 64),
+    ('ar.parhizgar', 'شهريار پرهيزكار', 48),
 ]
 # قراء الروايات الثلاث: ayah = ملف لكل آية، surah = ملف لكل سورة (mp3quran)
 RIW_RECITERS = {
     'warsh': [
-        ('warsh_abdulbasit', 'عبدالباسط عبدالصمد', 'ayah', 'https://everyayah.com/data/warsh/warsh_Abdul_Basit_128kbps/'),
+        ('warsh_abdulbasit', 'عبدالباسط عبدالصمد', 'surah', 'https://cdn.mp3quran.net/audio/abdulbasit-abdulsamad/r2/'),
         ('warsh_husary', 'محمود خليل الحصري', 'surah', 'https://cdn.mp3quran.net/audio/mahmoud-husary/r3/'),
     ],
     'qalun': [
@@ -123,12 +154,16 @@ RIW_RECITERS = {
         ('duri_husary', 'محمود خليل الحصري', 'surah', 'https://cdn.mp3quran.net/audio/mahmoud-husary/r4/'),
     ],
 }
-EVERY_FOLDER = {rid: folder for rid, _n, folder in HAFS_RECITERS}
+AUDIO_BITRATE = {rid: bitrate for rid, _name, bitrate in HAFS_RECITERS}
+AYAH_OFFSETS = {}
+_offset = 0
+for _surah in SURAHS:
+    AYAH_OFFSETS[int(_surah['number'])] = _offset
+    _offset += int(_surah['numberOfAyahs'])
 
 TAFSIR_EDITIONS = [
     ('ar.muyassar', 'التفسير الميسر (مجمع الملك فهد)'),
     ('ar.jalalayn', 'تفسير الجلالين'),
-    ('ar.waseet', 'التفسير الوسيط'),
     ('ar.baghawi', 'تفسير البغوي'),
     ('ar.qurtubi', 'تفسير القرطبي'),
     ('ar.miqbas', 'تنوير المقباس'),
@@ -139,7 +174,6 @@ TRANSLATION_EDITIONS = [
     ('en.sahih', 'English — Sahih International'),
     ('fr.hamidullah', 'Français — Hamidullah'),
     ('ur.jalandhry', 'اردو — جالندھری'),
-    ('id.indonesian', 'Bahasa Indonesia'),
     ('tr.diyanet', 'Türkçe — Diyanet'),
 ]
 
@@ -252,19 +286,27 @@ def tajweed_html(text):
     return ''.join(out)
 
 
-def display_ayah_text(surah, ayah, text):
-    """يفصل البسملة المدمجة في بيانات حفص عن أول آية لبقية السور.
+def display_ayah_source(surah, ayah, text, is_hafs):
+    """يرجع مصدر الآية المعروض، ويفصل بسملة حفص المدمجة دون لمس البيانات الأصلية.
 
-    الفاتحة استثناء علمي: يبقى ترقيم المصدر المختار كما هو ولا نغيّر أرقام الآيات
-    أو ربط التلاوة والتفسير. في ورش/قالون/الدوري تأتي «الحمد لله» آية 1 أصلًا.
+    الفصل خاص بطبعات حفص فقط. الفاتحة استثناء علمي: تبقى البسملة آية 1 كما
+    يرقّمها المصدر، ولا تتغير أرقام الآيات أو روابط التلاوة والتفسير. تقسيم الكلمات
+    يحافظ كذلك على ترميز التجويد إن أضاف المصدر البسملة إليه مستقبلًا.
     """
-    clean = plain_tajweed_text(text).lstrip('\ufeff').strip()
-    if ayah == 1 and surah not in (1, 9):
-        for prefix in (BASMALA_HAFS, BASMALA_SIMPLE):
-            if clean.startswith(prefix):
-                clean = clean[len(prefix):].strip()
-                break
-    return clean
+    source = str(text).lstrip('\ufeff').strip()
+    if not is_hafs or ayah != 1 or surah in (1, 9):
+        return source
+    clean = plain_tajweed_text(source)
+    for prefix in (BASMALA_HAFS, BASMALA_SIMPLE):
+        if clean.startswith(prefix):
+            words = source.split(maxsplit=4)
+            return words[4].strip() if len(words) == 5 else ''
+    return source
+
+
+def display_ayah_text(surah, ayah, text, is_hafs):
+    """النص المرئي النظيف؛ يجب تحديد حفص صراحةً حتى لا تتأثر الروايات الأخرى."""
+    return plain_tajweed_text(display_ayah_source(surah, ayah, text, is_hafs))
 
 
 THEMES = {
@@ -339,7 +381,7 @@ ICON_SVG = {
     'tafsir': '<path d="M4 4h12a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2z"/><path d="M8 9h6M8 13h6"/>',
     'search': '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
     'words': '<path d="M3 6h9M7.5 4v2M5 6c.8 3 2.5 5.5 5 7M10 6c-.8 3-2.5 5.5-5 7M13 20l4-10 4 10M14.5 16.5h5"/>',
-    'tajweed': '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+    'tajweed': '<path d="M12 3a9 9 0 1 0 0 18h1.5a2.5 2.5 0 0 0 0-5H12a2 2 0 0 1 0-4h3.5A5.5 5.5 0 0 0 21 6.5C19.2 4.3 15.9 3 12 3z"/><circle cx="7" cy="10" r="1" fill="{c}"/><circle cx="9" cy="6.5" r="1" fill="{c}"/><circle cx="14" cy="6.5" r="1" fill="{c}"/>',
     'adhkar': '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="3.5" r="1.4"/><circle cx="12" cy="20.5" r="1.4"/><circle cx="3.5" cy="12" r="1.4"/><circle cx="20.5" cy="12" r="1.4"/>',
     'memo': '<path d="M4 20l4-1L19 8l-3-3L5 16z"/>',
     'wird': '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
@@ -367,8 +409,12 @@ MEMO_LEVELS = [0, 25, 50, 75, 100]  # نسبة الكلمات المخفية
 
 
 def ayah_audio_url(rid, s, a):
-    folder = EVERY_FOLDER.get(rid)
-    return f'https://everyayah.com/data/{folder}/{s:03d}{a:03d}.mp3' if folder else None
+    bitrate = AUDIO_BITRATE.get(rid)
+    offset = AYAH_OFFSETS.get(int(s))
+    if bitrate is None or offset is None:
+        return None
+    number = offset + int(a)
+    return f'https://cdn.islamic.network/quran/audio/{bitrate}/{rid}/{number}.mp3'
 
 
 def audio_file_name(url):
@@ -608,6 +654,10 @@ def fade_in(widget):
 UPDATE_MANIFEST = (
     'https://raw.githubusercontent.com/mosalah30688-gif/quran/main/update/windows/stable.json'
 )
+PATCH_MANIFEST = (
+    'https://raw.githubusercontent.com/mosalah30688-gif/quran/main/update/windows/patch-stable.json'
+)
+RUNTIME_API = 1
 
 
 def is_newer_version(candidate, current=APP_VERSION):
@@ -627,7 +677,13 @@ class Main(QMainWindow):
         self.theme_name = self.settings.value('theme', 'light', type=str)
         if self.theme_name not in THEMES:
             self.theme_name = 'light'
-        self.font_pt = self.settings.value('font_pt', 25, type=int)
+        # ترحيل مرة واحدة من الحجم القديم الكبير إلى كثافة عرض حفص القريبة من الشاملة.
+        shamela_marker = 'migration/hafs-shamela-layout-v1'
+        if not self.settings.value(shamela_marker, False, type=bool):
+            if self.settings.value('font_pt', 25, type=int) == 25:
+                self.settings.setValue('font_pt', 18)
+            self.settings.setValue(shamela_marker, True)
+        self.font_pt = self.settings.value('font_pt', 18, type=int)
         self.mushaf_font = self.settings.value('mushaf_font', 'Amiri Quran', type=str)
         if self.mushaf_font not in {family for family, _label in MUSHAF_FONTS}:
             self.mushaf_font = 'Amiri Quran'
@@ -643,15 +699,27 @@ class Main(QMainWindow):
         self.riwaya_id = riwaya
         self.book = Book(riwaya)
         self.page = min(max(self.settings.value('page', 1, type=int), 1), TOTAL_PAGES)
-        self.last_counted = None
+        khatma_state(self.settings, self.page)  # ترحيل موضع الورد القديم من دون فرض هدف صفحات
+        self.reading_pending_page = self.page
+        self.reading_timer = QTimer(self)
+        self.reading_timer.setSingleShot(True)
+        self.reading_timer.setInterval(10_000)
+        self.reading_timer.timeout.connect(self.commit_reading_page)
+        self.reminder_timer = QTimer(self)
+        self.reminder_timer.setInterval(60_000)
+        self.reminder_timer.timeout.connect(self.update_khatma_reminder)
 
         self.nam = QNetworkAccessManager(self)
         self.tafsir_cache = {}
         self.tafsir_key = None
+        valid_tafsirs = {edition for edition, _name in TAFSIR_EDITIONS}
+        if self.settings.value('tafsir', 'ar.muyassar', type=str) not in valid_tafsirs:
+            self.settings.setValue('tafsir', 'ar.muyassar')
         valid_translations = {edition for edition, _name in TRANSLATION_EDITIONS}
         self.translation_id = self.settings.value('translation', '', type=str)
         if self.translation_id not in valid_translations:
             self.translation_id = ''
+            self.settings.setValue('translation', '')
         self.translation_cache = {}
         self.translation_pending = set()
         self.translation_attempted = set()
@@ -675,7 +743,7 @@ class Main(QMainWindow):
 
         avail = QGuiApplication.primaryScreen().availableGeometry()
         self.setMinimumSize(min(780, max(640, avail.width() - 40)), min(540, max(480, avail.height() - 80)))
-        self.resize(min(1440, int(avail.width() * 0.94)), min(920, int(avail.height() * 0.92)))
+        self.resize(min(1880, int(avail.width() * 0.96)), min(920, int(avail.height() * 0.92)))
         self.move(avail.center() - self.rect().center())
         self.build_ui()
         self.apply_theme()
@@ -684,12 +752,15 @@ class Main(QMainWindow):
             self.restoreGeometry(saved_geometry)
         self.show_view('reader')
         self.render_page()
+        self.schedule_reading_record()
+        self.reminder_timer.start()
+        QTimer.singleShot(1200, self.initialize_reminders)
 
         QShortcut(QKeySequence('PgDown'), self, activated=lambda: self.go_page(self.page + 1))
         QShortcut(QKeySequence('PgUp'), self, activated=lambda: self.go_page(self.page - 1))
         QShortcut(QKeySequence('Ctrl+P'), self, activated=self.toggle_play)
         QShortcut(QKeySequence('Ctrl+F'), self, activated=lambda: self.show_view('search'))
-        QShortcut(QKeySequence('Ctrl+0'), self, activated=lambda: self.set_font(25))
+        QShortcut(QKeySequence('Ctrl+0'), self, activated=lambda: self.set_font(18))
         QShortcut(QKeySequence('Ctrl+='), self, activated=lambda: self.set_font(self.font_pt + 2))
         QShortcut(QKeySequence('Ctrl+-'), self, activated=lambda: self.set_font(self.font_pt - 2))
         QShortcut(QKeySequence('Ctrl+Shift+C'), self, activated=self.copy_current_ayah)
@@ -736,7 +807,7 @@ class Main(QMainWindow):
             ('tajweed', 'tajweed', 'أحكام التجويد'),
             ('adhkar', 'adhkar', 'الأذكار'),
             ('memo', 'memo', 'وضع الحفظ'),
-            ('wird', 'wird', 'الورد اليومي'),
+            ('wird', 'wird', 'متابعة الختمة'),
             ('bookmarks', 'bookmarks', 'المحفوظات'),
             ('stats', 'stats', 'الإحصائيات'),
         ]
@@ -764,9 +835,23 @@ class Main(QMainWindow):
         ub.addWidget(self.update_banner_label)
         ub.addWidget(btn_update)
         self.update_banner.hide()
+        self.khatma_banner = QFrame()
+        self.khatma_banner.setObjectName('card')
+        kb = QVBoxLayout(self.khatma_banner)
+        kb.setContentsMargins(12, 10, 12, 10)
+        self.khatma_banner_label = QLabel()
+        self.khatma_banner_label.setWordWrap(True)
+        btn_continue = QPushButton('متابعة الختمة')
+        btn_continue.setObjectName('primary')
+        btn_continue.clicked.connect(self.start_wird)
+        kb.addWidget(self.khatma_banner_label)
+        kb.addWidget(btn_continue)
+        self.khatma_banner.hide()
         wrap_banner = QWidget()
         wl = QVBoxLayout(wrap_banner)
         wl.setContentsMargins(12, 0, 12, 0)
+        wl.setSpacing(8)
+        wl.addWidget(self.khatma_banner)
         wl.addWidget(self.update_banner)
         sl.addWidget(wrap_banner)
         sl.addStretch(1)
@@ -810,10 +895,15 @@ class Main(QMainWindow):
         self._apply_responsive_layout()
 
     def _apply_responsive_layout(self):
-        """يضغط التنقل والهوامش تلقائيًا دون إخفاء وظائف التطبيق."""
+        """يوسّع قارئ حفص تلقائيًا، ويظل كل تنقل متاحًا بالأيقونات والتلميحات."""
         if not hasattr(self, 'sidebar'):
             return
-        compact = self.width() < 1120
+        reader_wide = (
+            hasattr(self, 'stack')
+            and self.stack.currentWidget() is self.views.get('reader')
+            and self.riwaya_id.startswith('quran-')
+        )
+        compact = self.width() < 1120 or reader_wide
         self.sidebar.setFixedWidth(76 if compact else 228)
         self.brand_label.setText('سراج' if compact else APP_NAME_AR)
         self.brand_label.setAlignment(Qt.AlignmentFlag.AlignCenter if compact else Qt.AlignmentFlag.AlignRight)
@@ -821,7 +911,7 @@ class Main(QMainWindow):
         for key, button in self.nav_buttons.items():
             button.setText('' if compact else self.nav_labels[key])
             button.setMinimumHeight(44 if compact else 40)
-        margin = 12 if self.width() < 920 else 24
+        margin = 12 if self.width() < 920 or reader_wide else 24
         self.content_layout.setContentsMargins(margin, 14, margin, 12)
 
     def resizeEvent(self, event):  # noqa: N802
@@ -834,6 +924,7 @@ class Main(QMainWindow):
         fade_in(self.views[name])
         if name == 'reader':
             self.sync_index()
+            self.schedule_reading_record()
         elif name == 'tafsir':
             self.load_tafsir()
         elif name == 'meanings':
@@ -852,6 +943,7 @@ class Main(QMainWindow):
             self.render_stats()
         elif name == 'search':
             self.search_input.setFocus()
+        self._apply_responsive_layout()
 
     # ---------- المصحف ----------
     def build_reader(self):
@@ -1025,7 +1117,7 @@ class Main(QMainWindow):
         if ref is None:
             return
         s, a = ref
-        text = display_ayah_text(s, a, self.book.texts.get(ref, ''))
+        text = display_ayah_text(s, a, self.book.texts.get(ref, ''), self.riwaya_id.startswith('quran-'))
         if not text and s == 1 and a == 1:
             text = self.book.texts.get(ref, '').lstrip('\ufeff').strip()
         citation = f'﴿{text}﴾\n[{SURAHS[s - 1]["name"]} — الآية {ar(a)}]'
@@ -1185,6 +1277,7 @@ class Main(QMainWindow):
         saved = self.settings.value(f'reciter:{self.riwaya_id}', '', type=str)
         idx = self.reciter_combo.findData(saved)
         self.reciter_combo.setCurrentIndex(idx if idx >= 0 else 0)
+        self.reciter_combo.setToolTip(f'{ar(self.reciter_combo.count())} قارئاً متاحاً للرواية المختارة')
         self.reciter_combo.blockSignals(False)
 
     def reciter_options(self):
@@ -1209,24 +1302,37 @@ class Main(QMainWindow):
         if self.playing and not self._auto_turn:
             self.stop_play()
         self.sel_ayah = None
-        if self.last_counted != p:
-            self.last_counted = p
-            self.count_page_visit()
         self.render_page()
         self.sync_index()
+        self.schedule_reading_record()
 
     def render_page(self):
         page = self.page
         items = self.book.ayahs_on_page(page)
         t = THEMES[self.theme_name]
         fs = self.font_pt
+        is_hafs = self.riwaya_id.startswith('quran-')
+        # لون قريب من عرض الشاملة في الوضع الفاتح، مع بديل مقروء في الوضع الداكن.
+        shamela_color = '#8b3028' if self.theme_name == 'light' else '#e2aaa1'
+        flow_line_height = 125 if is_hafs else 150
+        reader_text = t['text']
+        if is_hafs:
+            paper = '#f5f0dc' if self.theme_name == 'light' else '#211f17'
+            reader_text = '#19140e' if self.theme_name == 'light' else '#f2ecdd'
+            self.browser.setStyleSheet(
+                f'background:{paper}; color:{reader_text}; border:none; border-radius:0; padding:0; '
+                f'selection-background-color:{t["brand"]}; selection-color:#ffffff;'
+            )
+        else:
+            self.browser.setStyleSheet('')
         out = []
         flow = []
 
         def flush():
             if flow:
                 out.append(
-                    '<p align="center" dir="rtl" style="margin:0; padding:0; line-height:125%;">'
+                    f'<p align="center" dir="rtl" style="margin:0; padding:0; '
+                    f'line-height:{flow_line_height}%;">'
                     + ''.join(flow)
                     + '</p>'
                 )
@@ -1236,25 +1342,36 @@ class Main(QMainWindow):
         for surah, ayah, raw_text in items:
             if ayah == 1 and surah != last:
                 flush()
-                out.append(
-                    f'<p align="center" style="margin:4px 0 0 0; padding:0; font-size:{fs + 5}pt; '
-                    f'line-height:115%; font-weight:bold; color:{t["brand"]};">'
-                    f'{html.escape(SURAHS[surah - 1]["name"])}</p>'
-                )
+                if is_hafs:
+                    title = f'[{norm(SURAHS[surah - 1]["name"])}]'
+                    out.append(
+                        f'<p align="center" style="margin:5px 0 1px 0; padding:0; '
+                        f'font-size:{max(fs - 3, 14)}pt; line-height:115%; font-weight:bold; '
+                        f'color:{shamela_color};">{html.escape(title)}</p>'
+                    )
+                else:
+                    out.append(
+                        f'<p align="center" style="margin:4px 0 0 0; padding:0; font-size:{fs + 5}pt; '
+                        f'line-height:115%; font-weight:bold; color:{t["brand"]};">'
+                        f'{html.escape(SURAHS[surah - 1]["name"])}</p>'
+                    )
                 # الفاتحة في بيانات حفص تعدّ البسملة آية 1؛ لا نغيّر ترقيم المصدر.
-                hafs_fatiha = surah == 1 and self.riwaya_id.startswith('quran-')
+                hafs_fatiha = surah == 1 and is_hafs
                 if surah != 9 and not hafs_fatiha:
+                    bism_color = shamela_color if is_hafs else t['text']
+                    bism_size = fs if is_hafs else max(fs - 1, 14)
                     out.append(
                         f'<p align="center" dir="rtl" style="margin:0 0 2px 0; padding:0; '
-                        f'line-height:115%; font-size:{max(fs - 1, 14)}pt;">{BASMALA}</p>'
+                        f'line-height:115%; font-size:{bism_size}pt; color:{bism_color};">{BASMALA}</p>'
                     )
                 last = surah
 
-            text = display_ayah_text(surah, ayah, raw_text)
+            display_source = display_ayah_source(surah, ayah, raw_text, is_hafs)
+            text = plain_tajweed_text(display_source)
             if not text:
                 continue
             rendered_text = (
-                tajweed_html(raw_text.lstrip('\ufeff').strip())
+                tajweed_html(display_source)
                 if self.riwaya_id == 'quran-tajweed'
                 else html.escape(text)
             )
@@ -1270,11 +1387,14 @@ class Main(QMainWindow):
                 )
             else:
                 style = ''
+            marker = f'۝{ar(ayah)}' if is_hafs else f'﴿{ar(ayah)}﴾'
+            marker_color = shamela_color if is_hafs else t['brand']
+            marker_size = max(fs - 6, 11) if is_hafs else max(fs - 9, 10)
             flow.append(
-                f'<a href="ayah:{surah}:{ayah}" style="text-decoration:none; color:{t["text"]};">'
+                f'<a href="ayah:{surah}:{ayah}" style="text-decoration:none; color:{reader_text};">'
                 f'<span style="{style}">{rendered_text}</span>'
-                f"<span style=\"font-family:'Amiri'; font-size:{max(fs - 9, 10)}pt; "
-                f'color:{t["brand"]};"> ﴿{ar(ayah)}﴾</span></a>&nbsp;'
+                f"<span style=\"font-family:'Amiri Quran','Amiri'; font-size:{marker_size}pt; "
+                f'color:{marker_color};"> {marker}</span></a>&nbsp;'
             )
             if self.translation_id:
                 # عند اختيار ترجمة نجعل كل آية كتلة مستقلة ثم نعرض ترجمتها تحتها.
@@ -1288,12 +1408,18 @@ class Main(QMainWindow):
                     )
         flush()
         body = ''.join(out) or '<p align="center">لا توجد آيات في هذه الصفحة</p>'
+        if is_hafs:
+            body = (
+                f'<table width="100%" border="1" cellspacing="0" cellpadding="12" '
+                f'style="border:1px solid {shamela_color}; border-collapse:collapse;">'
+                f'<tr><td>{body}</td></tr></table>'
+            )
         bar = self.browser.verticalScrollBar()
         pos = bar.value()
         family = html.escape(self.mushaf_font, quote=True)
         self.browser.setHtml(
             f"<html><body dir=\"rtl\" style=\"font-family:'{family}'; font-size:{fs}pt; "
-            f'line-height:125%; margin:0; padding:0; color:{t["text"]};">{body}</body></html>'
+            f'line-height:{flow_line_height}%; margin:0; padding:0; color:{reader_text};">{body}</body></html>'
         )
         bar.setValue(pos)
         first = items[0] if items else (1, 1, '')
@@ -1470,6 +1596,7 @@ class Main(QMainWindow):
                 self.engine.pause()
                 self.btn_play.setText('▶  متابعة')
                 self.set_play_status('متوقفة مؤقتاً')
+            self.update_memo_audio_controls()
             return
         s = self.play_surah.currentData()
         a = self.play_from.currentData()
@@ -1564,6 +1691,7 @@ class Main(QMainWindow):
         self.engine.stop()
         self.btn_play.setText('▶  تشغيل')
         self.set_play_status(message)
+        self.update_memo_audio_controls()
         self.render_page()
 
     def on_audio_tick(self):
@@ -1582,6 +1710,7 @@ class Main(QMainWindow):
         self.book = Book(rid)
         self.page = min(self.page, TOTAL_PAGES)
         self.populate_reciters()
+        self._apply_responsive_layout()
         self.render_page()
         self.sync_index()
 
@@ -1866,13 +1995,22 @@ class Main(QMainWindow):
             c = card()
             row = QHBoxLayout(c)
             row.setContentsMargins(18, 14, 18, 14)
+            text_box = QVBoxLayout()
             text = QLabel(it['text'])
             text.setWordWrap(True)
             text.setStyleSheet("font-family: 'Amiri Quran'; font-size: 19px; line-height: 170%;")
+            text_box.addWidget(text)
+            references = [ev.get('reference', '') for ev in it.get('evidence', []) if ev.get('reference')]
+            if references:
+                source = QLabel('المصدر: ' + '؛ '.join(references))
+                source.setWordWrap(True)
+                source.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+                source.setStyleSheet('font-size: 11px; color: #6f756f;')
+                text_box.addWidget(source)
             btn = QPushButton(f'{ar(n)} / {ar(it["count"])}')
             btn.setMinimumWidth(110)
             btn.clicked.connect(lambda _c=False, k=key, mx=it['count'], b=btn: self.bump_adhkar(k, mx, b))
-            row.addWidget(text, 1)
+            row.addLayout(text_box, 1)
             row.addWidget(btn)
             self.adh_items.addWidget(c)
         self.adh_items.addStretch(1)
@@ -1922,11 +2060,16 @@ class Main(QMainWindow):
         acts = QHBoxLayout()
         btn_hide = QPushButton('إخفاء/إظهار النص')
         btn_hide.clicked.connect(self.on_memo_hide)
-        btn_play = QPushButton('تشغيل مع التكرار')
-        btn_play.clicked.connect(self.memo_play)
+        self.btn_memo_play = QPushButton('▶ تشغيل مع التكرار')
+        self.btn_memo_play.setObjectName('primary')
+        self.btn_memo_play.clicked.connect(self.memo_play)
+        self.btn_memo_pause = QPushButton('⏸ إيقاف مؤقت')
+        self.btn_memo_pause.clicked.connect(self.memo_pause_resume)
+        self.btn_memo_stop = QPushButton('■ إيقاف كامل')
+        self.btn_memo_stop.clicked.connect(self.memo_stop)
         btn_save = QPushButton('حفظت هذا المقطع')
         btn_save.clicked.connect(self.memo_save_range)
-        for b in (btn_hide, btn_play, btn_save):
+        for b in (btn_hide, self.btn_memo_play, self.btn_memo_pause, self.btn_memo_stop, btn_save):
             acts.addWidget(b)
         acts.addStretch(1)
         bl.addLayout(acts)
@@ -1955,6 +2098,7 @@ class Main(QMainWindow):
         lay.addWidget(self.memo_browser, 1)
         self.on_memo_surah(0)
         self.render_memo_review()
+        self.update_memo_audio_controls()
         return w
 
     def on_memo_surah(self, _idx):
@@ -2117,8 +2261,39 @@ class Main(QMainWindow):
         self.queue_list = True
         self.playing = True
         self.btn_play.setText('⏸  إيقاف مؤقت')
-        self.memo_status.setText('')
+        self.memo_status.setText('جارٍ تشغيل مقطع الحفظ')
+        self.update_memo_audio_controls()
         self.play_index(0)
+
+    def memo_pause_resume(self):
+        if not self.playing or not self.queue_list:
+            return
+        if self.engine.paused:
+            self.engine.resume()
+            self.btn_play.setText('⏸  إيقاف مؤقت')
+            self.memo_status.setText('تم استئناف التلاوة')
+        else:
+            self.engine.pause()
+            self.btn_play.setText('▶  متابعة')
+            self.memo_status.setText('التلاوة متوقفة مؤقتاً')
+        self.update_memo_audio_controls()
+
+    def memo_stop(self):
+        if not self.playing or not self.queue_list:
+            return
+        self.stop_play('')
+        self.memo_status.setText('تم إيقاف تلاوة الحفظ بالكامل')
+        self.update_memo_audio_controls()
+
+    def update_memo_audio_controls(self):
+        if not hasattr(self, 'btn_memo_pause'):
+            return
+        active = bool(self.playing and self.queue_list)
+        self.btn_memo_play.setEnabled(not active)
+        self.btn_memo_pause.setEnabled(active)
+        self.btn_memo_stop.setEnabled(active)
+        paused = active and self.engine.paused
+        self.btn_memo_pause.setText('▶ استئناف' if paused else '⏸ إيقاف مؤقت')
 
     # ---------- مشاركة الآية كصورة ----------
     def share_selected_ayah(self):
@@ -2392,82 +2567,119 @@ class Main(QMainWindow):
         complete = sum(1 for s, n in per.items() if n >= SURAHS[s - 1]['numberOfAyahs'])
         self.dl_stored.setText(f'داخل التطبيق: {ar(total)} آية، {ar(complete)} سورة مكتملة لهذا القارئ')
 
-    # ---------- الورد اليومي ----------
+    # ---------- متابعة الختمة التلقائية ----------
     def build_wird(self):
         w = QWidget()
         lay = QVBoxLayout(w)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(14)
-        lay.addWidget(heading('الورد اليومي', 'حدد عدد الصفحات كل يوم، والورد بيكمل من حيث وقفت'))
-        c = card()
-        cl = QFormLayout(c)
-        cl.setContentsMargins(20, 18, 20, 18)
-        self.wird_target = QSpinBox()
-        self.wird_target.setRange(1, 60)
-        self.wird_target.setValue(self.settings.value('wird_target', 5, type=int))
-        self.wird_target.valueChanged.connect(self.on_wird_target)
-        cl.addRow('عدد الصفحات في اليوم', self.wird_target)
-        lay.addWidget(c)
-        ci = card()
-        il = QVBoxLayout(ci)
-        il.setContentsMargins(20, 18, 20, 18)
+        lay.addWidget(heading('متابعة الختمة', 'يسجل سراج القراءة تلقائياً ولا يفرض عدداً يومياً'))
+
+        progress_card = card()
+        pl = QVBoxLayout(progress_card)
+        pl.setContentsMargins(20, 18, 20, 18)
         self.wird_text = QLabel()
         self.wird_text.setWordWrap(True)
         self.wird_text.setStyleSheet('font-size: 18px; font-weight: 600;')
-        il.addWidget(self.wird_text)
-        lay.addWidget(ci)
+        self.khatma_progress_bar = QProgressBar()
+        self.khatma_progress_bar.setRange(0, TOTAL_PAGES)
+        self.khatma_progress_bar.setTextVisible(True)
+        self.khatma_habits = QLabel()
+        self.khatma_habits.setWordWrap(True)
+        self.khatma_habits.setObjectName('muted')
+        pl.addWidget(self.wird_text)
+        pl.addWidget(self.khatma_progress_bar)
+        pl.addWidget(self.khatma_habits)
+        lay.addWidget(progress_card)
+
         row = QHBoxLayout()
-        self.btn_wird_read = QPushButton('📖 ابدأ ورد اليوم')
+        self.btn_wird_read = QPushButton('📖 متابعة الختمة')
         self.btn_wird_read.setObjectName('primary')
         self.btn_wird_read.clicked.connect(self.start_wird)
-        self.btn_wird_done = QPushButton('✔ تم الورد')
-        self.btn_wird_done.clicked.connect(self.finish_wird)
-        self.btn_wird_reset = QPushButton('↺ ابدأ من أول القرآن')
+        self.khatma_page = QSpinBox()
+        self.khatma_page.setRange(1, TOTAL_PAGES)
+        self.khatma_page.setPrefix('صفحة المتابعة: ')
+        self.btn_khatma_set = QPushButton('تصحيح الموضع')
+        self.btn_khatma_set.clicked.connect(self.set_khatma_page)
+        self.btn_wird_reset = QPushButton('↺ بدء ختمة جديدة')
         self.btn_wird_reset.clicked.connect(self.reset_wird)
         row.addWidget(self.btn_wird_read)
-        row.addWidget(self.btn_wird_done)
+        row.addWidget(self.khatma_page)
+        row.addWidget(self.btn_khatma_set)
         row.addWidget(self.btn_wird_reset)
         row.addStretch(1)
         lay.addLayout(row)
+
+        reminder_card = card()
+        rf = QFormLayout(reminder_card)
+        rf.setContentsMargins(20, 18, 20, 18)
+        enabled, when = reminder_config(self.settings)
+        self.reminder_enabled = QCheckBox('تنبيه داخل التطبيق وإشعار النظام')
+        self.reminder_enabled.setChecked(enabled)
+        self.reminder_time = QTimeEdit()
+        self.reminder_time.setDisplayFormat('HH:mm')
+        self.reminder_time.setTime(QTime.fromString(valid_time(when), 'HH:mm'))
+        self.reminder_status = QLabel(self.settings.value('reminder/system_status', '', type=str))
+        self.reminder_status.setObjectName('muted')
+        self.reminder_status.setWordWrap(True)
+        self.reminder_enabled.toggled.connect(self.on_reminder_settings)
+        self.reminder_time.timeChanged.connect(lambda _value: self.on_reminder_settings())
+        rf.addRow('التذكير', self.reminder_enabled)
+        rf.addRow('وقت التذكير اليومي', self.reminder_time)
+        rf.addRow('', self.reminder_status)
+        lay.addWidget(reminder_card)
+
+        note = QLabel('تُسجّل الصفحة تلقائياً بعد بقائها معروضة ١٠ ثوانٍ. الانتقال إلى نتيجة بعيدة لا يتخطى صفحات الختمة غير المقروءة.')
+        note.setWordWrap(True)
+        note.setObjectName('muted')
+        lay.addWidget(note)
         lay.addStretch(1)
         return w
 
-    def wird_range(self):
-        start = self.settings.value('wird_next', 0, type=int) or self.page
-        start = min(max(start, 1), TOTAL_PAGES)
-        end = min(start + self.wird_target.value() - 1, TOTAL_PAGES)
-        return start, end
-
     def render_wird(self):
-        self.wird_target.blockSignals(True)
-        self.wird_target.setValue(self.settings.value('wird_target', 5, type=int))
-        self.wird_target.blockSignals(False)
-        start, end = self.wird_range()
-        done_today = self.settings.value('wird_day', '', type=str) == datetime.date.today().isoformat()
-        self.btn_wird_done.setEnabled(not done_today)
-        head = 'أنجزت ورد اليوم ✔' if done_today else 'ورد اليوم'
-        self.wird_text.setText(f'{head}: من صفحة {ar(start)} إلى صفحة {ar(end)} ({ar(end - start + 1)} صفحات)')
-
-    def on_wird_target(self, value):
-        self.settings.setValue('wird_target', value)
-        self.render_wird()
+        info = khatma_progress(self.settings, self.page)
+        pointer = info['pointer']
+        self.khatma_page.blockSignals(True)
+        self.khatma_page.setValue(pointer)
+        self.khatma_page.blockSignals(False)
+        self.khatma_progress_bar.setValue(info['read'])
+        self.khatma_progress_bar.setFormat(f'{ar(info["read"])} من {ar(TOTAL_PAGES)} — {ar(f"{info["percent"]:.1f}")}%')
+        self.wird_text.setText(
+            f'صفحة المتابعة التالية: {ar(pointer)} · المتبقي {ar(info["left"])} صفحة · '
+            f'الختمات المكتملة: {ar(len(info["finished"]))}'
+        )
+        today = reading_count(self.settings)
+        average = habit_average(self.settings)
+        streak = reading_streak(self.settings)
+        finish = estimated_finish(self.settings, self.page)
+        estimate = finish.strftime('%Y-%m-%d').translate(ARABIC_DIGITS) if finish else 'يُحسب بعد بدء القراءة'
+        avg_text = f'{average:.1f}'.translate(ARABIC_DIGITS) if average else '—'
+        self.khatma_habits.setText(
+            f'المسجّل اليوم: {ar(today)} صفحة · متوسط عادتك في أيام القراءة: {avg_text} صفحة · '
+            f'السلسلة: {ar(streak)} يوم · الإتمام المتوقع حسب عادتك: {estimate}'
+        )
 
     def start_wird(self):
-        start, _end = self.wird_range()
-        self.go_page(start)
+        pointer = khatma_progress(self.settings, self.page)['pointer']
+        self.go_page(pointer)
         self.show_view('reader')
+        self.schedule_reading_record()
+        if hasattr(self, 'khatma_banner'):
+            self.khatma_banner.hide()
 
-    def finish_wird(self):
-        _start, end = self.wird_range()
-        nxt = end + 1 if end < TOTAL_PAGES else 1
-        self.settings.setValue('wird_next', nxt)
-        self.settings.setValue('wird_day', datetime.date.today().isoformat())
-        self.settings.setValue('wird_count', self.settings.value('wird_count', 0, type=int) + 1)
+    def set_khatma_page(self):
+        set_khatma_pointer(self.settings, self.khatma_page.value())
         self.render_wird()
+        self.statusBar().showMessage('تم تصحيح موضع متابعة الختمة', 4000)
 
     def reset_wird(self):
-        self.settings.setValue('wird_next', 1)
-        self.settings.setValue('wird_day', '')
+        answer = QMessageBox.question(
+            self, 'بدء ختمة جديدة',
+            'هل تريد بدء ختمة جديدة من الصفحة الأولى؟ لن تُحذف إحصاءات القراءة السابقة.'
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        start_new_khatma(self.settings)
         self.render_wird()
 
     # ---------- المحفوظات ----------
@@ -2550,29 +2762,66 @@ class Main(QMainWindow):
         self.render_bookmarks()
         self.update_mark_button()
 
-    # ---------- الإحصائيات ----------
+    # ---------- تتبّع القراءة والإحصائيات ----------
     def days(self):
-        raw = self.settings.value('days', '{}', type=str)
-        try:
-            return json.loads(raw)
-        except ValueError:
-            return {}
+        """عدادات متوافقة مع البيانات القديمة، مع منع تكرار الصفحة في اليوم."""
+        return reading_counts(self.settings)
+
+    def schedule_reading_record(self):
+        if not hasattr(self, 'reading_timer'):
+            return
+        self.reading_pending_page = self.page
+        self.reading_timer.start()
 
     def count_page_visit(self):
-        days = self.days()
-        key = datetime.date.today().isoformat()
-        days[key] = days.get(key, 0) + 1
-        self.settings.setValue('days', json.dumps(days))
+        """اسم متوافق مع الاختبارات والإصدارات السابقة؛ التسجيل نفسه تلقائي."""
+        return self.commit_reading_page()
 
-    def streak(self, days):
-        day = datetime.date.today()
-        if days.get(day.isoformat(), 0) == 0:
-            day -= datetime.timedelta(days=1)
-        count = 0
-        while days.get(day.isoformat(), 0) > 0:
-            count += 1
-            day -= datetime.timedelta(days=1)
-        return count
+    def commit_reading_page(self):
+        page = int(getattr(self, 'reading_pending_page', self.page))
+        if page != self.page or self.stack.currentWidget() is not self.views.get('reader'):
+            return None
+        result = record_reading(self.settings, page)
+        if result.get('completed'):
+            self.statusBar().showMessage('تمت الختمة، بارك الله فيك. بدأت متابعة ختمة جديدة.', 9000)
+        if hasattr(self, 'khatma_banner'):
+            self.khatma_banner.hide()
+        if hasattr(self, 'wird_text'):
+            self.render_wird()
+        return result
+
+    def streak(self, _days=None):
+        return reading_streak(self.settings)
+
+    def initialize_reminders(self):
+        enabled, when = reminder_config(self.settings)
+        ok, message = configure_system_reminder(enabled, when)
+        self.settings.setValue('reminder/system_status', message)
+        self.settings.sync()
+        if not ok:
+            self.statusBar().showMessage('تعذّرت جدولة إشعار النظام؛ سيبقى التنبيه داخل التطبيق.', 7000)
+        self.update_khatma_reminder()
+
+    def update_khatma_reminder(self):
+        if not hasattr(self, 'khatma_banner'):
+            return
+        enabled, when = reminder_config(self.settings)
+        now = datetime.datetime.now()
+        due = now.strftime('%H:%M') >= when
+        if enabled and due and reading_count(self.settings) == 0:
+            pointer = khatma_progress(self.settings, self.page)['pointer']
+            self.khatma_banner_label.setText(f'حان وقت متابعة ختمتك من صفحة {ar(pointer)}')
+            self.khatma_banner.show()
+        else:
+            self.khatma_banner.hide()
+
+    def on_reminder_settings(self):
+        enabled = self.reminder_enabled.isChecked()
+        when = self.reminder_time.time().toString('HH:mm')
+        save_reminder_config(self.settings, enabled, when)
+        ok, message = configure_system_reminder(enabled, when)
+        self.reminder_status.setText(message if ok else 'تعذّرت جدولة النظام؛ التنبيه داخل التطبيق ما زال متاحاً')
+        self.update_khatma_reminder()
 
     def build_stats(self):
         w = QWidget()
@@ -2585,7 +2834,7 @@ class Main(QMainWindow):
         self.st_cards = {}
         for key, caption in (('today', 'صفحات اليوم'), ('total', 'إجمالي الصفحات'),
                              ('streak', 'أيام متتالية'), ('adhkar', 'أذكار مكتملة اليوم'),
-                             ('bookmarks', 'صفحات محفوظة'), ('wird', 'أوراد مكتملة')):
+                             ('bookmarks', 'صفحات محفوظة'), ('wird', 'ختمات مكتملة')):
             c = card()
             cl = QVBoxLayout(c)
             cl.setContentsMargins(18, 18, 18, 18)
@@ -2616,7 +2865,7 @@ class Main(QMainWindow):
         self.st_cards['streak'].setText(ar(self.streak(days)))
         self.st_cards['adhkar'].setText(ar(done))
         self.st_cards['bookmarks'].setText(ar(len(self.bookmarks())))
-        self.st_cards['wird'].setText(ar(self.settings.value('wird_count', 0, type=int)))
+        self.st_cards['wird'].setText(ar(len(khatma_progress(self.settings, self.page)['finished'])))
 
     # ---------- الإعدادات ----------
     def build_settings(self):
@@ -2700,12 +2949,16 @@ class Main(QMainWindow):
         self.render_page()
 
     def clear_user_data(self):
-        answer = QMessageBox.question(self, 'تأكيد', 'مسح الإحصائيات والمحفوظات والورد والأذكار؟')
+        answer = QMessageBox.question(self, 'تأكيد', 'مسح الإحصائيات والمحفوظات وتتبع الختمة والأذكار؟')
         if answer != QMessageBox.StandardButton.Yes:
             return
-        for key in ('days', 'bookmarks', 'adhkar', 'wird_count', 'wird_next', 'wird_day'):
+        clear_tracking(self.settings)
+        for key in ('bookmarks', 'adhkar'):
             self.settings.remove(key)
+        self.settings.sync()
         self.render_page()
+        if hasattr(self, 'wird_text'):
+            self.render_wird()
 
     def apply_theme(self):
         self.setStyleSheet(qss(THEMES[self.theme_name]))
@@ -2722,7 +2975,78 @@ class Main(QMainWindow):
             return
         self.update_busy = True
         if manual:
-            self.upd_status.setText('جارٍ التحقق من قناة Windows المستقرة…')
+            self.upd_status.setText('جارٍ التحقق من الترقيعات الداخلية الموقّعة…')
+        req = QNetworkRequest(QUrl(f'{PATCH_MANIFEST}?t={int(time.time())}'))
+        req.setAttribute(
+            QNetworkRequest.Attribute.CacheLoadControlAttribute,
+            QNetworkRequest.CacheLoadControl.AlwaysNetwork,
+        )
+        reply = self.nam.get(req)
+        reply.finished.connect(lambda: self._patch_update_checked(reply, manual))
+
+    def _patch_update_checked(self, reply, manual):
+        ok = reply.error() == QNetworkReply.NetworkError.NoError
+        data = bytes(reply.readAll()) if ok else b''
+        reply.deleteLater()
+        try:
+            info = json.loads(data.decode('utf-8')) if data else {}
+        except (ValueError, UnicodeError):
+            info = {}
+        available = info.get('available') is True
+        try:
+            runtime_api = int(info.get('runtime_api', -1))
+        except (TypeError, ValueError):
+            runtime_api = -1
+        signature_ok = bool(available and verify_update_manifest(info, UPDATE_PUBLIC_KEY))
+        valid = bool(
+            signature_ok
+            and info.get('schema') == 1
+            and info.get('kind') == 'siraj-patch-channel'
+            and info.get('product') == 'siraj-quran-windows'
+            and info.get('channel') == 'stable'
+            and runtime_api == RUNTIME_API
+            and is_newer_version(info.get('version'))
+        )
+        asset = (info.get('assets') or {}).get('patch') if valid else None
+        if isinstance(asset, dict):
+            url = str(asset.get('url', ''))
+            digest = str(asset.get('sha256', '')).lower()
+            try:
+                size = int(asset.get('size', 0) or 0)
+            except (TypeError, ValueError):
+                size = 0
+            valid = bool(
+                url.startswith('https://github.com/')
+                and url.split('?', 1)[0].lower().endswith('.sirajpatch')
+                and re.fullmatch(r'[0-9a-f]{64}', digest)
+                and 1000 < size <= 128 * 1024 * 1024
+            )
+        else:
+            valid = False
+
+        if valid:
+            self.update_busy = False
+            self.update_info = {
+                'kind': 'patch', 'version': info['version'], 'asset': asset,
+                'notes': info.get('release_notes', ''),
+            }
+            self.update_banner_label.setText(f'يتوفر ترقيع داخلي صغير لسراج {info["version"]}')
+            self.update_banner.show()
+            self.upd_status.setText(f'الترقيع {info["version"]} متاح — توقيعه صالح')
+            self.btn_check_update.setText('تنزيل الترقيع الداخلي')
+            return
+        if available and (not signature_ok or runtime_api != RUNTIME_API):
+            self.update_busy = False
+            self.update_info = None
+            if manual:
+                self.upd_status.setText('رُفضت قناة الترقيع: التوقيع أو توافق المحرك غير صحيح')
+            return
+        # لا يوجد ترقيع؛ افحص قناة الحزم الكاملة للتحديثات الكبيرة/تغيير المحرك.
+        self._request_full_update(manual)
+
+    def _request_full_update(self, manual):
+        if manual:
+            self.upd_status.setText('لا يوجد ترقيع أحدث؛ جارٍ فحص التحديثات الكبيرة…')
         req = QNetworkRequest(QUrl(f'{UPDATE_MANIFEST}?t={int(time.time())}'))
         req.setAttribute(
             QNetworkRequest.Attribute.CacheLoadControlAttribute,
@@ -2751,7 +3075,6 @@ class Main(QMainWindow):
             and info.get('available') is True
             and is_newer_version(info.get('version'))
         )
-        # Windows يُوزَّع كنسخة Portable فقط؛ لا ننزّل أو نشغّل أي مثبّت.
         asset = (info or {}).get('assets', {}).get('portable') if valid else None
         if not isinstance(asset, dict):
             valid = False
@@ -2766,11 +3089,14 @@ class Main(QMainWindow):
             )
 
         if valid:
-            self.update_info = {'version': info['version'], 'asset': asset, 'notes': info.get('release_notes', '')}
-            self.update_banner_label.setText(f'يتوفر تحديث سراج {info["version"]}')
+            self.update_info = {
+                'kind': 'full', 'version': info['version'], 'asset': asset,
+                'notes': info.get('release_notes', ''),
+            }
+            self.update_banner_label.setText(f'يتوفر تحديث كبير لسراج {info["version"]}')
             self.update_banner.show()
-            self.upd_status.setText(f'الإصدار {info["version"]} متاح — تم التحقق من بياناته')
-            self.btn_check_update.setText('تنزيل التحديث')
+            self.upd_status.setText(f'الإصدار {info["version"]} متاح — حزمة كاملة موقّعة')
+            self.btn_check_update.setText('تنزيل التحديث الكبير')
             return
 
         self.update_info = None
@@ -2779,7 +3105,7 @@ class Main(QMainWindow):
         if manual:
             if not ok:
                 self.upd_status.setText('تعذّر الاتصال بالمستودع؛ يمكنك المتابعة دون إنترنت')
-            elif not signature_ok:
+            elif info and info.get('available') is True and not signature_ok:
                 self.upd_status.setText('رُفضت قناة التحديث: التوقيع الرقمي غير صحيح')
             elif info and info.get('available') is True and not is_newer_version(info.get('version')):
                 self.upd_status.setText(f'أنت على أحدث نسخة ({APP_VERSION})')
@@ -2799,7 +3125,9 @@ class Main(QMainWindow):
         url = asset['url']
         raw_name = asset.get('file_name') or url.split('?', 1)[0].rsplit('/', 1)[-1]
         file_name = Path(raw_name).name
-        if not file_name.lower().endswith('.zip'):
+        kind = self.update_info.get('kind', 'full')
+        expected_suffix = '.sirajpatch' if kind == 'patch' else '.zip'
+        if not file_name.lower().endswith(expected_suffix):
             self.upd_status.setText('رفض ملف تحديث بصيغة غير معتمدة')
             return
         target_dir = cache_dir('updates')
@@ -2868,6 +3196,29 @@ class Main(QMainWindow):
 
     def _offer_install_update(self):
         if not self.upd_target or not self.upd_target.exists():
+            return
+        if self.update_info and self.update_info.get('kind') == 'patch':
+            try:
+                manifest = install_patch_archive(
+                    self.upd_target,
+                    product='siraj-quran-windows',
+                    runtime_api=RUNTIME_API,
+                    bundled_version=APP_VERSION,
+                    public_key_path=UPDATE_PUBLIC_KEY,
+                )
+            except (OSError, ValueError) as exc:
+                self.upd_status.setText('رُفض الترقيع الداخلي: توقيعه أو ملفاته غير صحيحة')
+                self.statusBar().showMessage(str(exc), 7000)
+                return
+            self.upd_target.unlink(missing_ok=True)
+            self.upd_status.setText(f'ثُبّت الترقيع {manifest["version"]} بأمان؛ سيعمل بعد إعادة التشغيل')
+            answer = QMessageBox.question(
+                self, 'الترقيع جاهز',
+                'اكتمل تثبيت الترقيع الصغير والتحقق من كل ملف. هل تريد إعادة تشغيل سراج الآن؟',
+            )
+            if answer == QMessageBox.StandardButton.Yes and getattr(sys, 'frozen', False):
+                subprocess.Popen([sys.executable], cwd=str(Path(sys.executable).parent), close_fds=True)
+                QApplication.quit()
             return
         helper = Path(sys.executable).resolve().parent / 'SirajPortableUpdater.exe'
         if helper.exists() and getattr(sys, 'frozen', False):
@@ -3009,6 +3360,26 @@ def configure_runtime_streams(log_path=None):
     return sys.stderr
 
 
+def run_reminder_notification(app):
+    settings = create_settings()
+    enabled, _when = reminder_config(settings)
+    if not enabled or reading_count(settings) > 0:
+        return 0
+    pointer = khatma_progress(settings, settings.value('page', 1, type=int))['pointer']
+    title = 'سراج — متابعة الختمة'
+    message = f'لم تُسجّل قراءة اليوم. تابع ختمتك من صفحة {ar(pointer)}.'
+    if QSystemTrayIcon.isSystemTrayAvailable():
+        tray = QSystemTrayIcon(QIcon(str(ICON)) if ICON.exists() else QIcon(), app)
+        tray.setToolTip(title)
+        tray.show()
+        tray.showMessage(title, message, QSystemTrayIcon.MessageIcon.Information, 12_000)
+        app._siraj_reminder_tray = tray
+        QTimer.singleShot(14_000, app.quit)
+        return app.exec()
+    QMessageBox.information(None, title, message)
+    return 0
+
+
 def main():
     import faulthandler
     diagnostic_stream = configure_runtime_streams()
@@ -3033,6 +3404,8 @@ def main():
         if path.exists():
             QFontDatabase.addApplicationFont(str(path))
     app.setFont(QFont('Noto Sans Arabic', 11))
+    if '--remind' in sys.argv:
+        return run_reminder_notification(app)
     win = Main()
     win.show()
     if '--selftest' in sys.argv or os.environ.get('MUSHAF_SELFTEST') == '1':

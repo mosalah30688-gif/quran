@@ -1,0 +1,18 @@
+Qt for Python / PySide6 Essentials 6.12.0 and the Qt 6.12.0 libraries
+--------------------------------------------------------------------
+Copyright (C) The Qt Company Ltd. and other contributors.
+
+Siraj selects the GNU Lesser General Public License version 3.0 only
+(LGPL-3.0-only) option for these unmodified libraries. The accompanying
+LGPL-3.0 and GPL-3.0 texts apply to these components, not to Siraj's original
+MIT-licensed code.
+
+Upstream licensing information:
+https://doc.qt.io/qtforpython-6/licenses.html
+https://www.qt.io/licensing/open-source-lgpl-obligations
+
+The release must ship the exact corresponding Qt/PySide source and third-party
+license materials, or a legally sufficient written source offer controlled by
+the distributor. See THIRD_PARTY_NOTICES.md and the release's corresponding-
+source asset. The Qt shared libraries remain separate files in Windows
+Portable and can be extracted from Linux AppImage for replacement/relinking.

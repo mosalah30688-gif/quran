@@ -25,8 +25,17 @@ jobs:
           node-version: '20'
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install audited dependencies
+        run: |
+          npm ci
+          npm audit --audit-level=high
+          node scripts/patch-capacitor-cli-tar.js
+
+      - name: Verify shared audio, edition, icon, and JavaScript sources
+        run: |
+          node --check app.js
+          python3 scripts/verify_audio_sources.py
+          python3 scripts/verify_asset_provenance.py
 
       - name: Copy web files and sync Android project
         run: npm run android:sync
@@ -49,6 +58,22 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
+
+      - name: Verify audited web assets are inside the APK
+        run: |
+          python3 - <<'PY'
+          import zipfile
+          apk = 'android/app/build/outputs/apk/debug/app-debug.apk'
+          with zipfile.ZipFile(apk) as archive:
+              app = archive.read('assets/public/app.js').decode()
+              html = archive.read('assets/public/index.html').decode()
+          assert 'everyayah.com' not in app.lower()
+          assert 'cdn.mp3quran.net/audio/abdulbasit-abdulsamad/r2/' in app
+          assert "'ar.waseet'" not in app and "'id.indonesian'" not in app
+          assert 'displayHafsSource' in app and '۝${toArabicDigits(a.n)}' in app
+          assert 'hafs-reader' in html and 'reader-wide' in html
+          assert '🎨' in html and '🎵' not in html
+          PY
 
       - name: Copy APK to downloads
         run: cp android/app/build/outputs/apk/debug/app-debug.apk downloads/quran-android.apk

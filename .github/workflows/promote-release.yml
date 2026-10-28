@@ -1,0 +1,176 @@
+name: Promote an approved Siraj Draft Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Release platform
+        required: true
+        type: choice
+        options:
+          - windows
+          - linux
+      release_kind:
+        description: Full portable/AppImage or small signed patch
+        required: true
+        type: choice
+        options:
+          - full
+          - patch
+      version:
+        description: Exact semantic version, for example 1.1.0
+        required: true
+        type: string
+      confirmation:
+        description: Type PROMOTE followed by a space and the exact generated tag
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  attestations: read
+
+concurrency:
+  group: siraj-release-promotion
+  cancel-in-progress: false
+
+jobs:
+  verify-and-promote:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PLATFORM: ${{ inputs.platform }}
+      RELEASE_KIND: ${{ inputs.release_kind }}
+      VERSION: ${{ inputs.version }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+    steps:
+      - name: Checkout the protected release controls
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up verifier
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install signature verification dependencies
+        run: python -m pip install PyNaCl==1.6.2 packaging==26.3
+
+      - name: Derive and validate the explicitly approved tag
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os, re
+          from packaging.version import Version
+          value = os.environ['VERSION']
+          assert re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', value), 'Use an x.y.z version'
+          if os.environ['RELEASE_KIND'] == 'patch':
+              assert Version(value) > Version('1.1.0'), 'A patch must be newer than transitional 1.1.0'
+          PY
+          if [[ "$RELEASE_KIND" == patch ]]; then
+            TAG="siraj-${PLATFORM}-patch-v${VERSION}"
+          else
+            TAG="siraj-${PLATFORM}-v${VERSION}"
+          fi
+          test "$CONFIRMATION" = "PROMOTE $TAG"
+          git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
+          RELEASE_COMMIT="$(git rev-list -n 1 "$TAG")"
+          git fetch origin main
+          git merge-base --is-ancestor "$RELEASE_COMMIT" origin/main
+          python scripts/check_release_gate.py --tag "$TAG" --commit "$RELEASE_COMMIT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "commit=$RELEASE_COMMIT" >> "$GITHUB_OUTPUT"
+
+      - name: Require the transitional full release before any patch
+        if: inputs.release_kind == 'patch'
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_TAG="siraj-${PLATFORM}-v1.1.0"
+          test "$(gh release view "$BASE_TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)" = false
+
+      - name: Download every Draft asset
+        shell: bash
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          test "$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)" = true
+          rm -rf candidate
+          mkdir candidate
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir candidate
+
+      - name: Verify signatures, hashes, URLs, SBOM, and exact asset set
+        shell: bash
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if [[ "$PLATFORM" == windows ]]; then
+            PUBLIC_KEY="windows_app/assets/update_public_key.txt"
+          else
+            PUBLIC_KEY="mushaf_app/assets/update_public_key.txt"
+          fi
+          python scripts/verify_release_candidate.py \
+            --platform "$PLATFORM" \
+            --kind "$RELEASE_KIND" \
+            --version "$VERSION" \
+            --tag "$TAG" \
+            --repository "$GITHUB_REPOSITORY" \
+            --release-dir candidate \
+            --public-key "$PUBLIC_KEY"
+
+      - name: Verify GitHub build provenance for every candidate asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' asset; do
+            gh attestation verify "$asset" --repo "$GITHUB_REPOSITORY"
+          done < <(find candidate -maxdepth 1 -type f -print0)
+
+      - name: Publish the verified release assets
+        shell: bash
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if [[ "$RELEASE_KIND" == full ]]; then
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
+          else
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false
+          fi
+
+      - name: Advertise the release in the stable channel
+        shell: bash
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_COMMIT: ${{ steps.release.outputs.commit }}
+        run: |
+          set -euo pipefail
+          if [[ "$RELEASE_KIND" == patch ]]; then
+            MANIFEST="patch-stable.json"
+          else
+            MANIFEST="stable.json"
+          fi
+          cp "candidate/$MANIFEST" "$RUNNER_TEMP/$MANIFEST"
+
+          # Re-read main after publication. If review controls changed meanwhile, fail closed.
+          git fetch origin main
+          git checkout -B main origin/main
+          python scripts/check_release_gate.py --tag "$TAG" --commit "$RELEASE_COMMIT"
+          mkdir -p "update/$PLATFORM"
+          cp "$RUNNER_TEMP/$MANIFEST" "update/$PLATFORM/$MANIFEST"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "update/$PLATFORM/$MANIFEST"
+          if git diff --cached --quiet; then
+            echo "Stable channel already points to the verified release."
+          else
+            git commit -m "ترقية قناة سراج ${PLATFORM} إلى ${VERSION} [skip ci]"
+            git push origin HEAD:main
+          fi

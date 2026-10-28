@@ -1,0 +1,831 @@
+{
+  "schema": 1,
+  "generated_on": "2026-10-28",
+  "scope": [
+    "windows_app",
+    "mushaf_app"
+  ],
+  "git_head": "df2c61f4a8c7f637d0d837f8a2c3946eab22d9b1",
+  "git_dirty": true,
+  "disclaimer": "Evidence inventory only; not a legal or scholarly approval.",
+  "data": {
+    "windows_app": [
+      {
+        "path": "windows_app/data/adhkar.json",
+        "bytes": 46613,
+        "sha256": "52e0c5fb07d6e1b2cbb06f1e54f5945ae6345202fedad4fc4c4a0e0349c46df9",
+        "root_type": "dict",
+        "root_count": 7,
+        "top_level_keys": [
+          "v",
+          "source",
+          "source_url",
+          "license",
+          "generated_by",
+          "scholarly_review",
+          "categories"
+        ],
+        "declared_metadata": {
+          "v": 2,
+          "source": "Curated from the pinned MIT-licensed asellam/HisnElMuslim dataset and locked Quran text",
+          "source_url": "https://github.com/asellam/HisnElMuslim/tree/872764ca013116c905f7fc9c3dc972c27cd37d4a"
+        }
+      },
+      {
+        "path": "windows_app/data/hafs.json",
+        "bytes": 2901570,
+        "sha256": "c1dee8c03d105421d4ff0068248822b1be1b41a1648c3d2eee682c07cf9144f6",
+        "root_type": "dict",
+        "root_count": 2,
+        "top_level_keys": [
+          "uthmani",
+          "simple"
+        ],
+        "declared_metadata": {}
+      },
+      {
+        "path": "windows_app/data/juz.json",
+        "bytes": 283,
+        "sha256": "1dae7ba461511df0782ae9d02a7d5f54975b9da403848cabd70fb6b0ac176c04",
+        "root_type": "list",
+        "root_count": 30
+      },
+      {
+        "path": "windows_app/data/quran-meanings.json",
+        "bytes": 2577563,
+        "sha256": "d9cf1c2e5c27d25c213c84b046df1b2af07cdbefa72eb0be1d2e9014166c03c3",
+        "root_type": "dict",
+        "root_count": 8,
+        "top_level_keys": [
+          "v",
+          "source",
+          "source_url",
+          "version",
+          "license",
+          "source_files",
+          "generated_by",
+          "ayahs"
+        ],
+        "declared_metadata": {
+          "v": 1,
+          "source": "الموسوعة القرآنية quranpedia.net",
+          "source_url": "https://quranpedia.net",
+          "version": "2026-10-24"
+        }
+      },
+      {
+        "path": "windows_app/data/quran-riwayat.json",
+        "bytes": 4404077,
+        "sha256": "4424377bf32f609bf1f10b595bd17695add15f4b1cc241012f6fef00df4bd640",
+        "root_type": "dict",
+        "root_count": 8,
+        "top_level_keys": [
+          "v",
+          "source",
+          "source_url",
+          "version",
+          "license",
+          "source_files",
+          "generated_by",
+          "riwayat"
+        ],
+        "declared_metadata": {
+          "v": 1,
+          "source": "الموسوعة القرآنية quranpedia.net",
+          "source_url": "https://quranpedia.net",
+          "version": "2026-10-27"
+        }
+      },
+      {
+        "path": "windows_app/data/quran-search.json",
+        "bytes": 818799,
+        "sha256": "1c6ec288fb10a3e12bd3cc60b92df0e8c210da6dffcc9fd7557547844b77de7b",
+        "root_type": "dict",
+        "root_count": 3,
+        "top_level_keys": [
+          "v",
+          "source",
+          "ayahs"
+        ],
+        "declared_metadata": {
+          "v": 1,
+          "source": "alquran.cloud quran-simple-clean"
+        }
+      },
+      {
+        "path": "windows_app/data/quran-tajweed.json",
+        "bytes": 1824707,
+        "sha256": "441c118e0000083ddafff9987874f7b9c8710a936721caf52d1b11d94fa1f0b3",
+        "root_type": "list",
+        "root_count": 6236
+      },
+      {
+        "path": "windows_app/data/surahs.json",
+        "bytes": 15848,
+        "sha256": "50d89cffe17484d592f184f1d88de13bdcd5b602f3f0fd83e13240996fb4eb4f",
+        "root_type": "list",
+        "root_count": 114
+      },
+      {
+        "path": "windows_app/data/tajweed.json",
+        "bytes": 1892,
+        "sha256": "812002f31940efaa4e4aa7035f5f379598eb5e57b468ba7757d73e669f106b44",
+        "root_type": "dict",
+        "root_count": 17,
+        "top_level_keys": [
+          "h",
+          "l",
+          "s",
+          "n",
+          "p",
+          "m",
+          "o",
+          "q",
+          "c",
+          "f",
+          "w",
+          "i",
+          "a",
+          "u",
+          "d",
+          "b",
+          "g"
+        ],
+        "declared_metadata": {}
+      }
+    ],
+    "mushaf_app": [
+      {
+        "path": "mushaf_app/data/adhkar.json",
+        "bytes": 46613,
+        "sha256": "52e0c5fb07d6e1b2cbb06f1e54f5945ae6345202fedad4fc4c4a0e0349c46df9",
+        "root_type": "dict",
+        "root_count": 7,
+        "top_level_keys": [
+          "v",
+          "source",
+          "source_url",
+          "license",
+          "generated_by",
+          "scholarly_review",
+          "categories"
+        ],
+        "declared_metadata": {
+          "v": 2,
+          "source": "Curated from the pinned MIT-licensed asellam/HisnElMuslim dataset and locked Quran text",
+          "source_url": "https://github.com/asellam/HisnElMuslim/tree/872764ca013116c905f7fc9c3dc972c27cd37d4a"
+        }
+      },
+      {
+        "path": "mushaf_app/data/hafs.json",
+        "bytes": 2901570,
+        "sha256": "c1dee8c03d105421d4ff0068248822b1be1b41a1648c3d2eee682c07cf9144f6",
+        "root_type": "dict",
+        "root_count": 2,
+        "top_level_keys": [
+          "uthmani",
+          "simple"
+        ],
+        "declared_metadata": {}
+      },
+      {
+        "path": "mushaf_app/data/juz.json",
+        "bytes": 283,
+        "sha256": "1dae7ba461511df0782ae9d02a7d5f54975b9da403848cabd70fb6b0ac176c04",
+        "root_type": "list",
+        "root_count": 30
+      },
+      {
+        "path": "mushaf_app/data/quran-meanings.json",
+        "bytes": 2577563,
+        "sha256": "d9cf1c2e5c27d25c213c84b046df1b2af07cdbefa72eb0be1d2e9014166c03c3",
+        "root_type": "dict",
+        "root_count": 8,
+        "top_level_keys": [
+          "v",
+          "source",
+          "source_url",
+          "version",
+          "license",
+          "source_files",
+          "generated_by",
+          "ayahs"
+        ],
+        "declared_metadata": {
+          "v": 1,
+          "source": "الموسوعة القرآنية quranpedia.net",
+          "source_url": "https://quranpedia.net",
+          "version": "2026-10-24"
+        }
+      },
+      {
+        "path": "mushaf_app/data/quran-riwayat.json",
+        "bytes": 4404077,
+        "sha256": "4424377bf32f609bf1f10b595bd17695add15f4b1cc241012f6fef00df4bd640",
+        "root_type": "dict",
+        "root_count": 8,
+        "top_level_keys": [
+          "v",
+          "source",
+          "source_url",
+          "version",
+          "license",
+          "source_files",
+          "generated_by",
+          "riwayat"
+        ],
+        "declared_metadata": {
+          "v": 1,
+          "source": "الموسوعة القرآنية quranpedia.net",
+          "source_url": "https://quranpedia.net",
+          "version": "2026-10-27"
+        }
+      },
+      {
+        "path": "mushaf_app/data/quran-search.json",
+        "bytes": 818799,
+        "sha256": "1c6ec288fb10a3e12bd3cc60b92df0e8c210da6dffcc9fd7557547844b77de7b",
+        "root_type": "dict",
+        "root_count": 3,
+        "top_level_keys": [
+          "v",
+          "source",
+          "ayahs"
+        ],
+        "declared_metadata": {
+          "v": 1,
+          "source": "alquran.cloud quran-simple-clean"
+        }
+      },
+      {
+        "path": "mushaf_app/data/surahs.json",
+        "bytes": 15848,
+        "sha256": "50d89cffe17484d592f184f1d88de13bdcd5b602f3f0fd83e13240996fb4eb4f",
+        "root_type": "list",
+        "root_count": 114
+      },
+      {
+        "path": "mushaf_app/data/tajweed.json",
+        "bytes": 1892,
+        "sha256": "812002f31940efaa4e4aa7035f5f379598eb5e57b468ba7757d73e669f106b44",
+        "root_type": "dict",
+        "root_count": 17,
+        "top_level_keys": [
+          "h",
+          "l",
+          "s",
+          "n",
+          "p",
+          "m",
+          "o",
+          "q",
+          "c",
+          "f",
+          "w",
+          "i",
+          "a",
+          "u",
+          "d",
+          "b",
+          "g"
+        ],
+        "declared_metadata": {}
+      }
+    ]
+  },
+  "data_parity": [
+    {
+      "name": "adhkar.json",
+      "windows_app": "52e0c5fb07d6e1b2cbb06f1e54f5945ae6345202fedad4fc4c4a0e0349c46df9",
+      "mushaf_app": "52e0c5fb07d6e1b2cbb06f1e54f5945ae6345202fedad4fc4c4a0e0349c46df9",
+      "identical": true
+    },
+    {
+      "name": "hafs.json",
+      "windows_app": "c1dee8c03d105421d4ff0068248822b1be1b41a1648c3d2eee682c07cf9144f6",
+      "mushaf_app": "c1dee8c03d105421d4ff0068248822b1be1b41a1648c3d2eee682c07cf9144f6",
+      "identical": true
+    },
+    {
+      "name": "juz.json",
+      "windows_app": "1dae7ba461511df0782ae9d02a7d5f54975b9da403848cabd70fb6b0ac176c04",
+      "mushaf_app": "1dae7ba461511df0782ae9d02a7d5f54975b9da403848cabd70fb6b0ac176c04",
+      "identical": true
+    },
+    {
+      "name": "quran-meanings.json",
+      "windows_app": "d9cf1c2e5c27d25c213c84b046df1b2af07cdbefa72eb0be1d2e9014166c03c3",
+      "mushaf_app": "d9cf1c2e5c27d25c213c84b046df1b2af07cdbefa72eb0be1d2e9014166c03c3",
+      "identical": true
+    },
+    {
+      "name": "quran-riwayat.json",
+      "windows_app": "4424377bf32f609bf1f10b595bd17695add15f4b1cc241012f6fef00df4bd640",
+      "mushaf_app": "4424377bf32f609bf1f10b595bd17695add15f4b1cc241012f6fef00df4bd640",
+      "identical": true
+    },
+    {
+      "name": "quran-search.json",
+      "windows_app": "1c6ec288fb10a3e12bd3cc60b92df0e8c210da6dffcc9fd7557547844b77de7b",
+      "mushaf_app": "1c6ec288fb10a3e12bd3cc60b92df0e8c210da6dffcc9fd7557547844b77de7b",
+      "identical": true
+    },
+    {
+      "name": "quran-tajweed.json",
+      "windows_app": "441c118e0000083ddafff9987874f7b9c8710a936721caf52d1b11d94fa1f0b3",
+      "mushaf_app": null,
+      "identical": false
+    },
+    {
+      "name": "surahs.json",
+      "windows_app": "50d89cffe17484d592f184f1d88de13bdcd5b602f3f0fd83e13240996fb4eb4f",
+      "mushaf_app": "50d89cffe17484d592f184f1d88de13bdcd5b602f3f0fd83e13240996fb4eb4f",
+      "identical": true
+    },
+    {
+      "name": "tajweed.json",
+      "windows_app": "812002f31940efaa4e4aa7035f5f379598eb5e57b468ba7757d73e669f106b44",
+      "mushaf_app": "812002f31940efaa4e4aa7035f5f379598eb5e57b468ba7757d73e669f106b44",
+      "identical": true
+    }
+  ],
+  "fonts": {
+    "windows_app": [
+      {
+        "path": "windows_app/fonts/Amiri-Regular.ttf",
+        "bytes": 431116,
+        "sha256": "ab391c4147d054c48976e98322ad0eefe1427aa0e0502a12a4c75d80a70cfcd7",
+        "expected_license_file": "OFL-Amiri.txt",
+        "license_present": true,
+        "license_sha256": "72de68e5954f4fdd24702292ef5a32f003ca960ec9330dc86e5eefb5dffb9b22"
+      },
+      {
+        "path": "windows_app/fonts/AmiriQuran-Regular.ttf",
+        "bytes": 136920,
+        "sha256": "e2a47644762d16bdfb6d33e0d8db8c6ff30beae84150ef5a705316bbd829455c",
+        "expected_license_file": "OFL-AmiriQuran.txt",
+        "license_present": true,
+        "license_sha256": "b32e3b24e2a943b8acbf6ab8d5499bfed737d5176091b7341a8c1e7fbcdeb0fa"
+      },
+      {
+        "path": "windows_app/fonts/NotoNaskhArabic-Variable.ttf",
+        "bytes": 307592,
+        "sha256": "67b5a525a661b607971fbd3f96a81b89d3a768e74534fca84f18ac97e6fab72f",
+        "expected_license_file": "OFL-NotoNaskhArabic.txt",
+        "license_present": true,
+        "license_sha256": "a7a5a25eb188bf1cd96982030d53e23c33485c69b1044a562254226857ee13af"
+      },
+      {
+        "path": "windows_app/fonts/NotoSansArabic-Bold.ttf",
+        "bytes": 252940,
+        "sha256": "ded6fc7359ca36d15d7aab9ef0c066e21ce48b26a069994d6602fa2cb9a1b952",
+        "expected_license_file": "OFL-NotoSansArabic.txt",
+        "license_present": true,
+        "license_sha256": "441b83e0664018a820c3894cba9e437df904191c505509e6701219fd9c7b1579"
+      },
+      {
+        "path": "windows_app/fonts/NotoSansArabic-Regular.ttf",
+        "bytes": 244072,
+        "sha256": "504d7407d86875acf7d04dfaa0fd7524d0b8797723bc4aa18022f29db25b0b6e",
+        "expected_license_file": "OFL-NotoSansArabic.txt",
+        "license_present": true,
+        "license_sha256": "441b83e0664018a820c3894cba9e437df904191c505509e6701219fd9c7b1579"
+      },
+      {
+        "path": "windows_app/fonts/ScheherazadeNew-Regular.ttf",
+        "bytes": 331504,
+        "sha256": "794bac8dc9e83d1d620bc471ea694f5f31d0965ce8006490a79dfc51a2d283b3",
+        "expected_license_file": "OFL-ScheherazadeNew.txt",
+        "license_present": true,
+        "license_sha256": "5b9fd21ce2377fc542debebd9edfe1c48f2d3525e78a2a8abdba4a0ec3280163"
+      }
+    ],
+    "mushaf_app": [
+      {
+        "path": "mushaf_app/fonts/AmiriQuran-arabic.woff2",
+        "bytes": 45680,
+        "sha256": "35f4f02bbde81b20118a788f8b212bff385eb499df0746d277b5b478f32e733e",
+        "expected_license_file": "OFL-LICENSE.txt",
+        "license_present": true,
+        "license_sha256": "51aac3e37ad762f728297f8638a27cb71e85e63649cc7594b674bf96f85b92bb"
+      },
+      {
+        "path": "mushaf_app/fonts/NotoSansArabic-Bold.ttf",
+        "bytes": 252940,
+        "sha256": "ded6fc7359ca36d15d7aab9ef0c066e21ce48b26a069994d6602fa2cb9a1b952",
+        "expected_license_file": "OFL-NotoSansArabic.txt",
+        "license_present": true,
+        "license_sha256": "441b83e0664018a820c3894cba9e437df904191c505509e6701219fd9c7b1579"
+      },
+      {
+        "path": "mushaf_app/fonts/NotoSansArabic-Regular.ttf",
+        "bytes": 244072,
+        "sha256": "504d7407d86875acf7d04dfaa0fd7524d0b8797723bc4aa18022f29db25b0b6e",
+        "expected_license_file": "OFL-NotoSansArabic.txt",
+        "license_present": true,
+        "license_sha256": "441b83e0664018a820c3894cba9e437df904191c505509e6701219fd9c7b1579"
+      }
+    ]
+  },
+  "assets": {
+    "windows_app": [
+      {
+        "path": "windows_app/assets/siraj.ico",
+        "bytes": 147131,
+        "sha256": "fb38f97ef7fa7d7e920de1826d3b9ba69822f2a3f2375dcdccb5230c896f70af"
+      },
+      {
+        "path": "windows_app/assets/siraj.png",
+        "bytes": 296429,
+        "sha256": "bf65b701f8e11dc2594f7ef7139d5473e4fd1c6801d041795eeffe0b8457ee0e"
+      }
+    ],
+    "mushaf_app": [
+      {
+        "path": "mushaf_app/icon.png",
+        "bytes": 296429,
+        "sha256": "bf65b701f8e11dc2594f7ef7139d5473e4fd1c6801d041795eeffe0b8457ee0e"
+      }
+    ]
+  },
+  "declared_python_dependencies": {
+    "windows_app": [
+      {
+        "name": "PySide6-Essentials",
+        "version": "6.12.0"
+      },
+      {
+        "name": "pyinstaller",
+        "version": "6.22.3"
+      },
+      {
+        "name": "miniaudio",
+        "version": "1.71"
+      },
+      {
+        "name": "cffi",
+        "version": "2.1.1"
+      },
+      {
+        "name": "packaging",
+        "version": "26.3"
+      },
+      {
+        "name": "PyNaCl",
+        "version": "1.6.2"
+      }
+    ],
+    "mushaf_app": [
+      {
+        "name": "PySide6-Essentials",
+        "version": "6.12.0"
+      },
+      {
+        "name": "pyinstaller",
+        "version": "6.22.3"
+      },
+      {
+        "name": "miniaudio",
+        "version": "1.71"
+      },
+      {
+        "name": "cffi",
+        "version": "2.1.1"
+      },
+      {
+        "name": "packaging",
+        "version": "26.3"
+      },
+      {
+        "name": "PyNaCl",
+        "version": "1.6.2"
+      }
+    ]
+  },
+  "source_references": {
+    "alquran.cloud": [
+      {
+        "path": "app.js",
+        "line": 2,
+        "urls": []
+      },
+      {
+        "path": "app.js",
+        "line": 7,
+        "urls": [
+          "https://api.alquran.cloud/v1"
+        ]
+      },
+      {
+        "path": "app.js",
+        "line": 69,
+        "urls": []
+      },
+      {
+        "path": "mushaf_app/THIRD_PARTY_NOTICES.md",
+        "line": 11,
+        "urls": [
+          "https://alquran.cloud/terms-and-conditions"
+        ]
+      },
+      {
+        "path": "mushaf_app/THIRD_PARTY_NOTICES.md",
+        "line": 31,
+        "urls": [
+          "https://alquran.cloud/terms-and-conditions"
+        ]
+      },
+      {
+        "path": "mushaf_app/main.py",
+        "line": 993,
+        "urls": [
+          "https://api.alquran.cloud/v1/ayah/{s}:{a}/{edition}"
+        ]
+      },
+      {
+        "path": "mushaf_app/main.py",
+        "line": 1376,
+        "urls": [
+          "https://api.alquran.cloud/v1/ayah/{s}:{a}/{edition}"
+        ]
+      },
+      {
+        "path": "windows_app/THIRD_PARTY_NOTICES.md",
+        "line": 11,
+        "urls": [
+          "https://alquran.cloud/terms-and-conditions"
+        ]
+      },
+      {
+        "path": "windows_app/THIRD_PARTY_NOTICES.md",
+        "line": 36,
+        "urls": [
+          "https://alquran.cloud/terms-and-conditions"
+        ]
+      },
+      {
+        "path": "windows_app/main.py",
+        "line": 1214,
+        "urls": [
+          "https://api.alquran.cloud/v1/ayah/{s}:{a}/{edition}"
+        ]
+      },
+      {
+        "path": "windows_app/main.py",
+        "line": 1391,
+        "urls": [
+          "https://api.alquran.cloud/v1/surah/{surah}/{edition}"
+        ]
+      },
+      {
+        "path": "windows_app/main.py",
+        "line": 1742,
+        "urls": [
+          "https://api.alquran.cloud/v1/ayah/{s}:{a}/{edition}"
+        ]
+      }
+    ],
+    "islamic.network": [
+      {
+        "path": "app.js",
+        "line": 1402,
+        "urls": [
+          "https://cdn.islamic.network/quran/audio/${bitrate}/${reciter}/${ayahNumber}.mp3"
+        ]
+      },
+      {
+        "path": "mushaf_app/THIRD_PARTY_NOTICES.md",
+        "line": 27,
+        "urls": []
+      },
+      {
+        "path": "mushaf_app/main.py",
+        "line": 299,
+        "urls": [
+          "https://cdn.islamic.network/quran/audio/{bitrate}/{rid}/{number}.mp3"
+        ]
+      },
+      {
+        "path": "mushaf_app/tests/test_reciter_catalog.py",
+        "line": 30,
+        "urls": []
+      },
+      {
+        "path": "mushaf_app/tests/ui_test.py",
+        "line": 78,
+        "urls": [
+          "https://cdn.islamic.network/"
+        ]
+      },
+      {
+        "path": "windows_app/THIRD_PARTY_NOTICES.md",
+        "line": 32,
+        "urls": []
+      },
+      {
+        "path": "windows_app/main.py",
+        "line": 409,
+        "urls": [
+          "https://cdn.islamic.network/quran/audio/{bitrate}/{rid}/{number}.mp3"
+        ]
+      },
+      {
+        "path": "windows_app/tests/test_reciter_catalog.py",
+        "line": 30,
+        "urls": []
+      },
+      {
+        "path": "windows_app/tests/ui_test.py",
+        "line": 73,
+        "urls": [
+          "https://cdn.islamic.network/"
+        ]
+      }
+    ],
+    "mp3quran.net": [
+      {
+        "path": "app.js",
+        "line": 46,
+        "urls": [
+          "https://cdn.mp3quran.net/audio/abdulbasit-abdulsamad/r2/"
+        ]
+      },
+      {
+        "path": "app.js",
+        "line": 47,
+        "urls": [
+          "https://cdn.mp3quran.net/audio/mahmoud-husary/r3/"
+        ]
+      },
+      {
+        "path": "app.js",
+        "line": 50,
+        "urls": [
+          "https://cdn.mp3quran.net/audio/mahmoud-husary/r5/"
+        ]
+      },
+      {
+        "path": "app.js",
+        "line": 51,
+        "urls": [
+          "https://cdn.mp3quran.net/audio/ali-hudhaifi/r2/"
+        ]
+      },
+      {
+        "path": "app.js",
+        "line": 54,
+        "urls": [
+          "https://cdn.mp3quran.net/audio/mahmoud-husary/r4/"
+        ]
+      },
+      {
+        "path": "mushaf_app/THIRD_PARTY_NOTICES.md",
+        "line": 36,
+        "urls": []
+      },
+      {
+        "path": "mushaf_app/THIRD_PARTY_NOTICES.md",
+        "line": 38,
+        "urls": [
+          "https://www.mp3quran.net/ar/privacy"
+        ]
+      },
+      {
+        "path": "mushaf_app/THIRD_PARTY_NOTICES.md",
+        "line": 39,
+        "urls": [
+          "https://www.mp3quran.net/api/v3/reciters?language=ar"
+        ]
+      },
+      {
+        "path": "mushaf_app/main.py",
+        "line": 124,
+        "urls": [
+          "https://cdn.mp3quran.net/audio/abdulbasit-abdulsamad/r2/"
+        ]
+      },
+      {
+        "path": "mushaf_app/main.py",
+        "line": 125,
+        "urls": [
+          "https://cdn.mp3quran.net/audio/mahmoud-husary/r3/"
+        ]
+      },
+      {
+        "path": "mushaf_app/main.py",
+        "line": 128,
+        "urls": [
+          "https://cdn.mp3quran.net/audio/mahmoud-husary/r5/"
+        ]
+      },
+      {
+        "path": "mushaf_app/main.py",
+        "line": 129,
+        "urls": [
+          "https://cdn.mp3quran.net/audio/ali-hudhaifi/r2/"
+        ]
+      },
+      {
+        "path": "mushaf_app/main.py",
+        "line": 132,
+        "urls": [
+          "https://cdn.mp3quran.net/audio/mahmoud-husary/r4/"
+        ]
+      },
+      {
+        "path": "mushaf_app/tests/ui_test.py",
+        "line": 142,
+        "urls": [
+          "https://cdn.mp3quran.net/audio/abdulbasit-abdulsamad/r2/"
+        ]
+      },
+      {
+        "path": "windows_app/THIRD_PARTY_NOTICES.md",
+        "line": 41,
+        "urls": []
+      },
+      {
+        "path": "windows_app/THIRD_PARTY_NOTICES.md",
+        "line": 43,
+        "urls": [
+          "https://www.mp3quran.net/ar/privacy"
+        ]
+      },
+      {
+        "path": "windows_app/THIRD_PARTY_NOTICES.md",
+        "line": 44,
+        "urls": [
+          "https://www.mp3quran.net/api/v3/reciters?language=ar"
+        ]
+      },
+      {
+        "path": "windows_app/main.py",
+        "line": 146,
+        "urls": [
+          "https://cdn.mp3quran.net/audio/abdulbasit-abdulsamad/r2/"
+        ]
+      },
+      {
+        "path": "windows_app/main.py",
+        "line": 147,
+        "urls": [
+          "https://cdn.mp3quran.net/audio/mahmoud-husary/r3/"
+        ]
+      },
+      {
+        "path": "windows_app/main.py",
+        "line": 150,
+        "urls": [
+          "https://cdn.mp3quran.net/audio/mahmoud-husary/r5/"
+        ]
+      },
+      {
+        "path": "windows_app/main.py",
+        "line": 151,
+        "urls": [
+          "https://cdn.mp3quran.net/audio/ali-hudhaifi/r2/"
+        ]
+      },
+      {
+        "path": "windows_app/main.py",
+        "line": 154,
+        "urls": [
+          "https://cdn.mp3quran.net/audio/mahmoud-husary/r4/"
+        ]
+      },
+      {
+        "path": "windows_app/tests/ui_test.py",
+        "line": 137,
+        "urls": [
+          "https://cdn.mp3quran.net/audio/abdulbasit-abdulsamad/r2/"
+        ]
+      }
+    ],
+    "quranpedia.net": [
+      {
+        "path": "mushaf_app/THIRD_PARTY_NOTICES.md",
+        "line": 12,
+        "urls": [
+          "https://quranpedia.net/dumps"
+        ]
+      },
+      {
+        "path": "mushaf_app/THIRD_PARTY_NOTICES.md",
+        "line": 13,
+        "urls": []
+      },
+      {
+        "path": "windows_app/THIRD_PARTY_NOTICES.md",
+        "line": 12,
+        "urls": [
+          "https://quranpedia.net/dumps"
+        ]
+      },
+      {
+        "path": "windows_app/THIRD_PARTY_NOTICES.md",
+        "line": 13,
+        "urls": []
+      }
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "ready": false,
+  "approved_commit": null,
+  "approved_tags": [],
+  "approved_at": null,
+  "approved_by": null,
+  "blockers": [
+    "Qualified human scholarly review is still pending for the final Quran, riwayat, tajweed, meanings, and adhkar hashes in audit/SCHOLARLY_REVIEW.md",
+    "No Authenticode certificate is available, so a public Windows full release remains prohibited by policy",
+    "The final Windows Portable ZIP, bundled notices/licenses, corresponding-source ZIP, SBOM, attestation, and double-click smoke tests have not succeeded in Windows CI",
+    "The final Ubuntu 22.04 AppImage build has not yet proved exact distribution source locks, corresponding-source ZIP, SBOM, attestation, and packaged smoke/audio tests in CI",
+    "No final Draft candidate has yet passed scripts/verify_release_candidate.py against its exact release assets"
+  ]
+}

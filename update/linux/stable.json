@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "product": "siraj-quran-linux",
+  "channel": "stable",
+  "available": false,
+  "version": "4.1.0",
+  "published_at": null,
+  "minimum_linux": "Ubuntu 22.04 or equivalent x86_64",
+  "release_notes": "حزمة توافق Linux 4.1.0 ذات زر التحديث المباشر قيد الاختبار؛ لم تُفعّل القناة المستقرة بعد.",
+  "assets": {}
+}

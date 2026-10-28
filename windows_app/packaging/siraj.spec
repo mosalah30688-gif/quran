@@ -22,7 +22,7 @@ EXCLUDES = [
 ]
 
 a = Analysis(
-    [str(ROOT / 'main.py')],
+    [str(ROOT / 'launcher.py')],
     pathex=[str(ROOT)],
     binaries=[],
     datas=[
@@ -30,7 +30,7 @@ a = Analysis(
         (str(ROOT / 'fonts'), 'fonts'),
         (str(ROOT / 'assets'), 'assets'),
     ],
-    hiddenimports=['_cffi_backend'],
+    hiddenimports=['_cffi_backend', 'main'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

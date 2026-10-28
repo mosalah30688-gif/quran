@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "items": [
+    {
+      "paths": [
+        "windows_app/data/tajweed.json",
+        "mushaf_app/data/tajweed.json"
+      ],
+      "sha256": "812002f31940efaa4e4aa7035f5f379598eb5e57b468ba7757d73e669f106b44",
+      "kind": "project-authored explanatory glossary",
+      "license": "MIT as original project text",
+      "note": "These short rule names and explanations are project-authored UI copy keyed to AlQuran Cloud quran-tajweed markup. Rights provenance is clear; scholarly tajweed review remains pending."
+    }
+  ]
+}
