@@ -8,4 +8,5 @@ squashfs-root/
 *.AppImage
 appimagetool*
 runtime-*-x86_64
+data/tafsir-offline.sqlite3
 *.spec

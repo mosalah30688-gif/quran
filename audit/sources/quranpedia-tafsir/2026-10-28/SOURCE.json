@@ -47,12 +47,16 @@
   },
   "transformation": {
     "script": "scripts/generate_quranpedia_tafsir_catalog.py",
-    "description": "Union the official per-ayah tafsir metadata; retain licensed classical primary works whose recorded author death is no later than 1350 AH; remove modern compilations and duplicate editions. Only metadata is bundled; text remains live API content."
+    "description": "Union the official per-ayah tafsir metadata; retain licensed classical primary works whose recorded author death is no later than 1350 AH; remove modern compilations and duplicate editions. This metadata controls the full offline text store built from the matching official per-book dumps."
   },
   "outputs": {
-    "tafsir-catalog.json": {
-      "bytes": 14324,
-      "sha256": "506c926ba332199acd599f87fabd9983cc716798191d9ae55941b9b0701294f3"
+    "mushaf_app/data/tafsir-catalog.json": {
+      "bytes": 14386,
+      "sha256": "47b76e098df4bbb780a26e984063deb0c3d995393743740df9066a6f1dc8434a"
+    },
+    "windows_app/data/tafsir-catalog.json": {
+      "bytes": 14386,
+      "sha256": "47b76e098df4bbb780a26e984063deb0c3d995393743740df9066a6f1dc8434a"
     }
   }
 }

@@ -15,11 +15,12 @@ class TafsirCatalogTests(unittest.TestCase):
         cls.catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
         cls.source_record = json.loads((SOURCE_DIR / "SOURCE.json").read_text(encoding="utf-8"))
 
-    def test_catalog_is_live_licensed_classical_metadata(self):
+    def test_catalog_is_offline_licensed_classical_metadata(self):
         books = self.catalog["books"]
         self.assertEqual(73, len(books))
         self.assertEqual(73, len({book["edition"] for book in books}))
-        self.assertTrue(self.catalog["selection"]["live_text_not_bundled"])
+        self.assertTrue(self.catalog["selection"]["offline_text_bundled"])
+        self.assertEqual("2026-08-10", self.catalog["selection"]["book_dump_version"])
         self.assertEqual("2026-10-24", self.catalog["dump_version"])
         self.assertTrue(all(book["edition"] == f"qp:{book['book_id']}" for book in books))
         self.assertTrue(all(book["author_death_hijri"] <= 1350 for book in books))
@@ -38,7 +39,7 @@ class TafsirCatalogTests(unittest.TestCase):
             prefix = stream.read(32_768)
         self.assertIn('"schema":"/v1/ayah/{surah}/{ayah}/tafsir"', prefix)
         self.assertIn('"source":"https://quranpedia.net"', prefix)
-        output_meta = self.source_record["outputs"]["tafsir-catalog.json"]
+        output_meta = self.source_record["outputs"]["mushaf_app/data/tafsir-catalog.json"]
         output_raw = CATALOG_PATH.read_bytes()
         self.assertEqual(output_meta["bytes"], len(output_raw))
         self.assertEqual(output_meta["sha256"], hashlib.sha256(output_raw).hexdigest())

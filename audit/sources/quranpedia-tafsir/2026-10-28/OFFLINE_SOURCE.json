@@ -1,0 +1,675 @@
+{
+  "schema": 1,
+  "source": "https://quranpedia.net",
+  "license": "https://quranpedia.net/dumps/LICENSE.md",
+  "book_dump_version": "2026-08-10",
+  "manifest_snapshot": "2026-10-28",
+  "manifest_url": "https://quranpedia.net/dumps/manifest.json",
+  "selection_catalog": "mushaf_app/data/tafsir-catalog.json",
+  "selected_book_count": 73,
+  "compressed_bytes": 663702274,
+  "files": [
+    {
+      "book_id": 4,
+      "name": "tafsir-book-4.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-4.json.gz",
+      "bytes": 10025398,
+      "sha256": "ea7132febfe16c40247388ca37716aee05e1d320f6c470f70f784c2f2051b966",
+      "built_at": "2026-08-10T20:29:02+00:00",
+      "title": "جامع البيان في تأويل آي القرآن"
+    },
+    {
+      "book_id": 26,
+      "name": "tafsir-book-26.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-26.json.gz",
+      "bytes": 1934575,
+      "sha256": "c5be6f96b42cf6b68810cd88a7eb5d68c65612f04d5ef2a77d1a7ef89023e30b",
+      "built_at": "2026-08-10T20:28:48+00:00",
+      "title": "مدارك التنزيل وحقائق التأويل"
+    },
+    {
+      "book_id": 37,
+      "name": "tafsir-book-37.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-37.json.gz",
+      "bytes": 3482345,
+      "sha256": "104a95ba927acb5d7103c3348a89373c66a251725ec98cb13da359544b602716",
+      "built_at": "2026-08-10T20:28:24+00:00",
+      "title": "إرشاد العقل السليم إلى مزايا الكتاب الكريم"
+    },
+    {
+      "book_id": 72,
+      "name": "tafsir-book-72.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-72.json.gz",
+      "bytes": 699636,
+      "sha256": "14c5df8b9bb0036f68a0405e10606843b4a397ec1ccd2ef8f337f1a8e902d720",
+      "built_at": "2026-08-10T20:29:04+00:00",
+      "title": "الوجيز في تفسير الكتاب العزيز"
+    },
+    {
+      "book_id": 108,
+      "name": "tafsir-book-108.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-108.json.gz",
+      "bytes": 877430,
+      "sha256": "60c29022d759890daacf72ffebaaca3a984a9280a5521e1a700ddf3b6b7e2f0e",
+      "built_at": "2026-08-10T20:31:07+00:00",
+      "title": "تفسير العز بن عبد السلام"
+    },
+    {
+      "book_id": 134,
+      "name": "tafsir-book-134.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-134.json.gz",
+      "bytes": 1927956,
+      "sha256": "df80fa46ab1a0629cb813e107de22069bd6ba747ad561fef1365d11e1c579e94",
+      "built_at": "2026-08-10T20:28:23+00:00",
+      "title": "تفسير السمعاني"
+    },
+    {
+      "book_id": 136,
+      "name": "tafsir-book-136.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-136.json.gz",
+      "bytes": 8335420,
+      "sha256": "26749df050617a92fb12e871395dcf1228a475e008d29035d71e61f75ed4f230",
+      "built_at": "2026-08-10T20:28:56+00:00",
+      "title": "تفسير القرآن العظيم"
+    },
+    {
+      "book_id": 149,
+      "name": "tafsir-book-149.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-149.json.gz",
+      "bytes": 3146028,
+      "sha256": "ca2c29ecbd490672c12caaf8b56d65a36798939dff9df0c527bb0362414ef135",
+      "built_at": "2026-08-10T20:28:45+00:00",
+      "title": "تفسير ابن أبي حاتم"
+    },
+    {
+      "book_id": 162,
+      "name": "tafsir-book-162.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-162.json.gz",
+      "bytes": 4136999,
+      "sha256": "398b6013ee54309463eb40d3cfeb1e1f0ceb1f8fb685ac4f5faf964fa2ddf37f",
+      "built_at": "2026-08-10T20:31:27+00:00",
+      "title": "الدر المصون في علوم الكتاب المكنون"
+    },
+    {
+      "book_id": 168,
+      "name": "tafsir-book-168.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-168.json.gz",
+      "bytes": 9429771,
+      "sha256": "f250d20e19c12bd607151ca4ff3bb4ac6968d5dc67e86c4b79a8a76b310c5b8b",
+      "built_at": "2026-08-10T20:31:47+00:00",
+      "title": "نظم الدرر في تناسب الآيات والسور"
+    },
+    {
+      "book_id": 169,
+      "name": "tafsir-book-169.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-169.json.gz",
+      "bytes": 13464620,
+      "sha256": "8d5a30e5d59cf1666ed178d5a97ff6722745473e8091531b1111c9891c0d924c",
+      "built_at": "2026-08-10T20:32:21+00:00",
+      "title": "اللباب في علوم الكتاب"
+    },
+    {
+      "book_id": 269,
+      "name": "tafsir-book-269.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-269.json.gz",
+      "bytes": 196553,
+      "sha256": "4c7f850f74be464b922e31695b73869f45000d2b79a619746cb75919c9c27946",
+      "built_at": "2026-08-10T20:31:32+00:00",
+      "title": "تفسير مجاهد"
+    },
+    {
+      "book_id": 299,
+      "name": "tafsir-book-299.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-299.json.gz",
+      "bytes": 1675028,
+      "sha256": "b6191addc06a1cebed2d436569eb8a7936a72b297bc723265991dfa173db12cb",
+      "built_at": "2026-08-10T20:33:12+00:00",
+      "title": "مراح لبيد لكشف معنى القرآن المجيد"
+    },
+    {
+      "book_id": 301,
+      "name": "tafsir-book-301.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-301.json.gz",
+      "bytes": 187405743,
+      "sha256": "59cb6cb42969e8c0f7eef349530fba2b9b0c10a25e7009da8a3c226b5677e66b",
+      "built_at": "2026-08-10T20:33:59+00:00",
+      "title": "روح المعاني"
+    },
+    {
+      "book_id": 313,
+      "name": "tafsir-book-313.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-313.json.gz",
+      "bytes": 12615343,
+      "sha256": "c0db9863f93a075ea9f014f93263a53009855dba0ea259ed328108eb87519e2c",
+      "built_at": "2026-08-10T20:33:58+00:00",
+      "title": "الكشف والبيان عن تفسير القرآن"
+    },
+    {
+      "book_id": 319,
+      "name": "tafsir-book-319.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-319.json.gz",
+      "bytes": 2303805,
+      "sha256": "635926be593a93d946b9900b033c6daf01ed5bd4f43f3f93896cbd669d15a477",
+      "built_at": "2026-08-10T20:31:58+00:00",
+      "title": "أنوار التنزيل وأسرار التأويل"
+    },
+    {
+      "book_id": 322,
+      "name": "tafsir-book-322.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-322.json.gz",
+      "bytes": 189532554,
+      "sha256": "ef0b5e11a9afe6669df80081ec4a215c22d911a7f6ca5e7bed6f58b6ccdea35f",
+      "built_at": "2026-08-10T20:37:09+00:00",
+      "title": "البحر المحيط في التفسير"
+    },
+    {
+      "book_id": 323,
+      "name": "tafsir-book-323.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-323.json.gz",
+      "bytes": 1128623,
+      "sha256": "606154103a953eb3d20714e27fb56b6b45ff4dfc02a6378714cb90451e2c0a1c",
+      "built_at": "2026-08-10T20:34:55+00:00",
+      "title": "إيجاز البيان عن معاني القرآن"
+    },
+    {
+      "book_id": 324,
+      "name": "tafsir-book-324.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-324.json.gz",
+      "bytes": 2349155,
+      "sha256": "d04e5d4da5c6980bae05637e5c552be57905829e73f30716fcdbbc15bc44c0c9",
+      "built_at": "2026-08-10T20:33:00+00:00",
+      "title": "بحر العلوم"
+    },
+    {
+      "book_id": 329,
+      "name": "tafsir-book-329.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-329.json.gz",
+      "bytes": 543976,
+      "sha256": "ca74b4cad6f254fee4c1822436e4bb643724bfd21a6f293141e2259677f030dc",
+      "built_at": "2026-08-10T20:34:07+00:00",
+      "title": "تفسير التستري"
+    },
+    {
+      "book_id": 336,
+      "name": "tafsir-book-336.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-336.json.gz",
+      "bytes": 8597276,
+      "sha256": "4537c3f62f554674374516efc6c478b26aa91822d3e88e4a6e0a97649b9635ac",
+      "built_at": "2026-08-10T20:34:44+00:00",
+      "title": "روح البيان"
+    },
+    {
+      "book_id": 337,
+      "name": "tafsir-book-337.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-337.json.gz",
+      "bytes": 69834491,
+      "sha256": "733a919eee4ef82384c521240bd812314616ab843964ecaa99c96d4dad89d1d7",
+      "built_at": "2026-08-10T20:33:44+00:00",
+      "title": "غرائب القرآن ورغائب الفرقان"
+    },
+    {
+      "book_id": 339,
+      "name": "tafsir-book-339.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-339.json.gz",
+      "bytes": 4638982,
+      "sha256": "c02ba8dbf051027ac0d49cbdc72229a1a161e4e7757ac737215bec62d2455af5",
+      "built_at": "2026-08-10T20:34:23+00:00",
+      "title": "الجواهر الحسان في تفسير القرآن"
+    },
+    {
+      "book_id": 340,
+      "name": "tafsir-book-340.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-340.json.gz",
+      "bytes": 4531138,
+      "sha256": "77fd4b8dd04e9d4e41f318330f962d38160009dbef5b62016d6057f4ac672777",
+      "built_at": "2026-08-10T20:34:31+00:00",
+      "title": "زاد المسير في علم التفسير"
+    },
+    {
+      "book_id": 341,
+      "name": "tafsir-book-341.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-341.json.gz",
+      "bytes": 480343,
+      "sha256": "0f566aa46be740ddda299c6d3d978199af54f71ce4a1c17c6ee080fd2e20664a",
+      "built_at": "2026-08-10T20:34:39+00:00",
+      "title": "غريب القرآن"
+    },
+    {
+      "book_id": 343,
+      "name": "tafsir-book-343.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-343.json.gz",
+      "bytes": 9422355,
+      "sha256": "72a792c914db409b747af86ca2ea47c038b63bd14d71e80c7ce726c96c2008ba",
+      "built_at": "2026-08-10T20:36:18+00:00",
+      "title": "فتح القدير الجامع بين فني الرواية والدراية من علم التفسير"
+    },
+    {
+      "book_id": 345,
+      "name": "tafsir-book-345.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-345.json.gz",
+      "bytes": 1692155,
+      "sha256": "8142c361f0f324e51f107ecb72fd825c2e9647caf83756522ec61d41a36873a8",
+      "built_at": "2026-08-10T20:34:55+00:00",
+      "title": "التسهيل لعلوم التنزيل"
+    },
+    {
+      "book_id": 346,
+      "name": "tafsir-book-346.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-346.json.gz",
+      "bytes": 4040927,
+      "sha256": "d349a8bd871399e83affe58cbb36157741ce639c0a625633b357164bc81f5199",
+      "built_at": "2026-08-10T20:35:08+00:00",
+      "title": "الكشاف عن حقائق التنزيل وعيون الأقاويل في وجوه التأويل"
+    },
+    {
+      "book_id": 348,
+      "name": "tafsir-book-348.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-348.json.gz",
+      "bytes": 665354,
+      "sha256": "396205dc6742bfa7a760f1d0ac9566dc34212bbf5c321834a2dfc2d7d36ccab4",
+      "built_at": "2026-08-10T20:36:36+00:00",
+      "title": "مجاز القرآن"
+    },
+    {
+      "book_id": 349,
+      "name": "tafsir-book-349.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-349.json.gz",
+      "bytes": 5325285,
+      "sha256": "925cb9aed626ed5791df494ec97fbdea554744bbdfa009bbe7cd2fe775da4dc2",
+      "built_at": "2026-08-10T20:37:07+00:00",
+      "title": "محاسن التأويل"
+    },
+    {
+      "book_id": 350,
+      "name": "tafsir-book-350.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-350.json.gz",
+      "bytes": 5202105,
+      "sha256": "bf2bbd367bccd25fef0fb984c3ffc485024e15f1a188995e5527c0ad034e2a94",
+      "built_at": "2026-08-10T20:35:37+00:00",
+      "title": "المحرر الوجيز فى تفسير الكتاب العزيز"
+    },
+    {
+      "book_id": 352,
+      "name": "tafsir-book-352.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-352.json.gz",
+      "bytes": 17981885,
+      "sha256": "5b1e232e89389e054bd9d9e46a87dc5c6550709c1cb77daeb1e1392b1bff0a9b",
+      "built_at": "2026-08-10T20:36:03+00:00",
+      "title": "مفاتيح الغيب"
+    },
+    {
+      "book_id": 367,
+      "name": "tafsir-book-367.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-367.json.gz",
+      "bytes": 4351918,
+      "sha256": "431bb86d5228d6a6508a6032d52714962a6f9544ee297c092b879c36da103458",
+      "built_at": "2026-08-10T20:34:12+00:00",
+      "title": "الهداية الى بلوغ النهاية"
+    },
+    {
+      "book_id": 400,
+      "name": "tafsir-book-400.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-400.json.gz",
+      "bytes": 4496882,
+      "sha256": "cb3ab1569a80657df63579fa3fd1e98f70557f7499c83cafd1c679cde638d4bc",
+      "built_at": "2026-08-10T20:34:39+00:00",
+      "title": "فتح البيان في مقاصد القرآن"
+    },
+    {
+      "book_id": 461,
+      "name": "tafsir-book-461.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-461.json.gz",
+      "bytes": 276972,
+      "sha256": "6f1000390614df4995ae93db8f27c630952903dd2a84db8f800e9cb7ca33da0c",
+      "built_at": "2026-08-10T20:36:06+00:00",
+      "title": "غاية الأماني في تفسير الكلام الرباني"
+    },
+    {
+      "book_id": 462,
+      "name": "tafsir-book-462.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-462.json.gz",
+      "bytes": 146010,
+      "sha256": "e28b3383361f066012d952115fdba033c9cefbfe07a51b5d41747158e725f7a7",
+      "built_at": "2026-08-10T20:36:04+00:00",
+      "title": "التقييد الكبير للبسيلي"
+    },
+    {
+      "book_id": 468,
+      "name": "tafsir-book-468.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-468.json.gz",
+      "bytes": 5102476,
+      "sha256": "d5b499c5632db3e04b7bfe7e2c892f78b957d41cb00118b39b533c126bd475b8",
+      "built_at": "2026-08-10T20:36:31+00:00",
+      "title": "تأويلات أهل السنة"
+    },
+    {
+      "book_id": 475,
+      "name": "tafsir-book-475.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-475.json.gz",
+      "bytes": 8243650,
+      "sha256": "855734da6b5a5aebfce8d7ab183f0e024359e1ceda401b98760e2ed8eab8a6f3",
+      "built_at": "2026-08-10T20:38:07+00:00",
+      "title": "التفسير البسيط"
+    },
+    {
+      "book_id": 507,
+      "name": "tafsir-book-507.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-507.json.gz",
+      "bytes": 3597206,
+      "sha256": "684071d2516ea2043d7106eab82113e20febd41abd43176c124986f1701a0ed2",
+      "built_at": "2026-08-10T20:36:55+00:00",
+      "title": "لباب التأويل في معاني التنزيل"
+    },
+    {
+      "book_id": 520,
+      "name": "tafsir-book-520.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-520.json.gz",
+      "bytes": 897265,
+      "sha256": "7169144a149eab09f5e7711dd4d05ffc13aba51216229b3530ac160748eabd19",
+      "built_at": "2026-08-10T20:35:31+00:00",
+      "title": "تفسير القرآن العزيز"
+    },
+    {
+      "book_id": 546,
+      "name": "tafsir-book-546.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-546.json.gz",
+      "bytes": 1784817,
+      "sha256": "266c4a5c48a02f7337cc27554b89c80030d79b81cc3ec8c181f8e7ea8e90130d",
+      "built_at": "2026-08-10T20:35:39+00:00",
+      "title": "معاني القرآن وإعرابه للزجاج"
+    },
+    {
+      "book_id": 547,
+      "name": "tafsir-book-547.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-547.json.gz",
+      "bytes": 790214,
+      "sha256": "8670253585673493b564ea2f9d12048046b0b0b066601366bfa6c9a2f7cf5c03",
+      "built_at": "2026-08-10T20:37:31+00:00",
+      "title": "تفسير الراغب الأصفهاني"
+    },
+    {
+      "book_id": 555,
+      "name": "tafsir-book-555.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-555.json.gz",
+      "bytes": 1519760,
+      "sha256": "da719b2cb18eb799ead5bd9d84479dbb4cd04c0eb24d84b8d8f1c5a7a5f1eb9f",
+      "built_at": "2026-08-10T20:36:29+00:00",
+      "title": "تفسير ابن عرفة"
+    },
+    {
+      "book_id": 557,
+      "name": "tafsir-book-557.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-557.json.gz",
+      "bytes": 2014617,
+      "sha256": "b6d0d7e5e187d3c40b92067bea2d842433d36a6dd307455f5494a57169ce3ef9",
+      "built_at": "2026-08-10T20:35:52+00:00",
+      "title": "فتح الرحمن في تفسير القرآن"
+    },
+    {
+      "book_id": 1239,
+      "name": "tafsir-book-1239.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-1239.json.gz",
+      "bytes": 2405963,
+      "sha256": "881685e62eff039eec213bc10648c9e50d1ef6ab0cc2f5bd463d63152f5b4b22",
+      "built_at": "2026-08-10T20:38:01+00:00",
+      "title": "كشف التنزيل في تحقيق المباحث والتأويل"
+    },
+    {
+      "book_id": 1470,
+      "name": "tafsir-book-1470.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-1470.json.gz",
+      "bytes": 1673433,
+      "sha256": "5753e913a93c092b8ec46b7beb1e4fbf6f0f800c0cd0fc717b9cc3341da8fa0d",
+      "built_at": "2026-08-10T20:38:25+00:00",
+      "title": "النكت والعيون"
+    },
+    {
+      "book_id": 1499,
+      "name": "tafsir-book-1499.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-1499.json.gz",
+      "bytes": 6173412,
+      "sha256": "d91be7d111b0867dd16a128dba877285d7af39510ecbbfd4bef561f35d620ad3",
+      "built_at": "2026-08-10T20:38:38+00:00",
+      "title": "الدر المنثور في التأويل بالمأثور"
+    },
+    {
+      "book_id": 27755,
+      "name": "tafsir-book-27755.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27755.json.gz",
+      "bytes": 1527357,
+      "sha256": "318dc4666cdae7348033b3c494580623ed5b1359ba9980576a77bdbecc57689e",
+      "built_at": "2026-08-10T20:38:45+00:00",
+      "title": "تفسير مقاتل بن سليمان"
+    },
+    {
+      "book_id": 27757,
+      "name": "tafsir-book-27757.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27757.json.gz",
+      "bytes": 2595251,
+      "sha256": "990ab862b2222ee744453b6e79d5dc85e8ada510d8a576e3862be7d87156fb4e",
+      "built_at": "2026-08-10T20:36:03+00:00",
+      "title": "حاشية الصاوي على تفسير الجلالين"
+    },
+    {
+      "book_id": 27759,
+      "name": "tafsir-book-27759.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27759.json.gz",
+      "bytes": 204657,
+      "sha256": "b57c49bcc5e114f8ac646c2ebb057b0b49221e22ffbbf96935c0fd879468a7fa",
+      "built_at": "2026-08-10T20:36:54+00:00",
+      "title": "تفسير النسائي"
+    },
+    {
+      "book_id": 27761,
+      "name": "tafsir-book-27761.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27761.json.gz",
+      "bytes": 179077,
+      "sha256": "58452c9c9bc9a593997fc644771d752c0ed2586c34589c4e5853bb1826778525",
+      "built_at": "2026-08-10T20:36:15+00:00",
+      "title": "تذكرة الاريب في تفسير الغريب"
+    },
+    {
+      "book_id": 27762,
+      "name": "tafsir-book-27762.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27762.json.gz",
+      "bytes": 5265953,
+      "sha256": "2900f7ea2cdec501044e5a8688fcab492ffb02081bc615a796ff143dea2f234c",
+      "built_at": "2026-08-10T20:37:27+00:00",
+      "title": "النهر الماد من البحر المحيط"
+    },
+    {
+      "book_id": 27763,
+      "name": "tafsir-book-27763.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27763.json.gz",
+      "bytes": 1332796,
+      "sha256": "87ce85b9bfb4989f26888a67be72c66da4c0cdddadf1d6b0ad9673a7cee5a1ac",
+      "built_at": "2026-08-10T20:39:11+00:00",
+      "title": "الصراط المستقيم في تبيان القرآن الكريم"
+    },
+    {
+      "book_id": 27764,
+      "name": "tafsir-book-27764.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27764.json.gz",
+      "bytes": 160483,
+      "sha256": "0ac31697e47e04d41d70c4fea0d6ae28ba4f9be9db800982282e4e3f2e397665",
+      "built_at": "2026-08-10T20:27:56+00:00",
+      "title": "غريب القرآن"
+    },
+    {
+      "book_id": 27765,
+      "name": "tafsir-book-27765.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27765.json.gz",
+      "bytes": 249168,
+      "sha256": "67aff960464d88e78ab259d15f23a157d4ed9f8b4870052412d7295ca366b07c",
+      "built_at": "2026-08-10T20:38:54+00:00",
+      "title": "تفسير الإمام مالك"
+    },
+    {
+      "book_id": 27766,
+      "name": "tafsir-book-27766.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27766.json.gz",
+      "bytes": 554672,
+      "sha256": "c068c1ffbcb519bc5c8d85325592aeaee65c6a21937c94584d43d8a170546bfb",
+      "built_at": "2026-08-10T20:36:21+00:00",
+      "title": "تفسير يحيى بن سلام"
+    },
+    {
+      "book_id": 27767,
+      "name": "tafsir-book-27767.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27767.json.gz",
+      "bytes": 434802,
+      "sha256": "560b954a092761c6eafd34ae735854a0fbc32e7df7aba4d1cfb4cc599eeebef3",
+      "built_at": "2026-08-10T20:38:55+00:00",
+      "title": "تفسير الشافعي"
+    },
+    {
+      "book_id": 27768,
+      "name": "tafsir-book-27768.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27768.json.gz",
+      "bytes": 744982,
+      "sha256": "f1f16ae349bbd27a7ff13ceee9cf09704ee8bfad6f2dc705848542d7464e8b96",
+      "built_at": "2026-08-10T20:38:34+00:00",
+      "title": "معاني القرآن"
+    },
+    {
+      "book_id": 27770,
+      "name": "tafsir-book-27770.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27770.json.gz",
+      "bytes": 379534,
+      "sha256": "4e77df023875aa78edd3597d7468d2af9fe2e0af6b01b604d94e48236e3dca68",
+      "built_at": "2026-08-10T20:39:17+00:00",
+      "title": "تفسير القرآن"
+    },
+    {
+      "book_id": 27771,
+      "name": "tafsir-book-27771.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27771.json.gz",
+      "bytes": 238887,
+      "sha256": "8f58081dd8606b6dd5ee845fdb3dd05a59bd7d165d9f22b2f13fae918884d783",
+      "built_at": "2026-08-10T20:38:37+00:00",
+      "title": "معاني القرآن"
+    },
+    {
+      "book_id": 27772,
+      "name": "tafsir-book-27772.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27772.json.gz",
+      "bytes": 299903,
+      "sha256": "d3200167166c6017b1cebd8c2416f29df8baa506a40ab915553759bc60167888",
+      "built_at": "2026-08-10T20:36:47+00:00",
+      "title": "تفسير ابن المنذر "
+    },
+    {
+      "book_id": 27773,
+      "name": "tafsir-book-27773.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27773.json.gz",
+      "bytes": 1052094,
+      "sha256": "71b4b3961d771bdb36675681a9e809d2d391f4259e7b0e746adb8557d4d3d3cd",
+      "built_at": "2026-08-10T20:36:31+00:00",
+      "title": "أحكام القرآن"
+    },
+    {
+      "book_id": 27774,
+      "name": "tafsir-book-27774.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27774.json.gz",
+      "bytes": 61829,
+      "sha256": "6b060ddf02af63f13fad1b79f6093ec80139ee84bd5d1bf58e7e61b0d7e6a235",
+      "built_at": "2026-08-10T20:37:27+00:00",
+      "title": "تفسير ابن خويز منداد"
+    },
+    {
+      "book_id": 27777,
+      "name": "tafsir-book-27777.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27777.json.gz",
+      "bytes": 1167910,
+      "sha256": "ca8bf85409775d960926f895cbce0dc9499065e415145f38484f325f8b01cb1e",
+      "built_at": "2026-08-10T20:37:04+00:00",
+      "title": "لطائف الإشارات"
+    },
+    {
+      "book_id": 27778,
+      "name": "tafsir-book-27778.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27778.json.gz",
+      "bytes": 431166,
+      "sha256": "8f2c356dabdd12a2d41a804407c3f54b26d7ff023fefdc1cbc2d9f35c25897a5",
+      "built_at": "2026-08-10T20:36:35+00:00",
+      "title": "أحكام القرآن"
+    },
+    {
+      "book_id": 27780,
+      "name": "tafsir-book-27780.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27780.json.gz",
+      "bytes": 1264458,
+      "sha256": "f8e7060a59c48660c95e761910125d710aa1d54c6f6fb77bbb5868da1ec78aa6",
+      "built_at": "2026-08-10T20:39:24+00:00",
+      "title": "أحكام القرآن"
+    },
+    {
+      "book_id": 27781,
+      "name": "tafsir-book-27781.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27781.json.gz",
+      "bytes": 961253,
+      "sha256": "f606170776428bd11758653934dd120bfce355c03d0d383969fe20c466cd2fe5",
+      "built_at": "2026-08-10T20:38:59+00:00",
+      "title": "أحكام القرآن"
+    },
+    {
+      "book_id": 27784,
+      "name": "tafsir-book-27784.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27784.json.gz",
+      "bytes": 151520,
+      "sha256": "d14278b8167dae7e18ebcd53381dab38812c348bfed0e5196ee30d32320ea42b",
+      "built_at": "2026-08-10T20:39:33+00:00",
+      "title": "التبيان في تفسير غريب القرآن"
+    },
+    {
+      "book_id": 27785,
+      "name": "tafsir-book-27785.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27785.json.gz",
+      "bytes": 1655366,
+      "sha256": "09c223a92d1ab22e815ddeeb9b845c063351f610bac47104ff0485b90fe049b4",
+      "built_at": "2026-08-10T20:39:18+00:00",
+      "title": "جامع البيان في تفسير القرآن"
+    },
+    {
+      "book_id": 27786,
+      "name": "tafsir-book-27786.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27786.json.gz",
+      "bytes": 287474,
+      "sha256": "e2e3010665d471a4d368d73f6e633b041a96ce5ca96ea879bea2ad4ac8b91289",
+      "built_at": "2026-08-10T20:37:08+00:00",
+      "title": "فتح الرحمن بكشف ما يلتبس في القرآن"
+    },
+    {
+      "book_id": 27787,
+      "name": "tafsir-book-27787.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27787.json.gz",
+      "bytes": 3510318,
+      "sha256": "e9d5002eedb03333de9532ca34954713966a88a082e57c29acb6d1f55ba87e8b",
+      "built_at": "2026-08-10T20:36:56+00:00",
+      "title": "السراج المنير في الإعانة على معرفة بعض معاني كلام ربنا الحكيم الخبير"
+    },
+    {
+      "book_id": 27788,
+      "name": "tafsir-book-27788.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27788.json.gz",
+      "bytes": 3704629,
+      "sha256": "7bc56de8ac2cf0a75a6bb6c96ef1118ed4ab73c9190acd01c7f0b03c058e4695",
+      "built_at": "2026-08-10T20:37:31+00:00",
+      "title": "التفسير المظهري"
+    },
+    {
+      "book_id": 27789,
+      "name": "tafsir-book-27789.json.gz",
+      "url": "https://quranpedia.net/dumps/tafsir-book-27789.json.gz",
+      "bytes": 4188886,
+      "sha256": "975424ba8aadab0743d8006fad0e96b71dcfc5b3e3b1a1605d3c65260de04856",
+      "built_at": "2026-08-10T20:37:29+00:00",
+      "title": "البحر المديد في تفسير القرآن المجيد"
+    }
+  ],
+  "transformation": {
+    "script": "scripts/build_offline_tafsir.py",
+    "description": "Verify every official size/SHA-256; stream and sanitize per-ayah HTML to plain Unicode; compress 16-ayah chunks into immutable SQLite without loading full books in RAM."
+  },
+  "output_lock": "audit/offline-tafsir-data.json"
+}

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """سراج — تطبيق قرآن كريم أصلي بواجهة Qt لنظام Linux.
 
-البيانات الأساسية محلية، والتلاوة وبعض التفاسير من الإنترنت كما في Android.
+البيانات الأساسية والتفاسير محلية؛ الاتصال مطلوب للتلاوة والتحديثات فقط.
 تشغيل:   python3 main.py
 اختبار:  python3 main.py --selftest
 """
@@ -31,6 +31,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout, QWidget,
 )
 
+from offline_tafsir import OfflineTafsirStore
 from patch_runtime import install_patch_archive
 from reading_tracker import (
     TOTAL_PAGES, clear_tracking, estimated_finish, habit_average, khatma_progress,
@@ -149,8 +150,8 @@ TAFSIR_EDITIONS = [
     ('ar.qurtubi', 'تفسير القرطبي'),
     ('ar.miqbas', 'تنوير المقباس'),
 ]
-# الكتب التراثية الإضافية: فهرس مقفول مولد من dump Quranpedia الرسمي؛ النص نفسه
-# يُطلب حيًا من API حتى تظل تصحيحات المصدر جارية ولا نشحن قاعدة تفاسير مجمدة.
+# الكتب التراثية الإضافية: فهرس مقفول مولد من dump Quranpedia الرسمي؛
+# النصوص الكاملة تُقرأ من قاعدة محلية مضغوطة ولا تحتاج إلى اتصال.
 QURANPEDIA_TAFSIR_EDITIONS = [
     (
         book['edition'],
@@ -258,7 +259,7 @@ def populate_tafsir_books(combo):
     combo.setMaxVisibleItems(22)
     combo.setMinimumContentsLength(28)
     combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-    combo.setToolTip('اختر تفسيرًا؛ الكتب التراثية من الموسوعة القرآنية وتُعرض مباشرة من المصدر')
+    combo.setToolTip('اختر تفسيرًا؛ جميع النصوص الموثقة مدمجة محليًا وتعمل دون إنترنت')
 
 
 def norm(text):
@@ -879,6 +880,7 @@ class Main(QMainWindow):
         self.reminder_timer.timeout.connect(self.update_khatma_reminder)
 
         self.nam = QNetworkAccessManager(self)
+        self.offline_tafsir = OfflineTafsirStore(resource_file('data/tafsir-offline.sqlite3'))
         self.tafsir_cache = {}
         self.tafsir_key = None
         valid_tafsirs = {edition for edition, _name in ALL_TAFSIR_EDITIONS}
@@ -1309,20 +1311,30 @@ class Main(QMainWindow):
                 combo.setCurrentIndex(index)
                 combo.blockSignals(False)
 
+    def _offline_tafsir_text(self, key):
+        handled, text = self.offline_tafsir.lookup(key[0], key[1], key[2])
+        if not handled:
+            return False, None
+        if not text:
+            text = 'لا يوجد نص خاص بهذه الآية في هذا الكتاب؛ فالمصدر لا يغطي جميع الآيات.'
+        self.tafsir_cache[key] = text
+        return True, text
+
     def _tafsir_source_footer(self, edition):
         t = THEMES[self.theme_name]
         if str(edition).startswith('qp:'):
             meta = TAFSIR_METADATA.get(edition, {})
             detail = (
-                f"الموسوعة القرآنية Quranpedia.net · فهرس {TAFSIR_CATALOG['dump_version']} · "
+                'الموسوعة القرآنية Quranpedia.net · '
+                f"نسخة بيانات الكتب {TAFSIR_CATALOG['selection']['book_dump_version']} · "
                 f"{html.escape(str(meta.get('author', '')))}"
             )
         else:
-            detail = 'AlQuran Cloud · الطبعة الحية المدققة في سجل الحقوق'
+            detail = 'AlQuran Cloud · لقطة محلية موثقة ٢٠٢٦-١٠-٢٨'
         return (
             f'<hr><p style="font-family:\'Noto Sans Arabic\'; font-size:10pt; '
             f'line-height:150%; color:{t["muted"]};">المصدر الرقمي: {detail}. '
-            'النص يُعرض من المصدر عند الطلب ولا يغيّر سراج محتواه.</p>'
+            'النص مدمج محليًا للعمل دون إنترنت ويُعرض دون تغيير في المحتوى.</p>'
         )
 
     def _tafsir_document(self, inner):
@@ -1352,6 +1364,10 @@ class Main(QMainWindow):
         self.tp_title.setText(f'{SURAHS[s - 1]["name"]} · الآية {ar(a)}')
         if key in self.tafsir_cache:
             self.show_tp(self.tafsir_cache[key], key)
+            return
+        handled, text = self._offline_tafsir_text(key)
+        if handled:
+            self.show_tp(text, key)
             return
         self.tp_browser.setHtml(self._tafsir_document('<p align="center">جارٍ تحميل التفسير…</p>'))
         reply = self.nam.get(tafsir_request(edition, s, a))
@@ -1826,6 +1842,10 @@ class Main(QMainWindow):
         head = self._tafsir_head(s, a)
         if key in self.tafsir_cache:
             self.show_tafsir(self.tafsir_cache[key], key)
+            return
+        handled, text = self._offline_tafsir_text(key)
+        if handled:
+            self.show_tafsir(text, key)
             return
         self.tf_browser.setHtml(
             self._tafsir_document(head + '<p align="center">جارٍ تحميل التفسير…</p>')
@@ -3245,6 +3265,7 @@ class Main(QMainWindow):
             except (OSError, RuntimeError):
                 pass
             state['temp'].unlink(missing_ok=True)
+        self.offline_tafsir.close()
         self.settings.setValue('geometry', self.saveGeometry())
         super().closeEvent(event)
 
@@ -3277,6 +3298,8 @@ def run_selftest(app, win):
 
     def check():
         text = win.browser.toPlainText()
+        local_a, tafsir_a = win.offline_tafsir.lookup('ar.muyassar', 1, 1)
+        local_b, tafsir_b = win.offline_tafsir.lookup('qp:301', 2, 255)
         info = {
             'page': win.page,
             'textLength': len(text),
@@ -3284,8 +3307,16 @@ def run_selftest(app, win):
             'reciters': win.reciter_combo.count(),
             'riwaya': win.riwaya_id,
             'hasMushaf': 'الفاتح' in text or '﴿' in text or 'ال' in text,
+            'offlineTafsir': bool(local_a and tafsir_a and local_b and tafsir_b),
+            'tafsirEditions': len(win.offline_tafsir.editions),
         }
-        ok = info['textLength'] > 200 and info['surahs'] == 114 and info['reciters'] >= 1
+        ok = (
+            info['textLength'] > 200
+            and info['surahs'] == 114
+            and info['reciters'] >= 1
+            and info['offlineTafsir']
+            and info['tafsirEditions'] == len(ALL_TAFSIR_EDITIONS)
+        )
         finish(ok, info)
 
     QTimer.singleShot(600, check)

@@ -32,6 +32,9 @@ jobs:
           cache: pip
           cache-dependency-path: mushaf_app/requirements.txt
 
+      - name: Download and verify the locked offline tafsir store
+        run: python scripts/fetch_offline_tafsir_data.py
+
       - name: Install AppImage and smoke-test system dependencies
         run: |
           sudo apt-get update
@@ -54,7 +57,7 @@ jobs:
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
         run: |
-          python -m py_compile mushaf_app/main.py mushaf_app/runtime.py mushaf_app/version.py mushaf_app/tests/test_*.py
+          python -m py_compile mushaf_app/main.py mushaf_app/offline_tafsir.py mushaf_app/runtime.py mushaf_app/version.py mushaf_app/tests/test_*.py
           python -m unittest discover -s mushaf_app/tests -p "test_*.py" -v
           VERSION="$(PYTHONPATH=mushaf_app python -c 'from version import APP_VERSION; print(APP_VERSION)')"
           test "$VERSION" = "$(PYTHONPATH=windows_app python -c 'from version import APP_VERSION; print(APP_VERSION)')"
@@ -78,6 +81,8 @@ jobs:
           python scripts/generate_alquran_data.py --verify
           python scripts/generate_quranpedia_data.py --verify
           python scripts/generate_quranpedia_tafsir_catalog.py --verify
+          python scripts/fetch_offline_tafsir_data.py --verify
+          python scripts/build_offline_tafsir.py --verify
           python scripts/generate_adhkar_data.py --verify
           python scripts/audit_alquran_editions.py --verify
           python scripts/verify_audio_sources.py
@@ -130,6 +135,7 @@ jobs:
           test -f squashfs-root/com.mosalah30688.siraj.quran.desktop
           test -f squashfs-root/usr/share/metainfo/com.mosalah30688.siraj.quran.appdata.xml
           test -f squashfs-root/usr/share/doc/siraj/THIRD_PARTY_NOTICES.md
+          find squashfs-root/usr/bin -type f -name tafsir-offline.sqlite3 -size 728866816c -print -quit | grep -q .
           test -d squashfs-root/usr/share/doc/siraj/licenses
           find squashfs-root/usr/share/doc/siraj/licenses -type f -print -quit | grep -q .
           desktop-file-validate squashfs-root/com.mosalah30688.siraj.quran.desktop
@@ -204,6 +210,32 @@ jobs:
             --output-file mushaf_app/release/SBOM.cdx.json
           test "$(find mushaf_app/release -mindepth 1 -maxdepth 1 -type f | wc -l)" -eq 4
           test "$(find mushaf_app/release -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 0
+
+      - name: Generate signed test update channel
+        if: startsWith(github.ref, 'refs/tags/siraj-linux-test-v')
+        env:
+          SIRAJ_UPDATE_SIGNING_SEED: ${{ secrets.WINDOWS_UPDATE_SIGNING_SEED }}
+        run: |
+          set -euo pipefail
+          test -n "$SIRAJ_UPDATE_SIGNING_SEED"
+          VERSION="${GITHUB_REF_NAME#siraj-linux-test-v}"
+          APPIMAGE="mushaf_app/release/Siraj-Quran-${VERSION}-linux-x86_64.AppImage"
+          BASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}"
+          python scripts/generate_linux_update_manifest.py \
+            --version "$VERSION" \
+            --appimage "$APPIMAGE" \
+            --base-url "$BASE_URL" \
+            --notes "سراج ${VERSION}: دمج 78 تفسيرًا محليًا للعمل دون إنترنت." \
+            --output mushaf_app/release/stable.json
+          python - <<'PY'
+          import json, os, pathlib, sys
+          sys.path.insert(0, 'scripts')
+          from update_signing import verify_manifest
+          public = pathlib.Path('mushaf_app/assets/update_public_key.txt').read_text(encoding='ascii')
+          manifest = json.loads(pathlib.Path('mushaf_app/release/stable.json').read_text(encoding='utf-8'))
+          assert verify_manifest(manifest, public)
+          assert manifest['available'] is True and manifest['version'] == os.environ['GITHUB_REF_NAME'].removeprefix('siraj-linux-test-v')
+          PY
 
       - name: Upload Linux UI screenshots
         if: always()

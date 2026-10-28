@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Build the Linux live-tafsir catalog from a locked official Quranpedia dump.
+"""Build Siraj's licensed classical-tafsir catalog from a locked Quranpedia dump.
 
-Only book metadata is bundled. Tafsir text is requested live from Quranpedia's
-read-only API so corrections remain current and the AppImage does not republish
-a frozen database.
+The catalog controls the visible rights-audited selection. Full text is built
+separately by ``build_offline_tafsir.py`` from the official per-book dumps.
 """
 
 from __future__ import annotations
@@ -19,7 +18,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 BASE_URL = "https://quranpedia.net/dumps"
 SOURCE_DIR = ROOT / "audit" / "sources" / "quranpedia-tafsir" / "2026-10-28"
-OUTPUT = ROOT / "mushaf_app" / "data" / "tafsir-catalog.json"
+OUTPUTS = (
+    ROOT / "mushaf_app" / "data" / "tafsir-catalog.json",
+    ROOT / "windows_app" / "data" / "tafsir-catalog.json",
+)
 SOURCE_NAME = "tafsir.json.gz"
 MAX_CLASSICAL_DEATH_YEAR = 1350
 
@@ -236,7 +238,7 @@ def build(source_dir: Path) -> tuple[bytes, dict]:
             "policy": "https://quranpedia.net/api-docs#usage-policy",
             "notice_ar": (
                 "يجوز استعمال البيانات داخل التطبيقات مجانًا؛ النصوص التراثية تراث مشترك، "
-                "والرقمنة والهيكلة والتدقيق للموسوعة القرآنية. يعرض سراج النص حيًا من API."
+                "والرقمنة والهيكلة والتدقيق للموسوعة القرآنية. يدمج سراج النصوص محليًا للعمل دون إنترنت."
             ),
         },
         "selection": {
@@ -244,7 +246,8 @@ def build(source_dir: Path) -> tuple[bytes, dict]:
             "maximum_author_death_hijri": MAX_CLASSICAL_DEATH_YEAR,
             "excludes_modern_compilations_by_title_prefix": list(EXCLUDED_TITLE_PREFIXES),
             "deduplicated": True,
-            "live_text_not_bundled": True,
+            "offline_text_bundled": True,
+            "book_dump_version": "2026-08-10",
         },
         "source_file": {"name": SOURCE_NAME, "sha256": sha256(source_raw)},
         "generated_by": "scripts/generate_quranpedia_tafsir_catalog.py",
@@ -281,11 +284,13 @@ def build(source_dir: Path) -> tuple[bytes, dict]:
             "description": (
                 "Union the official per-ayah tafsir metadata; retain licensed classical primary works "
                 "whose recorded author death is no later than 1350 AH; remove modern compilations "
-                "and duplicate editions. Only metadata is bundled; text remains live API content."
+                "and duplicate editions. This metadata controls the full offline text store built "
+                "from the matching official per-book dumps."
             ),
         },
         "outputs": {
-            "tafsir-catalog.json": {"bytes": len(output_raw), "sha256": sha256(output_raw)}
+            path.relative_to(ROOT).as_posix(): {"bytes": len(output_raw), "sha256": sha256(output_raw)}
+            for path in OUTPUTS
         },
     }
     return output_raw, source_record
@@ -325,8 +330,9 @@ def main() -> int:
     source_path = source_dir / "SOURCE.json"
     if args.verify:
         failures = []
-        if not OUTPUT.is_file() or OUTPUT.read_bytes() != output_raw:
-            failures.append(OUTPUT.relative_to(ROOT).as_posix())
+        for output in OUTPUTS:
+            if not output.is_file() or output.read_bytes() != output_raw:
+                failures.append(output.relative_to(ROOT).as_posix())
         if not source_path.is_file():
             failures.append(source_path.relative_to(ROOT).as_posix())
         else:
@@ -336,8 +342,9 @@ def main() -> int:
         if failures:
             raise SystemExit("generated tafsir catalog/evidence mismatch: " + ", ".join(failures))
     else:
-        OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-        OUTPUT.write_bytes(output_raw)
+        for output in OUTPUTS:
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_bytes(output_raw)
         source_path.write_text(
             json.dumps(source_record, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",

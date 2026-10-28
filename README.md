@@ -25,7 +25,7 @@ npm run android:sync
 
 - **سراج**
 - الوصف: **قرآن كريم**
-- الإصدار التالي المخطط (لم يُبنَ بعد): `4.1.0`
+- الإصدار التالي المخطط (لم يُبنَ بعد): `4.1.1`
 - Windows 10/11 x64
 
 الناتج:
@@ -33,8 +33,8 @@ npm run android:sync
 - نسخة Windows Portable فقط؛ تُفك بالكامل ويُشغّل `Siraj.exe` بلا تثبيت أو صلاحية مدير.
 - تحفظ بياناتها في `UserData` بجوار البرنامج ولا تستخدم Registry للإعدادات.
 - تحديث مرتبط بـ GitHub Releases مع توقيع Manifest عبر Ed25519 وفحص الحجم وSHA-256.
-- توقيع Authenticode لملفات EXE إلزامي للإصدارات المستقرة.
-- `4.1.0` حزمة انتقالية كاملة؛ التحديثات العادية التالية حزم `.sirajpatch` صغيرة موقعة، والحزمة الكاملة للتحديث الرئيسي أو تغيير runtime/dependencies الأصلية.
+- لا يُستخدم Authenticode؛ تُنشر النسخة Portable بلا مثبت مع SHA-256 وSBOM وattestation، وقد يعرض Windows تحذير SmartScreen المعتاد للملف غير الموقّع.
+- `4.1.1` حزمة كاملة بسبب دمج بيانات التفاسير؛ التحديثات العادية التالية حزم `.sirajpatch` صغيرة موقعة، والحزمة الكاملة للتحديث الرئيسي أو تغيير runtime/dependencies الأصلية.
 
 راجع [`windows_app/README.md`](windows_app/README.md) للتشغيل والبناء والتفاصيل.
 
@@ -42,18 +42,20 @@ npm run android:sync
 
 مسار Linux داخل `mushaf_app/` يحمل الهوية نفسها **سراج — قرآن كريم** وينتج:
 
-- `Siraj-Quran-4.1.0-linux-x86_64.AppImage`
-- `Siraj-Quran-4.1.0-linux-corresponding-source.zip`
+- `Siraj-Quran-4.1.1-linux-x86_64.AppImage`
+- `Siraj-Quran-4.1.1-linux-corresponding-source.zip`
 - `SHA256SUMS.txt`
 - `SBOM.cdx.json`
 
 يبني GitHub Actions الحزمة على Ubuntu 22.04، ثم يشغّل اختبارات الواجهة والبيانات والتلاوة من داخل AppImage، ويشغّل التطبيق بلا arguments تحت X11 افتراضي ويتحقق من ظهور نافذة «سراج» قبل رفع artifact باسم `siraj-linux-appimage`.
 
+يتضمن الإصدار `4.1.1` قاعدة تفسير محلية مضغوطة: 73 كتابًا تراثيًا مختارًا من ملفات Quranpedia الرسمية و5 طبعات مدققة من AlQuran Cloud (78 خيارًا)، لذلك تعمل النصوص دون إنترنت ويكبر حجم الحزمة الكاملة.
+
 بعد التنزيل يلزم منح الملف صلاحية التنفيذ مرة واحدة من **Properties → Permissions → Allow executing file as program** أو بالأمر:
 
 ```bash
-chmod +x Siraj-Quran-4.1.0-linux-x86_64.AppImage
-./Siraj-Quran-4.1.0-linux-x86_64.AppImage
+chmod +x Siraj-Quran-4.1.1-linux-x86_64.AppImage
+./Siraj-Quran-4.1.1-linux-x86_64.AppImage
 ```
 
 لا يُنشئ هذا المسار حزمة DEB/RPM أو مثبّتًا، ولا ينشر Release مستقرًا تلقائيًا. يظل النشر العام محجوبًا إلى حين اكتمال مراجعة تراخيص المحتوى والمراجعة العلمية.

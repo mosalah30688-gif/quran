@@ -93,6 +93,8 @@ try:
     check('licensed classical tafsir catalog has 73 unique books',
           len(M.QURANPEDIA_TAFSIR_EDITIONS) == 73
           and len({edition for edition, _name in M.ALL_TAFSIR_EDITIONS}) == 78)
+    check('all 78 tafsir editions are available in the offline store',
+          win.offline_tafsir.available and len(win.offline_tafsir.editions) == 78)
     check('tafsir selectors expose audited and classical books',
           win.tf_book.count() == 79 and win.tp_book.count() == 79 and win.tf_book.findData('qp:4') >= 0)
     check('Hafs audio uses audited Islamic Network CDN', M.ayah_audio_url('ar.alafasy', 2, 255).startswith('https://cdn.islamic.network/'))
@@ -292,7 +294,7 @@ try:
     check('search results', win.search_results.count() > 50)
     win.open_search_result(win.search_results.item(0))
     check('search opens reader', win.stack.currentWidget() is win.views['reader'])
-    # التفسير: القائمة الموسعة، المصدر الحي، ومنع العجلة وتوحيد خط المصحف.
+    # التفسير: القائمة الموسعة، المصدر المحلي، ومنع العجلة وتوحيد خط المصحف.
     win.show_view('tafsir')
     win.tf_surah.setCurrentIndex(1)
     win.tf_ayah.setValue(2)
@@ -302,12 +304,8 @@ try:
     win.tf_book.setCurrentIndex(qp_index)
     assert_wheel_locked('tafsir wheel cannot change book', win.tf_book, win.tf_book.currentIndex)
     qp_key = ('qp:4', 2, 2)
-    for _ in range(100):
-        wait(250)
-        if qp_key in win.tafsir_cache:
-            break
     app.processEvents()
-    check('Quranpedia classical tafsir fetched', qp_key in win.tafsir_cache)
+    check('Quranpedia classical tafsir loaded locally without waiting', qp_key in win.tafsir_cache)
     if qp_key in win.tafsir_cache:
         check('Quranpedia HTML sanitized to readable text',
               '<h3>' not in win.tafsir_cache[qp_key] and len(win.tafsir_cache[qp_key]) > 20)
