@@ -54,10 +54,12 @@ public class ApkUpdaterPlugin extends Plugin {
 
     @PluginMethod
     public void openInstallPermission(PluginCall call) {
-        Intent intent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                Uri.parse("package:" + getContext().getPackageName()));
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        getContext().startActivity(intent);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Intent intent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                    Uri.parse("package:" + getContext().getPackageName()));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+        }
         call.resolve();
     }
 
@@ -65,6 +67,14 @@ public class ApkUpdaterPlugin extends Plugin {
     public void downloadAndInstall(PluginCall call) {
         final String url = call.getString("url");
         final String sha256 = call.getString("sha256", "");
+        if (url == null || !url.startsWith("https://")) {
+            call.reject("update URL must use HTTPS");
+            return;
+        }
+        if (sha256 == null || !sha256.matches("(?i)[0-9a-f]{64}")) {
+            call.reject("a SHA-256 checksum is required");
+            return;
+        }
         io.execute(() -> {
             try {
                 File dir = new File(getContext().getCacheDir(), "apk");
@@ -74,7 +84,9 @@ public class ApkUpdaterPlugin extends Plugin {
                 conn.setInstanceFollowRedirects(true);
                 conn.setConnectTimeout(15000);
                 conn.setReadTimeout(30000);
+                conn.setRequestProperty("User-Agent", "Siraj-Android/1.4.0");
                 if (conn.getResponseCode() != 200) throw new Exception("HTTP " + conn.getResponseCode());
+                if (!"https".equalsIgnoreCase(conn.getURL().getProtocol())) throw new Exception("insecure redirect");
 
                 MessageDigest md = MessageDigest.getInstance("SHA-256");
                 try (InputStream is = conn.getInputStream(); FileOutputStream os = new FileOutputStream(out)) {
@@ -85,13 +97,11 @@ public class ApkUpdaterPlugin extends Plugin {
                         md.update(buf, 0, n);
                     }
                 }
-                if (sha256 != null && !sha256.isEmpty()) {
-                    StringBuilder hex = new StringBuilder();
-                    for (byte b : md.digest()) hex.append(String.format("%02x", b));
-                    if (!hex.toString().equalsIgnoreCase(sha256)) {
-                        out.delete();
-                        throw new Exception("checksum mismatch");
-                    }
+                StringBuilder hex = new StringBuilder();
+                for (byte b : md.digest()) hex.append(String.format("%02x", b));
+                if (!hex.toString().equalsIgnoreCase(sha256)) {
+                    out.delete();
+                    throw new Exception("checksum mismatch");
                 }
 
                 Uri uri = FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", out);

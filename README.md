@@ -12,12 +12,16 @@
 - `app.js` و`index.html`
 - `www/`
 
+إصدار Android الحالي في المصدر هو `1.4.0` (`versionCode 140`). يتضمن المصحف المحلي لحفص والتجويد وفهرس السور وأربعة خطوط OFL، ويتكيف مع الهاتف والتابلت والوضعين الرأسي والأفقي. حزمة التفاسير الـ78 منفصلة عن APK: ينزّلها المستخدم اختياريًا إلى مساحة التطبيق، ويتحقق Android من الحجم وSHA-256 وبنية SQLite قبل اعتمادها.
+
 بناء الويب والمزامنة:
 
 ```bash
 npm ci
 npm run android:sync
 ```
+
+يبني workflow ‏`.github/workflows/android.yml` ملف Release موقّعًا فقط، ويقارن شهادة توقيعه بشهادة `update/app.apk` الحالية ويتحقق أن `versionCode` أعلى قبل النشر. عند تشغيله يدويًا مع `publish=true` ينشر APK و`SHA256SUMS.txt` ثم يحدّث قناة `update/manifest.json`. مفتاح Android يأتي من GitHub Secrets ولا يُحفظ في المستودع.
 
 ### Windows — الخطة الجديدة
 
@@ -58,7 +62,7 @@ chmod +x Siraj-Quran-4.1.1-linux-x86_64.AppImage
 ./Siraj-Quran-4.1.1-linux-x86_64.AppImage
 ```
 
-لا يُنشئ هذا المسار حزمة DEB/RPM أو مثبّتًا، ولا ينشر Release مستقرًا تلقائيًا. يظل النشر العام محجوبًا إلى حين اكتمال مراجعة تراخيص المحتوى والمراجعة العلمية.
+لا يُنشئ هذا المسار حزمة DEB/RPM أو مثبّتًا. نُشر إصدار `4.1.1` بعد اجتياز بوابة مراجعة التراخيص والبيانات؛ ولا يجوز للإصدارات اللاحقة تجاوز البوابة نفسها.
 
 ## خصائص Windows الجديدة
 
@@ -78,7 +82,7 @@ chmod +x Siraj-Quran-4.1.1-linux-x86_64.AppImage
 - `cdn.mp3quran.net`
 - `quranpedia.net`
 
-سلسلة المنشأ والبصمات والمولدات موثقة في [`audit/DATA_PROVENANCE.md`](audit/DATA_PROVENANCE.md)، وسجل الحقوق والموانع في [`audit/THIRD_PARTY_REVIEW.md`](audit/THIRD_PARTY_REVIEW.md). ما زال الإصدار العام محجوبًا حتى الاعتماد العلمي البشري والبناء النهائي على Windows وUbuntu 22.04؛ راجع أيضًا [`windows_app/THIRD_PARTY_NOTICES.md`](windows_app/THIRD_PARTY_NOTICES.md).
+سلسلة المنشأ والبصمات والمولدات موثقة في [`audit/DATA_PROVENANCE.md`](audit/DATA_PROVENANCE.md)، وسجل الحقوق والموانع في [`audit/THIRD_PARTY_REVIEW.md`](audit/THIRD_PARTY_REVIEW.md). اجتاز `4.1.1` تدقيق الحقوق والبناء النهائي على Windows وUbuntu 22.04؛ وتظل البوابة نفسها إلزامية قبل أي نشر لاحق. أحدث إصدارات Windows وLinux وبيانات التفاسير، ثم Android `1.4.0` بعد نجاح مرشح Release، خاضعة لسياسة [الاعتماد والاحتفاظ الدائم](audit/RELEASE_RETENTION.md): لا تُحذف أصولها أو وسومها ولا تُستبدل. راجع أيضًا [`windows_app/THIRD_PARTY_NOTICES.md`](windows_app/THIRD_PARTY_NOTICES.md).
 
 ## الترخيص
 

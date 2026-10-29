@@ -4,19 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f5b4c" />
-  <meta name="description" content="تطبيق القرآن الكريم: مصحف المدينة صفحة بصفحة، بالتلاوات والتفسير والتجويد والحفظ." />
+  <meta name="description" content="سراج — قرآن كريم: قراءة محلية متجاوبة، تلاوات، تفاسير تراثية، تجويد وحفظ." />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Amiri+Quran&family=Noto+Naskh+Arabic:wght@400;700&display=swap" rel="stylesheet" />
-  <title>القرآن الكريم</title>
+  <title>سراج — قرآن كريم</title>
   <style>
+    @font-face { font-family: 'Amiri'; src: url('fonts/Amiri-Regular.ttf') format('truetype'); font-display: swap; }
+    @font-face { font-family: 'Amiri Quran'; src: url('fonts/AmiriQuran-Regular.ttf') format('truetype'); font-display: swap; }
+    @font-face { font-family: 'Noto Naskh Arabic'; src: url('fonts/NotoNaskhArabic-Variable.ttf') format('truetype'); font-display: swap; }
+    @font-face { font-family: 'Scheherazade New'; src: url('fonts/ScheherazadeNew-Regular.ttf') format('truetype'); font-display: swap; }
     :root {
       --bg: #f7f4ec; --card: #ffffff; --ink: #1d2b27; --muted: #6b7a75;
       --brand: #0f5b4c; --brand-2: #1a8a74; --gold: #b8860b; --line: #e3ddcf;
-      --hl: #fff4cc; --quran-size: 26px; --side: 300px; --player-h: 120px;
+      --hl: #fff4cc; --quran-size: 26px; --quran-font: "Amiri Quran"; --side: 300px; --player-h: 120px;
       --paper: #f3e8cc; --paper-edge: #e2cd9c; --paper-ink: #1d170c; --paper-gold: #a8843f; --paper-muted: #6e5629;
     }
     body.dark {
@@ -142,13 +143,13 @@
     .page-foot { text-align: center; font-family: Amiri, serif; color: var(--paper-muted); font-size: 18px; margin-top: 10px; position: relative; z-index: 1; }
 
     .surah-banner {
-      margin: 14px auto 8px; text-align: center; font-family: "Amiri Quran", Amiri, serif; font-size: 25px;
+      margin: 14px auto 8px; text-align: center; font-family: var(--quran-font), "Amiri Quran", Amiri, serif; font-size: 25px;
       border-top: 2px solid var(--paper-gold); border-bottom: 2px solid var(--paper-gold); padding: 6px 0;
       background: linear-gradient(90deg, transparent, rgba(168,132,63,.16), transparent);
     }
-    .bism { text-align: center; font-family: "Amiri Quran", Amiri, serif; font-size: calc(var(--quran-size) * .95); margin: 2px 0 6px; }
+    .bism { text-align: center; font-family: var(--quran-font), "Amiri Quran", Amiri, serif; font-size: calc(var(--quran-size) * .95); margin: 2px 0 6px; }
     .flow {
-      font-family: "Amiri Quran", Amiri, serif; font-size: var(--quran-size); line-height: 2.15;
+      font-family: var(--quran-font), "Amiri Quran", Amiri, serif; font-size: var(--quran-size); line-height: 2.15;
       text-align: justify; margin: 0; word-spacing: .02em;
     }
     .ay { cursor: pointer; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
@@ -186,7 +187,7 @@
     body.hafs-reader .end.hafs-end {
       display: inline; width: auto; height: auto; border: 0; border-radius: 0;
       padding: 0 1px; margin: 0 2px; background: none; color: #9a4438;
-      font-family: "Amiri Quran", Amiri, serif; font-size: .66em; vertical-align: baseline;
+      font-family: var(--quran-font), "Amiri Quran", Amiri, serif; font-size: .66em; vertical-align: baseline;
     }
     body.dark.hafs-reader .page { background: #211f17; color: #f2ecdd; border-color: #c78b81; }
     body.dark.hafs-reader .surah-banner, body.dark.hafs-reader .bism,
@@ -221,7 +222,7 @@
       border-top: 2px solid var(--brand); padding: 14px; border-radius: 16px 16px 0 0; display: none; box-shadow: 0 -8px 24px rgba(0,0,0,.2);
     }
     .panel-tafsir.show { display: block; }
-    .panel-tafsir .tf, .tf { font-size: 18px; line-height: 2; font-family: "Noto Naskh Arabic", serif; white-space: pre-line; }
+    .panel-tafsir .tf, .tf { font-size: 18px; line-height: 2; font-family: var(--quran-font), "Noto Naskh Arabic", serif; white-space: pre-line; }
     .tr { font-size: 16px; line-height: 1.8; }
     @font-face { font-family: 'AmiriQuranBundled'; src: url(fonts/AmiriQuran-arabic.woff2) format('woff2'); }
     body.riw #pageBody { font-family: 'AmiriQuranBundled', 'Amiri Quran', serif; }
@@ -230,12 +231,12 @@
     .mw { margin: 6px 0; line-height: 1.9; font-size: 16px; }
     .mw b { color: var(--brand); margin-left: 4px; }
     .tf-head { font-weight: 700; }
-    .tf-arabic { font-family: "Amiri Quran", Amiri, serif; font-size: 26px; line-height: 2.1; margin-top: 8px; }
-    .pop-ayah { font-family: "Amiri Quran", Amiri, serif; font-size: 22px; line-height: 2; margin-top: 8px; }
+    .tf-arabic { font-family: var(--quran-font), "Amiri Quran", Amiri, serif; font-size: 26px; line-height: 2.1; margin-top: 8px; }
+    .pop-ayah { font-family: var(--quran-font), "Amiri Quran", Amiri, serif; font-size: 22px; line-height: 2; margin-top: 8px; }
     .pop-label { font-size: 13px; color: var(--muted); margin-top: 12px; }
 
     /* ---------- الحفظ والمحفوظات ---------- */
-    .ayah { font-family: "Amiri Quran", Amiri, serif; font-size: var(--quran-size); line-height: 2.2; padding: 6px 10px; border-bottom: 1px dashed var(--line); }
+    .ayah { font-family: var(--quran-font), "Amiri Quran", Amiri, serif; font-size: var(--quran-size); line-height: 2.2; padding: 6px 10px; border-bottom: 1px dashed var(--line); }
     .ayah.hidden-text .txt { filter: blur(7px); user-select: none; cursor: pointer; }
     .ayah.playing { background: var(--hl); }
     .toast {
@@ -253,6 +254,14 @@
     .upd-banner button { border: 0; border-radius: 8px; padding: 6px 10px; font-size: 13px; cursor: pointer; font-family: inherit; }
     .upd-banner #updBannerBtn { background: #fff; color: #1f5e3b; font-weight: 700; }
     .upd-banner #updBannerX { background: transparent; color: #fff; font-size: 18px; padding: 2px 6px; }
+
+    /* أيقونات Fluent 3D متجهية: واضحة على الشاشات الصغيرة ولا تعتمد على رموز emoji. */
+    .ic { display: inline-grid; place-items: center; flex: 0 0 auto; }
+    .ic svg { width: 23px; height: 23px; display: block; overflow: visible; filter: drop-shadow(0 1px 1px rgba(0,0,0,.22)); }
+    .nav-end .ic svg { width: 21px; height: 21px; }
+    .pack-progress { width: 100%; height: 10px; accent-color: var(--brand); }
+    .pack-status { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; align-items: center; }
+    .pack-status b { color: var(--brand); }
 
     /* ---------- الشاشات الصغيرة ---------- */
     @media (max-width: 860px) {
@@ -338,18 +347,36 @@
 
     /* ===== الهاتف: التبويبات شبكة ظاهرة كلها بدون سحب، وزرّا الإعدادات والوضع الليلي عموديين على اليسار ===== */
     @media (max-width: 720px) {
-      .navbar { align-items: stretch; gap: 6px; padding: 6px 8px; }
-      .navbar nav.menu { flex: 1 1 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; overflow: visible; padding: 0; min-width: 0; }
+      .hdr { position: sticky; top: 0; }
+      .hdr .topbar { padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: 7px; }
+      .navbar {
+        position: fixed; z-index: 48; left: 0; right: 0; bottom: 0;
+        align-items: stretch; gap: 4px; padding: 5px 7px max(5px, env(safe-area-inset-bottom));
+        background: color-mix(in srgb, var(--card) 96%, transparent); box-shadow: 0 -5px 20px rgba(0,0,0,.16);
+      }
+      .navbar nav.menu { flex: 1 1 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; overflow: visible; padding: 0; min-width: 0; }
       .tab-group { display: block; position: static; }
-      .tab-group .group-menu, .tab-group[data-group="adhkarak"] .group-menu { left: 8px; right: 8px; min-width: 0; top: calc(100% + 4px); }
-      .group-btn { font-size: 11px; }
-      nav.menu button { width: 100%; flex: none; white-space: normal; min-height: 50px; padding: 4px 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px; line-height: 1.15; border-radius: 10px; text-align: center; }
-      nav.menu .ic { font-size: 17px; line-height: 1; }
-      .group-menu { left: auto; right: 0; min-width: 180px; }
-      .nav-end { flex-direction: column; justify-content: center; gap: 4px; }
-      .nav-end .btn { padding: 4px 9px; font-size: 16px; min-height: 40px; }
+      .tab-group .group-menu, .tab-group[data-group="adhkarak"] .group-menu {
+        position: fixed; left: 8px; right: 8px; bottom: calc(70px + env(safe-area-inset-bottom));
+        top: auto; min-width: 0; max-height: min(58vh, 420px); border-radius: 16px;
+      }
+      .group-btn { font-size: 10.5px; }
+      nav.menu button { width: 100%; flex: none; white-space: normal; min-height: 54px; padding: 4px 1px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; line-height: 1.1; border-radius: 11px; text-align: center; }
+      nav.menu .ic { line-height: 1; }
+      nav.menu .ic svg { width: 22px; height: 22px; }
+      .nav-end { flex: 0 0 48px; flex-direction: column; justify-content: center; gap: 2px; }
+      .nav-end .btn { width: 46px; min-height: 54px; padding: 3px; display: grid; place-items: center; }
       .nav-end .lbl { display: none; }
       .theme-btn { width: 40px; height: 40px; }
+      .wrap { padding: 10px 8px calc(82px + env(safe-area-inset-bottom)); }
+      .card { border-radius: 13px; padding: 11px; }
+      .toolbar { position: sticky; top: 50px; z-index: 9; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+      .toolbar::-webkit-scrollbar { display: none; }
+      .toolbar select { flex: 0 0 auto; max-width: 145px; }
+      .page { max-width: 100%; padding-left: 10px; padding-right: 10px; }
+      body.hafs-reader .page { padding: 12px 9px 10px; }
+      body.hafs-reader .flow { line-height: 1.5; }
+      .panel-tafsir { max-height: 76vh; padding-bottom: max(14px, env(safe-area-inset-bottom)); }
     }
     .theme-btn { border: 1px solid var(--line); background: var(--bg); border-radius: 10px; width: 38px; height: 36px; cursor: pointer; font-size: 16px; }
     nav.menu .ic { width: auto; }
@@ -395,31 +422,31 @@
         </div>
         <div class="navbar">
         <nav class="menu" id="tabs">
-          <button data-view="reader" class="active"><span class="ic">📖</span>المصحف</button>
+          <button data-view="reader" class="active"><span class="ic" data-icon="book" aria-hidden="true"></span>المصحف</button>
           <div class="tab-group" data-group="rasid">
-            <button type="button" class="group-btn" aria-haspopup="true" aria-expanded="false"><span class="ic">🏅</span>رصيدك ▾</button>
+            <button type="button" class="group-btn" aria-haspopup="true" aria-expanded="false"><span class="ic" data-icon="stats" aria-hidden="true"></span>رصيدك ▾</button>
             <div class="group-menu" hidden>
-              <button data-view="stats"><span class="ic">📊</span>الإحصائيات</button>
-              <button data-view="memo"><span class="ic">🧠</span>الحفظ</button>
-              <button data-view="wird"><span class="ic">🌿</span>الورد</button>
-              <button data-view="bookmarks"><span class="ic">⭐</span>المحفوظات</button>
+              <button data-view="stats"><span class="ic" data-icon="stats" aria-hidden="true"></span>الإحصائيات</button>
+              <button data-view="memo"><span class="ic" data-icon="memo" aria-hidden="true"></span>الحفظ</button>
+              <button data-view="wird"><span class="ic" data-icon="wird" aria-hidden="true"></span>الورد</button>
+              <button data-view="bookmarks"><span class="ic" data-icon="bookmarks" aria-hidden="true"></span>المحفوظات</button>
             </div>
           </div>
           <div class="tab-group" data-group="tadabbur">
-            <button type="button" class="group-btn" aria-haspopup="true" aria-expanded="false"><span class="ic">💡</span>تدبر ▾</button>
+            <button type="button" class="group-btn" aria-haspopup="true" aria-expanded="false"><span class="ic" data-icon="tafsir" aria-hidden="true"></span>تدبر ▾</button>
             <div class="group-menu" hidden>
-              <button data-view="tafsir"><span class="ic">📚</span>التفسير</button>
-              <button data-view="tajweed"><span class="ic">🎨</span>أحكام التجويد</button>
-              <button data-view="meanings"><span class="ic">🔤</span>المعاني</button>
+              <button data-view="tafsir"><span class="ic" data-icon="tafsir" aria-hidden="true"></span>التفسير</button>
+              <button data-view="tajweed"><span class="ic" data-icon="tajweed" aria-hidden="true"></span>أحكام التجويد</button>
+              <button data-view="meanings"><span class="ic" data-icon="words" aria-hidden="true"></span>المعاني</button>
             </div>
           </div>
           <div class="tab-group" data-group="adhkarak">
-            <button type="button" class="group-btn" aria-haspopup="true" aria-expanded="false"><span class="ic">📿</span>أذكارك ▾</button>
+            <button type="button" class="group-btn" aria-haspopup="true" aria-expanded="false"><span class="ic" data-icon="adhkar" aria-hidden="true"></span>أذكارك ▾</button>
             <div class="group-menu" id="adhkarMenu" hidden></div>
           </div>
         </nav>
           <div class="nav-end">
-            <button class="btn small" id="settingsBtn" title="الإعدادات" aria-label="الإعدادات">⚙️<span class="lbl"> الإعدادات</span></button>
+            <button class="btn small" id="settingsBtn" title="الإعدادات" aria-label="الإعدادات"><span class="ic" data-icon="settings" aria-hidden="true"></span><span class="lbl">الإعدادات</span></button>
           </div>
         </div>
       </header>
@@ -555,15 +582,10 @@
         <!-- الورد -->
         <section class="view" id="view-wird">
           <div class="card">
-            <h3 style="margin-top:0">ورد اليوم</h3>
-            <div class="wird-big"><span id="wdDone">0</span> من <span id="wdTarget">4</span> صفحة</div>
+            <h3 style="margin-top:0">قراءتك اليوم</h3>
+            <div class="wird-big"><span id="wdDone">0</span> صفحة</div>
             <div class="wbar"><div class="wfill" id="wdFill"></div></div>
-            <div class="row" style="margin-top:12px">
-              <button class="btn" id="wdAdd">قرأت صفحة</button>
-              <button class="btn ghost" id="wdFinish">أكملت الورد كله</button>
-              <button class="btn ghost small" id="wdSub">تراجع عن صفحة</button>
-            </div>
-            <div id="wdMsg" class="muted" style="margin-top:10px"></div>
+            <div id="wdMsg" class="muted" style="margin-top:10px">تُسجّل القراءة تلقائيًا عند فتح صفحة جديدة.</div>
           </div>
 
           <div class="card">
@@ -586,20 +608,18 @@
           </div>
 
           <div class="card">
-            <h3 style="margin-top:0">إعدادات الورد</h3>
-            <label class="lbl" for="wdTargetSel">عدد الصفحات في اليوم</label>
-            <select id="wdTargetSel">
-              <option value="1">صفحة واحدة</option>
-              <option value="2">صفحتان</option>
-              <option value="3">3 صفحات</option>
-              <option value="4">4 صفحات</option>
-              <option value="5">5 صفحات</option>
-              <option value="10">10 صفحات</option>
-              <option value="20">جزء كامل (20 صفحة)</option>
-            </select>
-            <div class="wird-line" style="margin-top:12px"><span>السلسلة الحالية</span><b id="wdStreak">0 يوم</b></div>
-            <div class="wird-line"><span>أيام مكتملة</span><b id="wdDays">0</b></div>
+            <h3 style="margin-top:0">متابعة بلا إلزام</h3>
+            <p class="muted">يسجل سراج الصفحات التي تقرؤها تلقائيًا، ويحسب عادتك الفعلية دون فرض هدف يومي.</p>
+            <div class="wird-line"><span>متوسط عادتك</span><b id="wdHabit">—</b></div>
+            <div class="wird-line"><span>سلسلة أيام القراءة</span><b id="wdStreak">0 يوم</b></div>
+            <div class="wird-line"><span>أيام القراءة</span><b id="wdDays">0</b></div>
             <div class="wird-line"><span>الختمات المكتملة</span><b id="wdKhCount">0</b></div>
+            <label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="wdReminderEnabled" /> تذكير يومي اختياري</label>
+            <div class="row" style="margin-top:8px">
+              <input type="time" id="wdReminderTime" value="20:00" style="max-width:150px" />
+              <button class="btn small ghost" id="wdReminderSave">حفظ التذكير</button>
+            </div>
+            <div class="muted" id="wdReminderStatus" style="margin-top:6px"></div>
           </div>
 
           <div class="card">
@@ -707,13 +727,38 @@
               <option value="tr.diyanet">Türkçe - Diyanet</option>
             </select>
 
+            <label class="lbl" for="setFont">خط المصحف والتفسير</label>
+            <select id="setFont">
+              <option value="Amiri Quran">Amiri Quran</option>
+              <option value="Amiri">Amiri</option>
+              <option value="Noto Naskh Arabic">Noto Naskh Arabic</option>
+              <option value="Scheherazade New">Scheherazade New</option>
+            </select>
+
             <label class="lbl">حجم الخط: <span id="sizeVal"></span></label>
-            <input type="range" id="setSize" min="18" max="40" step="1" />
+            <input type="range" id="setSize" min="18" max="44" step="1" />
 
             <div class="row" style="margin-top:12px">
               <label><input type="checkbox" id="setTajweed" /> تفعيل ألوان التجويد</label>
             </div>
           </div>
+          <details class="card dd" id="tafsirPackCard">
+            <summary>التفاسير المحلية — 78 طبعة</summary>
+            <div class="pack-status">
+              <span>الحالة</span><b id="tfPackState">جارٍ الفحص…</b>
+              <span>الحجم</span><span id="tfPackSize">نحو 695 م.ب بعد التنزيل</span>
+              <span>المساحة المتاحة</span><span id="tfPackFree">—</span>
+            </div>
+            <p class="muted">تُنزل قاعدة التفسير مرة واحدة إلى مساحة التطبيق، ثم تعمل الكتب التراثية محليًا دون API. يُفضّل اتصال Wi‑Fi وشحن الجهاز.</p>
+            <p class="muted">المحتوى: 73 مصنفًا تراثيًا من <a class="ext" href="https://quranpedia.net" target="_blank" rel="noopener noreferrer">الموسوعة القرآنية Quranpedia.net</a> (تفريغ 2026-08-10) و5 طبعات تفسير أساسية من AlQuran Cloud. لا تتضمن الحزمة كتبًا حديثة أو غامضة الحقوق، وتتحقق بصمة SHA‑256 قبل اعتمادها.</p>
+            <progress class="pack-progress" id="tfPackBar" value="0" max="1" hidden></progress>
+            <div class="muted" id="tfPackProgress"></div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn" id="btnTafsirPack">⬇ تنزيل حزمة التفاسير</button>
+              <button class="btn ghost" id="btnCancelTafsirPack" hidden>إيقاف</button>
+              <button class="btn ghost" id="btnDeleteTafsirPack" hidden>حذف الحزمة</button>
+            </div>
+          </details>
           <details class="card dd">
             <summary>تحميل التلاوات للاستماع بدون إنترنت</summary>
             <label class="lbl">القارئ</label>
@@ -739,7 +784,7 @@
             <progress id="dlBar" value="0" max="1" style="width:100%;margin-top:10px;display:none"></progress>
             <div class="muted" id="dlProgress" style="margin-top:6px"></div>
             <div class="muted" id="dlStored" style="margin-top:6px"></div>
-            <p class="muted">القارئ الذي لا يظهر هنا يعمل للاستماع المباشر، لكن تحميله غير متاح حالياً.</p>
+            <p class="muted">تتوفر أصوات حفص السبعة عشر للاستماع المباشر والتحكم الكامل والتنزيل المحلي؛ يعتمد حجم التنزيل على معدل البت الخاص بكل قارئ.</p>
           </details>
           <div class="card">
             <h3 style="margin-top:0">تحديث التطبيق</h3>
@@ -755,8 +800,8 @@
           <div class="card about-head">
             <img src="icon.png" alt="أيقونة التطبيق" class="about-icon" />
             <div>
-              <h2 class="about-title">القرآن الكريم</h2>
-              <div class="muted">مصحف المدينة صفحة بصفحة، بالتلاوات والتفسير والتجويد والحفظ</div>
+              <h2 class="about-title">سراج — قرآن كريم</h2>
+              <div class="muted">قراءة محلية متجاوبة، بالتلاوات والتفاسير التراثية والتجويد والحفظ</div>
             </div>
           </div>
 
@@ -765,8 +810,8 @@
             <ul class="feat">
               <li>📖 المصحف صفحة بصفحة بترقيم مصحف المدينة</li>
               <li>🔤 روايات ورسوم متعددة، مع وضع ألوان أحكام التجويد</li>
-              <li>🔊 تلاوات بأصوات عدة قراء، مع تشغيل السورة أو من آية محددة</li>
-              <li>📚 تفسير وترجمة لمعاني القرآن بلغات متعددة</li>
+              <li>🔊 17 قارئًا لحفص، مع تشغيل السورة أو من آية محددة وتحكم كامل بالحفظ</li>
+              <li>📚 78 تفسيرًا مرخصًا للتنزيل المحلي، وترجمات لمعاني القرآن بلغات متعددة</li>
               <li>🧠 وضع الحفظ: إخفاء النص واختبار نفسك آية بآية</li>
               <li>⭐ علامات على الآيات، والرجوع لآخر موضع تلقائياً</li>
               <li>⬇ تحميل التلاوات للاستماع بدون إنترنت</li>
@@ -834,7 +879,7 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.2.0';
+    window.APP_BUNDLE_VERSION = '1.4.0';
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {
@@ -865,6 +910,14 @@
       return true;
     }
 
+    function newer(a, b) {
+      var pa = String(a || '').split('.').map(Number), pb = String(b || '').split('.').map(Number);
+      for (var i = 0; i < Math.max(pa.length, pb.length); i++) {
+        if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) > (pb[i] || 0);
+      }
+      return false;
+    }
+
     var applied = false;
     try {
       var raw = localStorage.getItem(KEY);
@@ -874,8 +927,17 @@
         localStorage.removeItem(PEND);
         raw = null;
       }
-      if (raw) applied = applyUpdate(JSON.parse(raw));
-    } catch (e) { applied = false; }
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        // APK جديد لا يجوز أن تغطيه ترقية واجهة قديمة باقية في WebView.
+        if (newer(parsed.version, window.APP_BUNDLE_VERSION)) applied = applyUpdate(parsed);
+        else { localStorage.removeItem(KEY); localStorage.removeItem(PEND); }
+      }
+    } catch (e) {
+      localStorage.removeItem(KEY);
+      localStorage.removeItem(PEND);
+      applied = false;
+    }
 
     if (!applied) run(null, 'app.js');
   })();

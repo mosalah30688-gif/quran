@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "approved": true,
+  "approved_at": "2026-10-29T02:21:51+03:00",
+  "approved_by": "repository owner — explicit approval of all latest releases and permanent GitHub retention",
+  "approved_releases": [
+    {
+      "tag": "siraj-windows-v4.1.1",
+      "kind": "windows-stable",
+      "retention": "permanent"
+    },
+    {
+      "tag": "siraj-linux-test-v4.1.1",
+      "kind": "linux-stable-with-historical-test-tag",
+      "retention": "permanent"
+    },
+    {
+      "tag": "siraj-tafsir-data-v2026.10.28",
+      "kind": "licensed-tafsir-data",
+      "retention": "permanent"
+    },
+    {
+      "tag": "siraj-android-v1.4.0",
+      "kind": "android-stable-after-signed-release-gate",
+      "retention": "permanent"
+    }
+  ],
+  "rights_scope": "Distribution approved under the per-source rights and licenses recorded in audit documentation; third-party content is not relicensed under MIT.",
+  "deletion_policy": "Never delete a listed GitHub Release, its tag, or its assets. Publish a new version for corrections.",
+  "immutability_required": true,
+  "policy": "audit/RELEASE_RETENTION.md"
+}

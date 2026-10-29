@@ -9,6 +9,8 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(FolderPickerPlugin.class);
         registerPlugin(ApkUpdaterPlugin.class);
+        registerPlugin(TafsirStorePlugin.class);
+        registerPlugin(ReminderPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

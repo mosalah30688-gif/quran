@@ -1,13 +1,13 @@
 {
-  "name": "القرآن الكريم",
-  "short_name": "القرآن",
-  "description": "مصحف بالروايات والرسوم والتلاوات والتفسير والتجويد والحفظ",
+  "name": "سراج — قرآن كريم",
+  "short_name": "سراج",
+  "description": "قراءة محلية متجاوبة بالروايات والتلاوات والتفاسير التراثية والتجويد والحفظ",
   "lang": "ar",
   "dir": "rtl",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#f7f4ec",
   "theme_color": "#0f5b4c",
   "icons": [

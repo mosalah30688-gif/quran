@@ -1,33 +1,42 @@
-// تخزين مؤقت للواجهة ليعمل التطبيق بدون اتصال (بيانات السور تُخزن عند أول تحميل)
-const CACHE = 'quran-shell-v4';
-const SHELL = ['./', './index.html', './app.js', './manifest.json', './icon.png', './icon-192.png'];
+// غلاف سراج وبيانات القراءة الأساسية مخزّنة مسبقًا ليعمل المصحف دون اتصال.
+const CACHE = 'siraj-shell-v5';
+const SHELL = [
+  './', './index.html', './app.js', './manifest.json', './icon.png', './icon-192.png',
+  './quran-hafs.json', './quran-tajweed.json', './surahs.json', './tafsir-catalog.json',
+  './quran-search.json', './quran-meanings.json', './quran-riwayat.json', './adhkar.json',
+  './fonts/AmiriQuran-arabic.woff2', './fonts/Amiri-Regular.ttf',
+  './fonts/AmiriQuran-Regular.ttf', './fonts/NotoNaskhArabic-Variable.ttf',
+  './fonts/ScheherazadeNew-Regular.ttf',
+];
 
-self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+self.addEventListener('install', (event) => {
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));
 });
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });
 
-self.addEventListener('fetch', (e) => {
-  const req = e.request;
-  if (req.method !== 'GET') return;
-  const url = new URL(req.url);
+self.addEventListener('fetch', (event) => {
+  const request = event.request;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
   const isAPI = url.hostname.includes('alquran.cloud') || url.hostname.includes('islamic.network');
   if (isAPI) {
-    // شبكة أولاً ثم تخزين مؤقت عند انقطاع الاتصال
-    e.respondWith(
-      fetch(req).then((res) => {
-        if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
-        return res;
-      }).catch(() => caches.match(req))
+    // الشبكة أولًا للترجمات والمصادر الحية، ثم النسخة السابقة عند انقطاع الاتصال.
+    event.respondWith(
+      fetch(request).then((response) => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(request, copy));
+        }
+        return response;
+      }).catch(() => caches.match(request))
     );
     return;
   }
-  // الواجهة: الكاش أولاً
-  e.respondWith(caches.match(req).then((hit) => hit || fetch(req)));
+  event.respondWith(caches.match(request).then((hit) => hit || fetch(request)));
 });

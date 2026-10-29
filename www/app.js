@@ -31,14 +31,18 @@
     ['ar.hanirifai', 'هاني الرفاعي'],
     ['ar.ibrahimakhbar', 'إبراهيم الأخضر'],
     ['ar.aymanswoaid', 'أيمن سويد'],
+    ['ar.parhizgar', 'شهريار پرهيزكار'],
   ];
-  const TAFSIRS = [
+  const BASIC_TAFSIRS = [
     ['ar.muyassar', 'التفسير الميسر (مجمع الملك فهد)'],
     ['ar.jalalayn', 'تفسير الجلالين'],
     ['ar.baghawi', 'تفسير البغوي'],
     ['ar.qurtubi', 'تفسير القرطبي'],
     ['ar.miqbas', 'تنوير المقباس'],
   ];
+  let TAFSIRS = [...BASIC_TAFSIRS];
+  let tafsirCatalog = null;
+  let tafsirPack = { ready: false, downloading: false, bytes: 0, freeBytes: 0 };
 
   // قراء الروايات الثلاث من MP3Quran: ملف لكل سورة بلا توقيت للآيات، فتعمل السورة كاملة ثم تتوقف.
   const RIW_RECITERS = {
@@ -61,7 +65,7 @@
 
   const DEFAULTS = {
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
-    translation: '', size: 26, tajweed: false, dark: false,
+    translation: '', font: 'Amiri Quran', size: 26, tajweed: false, dark: false,
   };
   const VIEW_TITLES = { reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', wird: 'الورد', stats: 'الإحصائيات', adhkar: 'الأذكار', search: 'البحث', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق', tajweed: 'أحكام التجويد', meanings: 'المعاني' };
   const Cap = window.Capacitor || null;
@@ -90,6 +94,35 @@
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
+  // أيقونات Fluent 3D متجهية خفيفة؛ تبقى واضحة في شريط الهاتف والتابلت.
+  const FLUENT_ICONS = {
+    book: '<path d="M2.5 4h7.2c1.2 0 2 .5 2.3 1.4v15c-.8-.8-1.7-1.2-2.8-1.2H2.5z" fill="url(#paper)" stroke="#765b31"/><path d="M21.5 4h-7.2c-1.2 0-2 .5-2.3 1.4v15c.8-.8 1.7-1.2 2.8-1.2h6.7z" fill="url(#blue)" stroke="#164675"/><path d="M12 5.4v15" stroke="#d3a93f"/><path d="M4.5 6.2h5" stroke="#fff" opacity=".7"/>',
+    tafsir: '<path d="M3 5.2c3-1.2 6-.8 9 1.2 3-2 6-2.4 9-1.2v14c-3-1-6-.6-9 1.3-3-1.9-6-2.3-9-1.3z" fill="url(#paper)" stroke="#80693e"/><path d="M12 6.4v14" stroke="#b58a32"/><path d="M5 8h5M5 10.5h4M14 8h5M14 10.5h4" stroke="#477aa5" stroke-linecap="round"/><path d="M16 14l1 1.3 1.7-.2-.9 1.4.7 1.5-1.6-.4-1 1.3-.2-1.7-1.5-.6 1.5-.7z" fill="url(#gold)"/>',
+    stats: '<rect x="2.5" y="12" width="5" height="9" rx="1.3" fill="url(#blue)"/><rect x="9.5" y="5" width="5" height="16" rx="1.3" fill="url(#green)"/><rect x="16.5" y="8.5" width="5" height="12.5" rx="1.3" fill="url(#gold)"/><path d="M3.8 9.5l4.2-3.2 3.6 1.2 5.5-4" fill="none" stroke="#ed5267" stroke-width="1.6"/><path d="M17 3.5l1.8-.6-.3 1.9" fill="none" stroke="#ed5267" stroke-width="1.3"/>',
+    memo: '<path d="M4 2h12l4 4v16H4z" fill="url(#paper)" stroke="#79623d"/><path d="M16 2v4h4" fill="#e7cb8d"/><path d="M7 8h9M7 11h7M7 14h5" stroke="#7893aa"/><path d="M8 20l1-3 8-8 2 2-8 8z" fill="url(#green)"/><path d="M17 9l1-1c.5-.5 1.2-.5 1.7 0l.3.3c.5.5.5 1.2 0 1.7l-1 1z" fill="url(#gold)"/>',
+    wird: '<rect x="2.5" y="4" width="19" height="17" rx="2.2" fill="url(#paper)" stroke="#745e3d"/><path d="M2.5 6.2A2.2 2.2 0 0 1 4.7 4h14.6a2.2 2.2 0 0 1 2.2 2.2V9h-19z" fill="url(#blue)"/><path d="M7 2v4M17 2v4" stroke="#d8ad4b" stroke-width="2"/><path d="M6.5 14.5l3.1 3 7.8-7.1" fill="none" stroke="#13946d" stroke-width="2.3" stroke-linecap="round"/>',
+    bookmarks: '<path d="M3 4h16a2 2 0 0 1 2 2v13H5a2 2 0 0 1-2-2z" fill="url(#blue)" stroke="#164675"/><path d="M5 6h12a2 2 0 0 1 2 2v9H6c-.4 0-.7.1-1 .3z" fill="url(#paper)"/><path d="M13 3h4.5v10L15.2 11 13 13z" fill="url(#red)"/><path d="M7 8h5M7 10.5h4" stroke="#7b91a2"/>',
+    tajweed: '<path d="M12 2C6 2 2 6 2 11.2 2 17 7 21 13 21h1c1.8 0 3-1 3-2.5 0-1.6-1.2-2.5-2.8-2.5H13c-1 0-1.8-.8-1.8-1.7 0-1 .8-1.8 2-1.8H16c3.4 0 6-2.1 6-5C22 4.3 18 2 12 2z" fill="url(#violet)" stroke="#48236c"/><circle cx="6" cy="8" r="1.7" fill="#ff5863"/><circle cx="10" cy="5.5" r="1.7" fill="#ffbe3d"/><circle cx="14.5" cy="5.5" r="1.7" fill="#43ce7a"/><circle cx="18" cy="8.5" r="1.7" fill="#4ebeff"/>',
+    words: '<path d="M2.5 3h11A2.5 2.5 0 0 1 16 5.5v5A2.5 2.5 0 0 1 13.5 13H8l-4 3 .8-3H2.5A2.5 2.5 0 0 1 0 10.5v-5A2.5 2.5 0 0 1 2.5 3z" fill="url(#blue)"/><path d="M11 12h8.5a2.5 2.5 0 0 1 2.5 2.5v3A2.5 2.5 0 0 1 19.5 20h-2l.6 2-3-2H11a2.5 2.5 0 0 1-2.5-2.5v-3A2.5 2.5 0 0 1 11 12z" fill="url(#green)"/><path d="M3 6h9M3 9h6M12 15h7M12 17.5h5" stroke="#fff" stroke-linecap="round"/>',
+    adhkar: '<path d="M12 2c-5.5 0-9.5 4.3-9.5 9.5 0 4.7 3.3 8.4 7.6 9.3" fill="none" stroke="#d2a94b"/><g fill="url(#green)" stroke="#075044"><circle cx="12" cy="2" r="1.8"/><circle cx="6.8" cy="3.6" r="1.8"/><circle cx="3.3" cy="7.7" r="1.8"/><circle cx="3.2" cy="13" r="1.8"/><circle cx="6.3" cy="17.4" r="1.8"/><circle cx="11" cy="20" r="1.8"/></g><path d="M18.8 14.5l1.3 2.5-1.1 1.2 1.5 3.7-2.2.8-1.4-3.7-1.5-.2.4-2.7z" fill="url(#gold)"/>',
+    settings: '<path d="M9.8 2h4.4l.7 2.5 2.1 1.2 2.5-.7 2.2 3.8-1.8 1.9v2.6l1.8 1.9-2.2 3.8-2.5-.7-2.1 1.2-.7 2.5H9.8l-.7-2.5L7 18.3l-2.5.7-2.2-3.8 1.8-1.9v-2.6L2.3 8.8 4.5 5 7 5.7l2.1-1.2z" fill="url(#metal)" stroke="#506375"/><circle cx="12" cy="12" r="4.1" fill="url(#blue)"/><circle cx="12" cy="12" r="1.8" fill="#fff" opacity=".9"/>',
+  };
+  function fluentIcon(name) {
+    const body = FLUENT_ICONS[name] || FLUENT_ICONS.book;
+    return `<svg viewBox="0 0 24 24" role="img" focusable="false"><defs>
+      <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#71d7ff"/><stop offset="1" stop-color="#2375d8"/></linearGradient>
+      <linearGradient id="green" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#62e0ad"/><stop offset="1" stop-color="#08785c"/></linearGradient>
+      <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffe68a"/><stop offset="1" stop-color="#c88316"/></linearGradient>
+      <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fffdf2"/><stop offset="1" stop-color="#e8d4a6"/></linearGradient>
+      <linearGradient id="violet" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d69cff"/><stop offset="1" stop-color="#7042c2"/></linearGradient>
+      <linearGradient id="red" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff8190"/><stop offset="1" stop-color="#c42d45"/></linearGradient>
+      <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#eef5fa"/><stop offset="1" stop-color="#879dad"/></linearGradient>
+    </defs>${body}</svg>`;
+  }
+  function renderFluentIcons(root = document) {
+    $$('.ic[data-icon]', root).forEach((node) => { node.innerHTML = fluentIcon(node.dataset.icon); });
+  }
+
   // ---------- التخزين المحلي ----------
   const store = {
     get(key, fallback) {
@@ -100,15 +133,25 @@
   };
   const settings = Object.assign({}, DEFAULTS, store.get('settings', {}));
   const saveSettings = () => store.set('settings', settings);
+  const allowedFonts = new Set(['Amiri Quran', 'Amiri', 'Noto Naskh Arabic', 'Scheherazade New']);
+  if (!allowedFonts.has(settings.font)) settings.font = DEFAULTS.font;
+  settings.size = Math.min(44, Math.max(18, Number(settings.size) || DEFAULTS.size));
   // ترحيل آمن للطبعات التي حُجبت لعدم اكتمال سجل الحقوق، مع إبقاء بقية بيانات المستخدم.
-  if (!TAFSIRS.some(([id]) => id === settings.tafsir)) settings.tafsir = DEFAULTS.tafsir;
+  if (!TAFSIRS.some(([id]) => id === settings.tafsir) && !/^qp:\d+$/.test(settings.tafsir)) settings.tafsir = DEFAULTS.tafsir;
   const allowedTranslations = new Set(['', 'en.sahih', 'fr.hamidullah', 'ur.jalandhry', 'tr.diyanet']);
   if (!allowedTranslations.has(settings.translation)) settings.translation = '';
   saveSettings();
 
   // ---------- الحالة ----------
   let surahs = [];
-  const cache = new Map();          // طلبات الـ API
+  let localHafs = null;
+  let localTajweed = [];
+  const hafsPages = { uthmani: new Map(), simple: new Map() };
+  const hafsByRef = { uthmani: new Map(), simple: new Map() };
+  const tajweedByRef = new Map();
+  const pageByRef = new Map();
+  const globalByRef = new Map();
+  const cache = new Map();          // طلبات الشبكة الاختيارية (ترجمة/مصادر احتياطية)
   const pageCache = new Map();      // صفحات جاهزة (مُعالجة)
   const audio = new Audio();
   audio.preload = 'auto';
@@ -153,6 +196,48 @@
     const json = await res.json();
     cache.set(url, json);
     return json;
+  }
+
+  const refKey = (s, a) => `${s}:${a}`;
+  function indexHafsRows(kind, rows) {
+    rows.forEach((row, i) => {
+      const [s, a, page, text] = row;
+      const item = { s, n: a, page, text: clean(text), g: i + 1, juz: juzOf(s, a) };
+      if (!hafsPages[kind].has(page)) hafsPages[kind].set(page, []);
+      hafsPages[kind].get(page).push(item);
+      hafsByRef[kind].set(refKey(s, a), item);
+      if (kind === 'uthmani') {
+        pageByRef.set(refKey(s, a), page);
+        globalByRef.set(refKey(s, a), i + 1);
+      }
+    });
+  }
+
+  async function loadBundledData() {
+    const [surahData, hafsData, tajweedData, catalog] = await Promise.all([
+      getJSON('surahs.json'), getJSON('quran-hafs.json'),
+      getJSON('quran-tajweed.json'), getJSON('tafsir-catalog.json'),
+    ]);
+    surahs = Array.isArray(surahData) ? surahData : [];
+    localHafs = hafsData;
+    localTajweed = Array.isArray(tajweedData) ? tajweedData : [];
+    indexHafsRows('uthmani', localHafs.uthmani || []);
+    indexHafsRows('simple', localHafs.simple || []);
+    localTajweed.forEach((row) => tajweedByRef.set(refKey(row[0], row[1]), clean(row[3])));
+    tafsirCatalog = catalog;
+    const classical = (catalog.books || []).map((book) => [
+      book.edition,
+      `${book.name} — ${book.author} (ت ${toArabicDigits(book.author_death_hijri)}هـ)`,
+    ]);
+    TAFSIRS = [...BASIC_TAFSIRS, ...classical];
+    if (!TAFSIRS.some(([id]) => id === settings.tafsir)) settings.tafsir = DEFAULTS.tafsir;
+    saveSettings();
+  }
+
+  function ayahAudioUrl(reciter, s, a) {
+    const bitrate = OFFLINE_SRC[reciter] || 128;
+    const global = globalByRef.get(refKey(s, a));
+    return global ? `https://cdn.islamic.network/quran/audio/${bitrate}/${reciter}/${global}.mp3` : null;
   }
 
   function renderTajweed(raw) {
@@ -248,11 +333,9 @@
 
   // ---------- الفهرس: سورة / جزء / آية ----------
   async function loadSurahs() {
-    try {
-      surahs = (await getJSON(API + '/surah')).data;
-    } catch {
-      toast('تعذر تحميل الفهرس. تحقق من الاتصال بالإنترنت.');
-      return;
+    if (!surahs.length) {
+      try { surahs = (await getJSON(API + '/surah')).data; }
+      catch { toast('تعذر تحميل فهرس السور المحلي.'); return; }
     }
     $('#memoSurah').innerHTML = surahs.map((s) => `<option value="${s.number}">${s.number}. ${esc(s.name)}</option>`).join('');
     renderIndex();
@@ -315,7 +398,7 @@
 
   async function loadPage(p) {
     if (p < 1 || p > TOTAL_PAGES) return null;
-    const key = p + '|' + [settings.riwaya, settings.reciter, settings.tafsir, settings.translation, settings.tajweed].join('|');
+    const key = p + '|' + [settings.riwaya, settings.reciter, settings.tafsir, settings.translation, settings.tajweed, tafsirPack.ready].join('|');
     if (pageCache.has(key)) return pageCache.get(key);
     if (isRiw()) {
       const byPage = await loadRiwaya(settings.riwaya);
@@ -331,33 +414,54 @@
       return obj;
     }
 
-    const ids = [settings.riwaya, settings.reciter, settings.tafsir];
-    if (settings.translation) ids.push(settings.translation);
-    const withTajweed = settings.tajweed && settings.riwaya !== 'quran-tajweed';
-    if (withTajweed) ids.push('quran-tajweed');
+    const kind = settings.riwaya === 'quran-simple' ? 'simple' : 'uthmani';
+    const base = hafsPages[kind].get(p) || [];
+    if (!base.length) throw new Error('bundled Hafs page is missing');
 
-    const res = await Promise.all(ids.map((id) => getJSON(`${API}/page/${p}/${id}`)));
-    const byId = {};
-    ids.forEach((id, i) => { byId[id] = res[i].data.ayahs; });
-    const base = byId[settings.riwaya];
-    const markupSrc = settings.riwaya === 'quran-tajweed' ? base : (withTajweed ? byId['quran-tajweed'] : null);
+    let translated = [];
+    if (settings.translation) {
+      try { translated = (await getJSON(`${API}/page/${p}/${settings.translation}`)).data.ayahs || []; }
+      catch { translated = []; }
+    }
 
+    let tafsirTexts = new Array(base.length).fill('');
+    let localHandled = false;
+    const plugin = getTafsirNative();
+    if (tafsirPack.ready && plugin) {
+      try {
+        const result = await plugin.lookupBatch({
+          edition: settings.tafsir,
+          ayahs: base.map((a) => ({ surah: a.s, ayah: a.n })),
+        });
+        if (result && result.handled && Array.isArray(result.texts)) {
+          localHandled = true;
+          tafsirTexts = result.texts.map((text) => text || '');
+        }
+      } catch { localHandled = false; }
+    }
+    if (!localHandled && BASIC_TAFSIRS.some(([id]) => id === settings.tafsir)) {
+      try {
+        const rows = (await getJSON(`${API}/page/${p}/${settings.tafsir}`)).data.ayahs || [];
+        tafsirTexts = rows.map((row) => row.text || '');
+      } catch { tafsirTexts = new Array(base.length).fill(''); }
+    }
+
+    const showTajweed = settings.riwaya === 'quran-tajweed' || settings.tajweed;
     const ayahs = base.map((a, i) => {
-      const s = a.surah.number;
-      const n = a.numberInSurah;
-      const displaySource = displayHafsSource(s, n, a.text);
-      const markup = markupSrc ? displayHafsSource(s, n, markupSrc[i].text) : null;
+      const displaySource = displayHafsSource(a.s, a.n, a.text);
+      const tajweedSource = showTajweed ? tajweedByRef.get(refKey(a.s, a.n)) : null;
+      const markup = tajweedSource ? displayHafsSource(a.s, a.n, tajweedSource) : null;
       return {
-        s,
-        n,
-        g: a.number,
+        s: a.s,
+        n: a.n,
+        g: a.g,
         page: p,
         juz: a.juz,
         text: plainTajweed(displaySource),
         html: markup ? renderTajweed(markup) : esc(plainTajweed(displaySource)),
-        audio: byId[settings.reciter]?.[i]?.audio || null,
-        tafsir: byId[settings.tafsir]?.[i]?.text || '',
-        tr: settings.translation ? (byId[settings.translation]?.[i]?.text || '') : '',
+        audio: ayahAudioUrl(settings.reciter, a.s, a.n),
+        tafsir: tafsirTexts[i] || '',
+        tr: settings.translation ? (translated[i]?.text || '') : '',
       };
     });
     const obj = { p, ayahs };
@@ -367,6 +471,8 @@
 
   // رقم الصفحة لأي آية (من بيانات السورة)
   async function pageOfAyah(s, a) {
+    const local = pageByRef.get(refKey(s, a));
+    if (local) return local;
     const json = await getJSON(`${API}/surah/${s}/quran-uthmani`);
     return json.data.ayahs[a - 1].page;
   }
@@ -409,6 +515,7 @@
     renderPage(opts.dir);
     updateChrome();
     recordRead(p);
+    recordWirdPage(p);
     if (opts.save !== false) saveLast();
   }
 
@@ -609,12 +716,18 @@
   }
 
   // ---------- التفسير ----------
+  function missingTafsirText() {
+    if (/^qp:\d+$/.test(settings.tafsir) && !tafsirPack.ready) {
+      return 'نزّل حزمة التفاسير المحلية من الإعدادات لقراءة هذا الكتاب دون إنترنت.';
+    }
+    return 'لا يوجد نص خاص بهذه الآية في هذا الكتاب.';
+  }
   function showTafsirPanel(a) {
     const book = TAFSIRS.find((t) => t[0] === settings.tafsir)?.[1] || '';
     $('#tafsirTitle').textContent = `${surahName(a.s)} - الآية ${toArabicDigits(a.n)}`;
     $('#tafsirAyah').textContent = a.text;
     $('#tafsirLabel').textContent = book || 'التفسير';
-    $('#tafsirBody').textContent = a.tafsir || 'لا يوجد تفسير لهذه الآية في هذا الكتاب.';
+    $('#tafsirBody').textContent = a.tafsir || missingTafsirText();
     const hasTr = !!settings.translation;
     $('#transLabel').style.display = hasTr ? 'block' : 'none';
     $('#tafsirTrans').style.display = hasTr ? 'block' : 'none';
@@ -671,7 +784,7 @@
     }
     $('#tfTitle').textContent = `${surahName(a.s)} - الآية ${toArabicDigits(a.n)}`;
     $('#tfArabic').textContent = a.text;
-    $('#tfTafsir').textContent = a.tafsir || 'لا يوجد تفسير لهذه الآية في هذا الكتاب.';
+    $('#tfTafsir').textContent = a.tafsir || missingTafsirText();
     $('#tfTransText').textContent = settings.translation ? (a.tr || 'لا توجد ترجمة لهذه الآية.') : 'بدون ترجمة مختارة.';
   }
 
@@ -723,6 +836,18 @@
   function isNative() { return !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform()); }
   function hasNativePlugin(name) { return !!(isNative() && Cap.isPluginAvailable && Cap.isPluginAvailable(name)); }
   function nativeCall(plugin, method, opts) { return Cap.nativePromise(plugin, method, opts || {}); }
+  let tafsirNative = null;
+  let reminderNative = null;
+  function getTafsirNative() {
+    if (!hasNativePlugin('TafsirStore')) return null;
+    if (!tafsirNative && Cap.registerPlugin) tafsirNative = Cap.registerPlugin('TafsirStore');
+    return tafsirNative;
+  }
+  function getReminderNative() {
+    if (!hasNativePlugin('Reminder')) return null;
+    if (!reminderNative && Cap.registerPlugin) reminderNative = Cap.registerPlugin('Reminder');
+    return reminderNative;
+  }
   function bytesToBase64(bytes) {
     let bin = '';
     for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
@@ -1095,22 +1220,32 @@
     $('#playReciter').value = settings.reciter;
   }
 
+  function tafsirOptionsHtml() {
+    return TAFSIRS.map(([id, name]) => {
+      const needsPack = /^qp:\d+$/.test(id) && !tafsirPack.ready;
+      return `<option value="${id}" ${needsPack ? 'disabled' : ''}>${name}${needsPack ? ' — نزّل الحزمة أولاً' : ''}</option>`;
+    }).join('');
+  }
   function fillSettings() {
     $('#setRiwaya').value = settings.riwaya;
     syncReciters();
-    $('#setTafsir').innerHTML = TAFSIRS.map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
+    $('#setTafsir').innerHTML = tafsirOptionsHtml();
     $('#setTafsir').value = settings.tafsir;
     $('#setTranslation').value = settings.translation;
     $('#tfBook').innerHTML = $('#setTafsir').innerHTML;
     $('#tfBook').value = settings.tafsir;
     $('#tfTrans').innerHTML = $('#setTranslation').innerHTML;
     $('#tfTrans').value = settings.translation;
+    $('#setFont').value = settings.font;
     $('#setSize').value = settings.size;
     $('#sizeVal').textContent = settings.size + 'px';
     $('#setTajweed').checked = !!settings.tajweed;
-    applySize();
+    applyTypography();
   }
-  function applySize() { document.documentElement.style.setProperty('--quran-size', settings.size + 'px'); }
+  function applyTypography() {
+    document.documentElement.style.setProperty('--quran-size', settings.size + 'px');
+    document.documentElement.style.setProperty('--quran-font', `"${settings.font}"`);
+  }
 
   function onSettingChange(key, value) {
     settings[key] = value;
@@ -1133,10 +1268,15 @@
   $('#setTafsir').addEventListener('change', (e) => onSettingChange('tafsir', e.target.value));
   $('#setTranslation').addEventListener('change', (e) => onSettingChange('translation', e.target.value));
   $('#setTajweed').addEventListener('change', (e) => onSettingChange('tajweed', e.target.checked));
+  $('#setFont').addEventListener('change', (e) => {
+    settings.font = e.target.value;
+    saveSettings();
+    applyTypography();
+  });
   $('#setSize').addEventListener('input', (e) => {
     settings.size = Number(e.target.value);
     $('#sizeVal').textContent = settings.size + 'px';
-    applySize(); saveSettings();
+    applyTypography(); saveSettings();
   });
 
   // ---------- التحميل للاستماع بدون إنترنت ----------
@@ -1144,10 +1284,19 @@
   const UPDATE_KEY = 'quran-update';
   const UPDATE_BASE = 'https://raw.githubusercontent.com/mosalah30688-gif/quran/main/update/';
   const storedUpdate = () => { try { return JSON.parse(localStorage.getItem(UPDATE_KEY) || 'null'); } catch (e) { return null; } };
-  const currentVersion = () => (storedUpdate() || {}).version || window.APP_BUNDLE_VERSION || '1.0.0';
+  const currentVersion = () => {
+    const bundled = window.APP_BUNDLE_VERSION || '1.0.0';
+    const stored = storedUpdate();
+    return stored?.version && newerVersion(stored.version, bundled) ? stored.version : bundled;
+  };
   function renderUpdateCard() {
     $('#verVal').textContent = currentVersion();
     $('#btnRestore').hidden = !storedUpdate();
+    if (hasNativePlugin('ApkUpdater')) {
+      nativeCall('ApkUpdater', 'getVersion').then((r) => {
+        if (r?.version) $('#verVal').textContent = r.version;
+      }).catch(() => {});
+    }
   }
   // مقارنة أرقام الإصدارات: 1.0.10 أحدث من 1.0.9
   function newerVersion(a, b) {
@@ -1193,8 +1342,9 @@
           return;
         }
       }
-      if (manifest.version === currentVersion()) {
-        st.textContent = 'أنت على أحدث نسخة (' + manifest.version + ')';
+      // لا نطبّق ترقية واجهة مساوية أو أقدم من النسخة المضمّنة؛ هذا يمنع الرجوع إلى إصدار قديم.
+      if (!newerVersion(manifest.version, currentVersion())) {
+        st.textContent = 'أنت على أحدث نسخة (' + currentVersion() + ')';
         btn.disabled = false;
         return;
       }
@@ -1240,18 +1390,112 @@
   }
   silentUpdateCheck();
 
+  // ---------- حزمة التفاسير المحلية الكبيرة (تنزيل اختياري خارج الـ APK) ----------
+  const formatBytes = (n) => {
+    const value = Number(n) || 0;
+    if (value >= 1024 ** 3) return (value / 1024 ** 3).toFixed(1) + ' ج.ب';
+    if (value >= 1024 ** 2) return (value / 1024 ** 2).toFixed(0) + ' م.ب';
+    return (value / 1024).toFixed(0) + ' ك.ب';
+  };
+  function renderTafsirPackStatus() {
+    const stateEl = $('#tfPackState');
+    const bar = $('#tfPackBar');
+    const download = $('#btnTafsirPack');
+    const cancel = $('#btnCancelTafsirPack');
+    const remove = $('#btnDeleteTafsirPack');
+    stateEl.textContent = tafsirPack.downloading ? 'جارٍ التنزيل' : (tafsirPack.ready ? 'مثبتة وجاهزة دون إنترنت' : 'غير مثبتة');
+    $('#tfPackFree').textContent = tafsirPack.freeBytes ? formatBytes(tafsirPack.freeBytes) : '—';
+    download.hidden = tafsirPack.ready || tafsirPack.downloading;
+    cancel.hidden = !tafsirPack.downloading;
+    remove.hidden = !tafsirPack.ready || tafsirPack.downloading;
+    bar.hidden = !tafsirPack.downloading;
+    if (!tafsirPack.downloading) $('#tfPackProgress').textContent = tafsirPack.ready ? 'كل الكتب الـ78 متاحة محليًا.' : 'الكتب الخمسة الأساسية تبقى متاحة عبر المصدر الحي.';
+  }
+  async function refreshTafsirPackStatus() {
+    const plugin = getTafsirNative();
+    if (!plugin) {
+      tafsirPack = { ready: false, downloading: false, bytes: 0, freeBytes: 0 };
+      $('#tfPackState').textContent = 'التنزيل المحلي متاح داخل تطبيق Android';
+      $('#btnTafsirPack').disabled = true;
+      return;
+    }
+    try {
+      const status = await plugin.status();
+      tafsirPack = {
+        ready: !!status.ready,
+        downloading: !!status.downloading,
+        bytes: Number(status.bytes) || 0,
+        freeBytes: Number(status.freeBytes) || 0,
+      };
+    } catch { tafsirPack = { ready: false, downloading: false, bytes: 0, freeBytes: 0 }; }
+    if (!tafsirPack.ready && /^qp:\d+$/.test(settings.tafsir)) {
+      settings.tafsir = DEFAULTS.tafsir;
+      saveSettings();
+    }
+    pageCache.clear();
+    fillSettings();
+    renderTafsirPackStatus();
+  }
+  async function startTafsirPackDownload() {
+    const plugin = getTafsirNative();
+    if (!plugin) return;
+    tafsirPack.downloading = true;
+    renderTafsirPackStatus();
+    try {
+      await plugin.download();
+      toast('اكتمل تنزيل 78 تفسيرًا');
+    } catch (error) {
+      if (!String(error?.message || error).includes('cancel')) toast('تعذر تنزيل حزمة التفاسير');
+    }
+    await refreshTafsirPackStatus();
+    if (state.page) showPage(state.page, { selG: state.sel?.g, save: false });
+  }
+  $('#btnTafsirPack').addEventListener('click', startTafsirPackDownload);
+  $('#btnCancelTafsirPack').addEventListener('click', async () => {
+    const plugin = getTafsirNative();
+    if (plugin) await plugin.cancel().catch(() => {});
+  });
+  $('#btnDeleteTafsirPack').addEventListener('click', async () => {
+    if (!confirm('حذف حزمة التفاسير المحلية؟ يمكنك تنزيلها مجددًا لاحقًا.')) return;
+    const plugin = getTafsirNative();
+    if (plugin) await plugin.delete().catch(() => {});
+    await refreshTafsirPackStatus();
+  });
+  function attachTafsirProgress() {
+    const plugin = getTafsirNative();
+    if (!plugin || !plugin.addListener) return;
+    plugin.addListener('downloadProgress', (info) => {
+      const done = Number(info.bytes) || 0;
+      const total = Number(info.total) || 728866816;
+      tafsirPack.downloading = true;
+      $('#tfPackBar').hidden = false;
+      $('#tfPackBar').value = total ? done / total : 0;
+      $('#tfPackProgress').textContent = info.phase === 'verify'
+        ? `جارٍ التحقق من البصمة: ${formatBytes(done)} من ${formatBytes(total)}`
+        : `${formatBytes(done)} من ${formatBytes(total)}`;
+      renderTafsirPackStatus();
+    }).catch(() => {});
+  }
+
   // مصدر تنزيل حفص هو CDN المعلن لخدمة AlQuran Cloud / Islamic Network؛ القيمة معدل البت لكل طبعة.
   const OFFLINE_SRC = {
     'ar.alafasy': 128,
     'ar.abdurrahmaansudais': 192,
+    'ar.mahermuaiqly': 128,
     'ar.husary': 128,
     'ar.husarymujawwad': 128,
     'ar.hudhaify': 128,
     'ar.shaatree': 128,
+    'ar.abdulsamad': 64,
+    'ar.saoodshuraym': 64,
+    'ar.muhammadayyoub': 128,
+    'ar.muhammadjibreel': 128,
+    'ar.abdullahbasfar': 64,
+    'ar.ahmedajamy': 128,
     'ar.hanirifai': 192,
     'ar.ibrahimakhbar': 32,
     'ar.aymanswoaid': 64,
-    'ar.abdullahbasfar': 64,
+    'ar.parhizgar': 48,
   };
   const IDB_NAME = 'quran-offline';
   let dbPromise = null;
@@ -1772,7 +2016,8 @@
     $('#adhkarHome').innerHTML = '<div class="card muted">اختر نوع الأذكار من قائمة «أذكارك» في الشريط.</div>';
   }
   function renderAdhkarMenu(cats) {
-    $('#adhkarMenu').innerHTML = cats.map((c) => `<button data-view="adhkar" data-cat="${esc(c.id)}"><span class="ic">📿</span>${esc(c.name)}</button>`).join('');
+    $('#adhkarMenu').innerHTML = cats.map((c) => `<button data-view="adhkar" data-cat="${esc(c.id)}"><span class="ic" data-icon="adhkar" aria-hidden="true"></span>${esc(c.name)}</button>`).join('');
+    renderFluentIcons($('#adhkarMenu'));
   }
   loadAdhkar().then(renderAdhkarMenu).catch(() => { $('#adhkarMenu').innerHTML = '<div class="muted" style="padding:8px">تعذّر تحميل الأذكار.</div>'; });
   function openAdhkarCat(id) {
@@ -1866,106 +2111,98 @@
     }).join('');
   }
 
-  // ---------- الورد اليومي وتتبع الختمة ----------
-  // البيانات: الورد المختار، والصفحة التالية في الختمة، وعدد صفحات كل يوم، والختمات المكتملة
+  // ---------- الورد اليومي وتتبع الختمة بلا هدف إلزامي ----------
   const WIRD_KEY = 'wird';
   const dateKey = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   const todayKey = () => dateKey(new Date());
-  const dateAr = (d) => new Date(d).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
+  const dateAr = (d) => new Date(d + (String(d).length === 10 ? 'T12:00:00' : '')).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
   function getWird() {
     const w = store.get(WIRD_KEY, null) || {};
+    const oldReminder = store.get('wird-reminder', null) || {};
     return {
-      target: [1, 2, 3, 4, 5, 10, 20].includes(Number(w.target)) ? Number(w.target) : 4,
       pointer: Math.min(TOTAL_PAGES, Math.max(1, Number(w.pointer) || 1)),
       startDate: w.startDate || todayKey(),
-      days: w.days || {},
       finished: Array.isArray(w.finished) ? w.finished : [],
+      reminderEnabled: w.reminderEnabled != null ? !!w.reminderEnabled : !!oldReminder.enabled,
+      reminderTime: /^\d{2}:\d{2}$/.test(w.reminderTime || '') ? w.reminderTime : (/^\d{2}:\d{2}$/.test(oldReminder.time || '') ? oldReminder.time : '20:00'),
     };
   }
   function saveWird(w) { store.set(WIRD_KEY, w); }
 
-  // عدد أيام الورد المكتملة متتالية حتى اليوم (إن لم يكتمل ورد اليوم بعد لا يُحسب اليوم ضد السلسلة)
-  function wirdStreak(w) {
-    let n = 0;
+  function readingHabit() {
+    const st = getStats();
+    const keys = Object.keys(st.days).filter((k) => (st.days[k] || []).length).sort();
+    const recent = keys.slice(-30);
+    const total = recent.reduce((n, k) => n + (st.days[k] || []).length, 0);
+    const average = recent.length ? total / recent.length : 0;
+    let streak = 0;
     const d = new Date();
-    if ((w.days[todayKey()] || 0) < w.target) d.setDate(d.getDate() - 1);
+    if (!(st.days[todayKey()] || []).length) d.setDate(d.getDate() - 1);
     for (let i = 0; i < 3650; i++) {
-      if ((w.days[dateKey(d)] || 0) >= w.target) { n++; d.setDate(d.getDate() - 1); } else break;
+      if ((st.days[dateKey(d)] || []).length) { streak++; d.setDate(d.getDate() - 1); }
+      else break;
     }
-    return n;
+    return { average, streak, days: keys.length, today: (st.days[todayKey()] || []).length };
   }
 
   function renderWird() {
     const w = getWird();
-    const key = todayKey();
-    const done = w.days[key] || 0;
-    $('#wdTargetSel').value = String(w.target);
-    $('#wdTarget').textContent = toArabicDigits(w.target);
-    $('#wdDone').textContent = toArabicDigits(done);
-    $('#wdFill').style.width = Math.min(100, (done / w.target) * 100) + '%';
-    $('#wdMsg').textContent = done >= w.target ? 'أتممت ورد اليوم، بارك الله فيك.' : (done ? 'بقي ' + toArabicDigits(w.target - done) + ' من ورد اليوم.' : 'ابدأ ورد اليوم.');
+    const habit = readingHabit();
+    const avg = habit.average;
+    $('#wdDone').textContent = toArabicDigits(habit.today);
+    $('#wdFill').style.width = habit.today ? Math.min(100, habit.today / Math.max(1, avg) * 100) + '%' : '0%';
+    $('#wdMsg').textContent = habit.today
+      ? `قرأت ${toArabicDigits(habit.today)} صفحة اليوم. التسجيل تلقائي ولا يفرض عليك هدفًا.`
+      : 'تُسجّل القراءة تلقائيًا عند فتح صفحة جديدة، دون هدف يومي إلزامي.';
 
-    const next = w.pointer;
-    const readInKhatma = next - 1;
+    const readInKhatma = w.pointer - 1;
     const left = TOTAL_PAGES - readInKhatma;
     const pct = (readInKhatma / TOTAL_PAGES) * 100;
-    $('#khNext').textContent = toArabicDigits(next);
+    $('#khNext').textContent = toArabicDigits(w.pointer);
     $('#khPct').textContent = toArabicDigits(pct.toFixed(1)) + '%';
     $('#khLeft').textContent = toArabicDigits(left);
     $('#khFill').style.width = pct + '%';
-    const daysLeft = Math.ceil(left / w.target);
-    const endD = new Date(); endD.setDate(endD.getDate() + daysLeft);
-    $('#khEnd').textContent = readInKhatma >= TOTAL_PAGES ? '-' : dateAr(endD);
-
-    const totalDays = Object.values(w.days).filter((c) => c >= w.target).length;
-    $('#wdStreak').textContent = toArabicDigits(wirdStreak(w)) + ' يوم';
-    $('#wdDays').textContent = toArabicDigits(totalDays);
+    if (avg > 0) {
+      const endD = new Date();
+      endD.setDate(endD.getDate() + Math.ceil(left / avg));
+      $('#khEnd').textContent = dateAr(dateKey(endD));
+      $('#wdHabit').textContent = toArabicDigits(avg.toFixed(1)) + ' صفحة/يوم قراءة';
+    } else {
+      $('#khEnd').textContent = 'يتضح بعد بدء القراءة';
+      $('#wdHabit').textContent = '—';
+    }
+    $('#wdStreak').textContent = toArabicDigits(habit.streak) + ' يوم';
+    $('#wdDays').textContent = toArabicDigits(habit.days);
     $('#wdKhCount').textContent = toArabicDigits(w.finished.length);
+    $('#wdReminderEnabled').checked = w.reminderEnabled;
+    $('#wdReminderTime').value = w.reminderTime;
+    $('#wdReminderStatus').textContent = w.reminderEnabled ? `التذكير اليومي عند ${w.reminderTime}.` : 'التذكير متوقف.';
     $('#wdHist').innerHTML = w.finished.length
-      ? w.finished.map((f, i) => `<div class="wird-line"><span>الختمة ${toArabicDigits(i + 1)}</span><span class="muted">${dateAr(f.start)} - ${dateAr(f.end)}</span></div>`).join('')
+      ? w.finished.slice().reverse().map((f, i) => `<div class="wird-line"><span>ختمة مكتملة</span><span class="muted">${dateAr(f.start)} — ${dateAr(f.end)}</span></div>`).join('')
       : '<div class="muted">لا توجد ختمات مكتملة بعد.</div>';
   }
 
-  // يغيّر عدد صفحات اليوم، ويحرّك مؤشر الختمة بالمقدار نفسه
-  function addWirdPages(n) {
+  // لا يتحرك مؤشر الختمة إلا عند فتح الصفحة التالية نفسها؛ فتح صفحة عشوائية لا يفسد التتبع.
+  function recordWirdPage(p) {
     const w = getWird();
-    const key = todayKey();
-    const before = w.days[key] || 0;
-    const after = Math.max(0, before + n);
-    const delta = after - before;
-    if (!delta) return;
-    w.days[key] = after;
-    w.pointer = w.pointer + delta;
-    if (w.pointer > TOTAL_PAGES) {
-      w.finished.push({ start: w.startDate, end: key });
+    if (Number(p) !== w.pointer) return;
+    if (w.pointer >= TOTAL_PAGES) {
+      w.finished.push({ start: w.startDate, end: todayKey() });
+      w.finished = w.finished.slice(-50);
       w.pointer = 1;
-      w.startDate = key;
+      w.startDate = todayKey();
       toast('تمت الختمة، بارك الله فيك. بدأت ختمة جديدة');
     } else {
-      w.pointer = Math.max(1, w.pointer);
+      w.pointer++;
     }
     saveWird(w);
-    renderWird();
+    if (curView === 'wird') renderWird();
   }
 
-  $('#wdAdd').addEventListener('click', () => addWirdPages(1));
-  $('#wdSub').addEventListener('click', () => addWirdPages(-1));
-  $('#wdFinish').addEventListener('click', () => {
-    const w = getWird();
-    const done = w.days[todayKey()] || 0;
-    if (done >= w.target) { toast('ورد اليوم مكتمل'); return; }
-    addWirdPages(w.target - done);
-  });
-  $('#wdTargetSel').addEventListener('change', (e) => {
-    const w = getWird();
-    w.target = Number(e.target.value);
-    saveWird(w);
-    renderWird();
-  });
   $('#wdGo').addEventListener('click', () => {
     const w = getWird();
     showView('reader');
-    showPage(Math.min(TOTAL_PAGES, w.pointer));
+    showPage(w.pointer);
   });
   $('#wdFromLast').addEventListener('click', () => {
     const last = getLast();
@@ -1974,7 +2211,7 @@
     w.pointer = Math.min(TOTAL_PAGES, Math.max(1, Number(last.p)));
     saveWird(w);
     renderWird();
-    toast('تم تحديد الصفحة من آخر موضع');
+    toast('بدأ تتبع الختمة من آخر موضع');
   });
   $('#wdSetPage').addEventListener('click', () => {
     const row = $('#wdSetRow');
@@ -1984,18 +2221,59 @@
   function saveWirdPage() {
     const raw = $('#wdPageIn').value.trim();
     const p = Number(raw.replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
-    if (!Number.isInteger(p) || p < 1 || p > TOTAL_PAGES) { toast('أدخل رقم صفحة بين 1 و 604'); return; }
+    if (!Number.isInteger(p) || p < 1 || p > TOTAL_PAGES) { toast('أدخل رقم صفحة بين 1 و604'); return; }
     const w = getWird();
     w.pointer = p;
     saveWird(w);
     $('#wdSetRow').hidden = true;
     renderWird();
-    toast('تم حفظ الصفحة');
+    toast('حُفظ موضع الختمة');
   }
   $('#wdPageOk').addEventListener('click', saveWirdPage);
   $('#wdPageIn').addEventListener('keydown', (e) => { if (e.key === 'Enter') saveWirdPage(); });
 
-  // بدء ختمة جديدة يحتاج ضغطتين لتجنب الخطأ
+  async function saveWirdReminder() {
+    const w = getWird();
+    w.reminderEnabled = $('#wdReminderEnabled').checked;
+    w.reminderTime = $('#wdReminderTime').value || '20:00';
+    saveWird(w);
+    const plugin = getReminderNative();
+    if (!plugin) {
+      $('#wdReminderStatus').textContent = w.reminderEnabled ? 'سيظهر التذكير داخل التطبيق عندما يكون مفتوحًا.' : 'التذكير متوقف.';
+      return;
+    }
+    try {
+      if (!w.reminderEnabled) {
+        await plugin.cancel();
+        $('#wdReminderStatus').textContent = 'التذكير متوقف.';
+      } else {
+        const [hour, minute] = w.reminderTime.split(':').map(Number);
+        const result = await plugin.schedule({ hour, minute, title: 'سراج — ورد القرآن', body: 'موعد وردك اليوم. اقرأ ما تيسر دون إلزام.' });
+        $('#wdReminderStatus').textContent = result?.exact === false ? 'ضُبط تذكير يومي تقريبي من النظام.' : 'ضُبط تذكير يومي من النظام.';
+      }
+    } catch {
+      w.reminderEnabled = false;
+      saveWird(w);
+      $('#wdReminderEnabled').checked = false;
+      $('#wdReminderStatus').textContent = 'تعذر تفعيل إذن الإشعارات. راجع أذونات التطبيق.';
+    }
+  }
+  $('#wdReminderSave').addEventListener('click', saveWirdReminder);
+  $('#wdReminderEnabled').addEventListener('change', saveWirdReminder);
+
+  function checkInAppWirdReminder() {
+    const w = getWird();
+    if (!w.reminderEnabled) return;
+    const now = new Date();
+    const current = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const key = `wird-notified-${todayKey()}`;
+    if (current >= w.reminderTime && !sessionStorage.getItem(key)) {
+      sessionStorage.setItem(key, '1');
+      toast('موعد وردك اليوم — اقرأ ما تيسر دون إلزام');
+    }
+  }
+
+  // بدء ختمة جديدة يحتاج ضغطتين لتجنب اللمس غير المقصود.
   let wdNewArmed = false;
   $('#wdNewKhatma').addEventListener('click', (e) => {
     const btn = e.currentTarget;
@@ -2016,15 +2294,26 @@
   });
 
   // ---------- التشغيل الأولي ----------
+  renderFluentIcons();
   applyTheme();
   document.body.classList.toggle('riw', isRiw());
   syncReaderLayout();
   fillSettings();
   renderBookmarks();
   renderLast();
+  renderWird();
+  if (getWird().reminderEnabled && getReminderNative()) saveWirdReminder();
+  attachTafsirProgress();
+  checkInAppWirdReminder();
+  setInterval(checkInAppWirdReminder, 60 * 1000);
 
-  // الصفحة الرئيسية = الصفحة التي توقف عندها القارئ
-  loadSurahs().finally(async () => {
+  // القرآن والسور والتجويد وفهرس التفاسير أصول مضمّنة: يبدأ التطبيق دون شبكة.
+  loadBundledData().catch(() => {
+    toast('تعذر فتح بعض بيانات المصحف المحلية.');
+  }).finally(async () => {
+    fillSettings();
+    await refreshTafsirPackStatus();
+    await loadSurahs();
     // التطبيق اشتغل بنجاح: نلغي علامة التحديث المعلّق
     localStorage.removeItem('quran-update-pending');
     const last = getLast();

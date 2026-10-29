@@ -1,0 +1,113 @@
+{
+  "results": [
+    {
+      "name": "phone-portrait",
+      "metrics": {
+        "width": 412,
+        "height": 915,
+        "scrollWidth": 412,
+        "ayahs": 7,
+        "svgs": 26,
+        "nav": {
+          "l": 0,
+          "r": 412,
+          "t": 850,
+          "b": 915
+        },
+        "page": {
+          "l": 12,
+          "r": 400,
+          "w": 388
+        },
+        "version": "1.4.0"
+      },
+      "wird": {
+        "done": "١",
+        "next": "٢",
+        "status": "التذكير متوقف."
+      }
+    },
+    {
+      "name": "phone-landscape",
+      "metrics": {
+        "width": 915,
+        "height": 412,
+        "scrollWidth": 915,
+        "ayahs": 7,
+        "svgs": 26,
+        "nav": {
+          "l": 0,
+          "r": 915,
+          "t": 47,
+          "b": 107
+        },
+        "page": {
+          "l": 12,
+          "r": 903,
+          "w": 891
+        },
+        "version": "1.4.0"
+      },
+      "wird": {
+        "done": "١",
+        "next": "٢",
+        "status": "التذكير متوقف."
+      }
+    },
+    {
+      "name": "tablet-portrait",
+      "metrics": {
+        "width": 800,
+        "height": 1280,
+        "scrollWidth": 800,
+        "ayahs": 7,
+        "svgs": 26,
+        "nav": {
+          "l": 0,
+          "r": 800,
+          "t": 47,
+          "b": 108
+        },
+        "page": {
+          "l": 12,
+          "r": 788,
+          "w": 776
+        },
+        "version": "1.4.0"
+      },
+      "wird": {
+        "done": "١",
+        "next": "٢",
+        "status": "التذكير متوقف."
+      }
+    },
+    {
+      "name": "tablet-landscape",
+      "metrics": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "ayahs": 7,
+        "svgs": 26,
+        "nav": {
+          "l": 0,
+          "r": 1280,
+          "t": 47,
+          "b": 107
+        },
+        "page": {
+          "l": 12,
+          "r": 1268,
+          "w": 1256
+        },
+        "version": "1.4.0"
+      },
+      "wird": {
+        "done": "١",
+        "next": "٢",
+        "status": "التذكير متوقف."
+      }
+    }
+  ],
+  "errors": []
+}
