@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Enable GitHub release immutability and lock the explicitly approved releases.
+"""Enable GitHub immutability and lock approved or all published releases.
 
 The token is read only from GITHUB_TOKEN and is never written to disk or output.
-Required fine-grained permissions: Administration (write) and Contents (write).
+Archival locking never grants or changes a content license. Required fine-grained
+permissions: Administration (write) and Contents (write).
 """
 
 from __future__ import annotations
@@ -63,21 +64,43 @@ class GitHub:
             raise RuntimeError(f"Release not found: {tag}")
         return payload
 
+    def published_release_tags(self) -> tuple[str, ...]:
+        tags: list[str] = []
+        page = 1
+        while True:
+            status, payload = self.request(
+                "GET", f"/repos/{self.repository}/releases?per_page=100&page={page}"
+            )
+            if status != 200 or not isinstance(payload, list):
+                raise RuntimeError("Could not enumerate repository releases")
+            tags.extend(str(item["tag_name"]) for item in payload if not item.get("draft"))
+            if len(payload) < 100:
+                break
+            page += 1
+        return tuple(tags)
+
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repository", default=DEFAULT_REPOSITORY)
-    parser.add_argument("--apply", action="store_true", help="Enable the setting and republish approved releases")
+    parser.add_argument("--apply", action="store_true", help="Enable the setting and republish selected releases")
+    parser.add_argument(
+        "--all-published",
+        action="store_true",
+        help="Preserve every existing published release as an archive; this does not grant or change licenses",
+    )
     args = parser.parse_args()
 
     token = os.environ.get("GITHUB_TOKEN", "").strip()
     if not token:
         raise SystemExit("GITHUB_TOKEN is required and must not be stored in the repository")
     github = GitHub(args.repository, token)
+    tags = github.published_release_tags() if args.all_published else APPROVED_TAGS
 
     if not args.apply:
-        print("Dry run: the following published releases are approved for permanent locking:")
-        for tag in APPROVED_TAGS:
+        scope = "all published archival releases" if args.all_published else "approved releases"
+        print(f"Dry run: checking {scope} for permanent locking:")
+        for tag in tags:
             release = github.release(tag)
             print(f"- {tag}: draft={release['draft']} immutable={release.get('immutable', False)}")
         print("Re-run with --apply after confirming the repository administration token.")
@@ -91,10 +114,10 @@ def main() -> int:
         raise RuntimeError("Repository release immutability was not enabled")
     print("Repository Immutable Releases: enabled")
 
-    for tag in APPROVED_TAGS:
+    for tag in tags:
         release = github.release(tag)
         if release.get("draft"):
-            raise RuntimeError(f"Approved release is still a draft: {tag}")
+            raise RuntimeError(f"Selected release is still a draft: {tag}")
         if not release.get("immutable"):
             # GitHub makes a previously published release immutable when it is
             # republished through the Update Release endpoint with an empty body.
@@ -104,7 +127,10 @@ def main() -> int:
             raise RuntimeError(f"Release did not become immutable: {tag}")
         print(f"Locked permanently: {tag} (release {release['id']})")
 
-    print("All explicitly approved existing releases are immutable. Android 1.4.0 will be immutable at publication.")
+    if args.all_published:
+        print(f"All {len(tags)} published releases are immutable archival records; licensing scope is unchanged.")
+    else:
+        print("All explicitly approved releases are immutable.")
     return 0
 
 

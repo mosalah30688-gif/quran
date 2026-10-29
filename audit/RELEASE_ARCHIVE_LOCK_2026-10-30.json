@@ -1,0 +1,177 @@
+{
+  "schema": 1,
+  "verified_at": "2026-10-30T01:43:15+02:00",
+  "repository": "mosalah30688-gif/quran",
+  "immutable_releases_setting": {
+    "enabled": true,
+    "enforced_by_owner": false
+  },
+  "published_release_count": 21,
+  "all_published_releases_immutable": true,
+  "tag_ruleset": {
+    "id": 26170318,
+    "name": "Permanent protection for all release tags",
+    "target": "tag",
+    "enforcement": "active",
+    "include": [
+      "~ALL"
+    ],
+    "bypass_actors": [],
+    "rules": [
+      "deletion",
+      "update",
+      "non_fast_forward"
+    ],
+    "source": ".github/rulesets/permanent-release-tags.json"
+  },
+  "licensing_note": "Archival immutability does not grant, broaden, or change any content license. The approved distribution scope remains limited to audit/RELEASE_APPROVAL.json and per-source records.",
+  "releases": [
+    {
+      "id": 428501519,
+      "tag": "siraj-android-v1.4.0",
+      "published_at": "2026-10-29T23:38:04Z",
+      "immutable": true,
+      "asset_count": 2
+    },
+    {
+      "id": 427141192,
+      "tag": "siraj-windows-v4.1.1",
+      "published_at": "2026-10-28T20:12:37Z",
+      "immutable": true,
+      "asset_count": 5
+    },
+    {
+      "id": 427089059,
+      "tag": "siraj-tafsir-data-v2026.10.28",
+      "published_at": "2026-10-28T19:16:31Z",
+      "immutable": true,
+      "asset_count": 1
+    },
+    {
+      "id": 427114717,
+      "tag": "siraj-linux-test-v4.1.1",
+      "published_at": "2026-10-28T19:44:44Z",
+      "immutable": true,
+      "asset_count": 5
+    },
+    {
+      "id": 427131979,
+      "tag": "siraj-windows-test-v4.1.1",
+      "published_at": "2026-10-28T20:02:21Z",
+      "immutable": true,
+      "asset_count": 4
+    },
+    {
+      "id": 427011715,
+      "tag": "siraj-linux-test-v4.1.0",
+      "published_at": "2026-10-28T18:01:13Z",
+      "immutable": true,
+      "asset_count": 3
+    },
+    {
+      "id": 425814907,
+      "tag": "mushaf-v4.0.7",
+      "published_at": "2026-10-27T18:06:36Z",
+      "immutable": true,
+      "asset_count": 1
+    },
+    {
+      "id": 425790329,
+      "tag": "mushaf-v4.0.6",
+      "published_at": "2026-10-27T17:42:09Z",
+      "immutable": true,
+      "asset_count": 1
+    },
+    {
+      "id": 425758610,
+      "tag": "mushaf-v4.0.5",
+      "published_at": "2026-10-27T17:10:33Z",
+      "immutable": true,
+      "asset_count": 1
+    },
+    {
+      "id": 425730965,
+      "tag": "mushaf-v4.0.4",
+      "published_at": "2026-10-27T16:44:26Z",
+      "immutable": true,
+      "asset_count": 1
+    },
+    {
+      "id": 425703044,
+      "tag": "mushaf-v4.0.3",
+      "published_at": "2026-10-27T16:17:48Z",
+      "immutable": true,
+      "asset_count": 1
+    },
+    {
+      "id": 425648954,
+      "tag": "mushaf-v4.0.2",
+      "published_at": "2026-10-27T15:35:44Z",
+      "immutable": true,
+      "asset_count": 1
+    },
+    {
+      "id": 425619843,
+      "tag": "mushaf-v4.0.1",
+      "published_at": "2026-10-27T15:11:31Z",
+      "immutable": true,
+      "asset_count": 1
+    },
+    {
+      "id": 425530915,
+      "tag": "mushaf-v4.0.0",
+      "published_at": "2026-10-27T13:56:13Z",
+      "immutable": true,
+      "asset_count": 1
+    },
+    {
+      "id": 425466089,
+      "tag": "mushaf-v3.1.1",
+      "published_at": "2026-10-27T13:01:40Z",
+      "immutable": true,
+      "asset_count": 1
+    },
+    {
+      "id": 424829516,
+      "tag": "v1.3.1",
+      "published_at": "2026-10-26T22:17:53Z",
+      "immutable": true,
+      "asset_count": 2
+    },
+    {
+      "id": 424533368,
+      "tag": "v1.0.3",
+      "published_at": "2026-10-26T17:05:40Z",
+      "immutable": true,
+      "asset_count": 1
+    },
+    {
+      "id": 424512214,
+      "tag": "v1.0.2",
+      "published_at": "2026-10-26T16:44:32Z",
+      "immutable": true,
+      "asset_count": 1
+    },
+    {
+      "id": 424445506,
+      "tag": "v1.0.1",
+      "published_at": "2026-10-26T15:46:47Z",
+      "immutable": true,
+      "asset_count": 1
+    },
+    {
+      "id": 424859379,
+      "tag": "native-v2.0.0",
+      "published_at": "2026-10-26T23:00:07Z",
+      "immutable": true,
+      "asset_count": 1
+    },
+    {
+      "id": 424869037,
+      "tag": "mushaf-v3.0.0",
+      "published_at": "2026-10-26T23:15:51Z",
+      "immutable": true,
+      "asset_count": 1
+    }
+  ]
+}

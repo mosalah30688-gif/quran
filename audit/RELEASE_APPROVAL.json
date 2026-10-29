@@ -30,6 +30,9 @@
   "immutability_required": true,
   "immutability_enabled": true,
   "all_approved_releases_verified_immutable": true,
+  "all_published_releases_archived_immutable": 21,
+  "archive_lock_evidence": "audit/RELEASE_ARCHIVE_LOCK_2026-10-30.json",
+  "release_tag_ruleset_id": 26170318,
   "android_release_evidence": "audit/ANDROID_RELEASE_1.4.0.json",
   "policy": "audit/RELEASE_RETENTION.md"
 }
