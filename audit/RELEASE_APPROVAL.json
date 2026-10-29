@@ -28,5 +28,8 @@
   "rights_scope": "Distribution approved under the per-source rights and licenses recorded in audit documentation; third-party content is not relicensed under MIT.",
   "deletion_policy": "Never delete a listed GitHub Release, its tag, or its assets. Publish a new version for corrections.",
   "immutability_required": true,
+  "immutability_enabled": true,
+  "all_approved_releases_verified_immutable": true,
+  "android_release_evidence": "audit/ANDROID_RELEASE_1.4.0.json",
   "policy": "audit/RELEASE_RETENTION.md"
 }
