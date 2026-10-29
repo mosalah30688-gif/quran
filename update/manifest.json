@@ -1,13 +1,13 @@
 {
-  "version": "1.2.0",
+  "version": "1.4.0",
   "files": [
     "index.html",
     "app.js"
   ],
   "apk": {
-    "version": "1.3.1",
-    "url": "https://raw.githubusercontent.com/mosalah30688-gif/quran/main/update/app.apk",
-    "sha256": "7ec9ac1ec85e7b3d5a3471f147ee3e0b333cc9545d1c1251ba39db80d74f0255"
+    "version": "1.4.0",
+    "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-android-v1.4.0/Siraj-Android-1.4.0.apk",
+    "sha256": "c5501b6454366c1a9ab080091587ef9a8b7109ebc16cd0824a7f1b3714c9df3e"
   },
   "desktop": {
     "version": "4.1.1",
