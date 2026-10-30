@@ -84,7 +84,7 @@ public class ApkUpdaterPlugin extends Plugin {
                 conn.setInstanceFollowRedirects(true);
                 conn.setConnectTimeout(15000);
                 conn.setReadTimeout(30000);
-                conn.setRequestProperty("User-Agent", "Siraj-Android/1.4.0");
+                conn.setRequestProperty("User-Agent", "Siraj-Android/1.4.1");
                 if (conn.getResponseCode() != 200) throw new Exception("HTTP " + conn.getResponseCode());
                 if (!"https".equalsIgnoreCase(conn.getURL().getProtocol())) throw new Exception("insecure redirect");
 

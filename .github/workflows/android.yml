@@ -30,7 +30,7 @@ on:
         type: boolean
         default: false
       confirmation:
-        description: 'For publication type: PUBLISH IMMUTABLE siraj-android-v1.4.0'
+        description: 'For publication type: PUBLISH IMMUTABLE siraj-android-v1.4.1'
         required: false
         type: string
 
@@ -131,11 +131,12 @@ jobs:
           NEW_CODE=$("$BUILD_TOOLS/aapt" dump badging "$APK" | sed -n "s/.*versionCode='\([0-9]*\)'.*/\1/p" | head -1)
           test "$NEW_CODE" -gt "$OLD_CODE"
           "$BUILD_TOOLS/aapt" dump badging "$APK" | grep -q "versionName='${{ steps.meta.outputs.version }}'"
+          "$BUILD_TOOLS/aapt" dump badging "$APK" | grep -Fq "application-label:'سراج — قرآن كريم'"
           python3 - <<'PY'
           import zipfile
           apk = 'android/app/build/outputs/apk/release/app-release.apk'
           required = {
-              'assets/public/app.js', 'assets/public/index.html',
+              'assets/public/app.js', 'assets/public/index.html', 'assets/public/sw.js',
               'assets/public/quran-hafs.json', 'assets/public/quran-tajweed.json',
               'assets/public/surahs.json', 'assets/public/tafsir-catalog.json',
               'assets/public/fonts/Amiri-Regular.ttf',
@@ -148,10 +149,15 @@ jobs:
               assert not (required - names), required - names
               app = archive.read('assets/public/app.js').decode()
               html = archive.read('assets/public/index.html').decode()
+              service_worker = archive.read('assets/public/sw.js').decode()
           assert 'everyayah.com' not in app.lower()
           assert 'TafsirStore' in app and 'Reminder' in app and 'ar.parhizgar' in app
           assert 'loadBundledData()' in app and 'recordWirdPage' in app
-          assert "APP_BUNDLE_VERSION = '1.4.0'" in html
+          assert "APP_BUNDLE_VERSION = '1.4.1'" in html and 'الإصدار 1.4.1' in html
+          assert 'مميزات سراج الحالية' in html and 'أحدث التحديثات' in html
+          assert 'محمد صلاح عبد الخالق' in html and 'اتصل بنا' in html
+          assert '78 تفسيرًا' in html and '17 قارئًا' in html
+          assert 'siraj-shell-v6' in service_worker
           assert 'data-icon="tajweed"' in html and '🎵' not in html
           PY
 

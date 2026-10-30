@@ -22,7 +22,7 @@
   <releases>
     <release version="@VERSION@" date="@RELEASE_DATE@">
       <description>
-        <p>First Linux AppImage under the Siraj identity.</p>
+        <p>Current Siraj Linux AppImage with Quran reading, recitations, tafsir, memorization and study tools.</p>
       </description>
     </release>
   </releases>

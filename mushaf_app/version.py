@@ -1,6 +1,6 @@
 """هوية وإصدار سراج لنظام Linux."""
 
-APP_VERSION = "4.1.1"
+APP_VERSION = "4.1.2"
 APP_NAME = "Siraj"
 APP_NAME_AR = "سراج"
 APP_DESCRIPTION_AR = "قرآن كريم"

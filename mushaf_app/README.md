@@ -41,10 +41,10 @@ bash build_appimage.sh
 
 الناتج داخل `release/`:
 
-- `Siraj-Quran-4.1.1-linux-x86_64.AppImage`
+- `Siraj-Quran-4.1.2-linux-x86_64.AppImage`
 - `SHA256SUMS.txt`
 
-يضيف CI كذلك `Siraj-Quran-4.1.1-linux-corresponding-source.zip` و`SBOM.cdx.json` بعد جرد رخص الحزمة والتحقق من أقفال مصادر النظام الدقيقة.
+يضيف CI كذلك `Siraj-Quran-4.1.2-linux-corresponding-source.zip` و`SBOM.cdx.json` بعد جرد رخص الحزمة والتحقق من أقفال مصادر النظام الدقيقة.
 
 يُنزّل السكربت `appimagetool` 1.9.1 وType-2 runtime الثابت `20251108` من إصدارات محددة، ويتحقق من SHA-256 لكليهما قبل الاستعمال. لا يعتمد AppImage الناتج على FUSE 2 في جهاز المستخدم. يضيف CI ملف CycloneDX SBOM، ويفحص metadata، ثم يشغّل AppImage نفسه بلا arguments تحت Xvfb ويتحقق من نافذة «سراج».
 
@@ -53,7 +53,7 @@ bash build_appimage.sh
 امنح الملف صلاحية التنفيذ مرة واحدة ثم افتحه بالنقر المزدوج:
 
 ```bash
-chmod +x Siraj-Quran-4.1.1-linux-x86_64.AppImage
+chmod +x Siraj-Quran-4.1.2-linux-x86_64.AppImage
 ```
 
 تُحفظ الإعدادات والملفات المؤقتة وفق مسارات XDG الخاصة بالمستخدم، ولا تُكتب بيانات داخل AppImage. عند غياب streams في تشغيل سطح المكتب، يوجد سجل تشخيص في:
@@ -62,4 +62,4 @@ chmod +x Siraj-Quran-4.1.1-linux-x86_64.AppImage
 ~/.local/state/siraj/logs/siraj-startup.log
 ```
 
-النشر العام المستقر غير مفعّل إلى أن تكتمل مراجعة تراخيص المحتوى والمراجعة العلمية. راجع `THIRD_PARTY_NOTICES.md`.
+لا يُنشر أي إصدار جديد ولا تُحدّث القناة المستقرة قبل اكتمال مراجعة تراخيص المحتوى والمراجعة العلمية واجتياز بوابة الإصدار. راجع `THIRD_PARTY_NOTICES.md`.

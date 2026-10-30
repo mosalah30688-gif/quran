@@ -1,6 +1,6 @@
 {
   "appId": "com.quran.mushaf",
-  "appName": "سراج",
+  "appName": "سراج — قرآن كريم",
   "webDir": "www",
   "server": {
     "androidScheme": "https"

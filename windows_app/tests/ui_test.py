@@ -85,6 +85,23 @@ try:
     check('dedicated update button opens updater',
           win.stack.currentWidget() is win.views['settings'] and update_clicks == [True])
     win.check_updates = original_check_updates
+    check('dedicated about button is always visible',
+          win.nav_buttons['about'].isVisible() and not win.nav_buttons['about'].icon().isNull()
+          and 'المطور' in win.nav_buttons['about'].toolTip())
+    win.nav_buttons['about'].click()
+    app.processEvents()
+    wait(300)  # دع حركة الانتقال تنتهي كي تكون لقطة صفحة «عن التطبيق» مقروءة.
+    check('about button opens its own view', win.stack.currentWidget() is win.views['about'])
+    check('about view lists current features',
+          '78 تفسيرًا' in win.about_features_label.text()
+          and '17 قارئًا' in win.about_features_label.text()
+          and 'متابعة ختمة' in win.about_features_label.text())
+    check('about view identifies developer and contact',
+          M.DEVELOPER_NAME in win.about_developer_label.text()
+          and win.about_contact_button.text() == 'اتصل بنا'
+          and set(win.about_link_buttons) == {M.DEVELOPER_PAGE_URL, M.CONTACT_URL, M.REPOSITORY_URL}
+          and all(button.property('externalUrl') == url for url, button in win.about_link_buttons.items()))
+    shot('about')
     win.show_view('reader')
     app.processEvents()
     # المصحف
@@ -101,7 +118,7 @@ try:
     check('Hafs audio uses audited Islamic Network CDN', M.ayah_audio_url('ar.alafasy', 2, 255).startswith('https://cdn.islamic.network/'))
     check('tajweed icon is a palette not music notes', 'M9 18V5' not in M.ICON_SVG['tajweed'])
     icon_colors = []
-    for key in ('book', 'tafsir', 'search', 'words', 'tajweed', 'adhkar', 'memo', 'wird', 'bookmarks', 'stats', 'update', 'settings'):
+    for key in ('book', 'tafsir', 'search', 'words', 'tajweed', 'adhkar', 'memo', 'wird', 'bookmarks', 'stats', 'update', 'about', 'settings'):
         image = M.svg_icon(key, size=24).pixmap(48, 48).toImage()
         colors = {image.pixelColor(x, y).rgba() for x in range(0, image.width(), 3)
                   for y in range(0, image.height(), 3) if image.pixelColor(x, y).alpha()}

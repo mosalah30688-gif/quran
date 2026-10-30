@@ -65,6 +65,28 @@ FONTS = (_PATCH_BASE / 'fonts') if _PATCH_BASE is not None and (_PATCH_BASE / 'f
 ICON = resource_file('icon.png')
 UPDATE_PUBLIC_KEY = BASE / 'assets' / 'update_public_key.txt'
 
+DEVELOPER_NAME = 'محمد صلاح عبد الخالق'
+DEVELOPER_PAGE_URL = 'https://elkatebmohamadsalah.blogspot.com/p/c.html'
+CONTACT_URL = 'https://elkatebmohamadsalah.blogspot.com/p/blog-page_827.html'
+REPOSITORY_URL = 'https://github.com/mosalah30688-gif/quran'
+PLATFORM_LABEL = 'Linux AppImage'
+ABOUT_FEATURES = (
+    'مصحف كامل في 604 صفحات مع فهرس السور والأجزاء والآيات والرجوع لآخر موضع.',
+    'حفص بأربعة رسوم، وورش وقالون والدوري، مع معالجة البسملة وعرض حفص المتصل.',
+    '17 قارئًا لحفص وتلاوات الروايات، مع التشغيل من آية والتنزيل المحلي والتحكم الكامل بالحفظ.',
+    '78 تفسيرًا تراثيًا مدقق الحقوق تعمل محليًا دون API، مع معاني الكلمات والترجمات.',
+    'بحث محلي، وألوان أحكام التجويد، ونسخ ومشاركة الآيات وتحديد النص.',
+    'وضع حفظ بإخفاء النص والتكرار الصوتي والمراجعة المتباعدة وتسجيل المقاطع المحفوظة.',
+    'متابعة ختمة مرنة بلا إلزام، وورد وتذكير اختياري وإحصائيات وعادة قراءة.',
+    'أذكار، ومحفوظات، وأربعة خطوط عربية مع تحكم موحد بالحجم.',
+    'واجهة عربية RTL متجاوبة ووضع ليلي وتحديثات موقعة كاملة أو صغيرة.',
+)
+ABOUT_RELEASE_NOTES = (
+    'إضافة صفحة «عن التطبيق» مستقلة مع تعريف المطور وروابط التواصل.',
+    'تحديث قائمة المميزات لتطابق المصحف والتفاسير والتلاوات والحفظ والختمة الحالية.',
+    'الإبقاء على البيانات المحلية وقناة التحديث الموقعة من دون المساس بإعدادات المستخدم.',
+)
+
 ARABIC_DIGITS = str.maketrans('0123456789', '٠١٢٣٤٥٦٧٨٩')
 
 
@@ -407,6 +429,7 @@ def qss(t):
     QListWidget::item:selected {{ background: {t['brand']}; color: #ffffff; }}
     QListWidget::item:hover {{ background: {t['hover']}; }}
     QScrollArea {{ background: transparent; border: none; }}
+    QScrollArea > QWidget > QWidget {{ background: transparent; }}
     QScrollBar:vertical {{ background: transparent; width: 10px; margin: 2px; }}
     QScrollBar::handle:vertical {{ background: {t['line']}; border-radius: 5px; min-height: 30px; }}
     QScrollBar::add-line, QScrollBar::sub-line {{ height: 0; }}
@@ -508,6 +531,14 @@ ICON_SVG = {
         <path d="M3.2 12.75a8.9 8.9 0 0 0 15.25 5.8l1.75 1.65.7-6.25-6.25.7 1.72 1.62A6.05 6.05 0 0 1 6.1 12.75z" fill="url(#gEmerald)" stroke="#075044" stroke-width=".65"/>
         <path d="M12 5.9v8.25M8.85 11.05 12 14.25l3.15-3.2" fill="none" stroke="#fff" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round"/>
         <path d="M17.1 5.15c1.25 1.05 2.1 2.4 2.45 3.85" fill="none" stroke="#fff" stroke-width=".7" stroke-linecap="round" opacity=".65"/>
+    ''',
+    'about': '''
+        <circle cx="12" cy="12" r="9.5" fill="#102d3f" opacity=".35" transform="translate(.45 .65)"/>
+        <circle cx="12" cy="11.4" r="9.5" fill="url(#gBlue)" stroke="#164675" stroke-width=".75"/>
+        <circle cx="12" cy="11.4" r="7.1" fill="url(#gPaper)" stroke="#b08b43" stroke-width=".55"/>
+        <circle cx="12" cy="8.1" r="2.25" fill="url(#gGold)" stroke="#805317" stroke-width=".55"/>
+        <path d="M7.8 17.1c.55-3 2.15-4.55 4.2-4.55s3.65 1.55 4.2 4.55" fill="url(#gEmerald)" stroke="#075044" stroke-width=".65" stroke-linecap="round"/>
+        <path d="M6.1 5.5a8.1 8.1 0 0 1 8.9-1.7" fill="none" stroke="#fff" stroke-width=".8" stroke-linecap="round" opacity=".72"/>
     ''',
     'settings': '''
         <path d="M9.6 2.2h4.8l.65 2.35c.62.2 1.2.45 1.75.78l2.15-1.2 3.4 3.4-1.2 2.15c.33.55.58 1.13.78 1.75l2.35.65v4.8l-2.35.65c-.2.62-.45 1.2-.78 1.75l1.2 2.15-3.4 3.4-2.15-1.2c-.55.33-1.13.58-1.75.78l-.65 2.35H9.6l-.65-2.35a9.2 9.2 0 0 1-1.75-.78l-2.15 1.2-3.4-3.4 1.2-2.15a9.2 9.2 0 0 1-.78-1.75l-2.35-.65v-4.8l2.35-.65c.2-.62.45-1.2.78-1.75l-1.2-2.15 3.4-3.4 2.15 1.2c.55-.33 1.13-.58 1.75-.78z" fill="#1a2d3d" opacity=".35" transform="scale(.82) translate(3.4 2.8)"/>
@@ -1021,6 +1052,17 @@ class Main(QMainWindow):
         self.btn_sidebar_update.setToolTip('فحص وتنزيل تحديثات سراج')
         self.btn_sidebar_update.clicked.connect(self.open_updates)
         sl.addWidget(self.btn_sidebar_update)
+        b = QPushButton('عن التطبيق')
+        b.setIcon(svg_icon('about'))
+        b.setIconSize(QSize(22, 22))
+        b.setObjectName('nav')
+        b.setCheckable(True)
+        b.clicked.connect(lambda: self.show_view('about'))
+        self.nav_group.addButton(b)
+        self.nav_buttons['about'] = b
+        self.nav_labels['about'] = 'عن التطبيق'
+        b.setToolTip('عن التطبيق والمطور والتواصل')
+        sl.addWidget(b)
         b = QPushButton('الإعدادات')
         b.setIcon(svg_icon('settings'))
         b.setIconSize(QSize(22, 22))
@@ -1053,6 +1095,7 @@ class Main(QMainWindow):
         self.views['wird'] = self.build_wird()
         self.views['bookmarks'] = self.build_bookmarks()
         self.views['stats'] = self.build_stats()
+        self.views['about'] = self.build_about()
         self.views['settings'] = self.build_settings()
         for w in self.views.values():
             self.stack.addWidget(w)
@@ -2916,6 +2959,108 @@ class Main(QMainWindow):
         self.st_cards['adhkar'].setText(ar(done))
         self.st_cards['bookmarks'].setText(ar(len(self.bookmarks())))
         self.st_cards['wird'].setText(ar(len(khatma_progress(self.settings, self.page)['finished'])))
+
+    # ---------- عن التطبيق ----------
+    def build_about(self):
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        inner = QWidget()
+        lay = QVBoxLayout(inner)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(14)
+        lay.addWidget(heading('عن التطبيق', 'سراج — قرآن كريم'))
+
+        hero = card()
+        hero_lay = QHBoxLayout(hero)
+        hero_lay.setContentsMargins(22, 20, 22, 20)
+        hero_lay.setSpacing(18)
+        self.about_icon_label = QLabel()
+        self.about_icon_label.setFixedSize(92, 92)
+        pixmap = QPixmap(str(ICON))
+        if not pixmap.isNull():
+            self.about_icon_label.setPixmap(pixmap.scaled(
+                88, 88, Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            ))
+        self.about_icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        hero_lay.addWidget(self.about_icon_label)
+        hero_text = QVBoxLayout()
+        title = QLabel(f'{APP_NAME_AR} — {APP_DESCRIPTION_AR}')
+        title.setStyleSheet('font-size:24px; font-weight:800;')
+        title.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        hero_text.addWidget(title)
+        edition = QLabel(f'الإصدار {APP_VERSION} · {PLATFORM_LABEL}')
+        edition.setObjectName('muted')
+        hero_text.addWidget(edition)
+        summary = QLabel('تطبيق قرآن عربي متعدد المنصات يجمع القراءة والتلاوة والتفسير والحفظ والختمة في تجربة محلية تحترم الخصوصية.')
+        summary.setWordWrap(True)
+        summary.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        hero_text.addWidget(summary)
+        hero_lay.addLayout(hero_text, 1)
+        lay.addWidget(hero)
+
+        features_card = card()
+        features_lay = QVBoxLayout(features_card)
+        features_lay.setContentsMargins(22, 18, 22, 20)
+        features_lay.setSpacing(10)
+        features_title = QLabel('مميزات سراج')
+        features_title.setStyleSheet('font-size:18px; font-weight:800;')
+        features_lay.addWidget(features_title)
+        self.about_features_label = QLabel('\n'.join(f'• {item}' for item in ABOUT_FEATURES))
+        self.about_features_label.setWordWrap(True)
+        self.about_features_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        features_lay.addWidget(self.about_features_label)
+        lay.addWidget(features_card)
+
+        release_card = card()
+        release_lay = QVBoxLayout(release_card)
+        release_lay.setContentsMargins(22, 18, 22, 20)
+        release_lay.setSpacing(8)
+        release_title = QLabel(f'أحدث تحديثات الإصدار {APP_VERSION}')
+        release_title.setStyleSheet('font-size:18px; font-weight:800;')
+        release_lay.addWidget(release_title)
+        self.about_updates_label = QLabel('\n'.join(f'• {item}' for item in ABOUT_RELEASE_NOTES))
+        self.about_updates_label.setWordWrap(True)
+        self.about_updates_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        release_lay.addWidget(self.about_updates_label)
+        lay.addWidget(release_card)
+
+        developer_card = card()
+        developer_lay = QVBoxLayout(developer_card)
+        developer_lay.setContentsMargins(22, 18, 22, 20)
+        developer_lay.setSpacing(10)
+        developer_title = QLabel('المطور والتواصل')
+        developer_title.setStyleSheet('font-size:18px; font-weight:800;')
+        developer_lay.addWidget(developer_title)
+        self.about_developer_label = QLabel(
+            f'{DEVELOPER_NAME} — مطوّر تطبيق سراج. صُمم المشروع لتقديم أدوات عربية نافعة '
+            'لقراءة القرآن وحفظه ومتابعة الختمة مع توثيق المصادر والحقوق.'
+        )
+        self.about_developer_label.setWordWrap(True)
+        self.about_developer_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        developer_lay.addWidget(self.about_developer_label)
+        links = QHBoxLayout()
+        links.setSpacing(8)
+        self.about_link_buttons = {}
+        for text, url, primary in (
+            ('صفحة المطور', DEVELOPER_PAGE_URL, False),
+            ('اتصل بنا', CONTACT_URL, True),
+            ('GitHub', REPOSITORY_URL, False),
+        ):
+            button = QPushButton(text)
+            if primary:
+                button.setObjectName('primary')
+                self.about_contact_button = button
+            button.setProperty('externalUrl', url)
+            button.clicked.connect(lambda _checked=False, target=url: QDesktopServices.openUrl(QUrl(target)))
+            self.about_link_buttons[url] = button
+            links.addWidget(button)
+        links.addStretch(1)
+        developer_lay.addLayout(links)
+        lay.addWidget(developer_card)
+        lay.addStretch(1)
+        scroll.setWidget(inner)
+        return scroll
 
     # ---------- الإعدادات ----------
     def build_settings(self):

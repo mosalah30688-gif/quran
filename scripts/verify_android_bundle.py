@@ -73,11 +73,21 @@ def main() -> None:
 
     app = (ROOT / "app.js").read_text(encoding="utf-8")
     html = (ROOT / "index.html").read_text(encoding="utf-8")
+    service_worker = (ROOT / "sw.js").read_text(encoding="utf-8")
+    capacitor = load("capacitor.config.json")
+    android_strings = (ROOT / "android/app/src/main/res/values/strings.xml").read_text(encoding="utf-8")
+    assert capacitor["appName"] == "سراج — قرآن كريم"
+    assert '<string name="app_name">سراج — قرآن كريم</string>' in android_strings
+    assert '<string name="title_activity_main">سراج — قرآن كريم</string>' in android_strings
     assert "loadBundledData()" in app
     assert "lookupBatch" in app and "TafsirStore" in app
     assert "recordWirdPage" in app and "Reminder" in app
     assert "wdTargetSel" not in app and "wdAdd" not in app
-    assert "APP_BUNDLE_VERSION = '1.4.0'" in html
+    assert "APP_BUNDLE_VERSION = '1.4.1'" in html and "الإصدار 1.4.1" in html
+    assert "مميزات سراج الحالية" in html and "أحدث التحديثات" in html
+    assert "محمد صلاح عبد الخالق" in html and "صفحة المطور" in html and "اتصل بنا" in html
+    assert "78 تفسيرًا" in html and "17 قارئًا" in html and "ختمة مرنة وورد مرن" in html
+    assert "siraj-shell-v6" in service_worker
     assert "--quran-font" in html and "setFont" in html
     assert "data-icon=\"tajweed\"" in html and "🎵" not in html
 

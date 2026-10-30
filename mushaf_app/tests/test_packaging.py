@@ -19,7 +19,7 @@ class LinuxPackagingTests(unittest.TestCase):
     def test_linux_identity_matches_siraj_product(self):
         linux = load_version(HERE / "version.py", "linux_version")
         windows = load_version(ROOT / "windows_app" / "version.py", "windows_version")
-        # Windows is still not built or published, but shared source metadata stays aligned.
+        # Both desktop builds share one compatibility version and must stay aligned.
         self.assertEqual(linux.APP_VERSION, windows.APP_VERSION)
         self.assertGreater(tuple(map(int, linux.APP_VERSION.split("."))), (4, 0, 7))
         self.assertEqual(linux.APP_NAME_AR, "سراج")
@@ -36,14 +36,18 @@ class LinuxPackagingTests(unittest.TestCase):
         self.assertEqual(entry["Terminal"], "false")
         self.assertEqual(entry["Icon"], "com.mosalah30688.siraj.quran")
 
-    def test_stable_channel_publishes_the_signed_current_appimage(self):
+    def test_stable_channel_publishes_the_signed_latest_approved_appimage(self):
         manifest = json.loads((ROOT / "update" / "linux" / "stable.json").read_text(encoding="utf-8"))
         linux = load_version(HERE / "version.py", "linux_channel_version")
         asset = manifest["assets"]["appimage"]
         self.assertEqual(manifest["product"], "siraj-quran-linux")
         self.assertTrue(manifest["available"])
-        self.assertEqual(manifest["version"], linux.APP_VERSION)
-        self.assertEqual(asset["file_name"], f"Siraj-Quran-{linux.APP_VERSION}-linux-x86_64.AppImage")
+        stable_version = manifest["version"]
+        self.assertLessEqual(
+            tuple(map(int, stable_version.split("."))),
+            tuple(map(int, linux.APP_VERSION.split("."))),
+        )
+        self.assertEqual(asset["file_name"], f"Siraj-Quran-{stable_version}-linux-x86_64.AppImage")
         self.assertTrue(asset["url"].startswith("https://github.com/"))
         self.assertGreater(asset["size"], 100 * 1024 * 1024)
         self.assertEqual(len(asset["sha256"]), 64)
