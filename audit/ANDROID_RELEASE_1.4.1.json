@@ -1,0 +1,162 @@
+{
+  "schema": 1,
+  "verified_at": "2026-10-30T23:50:46+02:00",
+  "repository": "mosalah30688-gif/quran",
+  "source_commit": "a36b0c62b4f845ff6314f98a7fa6692c6306e8ca",
+  "channel_commit": "90cee86854bdd6dd7ee616348bb027cb8ec3b9b1",
+  "validation_run": {
+    "id": 41133220624,
+    "url": "https://github.com/mosalah30688-gif/quran/actions/runs/41133220624",
+    "conclusion": "success"
+  },
+  "publication_run": {
+    "id": 41133606574,
+    "url": "https://github.com/mosalah30688-gif/quran/actions/runs/41133606574",
+    "conclusion": "success",
+    "release_gate": "PUBLISH IMMUTABLE siraj-android-v1.4.1"
+  },
+  "release": {
+    "id": 429520958,
+    "tag": "siraj-android-v1.4.1",
+    "url": "https://github.com/mosalah30688-gif/quran/releases/tag/siraj-android-v1.4.1",
+    "published_at": "2026-10-30T21:49:58Z",
+    "draft": false,
+    "prerelease": false,
+    "immutable": true,
+    "assets": [
+      {
+        "id": 693520700,
+        "name": "Siraj-Android-1.4.1.apk",
+        "bytes": 7447408
+      },
+      {
+        "id": 693520803,
+        "name": "SHA256SUMS.txt",
+        "bytes": 90
+      }
+    ]
+  },
+  "apk": {
+    "name": "Siraj-Android-1.4.1.apk",
+    "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-android-v1.4.1/Siraj-Android-1.4.1.apk",
+    "bytes": 7447408,
+    "sha256": "f219ad68ab4e2701b2327e3241a2cf45ff0765775fd2d062c0f589589ee71faa",
+    "release_checksum_matches": true,
+    "stable_channel_checksum_matches": true,
+    "public_download_reverified": true,
+    "package": "com.quran.mushaf",
+    "application_label": "سراج — قرآن كريم",
+    "version_name": "1.4.1",
+    "version_code": 141,
+    "min_sdk": 22,
+    "target_sdk": 34,
+    "signature_schemes": {
+      "v1": true,
+      "v2": true,
+      "v3": false,
+      "v3_1": false,
+      "v4": false
+    },
+    "signer_certificate_sha256": "3f60f24c3960d662a1454fc8bdfcc2039872e6624c6e3efbbb6abc83b842027c"
+  },
+  "upgrade_from": {
+    "version_name": "1.4.0",
+    "version_code": 140,
+    "same_package": true,
+    "same_signer_certificate": true,
+    "higher_version_code": true
+  },
+  "reader_redesign": {
+    "fixed_reader_dock": true,
+    "previous_and_next_page_controls_visible": true,
+    "bottom_navigation_overlap_prevented": true,
+    "dynamic_dock_height_padding": true,
+    "safe_area_insets": [
+      "top",
+      "bottom",
+      "left",
+      "right"
+    ],
+    "recitation_controls_separated": true,
+    "audio_timeline_and_seek": true,
+    "minimum_touch_target_px": 44,
+    "dark_mode_verified": true,
+    "orientation_change_verified": true
+  },
+  "responsive_browser_verification": {
+    "engine": "Playwright Chromium 141.0.7390.37",
+    "profiles_css_px": [
+      "320x568",
+      "568x320",
+      "360x800",
+      "390x844",
+      "844x390",
+      "800x1280",
+      "1280x800"
+    ],
+    "assertions": [
+      "reader dock remains fixed and inside the viewport",
+      "reader dock does not overlap the mobile bottom navigation",
+      "previous and next page targets are at least 44px",
+      "recitation selectors and player controls do not overlap",
+      "no horizontal document overflow",
+      "last Quran line remains reachable above the expanded dock",
+      "page navigation changes the rendered page",
+      "rotation preserves dock bounds and measured height"
+    ],
+    "audio_control_test": "passed with a controlled 10-second media element: metadata, seek to 5 seconds, pause, stop, and timeline reset",
+    "runtime_errors": 0,
+    "result": "passed"
+  },
+  "build_and_lint": {
+    "local_release_unit_tests": "passed",
+    "local_lint_release": {
+      "errors": 0,
+      "warnings": 31
+    },
+    "local_unsigned_release_assembly": "passed",
+    "signed_ci_release_assembly": "passed",
+    "npm_high_severity_vulnerabilities": 0
+  },
+  "source_and_rights_verification": {
+    "android_bundle_rows": 6236,
+    "mushaf_pages": 604,
+    "licensed_tafsir_editions": 78,
+    "fonts": 4,
+    "hafs_reciters": 17,
+    "audio_sources": "passed",
+    "asset_provenance": "34 owned icon assets verified",
+    "data_provenance": "19 bundled JSON files verified"
+  },
+  "packaged_assets_verified": [
+    "app.js",
+    "index.html",
+    "sw.js",
+    "quran-hafs.json",
+    "quran-tajweed.json",
+    "surahs.json",
+    "tafsir-catalog.json",
+    "Amiri-Regular.ttf",
+    "AmiriQuran-Regular.ttf",
+    "NotoNaskhArabic-Variable.ttf",
+    "ScheherazadeNew-Regular.ttf"
+  ],
+  "packaged_source_sha256": {
+    "index.html": "efd5518c92a8ecd6cee39aff9d045d86efd6b48166077fb3aa48b08ab07e3e48",
+    "app.js": "168271377a0a66fb20a425346a2dd4bb5d2ade5de73c2b5972cfe30555da1f9d",
+    "sw.js": "e384d58ea086cc0b9a46776618a003c3ba90a26367af50c246d0f0751ab7e487"
+  },
+  "stable_channel": {
+    "path": "update/manifest.json",
+    "version": "1.4.1",
+    "apk_url_matches_release": true,
+    "sha256_matches_release": true
+  },
+  "archive_state": {
+    "published_releases": 23,
+    "immutable_releases": 23,
+    "all_published_releases_immutable": true,
+    "release_tag_ruleset_id": 26170318
+  },
+  "google_play": "deferred by owner; this audit covers the direct immutable GitHub APK release"
+}

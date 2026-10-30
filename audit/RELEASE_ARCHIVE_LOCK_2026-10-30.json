@@ -1,12 +1,12 @@
 {
   "schema": 1,
-  "verified_at": "2026-10-30T01:43:15+02:00",
+  "verified_at": "2026-10-30T23:50:46+02:00",
   "repository": "mosalah30688-gif/quran",
   "immutable_releases_setting": {
     "enabled": true,
     "enforced_by_owner": false
   },
-  "published_release_count": 21,
+  "published_release_count": 23,
   "all_published_releases_immutable": true,
   "tag_ruleset": {
     "id": 26170318,
@@ -26,6 +26,20 @@
   },
   "licensing_note": "Archival immutability does not grant, broaden, or change any content license. The approved distribution scope remains limited to audit/RELEASE_APPROVAL.json and per-source records.",
   "releases": [
+    {
+      "id": 428539119,
+      "tag": "siraj-windows-patch-v4.1.2",
+      "published_at": "2026-10-30T00:49:44Z",
+      "immutable": true,
+      "asset_count": 4
+    },
+    {
+      "id": 429520958,
+      "tag": "siraj-android-v1.4.1",
+      "published_at": "2026-10-30T21:49:58Z",
+      "immutable": true,
+      "asset_count": 2
+    },
     {
       "id": 428501519,
       "tag": "siraj-android-v1.4.0",
