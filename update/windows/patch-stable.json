@@ -3,10 +3,22 @@
   "kind": "siraj-patch-channel",
   "product": "siraj-quran-windows",
   "channel": "stable",
-  "available": false,
-  "version": "1.1.0",
+  "available": true,
+  "version": "4.1.2",
   "runtime_api": 1,
-  "published_at": null,
-  "release_notes": "قناة الترقيعات الصغيرة محجوبة حتى نشر الحزمة الانتقالية الكاملة 1.1.0 واجتياز التدقيق.",
-  "assets": {}
+  "published_at": "2026-10-30T00:46:09Z",
+  "release_notes": "ترقيع صغير موقّع لسراج Windows.",
+  "assets": {
+    "patch": {
+      "file_name": "Siraj-Quran-4.1.2-windows.sirajpatch",
+      "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-windows-patch-v4.1.2/Siraj-Quran-4.1.2-windows.sirajpatch",
+      "size": 2816354,
+      "sha256": "fd1cec0f7a18a2f7c1db84693a286fa2edad715e3acea4d95f97fae58b7c4561"
+    }
+  },
+  "signature": {
+    "algorithm": "ed25519",
+    "key_id": "siraj-update-2026-01",
+    "value": "81tmGmFV1sAGcFablJ5nNO9xU0uDCazXwhURe/lCHNbF2q7rAjyu+lxee8FaPsv8IeU/kxAFM0+xY+55/tmGBg=="
+  }
 }
