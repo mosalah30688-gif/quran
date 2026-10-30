@@ -1,0 +1,177 @@
+{
+  "schema": 1,
+  "verified_at": "2026-10-31T00:23:10+02:00",
+  "repository": "mosalah30688-gif/quran",
+  "source_commit": "224adcb469737a9290005eef874c5e489242d740",
+  "channel_commit": "cfb4daf1ee511ba7c8950bbed2d020ce3866962a",
+  "validation_run": {
+    "id": 41137082796,
+    "url": "https://github.com/mosalah30688-gif/quran/actions/runs/41137082796",
+    "conclusion": "success"
+  },
+  "publication_run": {
+    "id": 41137322104,
+    "url": "https://github.com/mosalah30688-gif/quran/actions/runs/41137322104",
+    "conclusion": "success",
+    "release_gate": "PUBLISH IMMUTABLE siraj-android-v1.4.2"
+  },
+  "release": {
+    "id": 429542498,
+    "tag": "siraj-android-v1.4.2",
+    "url": "https://github.com/mosalah30688-gif/quran/releases/tag/siraj-android-v1.4.2",
+    "published_at": "2026-10-30T22:21:31Z",
+    "draft": false,
+    "prerelease": false,
+    "immutable": true,
+    "latest": true,
+    "assets": [
+      {
+        "id": 693594101,
+        "name": "Siraj-Android-1.4.2.apk",
+        "bytes": 7448072
+      },
+      {
+        "id": 693594142,
+        "name": "SHA256SUMS.txt",
+        "bytes": 90
+      }
+    ]
+  },
+  "apk": {
+    "name": "Siraj-Android-1.4.2.apk",
+    "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-android-v1.4.2/Siraj-Android-1.4.2.apk",
+    "bytes": 7448072,
+    "sha256": "118d39cf405ca8a49ad9b3a62f9b127632f0fab1a53ef339b0b473ebcfbccf97",
+    "release_checksum_matches": true,
+    "release_asset_digest_matches": true,
+    "stable_channel_checksum_matches": true,
+    "public_download_reverified": true,
+    "package": "com.quran.mushaf",
+    "application_label": "سراج — قرآن كريم",
+    "version_name": "1.4.2",
+    "version_code": 142,
+    "min_sdk": 22,
+    "target_sdk": 34,
+    "signature_schemes": {
+      "v1": true,
+      "v2": true,
+      "v3": false,
+      "v3_1": false,
+      "v4": false
+    },
+    "signer_certificate_sha256": "3f60f24c3960d662a1454fc8bdfcc2039872e6624c6e3efbbb6abc83b842027c"
+  },
+  "upgrade_from": {
+    "version_name": "1.4.1",
+    "version_code": 141,
+    "same_package": true,
+    "same_signer_certificate": true,
+    "higher_version_code": true
+  },
+  "foreground_group_menu_fix": {
+    "groups_verified": [
+      "رصيدك",
+      "تدبر",
+      "أذكارك"
+    ],
+    "layer_order": {
+      "header_and_active_menu": 52,
+      "interaction_scrim": 43,
+      "reader_dock_and_player": 34
+    },
+    "selected_menu_in_foreground": true,
+    "reader_and_player_remain_visible_behind_light_dimming": true,
+    "background_controls_do_not_capture_touch": true,
+    "dynamic_phone_position_above_reader_dock": true,
+    "short_landscape_menu_scroll": true,
+    "safe_area_left_right_bottom": true,
+    "focus_first_item_on_open": true,
+    "escape_outside_click_and_android_back_close": true,
+    "focus_restored_to_origin_button": true,
+    "reduced_motion_supported": true
+  },
+  "responsive_browser_verification": {
+    "engine": "Playwright Chromium 141.0.7390.37",
+    "foreground_profiles_css_px": [
+      "320x568",
+      "390x844",
+      "568x320",
+      "844x390",
+      "800x1280"
+    ],
+    "reader_regression_profiles_css_px": [
+      "320x568",
+      "568x320",
+      "360x800",
+      "390x844",
+      "844x390",
+      "800x1280",
+      "1280x800"
+    ],
+    "assertions": [
+      "selected group menu renders above the reader dock and audio player",
+      "phone menu maintains an 8px clearance above the measured reader dock",
+      "short-landscape menu can scroll to its final option",
+      "interaction scrim prevents the page pager from receiving the outside tap",
+      "dark-mode foreground state remains legible",
+      "reader dock, previous/next controls, safe areas, and orientation behavior remain valid",
+      "audio metadata, seek, pause, stop, and timeline reset remain valid with FakeAudio"
+    ],
+    "runtime_errors": 0,
+    "result": "passed"
+  },
+  "build_and_lint": {
+    "local_release_unit_tests": "passed",
+    "local_lint_release": {
+      "errors": 0,
+      "warnings": 31
+    },
+    "local_unsigned_release_assembly": "passed",
+    "signed_ci_release_assembly": "passed",
+    "validation_workflow": "passed",
+    "publication_workflow": "passed",
+    "npm_high_severity_vulnerabilities": 0
+  },
+  "source_and_rights_verification": {
+    "android_bundle_rows": 6236,
+    "mushaf_pages": 604,
+    "licensed_tafsir_editions": 78,
+    "fonts": 4,
+    "hafs_reciters": 17,
+    "audio_sources": "passed",
+    "asset_provenance": "34 owned icon assets verified",
+    "data_provenance": "19 bundled JSON files verified"
+  },
+  "packaged_assets_verified": [
+    "app.js",
+    "index.html",
+    "sw.js",
+    "quran-hafs.json",
+    "quran-tajweed.json",
+    "surahs.json",
+    "tafsir-catalog.json",
+    "Amiri-Regular.ttf",
+    "AmiriQuran-Regular.ttf",
+    "NotoNaskhArabic-Variable.ttf",
+    "ScheherazadeNew-Regular.ttf"
+  ],
+  "packaged_source_sha256": {
+    "index.html": "c5ef513bc57ee39df140847c9f2b31f8cd8ed117a483f1d338e5e27667a65504",
+    "app.js": "f0a8ebd5a670daff87e1ab800656d1f4846c026b92f3cab4cb62b73c69f03679",
+    "sw.js": "f6ed789e205e3f2f6dc3c6a74fe0dd8b5f2d68a0e2c709f60982660ba8beb18a"
+  },
+  "stable_channel": {
+    "path": "update/manifest.json",
+    "version": "1.4.2",
+    "apk_url_matches_release": true,
+    "sha256_matches_release": true
+  },
+  "archive_state": {
+    "published_releases": 24,
+    "immutable_releases": 24,
+    "all_published_releases_immutable": true,
+    "immutable_releases_setting_enabled": true,
+    "release_tag_ruleset_id": 26170318
+  },
+  "google_play": "deferred by owner; this audit covers the direct immutable GitHub APK release"
+}

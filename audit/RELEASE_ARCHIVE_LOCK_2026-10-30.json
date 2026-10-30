@@ -1,12 +1,12 @@
 {
   "schema": 1,
-  "verified_at": "2026-10-30T23:50:46+02:00",
+  "verified_at": "2026-10-31T00:23:39+02:00",
   "repository": "mosalah30688-gif/quran",
   "immutable_releases_setting": {
     "enabled": true,
     "enforced_by_owner": false
   },
-  "published_release_count": 23,
+  "published_release_count": 24,
   "all_published_releases_immutable": true,
   "tag_ruleset": {
     "id": 26170318,
@@ -32,6 +32,13 @@
       "published_at": "2026-10-30T00:49:44Z",
       "immutable": true,
       "asset_count": 4
+    },
+    {
+      "id": 429542498,
+      "tag": "siraj-android-v1.4.2",
+      "published_at": "2026-10-30T22:21:31Z",
+      "immutable": true,
+      "asset_count": 2
     },
     {
       "id": 429520958,

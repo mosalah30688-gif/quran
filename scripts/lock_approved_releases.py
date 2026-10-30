@@ -25,6 +25,7 @@ APPROVED_TAGS = (
     "siraj-tafsir-data-v2026.10.28",
     "siraj-android-v1.4.0",
     "siraj-android-v1.4.1",
+    "siraj-android-v1.4.2",
 )
 
 
