@@ -160,7 +160,7 @@ public class TafsirStorePlugin extends Plugin {
         connection.setInstanceFollowRedirects(true);
         connection.setConnectTimeout(20000);
         connection.setReadTimeout(45000);
-        connection.setRequestProperty("User-Agent", "Siraj-Android/1.4.1");
+        connection.setRequestProperty("User-Agent", "Siraj-Android/1.4.2");
         connection.setRequestProperty("Accept", "application/octet-stream");
         if (offset > 0) connection.setRequestProperty("Range", "bytes=" + offset + "-");
         int response = connection.getResponseCode();

@@ -1,5 +1,5 @@
 // غلاف سراج وبيانات القراءة الأساسية مخزّنة مسبقًا ليعمل المصحف دون اتصال.
-const CACHE = 'siraj-shell-v7';
+const CACHE = 'siraj-shell-v8';
 const SHELL = [
   './', './index.html', './app.js', './manifest.json', './icon.png', './icon-192.png',
   './quran-hafs.json', './quran-tajweed.json', './surahs.json', './tafsir-catalog.json',

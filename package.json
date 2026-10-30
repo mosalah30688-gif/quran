@@ -1,6 +1,6 @@
 {
   "name": "quran-app",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "private": true,
   "description": "سراج — قرآن كريم: مصحف محلي متجاوب بالتلاوات والتفسير والتجويد والحفظ",
   "scripts": {

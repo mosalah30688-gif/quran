@@ -262,8 +262,10 @@
   }
   function syncReaderLayout() {
     const hafs = !isRiw();
+    const readerActive = curView === 'reader';
     document.body.classList.toggle('hafs-reader', hafs);
-    $('.wrap')?.classList.toggle('reader-wide', curView === 'reader' && hafs);
+    document.body.classList.toggle('reader-view-active', readerActive);
+    $('.wrap')?.classList.toggle('reader-wide', readerActive && hafs);
   }
 
   // ---------- التنقل بين الأقسام ----------
@@ -298,19 +300,38 @@
   $('#settingsBtn').addEventListener('click', () => showView('settings'));
   function closeSide() { document.body.classList.remove('side-open'); }
 
-  // القوائم المنسدلة للشريط: تفتح وتقفل، وتقفل عند اختيار تبويب أو الضغط بره أو Esc
-  function setGroupOpen(group, open) {
-    group.querySelector('.group-menu').hidden = !open;
-    group.querySelector('.group-btn').setAttribute('aria-expanded', String(open));
+  // القوائم المنسدلة للشريط: النافذة التي اختارها المستخدم تبقى دائمًا في الطبقة الأمامية.
+  let activeGroup = null;
+  function syncGroupMenuLayer() {
+    const open = $$('.group-menu').some((menu) => !menu.hidden);
+    document.body.classList.toggle('group-menu-open', open);
+    if (!open) activeGroup = null;
   }
-  function closeGroups() { $$('.tab-group').forEach((g) => setGroupOpen(g, false)); }
+  function setGroupOpen(group, open, opts = {}) {
+    const menu = group.querySelector('.group-menu');
+    menu.hidden = !open;
+    group.classList.toggle('is-open', open);
+    group.querySelector('.group-btn').setAttribute('aria-expanded', String(open));
+    if (open) {
+      activeGroup = group;
+      if (opts.focusFirst) requestAnimationFrame(() => menu.querySelector('button')?.focus({ preventScroll: true }));
+    } else if (activeGroup === group) {
+      activeGroup = null;
+    }
+    syncGroupMenuLayer();
+  }
+  function closeGroups(opts = {}) {
+    const previous = activeGroup;
+    $$('.tab-group').forEach((g) => setGroupOpen(g, false));
+    if (opts.restoreFocus) previous?.querySelector('.group-btn')?.focus({ preventScroll: true });
+  }
   $('#tabs').addEventListener('click', (e) => {
     const gb = e.target.closest('.group-btn');
     if (gb) {
       const g = gb.closest('.tab-group');
       const open = g.querySelector('.group-menu').hidden;
       closeGroups();
-      if (open) setGroupOpen(g, true);
+      if (open) setGroupOpen(g, true, { focusFirst: true });
       return;
     }
     // نوع من الأذكار: يفتح الأذكار مباشرة بدون صفحة اختيار وسيطة
@@ -323,7 +344,7 @@
     closeSide();
   });
   document.addEventListener('click', (e) => { if (!e.target.closest('.tab-group')) closeGroups(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeGroups(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeGroups({ restoreFocus: true }); });
   $('#backdrop').addEventListener('click', closeSide);
 
   function applyTheme() {
@@ -836,6 +857,7 @@
   }
   let exitArmedAt = 0;
   function handleBack() {
+    if (document.body.classList.contains('group-menu-open')) { closeGroups({ restoreFocus: true }); return; }
     if ($('#tafsirPanel').classList.contains('show')) { $('#tafsirPanel').classList.remove('show'); return; }
     if ($('#tjPanel').classList.contains('show')) { $('#tjPanel').classList.remove('show'); return; }
     if (document.body.classList.contains('side-open')) { closeSide(); return; }

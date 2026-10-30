@@ -343,7 +343,23 @@
     nav.menu .group-menu button { width: 100%; flex: none; min-height: 44px; padding: 10px 12px; display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 8px; font-size: 14px; white-space: nowrap; text-align: right; }
     nav.menu .group-menu button .ic { width: 22px; text-align: center; }
     nav.menu .group-menu button.active { background: var(--brand); color: #fff; }
+    nav.menu .group-menu button:focus-visible { outline: 3px solid var(--brand-2); outline-offset: -2px; }
     .group-btn.active { background: var(--brand); color: #fff; }
+    /* النافذة التي ضغطها المستخدم لها الأولوية على رصيف الصفحات والمشغل. */
+    body.group-menu-open .hdr { z-index: 52; }
+    body.group-menu-open nav.menu { overflow: visible; }
+    body.group-menu-open::before {
+      content: ""; position: fixed; inset: 0; z-index: 43; pointer-events: auto;
+      background: rgba(8, 24, 20, .18); backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);
+    }
+    body.group-menu-open .group-menu:not([hidden]) { animation: groupMenuIn .18s ease-out both; }
+    @keyframes groupMenuIn {
+      from { opacity: 0; transform: translateY(7px) scale(.985); }
+      to { opacity: 1; transform: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      body.group-menu-open .group-menu:not([hidden]) { animation: none; }
+    }
 
     /* ===== الهاتف: التبويبات شبكة ظاهرة كلها بدون سحب، وزرّا الإعدادات والوضع الليلي عموديين على اليسار ===== */
     @media (max-width: 720px) {
@@ -357,8 +373,17 @@
       .navbar nav.menu { flex: 1 1 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; overflow: visible; padding: 0; min-width: 0; }
       .tab-group { display: block; position: static; }
       .tab-group .group-menu, .tab-group[data-group="adhkarak"] .group-menu {
-        position: fixed; left: 8px; right: 8px; bottom: calc(70px + env(safe-area-inset-bottom));
-        top: auto; min-width: 0; max-height: min(58vh, 420px); border-radius: 16px;
+        position: fixed;
+        left: max(8px, env(safe-area-inset-left)); right: max(8px, env(safe-area-inset-right));
+        bottom: calc(var(--mobile-nav-h, 64px) + env(safe-area-inset-bottom) + 6px);
+        top: auto; min-width: 0;
+        max-height: min(58dvh, 420px, calc(100dvh - var(--mobile-nav-h, 64px) - env(safe-area-inset-bottom) - env(safe-area-inset-top) - 22px));
+        border-radius: 16px;
+      }
+      body.reader-view-active .tab-group .group-menu,
+      body.reader-view-active .tab-group[data-group="adhkarak"] .group-menu {
+        bottom: calc(var(--mobile-nav-h, 64px) + env(safe-area-inset-bottom) + var(--reader-dock-h, 82px) + 15px);
+        max-height: min(58dvh, 420px, calc(100dvh - var(--mobile-nav-h, 64px) - env(safe-area-inset-bottom) - env(safe-area-inset-top) - var(--reader-dock-h, 82px) - 31px));
       }
       .group-btn { font-size: 10.5px; }
       nav.menu button { width: 100%; flex: none; white-space: normal; min-height: 54px; padding: 4px 1px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; line-height: 1.1; border-radius: 11px; text-align: center; }
@@ -1028,7 +1053,7 @@
             <img src="icon.png" alt="أيقونة تطبيق سراج" class="about-icon" />
             <div>
               <h2 class="about-title">سراج — قرآن كريم</h2>
-              <div class="muted">الإصدار 1.4.1 · مصحف محلي متجاوب للتلاوة والتفسير والحفظ ومتابعة الختمة</div>
+              <div class="muted">الإصدار 1.4.2 · مصحف محلي متجاوب للتلاوة والتفسير والحفظ ومتابعة الختمة</div>
             </div>
           </div>
 
@@ -1052,6 +1077,7 @@
           <div class="card">
             <h3 style="margin-top:0">أحدث التحديثات</h3>
             <ul class="feat">
+              <li>إصلاح تفاعل نوافذ «رصيدك» و«تدبر» و«أذكارك» لتظهر في المقدمة فوق رصيف الصفحات والمشغل وتتكيف مع المساحة المتاحة.</li>
               <li>إعادة تصميم شاشة المصحف في Android بواجهة احترافية متجاوبة للهاتف والتابلت والوضع الأفقي.</li>
               <li>إظهار زري الصفحة السابقة والتالية دائمًا في رصيف واضح فوق شريط التنقل السفلي.</li>
               <li>فصل إعدادات التلاوة عن المشغل وإضافة شريط تقدم زمني وأزرار صوت كبيرة غير متداخلة.</li>
@@ -1122,7 +1148,7 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.4.1';
+    window.APP_BUNDLE_VERSION = '1.4.2';
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {

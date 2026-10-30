@@ -30,7 +30,7 @@ on:
         type: boolean
         default: false
       confirmation:
-        description: 'For publication type: PUBLISH IMMUTABLE siraj-android-v1.4.1'
+        description: 'For publication type: PUBLISH IMMUTABLE siraj-android-v1.4.2'
         required: false
         type: string
 
@@ -153,15 +153,17 @@ jobs:
           assert 'everyayah.com' not in app.lower()
           assert 'TafsirStore' in app and 'Reminder' in app and 'ar.parhizgar' in app
           assert 'loadBundledData()' in app and 'recordWirdPage' in app
-          assert "APP_BUNDLE_VERSION = '1.4.1'" in html and 'الإصدار 1.4.1' in html
+          assert "APP_BUNDLE_VERSION = '1.4.2'" in html and 'الإصدار 1.4.2' in html
           assert 'مميزات سراج الحالية' in html and 'أحدث التحديثات' in html
           assert 'محمد صلاح عبد الخالق' in html and 'اتصل بنا' in html
           assert '78 تفسيرًا' in html and '17 قارئًا' in html
           assert 'class="reader-dock"' in html and 'id="pPrevS"' in html and 'id="pNextS"' in html
           assert 'id="audioSeek"' in html and 'class="player-controls"' in html
           assert '--reader-dock-h' in html and 'safe-area-inset-bottom' in html and 'safe-area-inset-left' in html
+          assert 'group-menu-open' in html and 'reader-view-active' in html and 'body.group-menu-open .hdr' in html
           assert 'syncReaderDockHeight' in app and 'syncAudioTimeline' in app
-          assert 'siraj-shell-v7' in service_worker
+          assert 'syncGroupMenuLayer' in app and 'focusFirst' in app and 'restoreFocus' in app
+          assert 'siraj-shell-v8' in service_worker
           assert 'data-icon="tajweed"' in html and '🎵' not in html
           PY
 
@@ -233,6 +235,7 @@ jobs:
                   '- إعادة تصميم احترافية متجاوبة لشاشة المصحف على الهاتف والتابلت رأسيًا وأفقيًا.\n'
                   '- رصيف قراءة واضح يثبت زري الصفحة السابقة والتالية فوق شريط التنقل مع مراعاة المساحات الآمنة.\n'
                   '- مشغل تلاوة منظم بخط زمني وأزرار لمس واضحة دون تداخل.\n'
+                  '- نوافذ رصيدك وتدبر وأذكارك تتقدم تفاعليًا فوق رصيف الصفحات والمشغل وتتكيف مع المساحة المتاحة.\n'
                   '- 17 قارئًا، حفظ، ورد مرن وتنبيه اختياري.\n'
                   '- تنزيل اختياري لحزمة 78 تفسيرًا تراثيًا مدقق الحقوق مع تحقق الحجم وSHA-256.\n'
                   '- يخضع هذا الإصدار لسياسة الاحتفاظ الدائم؛ لا تُستبدل أصوله ولا يُحذف وسمه.'
