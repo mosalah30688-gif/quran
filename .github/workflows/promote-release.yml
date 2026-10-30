@@ -70,7 +70,8 @@ jobs:
           value = os.environ['VERSION']
           assert re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', value), 'Use an x.y.z version'
           if os.environ['RELEASE_KIND'] == 'patch':
-              assert Version(value) > Version('1.1.0'), 'A patch must be newer than transitional 1.1.0'
+              baseline = {'windows': '4.1.1', 'linux': '4.1.1'}[os.environ['PLATFORM']]
+              assert Version(value) > Version(baseline), f'A patch must be newer than the {baseline} patch-capable baseline'
           PY
           if [[ "$RELEASE_KIND" == patch ]]; then
             TAG="siraj-${PLATFORM}-patch-v${VERSION}"
@@ -91,7 +92,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          BASE_TAG="siraj-${PLATFORM}-v1.1.0"
+          if [[ "$PLATFORM" == windows ]]; then
+            BASE_TAG="siraj-windows-v4.1.1"
+          else
+            # Linux 4.1.1 is the approved patch-capable AppImage; its historical test tag is retained permanently.
+            BASE_TAG="siraj-linux-test-v4.1.1"
+          fi
           test "$(gh release view "$BASE_TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)" = false
 
       - name: Download every Draft asset

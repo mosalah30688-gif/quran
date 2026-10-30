@@ -168,6 +168,15 @@ class ReleaseToolTests(unittest.TestCase):
         rejected = subprocess.run(command, cwd=ROOT, capture_output=True, text=True, check=False)
         self.assertNotEqual(rejected.returncode, 0)
 
+    def test_patch_promotion_requires_the_published_patch_capable_baseline(self):
+        promote = (ROOT / ".github" / "workflows" / "promote-release.yml").read_text(encoding="utf-8")
+        self.assertIn('BASE_TAG="siraj-windows-v4.1.1"', promote)
+        self.assertIn('BASE_TAG="siraj-linux-test-v4.1.1"', promote)
+        self.assertNotIn('BASE_TAG="siraj-${PLATFORM}-v1.1.0"', promote)
+        workflow_name = "linux-appimage.yml" if self.PRODUCT.endswith("linux") else "windows-v1.yml"
+        workflow = (ROOT / ".github" / "workflows" / workflow_name).read_text(encoding="utf-8")
+        self.assertIn("bundled_version='4.1.1'", workflow)
+
     def test_release_gate_requires_exact_tag_commit_and_empty_blockers(self):
         platform = "linux" if self.PRODUCT.endswith("linux") else "windows"
         tag = f"siraj-{platform}-v1.1.0"

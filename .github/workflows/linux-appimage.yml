@@ -69,7 +69,7 @@ jobs:
             TAG_VERSION="${TAG_VERSION#siraj-linux-v}"
             test "$TAG_VERSION" = "$VERSION"
             if [[ "$REF_NAME" == siraj-linux-patch-v* ]]; then
-              python -c "from packaging.version import Version; assert Version('$VERSION') > Version('4.1.0'), 'Patch releases require a version newer than Linux 4.1.0'"
+              python -c "from packaging.version import Version; assert Version('$VERSION') > Version('4.1.1'), 'Patch releases require a version newer than the Linux 4.1.1 patch-capable baseline'"
             fi
           fi
           echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> "$GITHUB_ENV"
@@ -349,7 +349,7 @@ jobs:
           with tempfile.TemporaryDirectory() as folder:
               manifest = patch_runtime.install_patch_archive(
                   Path(os.environ['PATCH_PATH']), product='siraj-quran-linux', runtime_api=1,
-                  bundled_version='1.1.0', public_key_path=public,
+                  bundled_version='4.1.1', public_key_path=public,
                   patch_root=Path(folder) / 'patches')
               assert manifest['version'] == channel['version']
           PY
@@ -358,7 +358,7 @@ jobs:
             cat > release-notes.md <<EOF
           # سراج ${VERSION} — ترقيع Linux موقّع
 
-          - ترقيع صغير بعد الحزمة الانتقالية الكاملة 1.1.0.
+          - ترقيع صغير بعد حزمة Linux الكاملة الداعمة للترقيعات 4.1.1.
           - لا يستبدل AppImage أو مكتبات runtime الأصلية.
           - تتحقق النسخة الانتقالية من Ed25519 وSHA-256 لكل ملف قبل تشغيله، مع رجوع آمن للنسخة المضمّنة.
           - هذا Draft فقط؛ لا تُفعّل قناة التحديث قبل المراجعة والترقية الصريحة.

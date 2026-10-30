@@ -71,7 +71,7 @@ jobs:
               -replace '^siraj-windows-v',''
             if ($TagVersion -ne $Version) { throw "Tag $TagVersion does not match app version $Version" }
             if ("${{ github.ref_name }}" -like 'siraj-windows-patch-v*') {
-              python -c "from packaging.version import Version; assert Version('$Version') > Version('1.1.0'), 'Patch releases require a version newer than transitional 1.1.0'"
+              python -c "from packaging.version import Version; assert Version('$Version') > Version('4.1.1'), 'Patch releases require a version newer than the Windows 4.1.1 patch-capable baseline'"
             }
           }
 
@@ -235,7 +235,7 @@ jobs:
           with tempfile.TemporaryDirectory() as folder:
               manifest = patch_runtime.install_patch_archive(
                   Path(os.environ['PATCH_PATH']), product='siraj-quran-windows', runtime_api=1,
-                  bundled_version='1.1.0', public_key_path=public,
+                  bundled_version='4.1.1', public_key_path=public,
                   patch_root=Path(folder) / 'patches')
               assert manifest['version'] == channel['version']
           PY
@@ -244,7 +244,7 @@ jobs:
             cat > release-notes.md <<EOF
           # سراج ${VERSION} — ترقيع Windows موقّع
 
-          - ترقيع صغير بعد الحزمة الانتقالية الكاملة 1.1.0.
+          - ترقيع صغير بعد حزمة Windows الكاملة الداعمة للترقيعات 4.1.1.
           - لا يحتوي مثبتًا ولا يستبدل ملفات runtime الأصلية.
           - تتحقق النسخة الانتقالية من Ed25519 وSHA-256 لكل ملف قبل تشغيله، مع رجوع آمن للنسخة المضمّنة.
           - هذا Draft فقط؛ لا تُفعّل قناة التحديث قبل المراجعة والترقية الصريحة.
