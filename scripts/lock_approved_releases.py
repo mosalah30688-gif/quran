@@ -20,8 +20,10 @@ API = "https://api.github.com"
 DEFAULT_REPOSITORY = "mosalah30688-gif/quran"
 APPROVED_TAGS = (
     "siraj-windows-v4.1.1",
+    "siraj-windows-patch-v4.1.2",
     "siraj-linux-test-v4.1.1",
     "siraj-tafsir-data-v2026.10.28",
+    "siraj-android-v1.4.0",
 )
 
 

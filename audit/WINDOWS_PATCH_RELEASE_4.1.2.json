@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "product": "siraj-quran-windows",
+  "version": "4.1.2",
+  "kind": "signed-small-patch",
+  "verified_at": "2026-10-30T00:51:00Z",
+  "source": {
+    "commit": "509009f0681142e6c8ec805f295243d492f11ec5",
+    "tag": "siraj-windows-patch-v4.1.2",
+    "tag_object": "e19bd18c9e69fc2ade8a684e5aa28acc6c34343b",
+    "release_gate_commit": "82840f5",
+    "promotion_control_fix_commit": "91125ca"
+  },
+  "ci": {
+    "build_run": {
+      "id": 40980860187,
+      "url": "https://github.com/mosalah30688-gif/quran/actions/runs/40980860187",
+      "conclusion": "success"
+    },
+    "promotion_run": {
+      "id": 40982068432,
+      "url": "https://github.com/mosalah30688-gif/quran/actions/runs/40982068432",
+      "conclusion": "success"
+    },
+    "earlier_failed_promotion": {
+      "id": 40981811740,
+      "conclusion": "failure-before-download-or-publication",
+      "reason": "The promotion control still required the obsolete, nonexistent v1.1.0 baseline tag. No release asset was published or channel advanced by that run; the control was corrected to require the immutable Windows 4.1.1 patch-capable baseline."
+    }
+  },
+  "release": {
+    "id": 428539119,
+    "url": "https://github.com/mosalah30688-gif/quran/releases/tag/siraj-windows-patch-v4.1.2",
+    "draft": false,
+    "immutable": true,
+    "assets": {
+      "patch": {
+        "id": 690417747,
+        "name": "Siraj-Quran-4.1.2-windows.sirajpatch",
+        "size": 2816354,
+        "sha256": "fd1cec0f7a18a2f7c1db84693a286fa2edad715e3acea4d95f97fae58b7c4561"
+      },
+      "checksums": {
+        "id": 690417748,
+        "name": "SHA256SUMS.txt",
+        "size": 187,
+        "sha256": "ba170fb05bd128fc5d66f8d7e7fd862062aef5eecdbfa185bc3d45c53dc32be9"
+      },
+      "sbom": {
+        "id": 690417749,
+        "name": "SBOM.cdx.json",
+        "size": 6615,
+        "sha256": "8ae5cafacd71f9d7bb1a1f98f9dbed73c1c37b2b6454904aa0dd0e5290116aa7"
+      },
+      "channel": {
+        "id": 690417755,
+        "name": "patch-stable.json",
+        "size": 825,
+        "sha256": "743804a36839effb3cb85763d832af7793bd2f03c3ea0a32960dd53e59d631e0"
+      }
+    }
+  },
+  "channel": {
+    "path": "update/windows/patch-stable.json",
+    "commit": "aa7252113ffd3cf52cb759363e5cdf3619186270",
+    "version": "4.1.2",
+    "available": true,
+    "signature_algorithm": "ed25519",
+    "signature_key_id": "siraj-update-2026-01",
+    "manifest_sha256": "743804a36839effb3cb85763d832af7793bd2f03c3ea0a32960dd53e59d631e0",
+    "public_key_file_sha256": "ee809a96c5e58e8f41ed7af21fe30b9bd96bad8080b548c44fb0138dd1821169"
+  },
+  "verification": {
+    "published_release_immutable": true,
+    "release_asset_digest_matches_channel": true,
+    "channel_ed25519_signature_valid": true,
+    "downloaded_patch_sha256_valid": true,
+    "patch_archive_signature_and_all_file_hashes_valid": true,
+    "install_simulation_against_4.1.1_passed": true,
+    "patch_file_count": 18,
+    "about_view_present": true,
+    "developer_links_present": true,
+    "content_or_rights_payload_changed": false,
+    "published_release_count": 22,
+    "all_published_releases_immutable": true
+  }
+}

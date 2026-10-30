@@ -10,6 +10,11 @@
       "retention": "permanent"
     },
     {
+      "tag": "siraj-windows-patch-v4.1.2",
+      "kind": "windows-signed-stable-patch",
+      "retention": "permanent"
+    },
+    {
       "tag": "siraj-linux-test-v4.1.1",
       "kind": "linux-stable-with-historical-test-tag",
       "retention": "permanent"
@@ -30,9 +35,10 @@
   "immutability_required": true,
   "immutability_enabled": true,
   "all_approved_releases_verified_immutable": true,
-  "all_published_releases_archived_immutable": 21,
+  "all_published_releases_archived_immutable": 22,
   "archive_lock_evidence": "audit/RELEASE_ARCHIVE_LOCK_2026-10-30.json",
   "release_tag_ruleset_id": 26170318,
   "android_release_evidence": "audit/ANDROID_RELEASE_1.4.0.json",
+  "windows_patch_release_evidence": "audit/WINDOWS_PATCH_RELEASE_4.1.2.json",
   "policy": "audit/RELEASE_RETENTION.md"
 }
