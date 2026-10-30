@@ -1,20 +1,21 @@
 {
   "schema": 1,
   "ready": true,
-  "approved_commit": "9cc353a6faf6a113f4c6888636a6a77d3d441c4d",
+  "approved_commit": "509009f0681142e6c8ec805f295243d492f11ec5",
   "approved_tags": [
-    "siraj-windows-v4.1.1"
+    "siraj-windows-patch-v4.1.2"
   ],
-  "approved_at": "2026-10-28T20:04:36Z",
-  "approved_by": "repository owner — explicit instruction to continue stable publication",
+  "approved_at": "2026-10-30T00:37:00Z",
+  "approved_by": "repository owner — explicit instruction to publish the missing Windows About update",
   "blockers": [],
   "evidence": [
-    "Windows CI run 40757786115 passed 42 unit tests, the full UI regression, packaged self/audio tests, double-click startup, final ZIP extraction, SBOM generation and artifact attestations.",
-    "Public test release siraj-windows-test-v4.1.1 matched the CI artifact digests and contained the locked 78-edition offline tafsir database.",
-    "Linux 4.1.1 already distributes the same locked Quran and tafsir content through a verified Ed25519-signed channel."
+    "Release source 509009f adds the dedicated About view, Fluent 3D navigation icon, current feature list, developer identity and verified contact/repository links to Windows 4.1.2.",
+    "Windows source passed Python compilation, the focused offscreen About smoke test, 40 non-UI unit tests (with only the unfetched locked tafsir fixture skipped), update-signature tests and patch-runtime tests.",
+    "The 4.1.2 change does not modify Quran, tafsir, recitation, font or other third-party content; the locked and reviewed 4.1.1 content set remains unchanged.",
+    "The tag workflow must still pass the complete Windows UI regression, locked-data verification, audio checks, portable build, SBOM generation and attestations before it can create a Draft; promotion independently verifies every Draft asset before publication."
   ],
   "accepted_risks": [
-    "No external scholarly certification is claimed by this approval; the owner authorized distribution based on locked source provenance, rights filtering, integrity checks and regression evidence.",
-    "Windows executables intentionally have no Authenticode signature; integrity is provided by the Ed25519-signed update manifest and SHA-256 asset digest."
+    "No external scholarly certification is claimed by this approval; this patch changes application UI and documentation only and retains the previously approved locked content.",
+    "Windows executables intentionally have no Authenticode signature; patch integrity is provided by Ed25519 signatures and SHA-256 asset digests."
   ]
 }
