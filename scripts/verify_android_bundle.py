@@ -87,7 +87,11 @@ def main() -> None:
     assert "مميزات سراج الحالية" in html and "أحدث التحديثات" in html
     assert "محمد صلاح عبد الخالق" in html and "صفحة المطور" in html and "اتصل بنا" in html
     assert "78 تفسيرًا" in html and "17 قارئًا" in html and "ختمة مرنة وورد مرن" in html
-    assert "siraj-shell-v6" in service_worker
+    assert 'class="reader-dock"' in html and 'id="pPrevS"' in html and 'id="pNextS"' in html
+    assert 'id="audioSeek"' in html and 'class="play-pickers"' in html and 'class="player-controls"' in html
+    assert "--reader-dock-h" in html and "safe-area-inset-bottom" in html and "safe-area-inset-left" in html
+    assert "syncReaderDockHeight" in app and "syncAudioTimeline" in app and "formatAudioTime" in app
+    assert "siraj-shell-v7" in service_worker
     assert "--quran-font" in html and "setFont" in html
     assert "data-icon=\"tajweed\"" in html and "🎵" not in html
 

@@ -157,7 +157,11 @@ jobs:
           assert 'مميزات سراج الحالية' in html and 'أحدث التحديثات' in html
           assert 'محمد صلاح عبد الخالق' in html and 'اتصل بنا' in html
           assert '78 تفسيرًا' in html and '17 قارئًا' in html
-          assert 'siraj-shell-v6' in service_worker
+          assert 'class="reader-dock"' in html and 'id="pPrevS"' in html and 'id="pNextS"' in html
+          assert 'id="audioSeek"' in html and 'class="player-controls"' in html
+          assert '--reader-dock-h' in html and 'safe-area-inset-bottom' in html and 'safe-area-inset-left' in html
+          assert 'syncReaderDockHeight' in app and 'syncAudioTimeline' in app
+          assert 'siraj-shell-v7' in service_worker
           assert 'data-icon="tajweed"' in html and '🎵' not in html
           PY
 
@@ -226,7 +230,9 @@ jobs:
               'body': (
                   'إصدار Android كامل موقّع وقابل للترقية فوق النسخة السابقة.\n\n'
                   '- مصحف حفص وتجويد وفهرس سور وخطوط محلية داخل APK.\n'
-                  '- واجهة متجاوبة للهاتف والتابلت رأسيًا وأفقيًا.\n'
+                  '- إعادة تصميم احترافية متجاوبة لشاشة المصحف على الهاتف والتابلت رأسيًا وأفقيًا.\n'
+                  '- رصيف قراءة واضح يثبت زري الصفحة السابقة والتالية فوق شريط التنقل مع مراعاة المساحات الآمنة.\n'
+                  '- مشغل تلاوة منظم بخط زمني وأزرار لمس واضحة دون تداخل.\n'
                   '- 17 قارئًا، حفظ، ورد مرن وتنبيه اختياري.\n'
                   '- تنزيل اختياري لحزمة 78 تفسيرًا تراثيًا مدقق الحقوق مع تحقق الحجم وSHA-256.\n'
                   '- يخضع هذا الإصدار لسياسة الاحتفاظ الدائم؛ لا تُستبدل أصوله ولا يُحذف وسمه.'

@@ -290,6 +290,7 @@
     if (name === 'meanings') renderMeaningsView();
     if (name === 'memo') renderMemoReview();
     syncReaderLayout();
+    if (name === 'reader') requestAnimationFrame(syncReaderDockHeight);
     $('#content').scrollTop = 0;
   }
   function popView() { showView(navStack.pop() || 'reader', { back: true }); }
@@ -514,6 +515,16 @@
 
     renderPage(opts.dir);
     updateChrome();
+    if (opts.scroll === true || opts.dir) {
+      requestAnimationFrame(() => {
+        const content = $('#content');
+        const header = $('.hdr');
+        const stageTop = $('#stage').getBoundingClientRect().top;
+        const headerBottom = header ? header.getBoundingClientRect().bottom : 0;
+        const target = Math.max(0, content.scrollTop + stageTop - headerBottom - 8);
+        content.scrollTo({ top: target, behavior: opts.dir ? 'smooth' : 'auto' });
+      });
+    }
     recordRead(p);
     recordWirdPage(p);
     if (opts.save !== false) saveLast();
@@ -575,6 +586,7 @@
     $('#pgSurah').textContent = surahsOnPage.map((s) => surahNameShort(s)).join(' - ');
     $('#pgFoot').textContent = toArabicDigits(pg.p);
     $('#pageNo').textContent = `صفحة ${toArabicDigits(pg.p)} من ${toArabicDigits(TOTAL_PAGES)}`;
+    $('#pagerContext').textContent = `${surahNameShort(state.sel.s)} · الجزء ${toArabicDigits(state.sel.juz || juz)}`;
     $('#pPrevS').disabled = pg.p <= 1;
     $('#pNextS').disabled = pg.p >= TOTAL_PAGES;
     $('#topTitle').textContent = `${surahName(state.sel.s)} · الجزء ${toArabicDigits(state.sel.juz || juz)} · ص ${toArabicDigits(pg.p)}`;
@@ -582,7 +594,7 @@
     // قائمة اختيار الآية تتبع السورة المحددة
     syncPlayControls();
     const bm = isBookmarked(state.sel.s, state.sel.n);
-    $('#btnBm').textContent = bm ? '★ علامة' : '☆ علامة';
+    $('#btnBm').innerHTML = `${bm ? '★' : '☆'} <span>${bm ? 'محفوظة' : 'حفظ علامة'}</span>`;
     updateResumeBtn();
     renderIndex();
   }
@@ -621,8 +633,8 @@
     const last = getLast();
     const btn = $('#btnResume');
     if (!last || !last.p) { btn.style.display = 'none'; return; }
-    btn.style.display = last.p === state.page ? 'none' : 'inline-block';
-    btn.textContent = `↩ آخر موضع (ص ${toArabicDigits(last.p)})`;
+    btn.style.display = last.p === state.page ? 'none' : 'block';
+    btn.innerHTML = `↩ <span>آخر موضع · ص ${toArabicDigits(last.p)}</span>`;
   }
 
   // ---------- التقليب ----------
@@ -693,7 +705,7 @@
 
   $('#btnResume').addEventListener('click', () => {
     const last = getLast();
-    if (last && last.p) showPage(last.p, { selG: last.g, save: false });
+    if (last && last.p) showPage(last.p, { selG: last.g, save: false, scroll: true });
   });
 
   $('#btnBm').addEventListener('click', () => {
@@ -709,7 +721,7 @@
       const ayah = await findAyah(s, a);
       if (!ayah) return;
       showView('reader');
-      showPage(ayah.page, { selG: ayah.g });
+      showPage(ayah.page, { selG: ayah.g, scroll: true });
     } catch {
       toast('تعذر الوصول إلى الآية. تحقق من الاتصال.');
     }
@@ -752,7 +764,9 @@
     if (!state.pg || !state.sel) return;
     const pg = state.pg;
     $('#topTitle').textContent = `${surahName(state.sel.s)} · الجزء ${toArabicDigits(state.sel.juz || pg.ayahs[0].juz)} · ص ${toArabicDigits(pg.p)}`;
-    $('#btnBm').textContent = isBookmarked(state.sel.s, state.sel.n) ? '★ علامة' : '☆ علامة';
+    $('#pagerContext').textContent = `${surahNameShort(state.sel.s)} · الجزء ${toArabicDigits(state.sel.juz || pg.ayahs[0].juz)}`;
+    const bookmarked = isBookmarked(state.sel.s, state.sel.n);
+    $('#btnBm').innerHTML = `${bookmarked ? '★' : '☆'} <span>${bookmarked ? 'محفوظة' : 'حفظ علامة'}</span>`;
     updateResumeBtn();
     syncPlayControls();
     if (surahChanged) renderIndex();
@@ -861,13 +875,38 @@
   }
 
   // ---------- التشغيل ----------
+  function formatAudioTime(value) {
+    const seconds = Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
+    const minutes = Math.floor(seconds / 60);
+    return toArabicDigits(`${minutes}:${String(seconds % 60).padStart(2, '0')}`);
+  }
+
+  function syncAudioTimeline() {
+    const seek = $('#audioSeek');
+    const duration = Number.isFinite(audio.duration) ? audio.duration : 0;
+    const current = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+    seek.max = String(duration || 0);
+    seek.value = String(duration ? Math.min(current, duration) : 0);
+    seek.disabled = !duration;
+    $('#audioCurrent').textContent = formatAudioTime(current);
+    $('#audioDuration').textContent = formatAudioTime(duration);
+  }
+
   function setPlayerUI() {
     $('#player').classList.toggle('show', play.active);
     if (play.active && play.cur) {
-      $('#playerInfo').textContent = `${play.label} · الآية ${play.cur.n}` +
-        (play.repeatCount > 1 ? ` · تكرار ${play.repeatCount - play.repeatLeft + 1}/${play.repeatCount}` : '');
+      $('#playerInfo').textContent = `${play.label} · الآية ${toArabicDigits(play.cur.n)}` +
+        (play.repeatCount > 1
+          ? ` · تكرار ${toArabicDigits(play.repeatCount - play.repeatLeft + 1)} من ${toArabicDigits(play.repeatCount)}`
+          : '');
     }
-    $('#pToggle').textContent = audio.paused ? '▶' : '⏸';
+    const paused = audio.paused;
+    $('#pToggle').textContent = paused ? '▶' : '⏸';
+    $('#pToggle').setAttribute('aria-label', paused ? 'تشغيل التلاوة' : 'إيقاف التلاوة مؤقتًا');
+    $('#btnPlaySurah').classList.toggle('is-playing', play.active);
+    $('.reader-play-label').textContent = play.active ? 'تشغيل من المحدد' : 'تشغيل السورة';
+    syncAudioTimeline();
+    requestAnimationFrame(syncReaderDockHeight);
   }
 
   async function playAyah(a) {
@@ -889,7 +928,7 @@
     // تقليب الصفحة تلقائياً مع التلاوة
     if (a.page && a.page !== state.page && play.follow) {
       state.sel = a; state.selSurah = a.s;
-      showPage(a.page, { selG: a.g, save: false });
+      showPage(a.page, { selG: a.g, save: false, scroll: true });
     } else {
       markSelection();
       if (state.pg && state.pg.ayahs.some((x) => x.g === a.g)) {
@@ -960,6 +999,7 @@
   function stopPlayback() {
     audio.pause();
     audio.removeAttribute('src');
+    audio.load();
     play.active = false;
     play.cur = null;
     setPlayerUI();
@@ -990,17 +1030,32 @@
   });
   audio.addEventListener('play', setPlayerUI);
   audio.addEventListener('pause', setPlayerUI);
+  audio.addEventListener('timeupdate', syncAudioTimeline);
+  audio.addEventListener('loadedmetadata', syncAudioTimeline);
+  audio.addEventListener('durationchange', syncAudioTimeline);
+  audio.addEventListener('emptied', syncAudioTimeline);
 
-  // قياس ارتفاع شريط التشغيل ليترك المحتوى مساحة له (لا يغطي أزرار الصفحات)
-  if (window.ResizeObserver) {
-    new ResizeObserver(() => {
-      document.documentElement.style.setProperty('--player-h', $('#player').offsetHeight + 'px');
-    }).observe($('#player'));
+  $('#audioSeek').addEventListener('input', (e) => {
+    const value = Number(e.target.value);
+    if (Number.isFinite(value) && Number.isFinite(audio.duration)) audio.currentTime = value;
+    syncAudioTimeline();
+  });
+
+  // يقيس الرصيف كاملًا (التنقل + المشغل عند ظهوره) حتى لا يغطي آخر سطر من المصحف.
+  function syncReaderDockHeight() {
+    const dock = $('#readerDock');
+    if (!dock) return;
+    const height = Math.ceil(dock.getBoundingClientRect().height);
+    if (height > 0) document.documentElement.style.setProperty('--reader-dock-h', `${height}px`);
   }
+  if (window.ResizeObserver) new ResizeObserver(syncReaderDockHeight).observe($('#readerDock'));
+  window.addEventListener('resize', syncReaderDockHeight, { passive: true });
+  requestAnimationFrame(syncReaderDockHeight);
 
   $('#pToggle').addEventListener('click', () => {
     if (!play.active) return;
-    audio.paused ? audio.play() : audio.pause();
+    if (audio.paused) audio.play().catch(() => toast('تعذر استئناف التلاوة'));
+    else audio.pause();
   });
   $('#pNext').addEventListener('click', async () => {
     if (!play.active || !play.cur) return;
@@ -1012,10 +1067,20 @@
   });
   $('#pStop').addEventListener('click', stopPlayback);
 
-  $('#btnPlaySurah').addEventListener('click', () => {
+  $('#btnPlaySurah').addEventListener('click', async () => {
+    const button = $('#btnPlaySurah');
     const n = Number($('#playFrom').value) || 1;
     const s = Number($('#playSurah').value) || state.selSurah;
-    startSurahPlay(s, n).catch(() => toast('تعذر بدء التلاوة'));
+    button.disabled = true;
+    $('.reader-play-label').textContent = 'جارٍ التحضير…';
+    try {
+      await startSurahPlay(s, n);
+    } catch {
+      toast('تعذر بدء التلاوة');
+    } finally {
+      button.disabled = false;
+      setPlayerUI();
+    }
   });
 
   // ---------- الحفظ ----------
@@ -1205,7 +1270,7 @@
   $('#lastRead').addEventListener('click', (e) => {
     if (!e.target.closest('#btnGoLast')) return;
     const last = getLast();
-    if (last && last.p) { showView('reader'); showPage(last.p, { selG: last.g, save: false }); }
+    if (last && last.p) { showView('reader'); showPage(last.p, { selG: last.g, save: false, scroll: true }); }
   });
 
   // ---------- الإعدادات ----------
@@ -2202,7 +2267,7 @@
   $('#wdGo').addEventListener('click', () => {
     const w = getWird();
     showView('reader');
-    showPage(w.pointer);
+    showPage(w.pointer, { scroll: true });
   });
   $('#wdFromLast').addEventListener('click', () => {
     const last = getLast();
@@ -2320,7 +2385,7 @@
     if (last && last.p) {
       showPage(last.p, { selG: last.g, save: false });
     } else {
-      goToAyah(1, 1);
+      showPage(1, { save: false });
     }
   });
 
