@@ -1,13 +1,13 @@
 {
-  "version": "1.4.3",
+  "version": "1.4.4",
   "files": [
     "index.html",
     "app.js"
   ],
   "apk": {
-    "version": "1.4.3",
-    "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-android-v1.4.3/Siraj-Android-1.4.3.apk",
-    "sha256": "23c18d09e0ae3160e85dc86ca84a36d82b24adde284f9383e7693dca85738db4"
+    "version": "1.4.4",
+    "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-android-v1.4.4/Siraj-Android-1.4.4.apk",
+    "sha256": "e155cf8a8ca2968f4e4a07167b8f54387eb1d38e5731c1325545da28d669e2f4"
   },
   "desktop": {
     "version": "4.1.1",
@@ -15,6 +15,6 @@
     "linux": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-linux-test-v4.1.1/Siraj-Quran-4.1.1-linux-x86_64.AppImage"
   },
   "features": [
-    "صفحة «عن التطبيق» بصياغة موجزة وموحدة."
+    "هوية أوضح لسراج ووصول منظم إلى «عن التطبيق»."
   ]
 }
