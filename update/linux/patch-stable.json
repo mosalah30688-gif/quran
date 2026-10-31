@@ -3,10 +3,24 @@
   "kind": "siraj-patch-channel",
   "product": "siraj-quran-linux",
   "channel": "stable",
-  "available": false,
-  "version": "4.1.0",
+  "available": true,
+  "version": "4.1.2",
   "runtime_api": 1,
-  "published_at": null,
-  "release_notes": "قناة الترقيعات الصغيرة محجوبة حتى نشر حزمة توافق Linux الكاملة 4.1.0 واجتياز الاختبار.",
-  "assets": {}
+  "published_at": "2026-10-31T18:19:09Z",
+  "features": [
+    "صفحة «عن التطبيق» بصياغة موجزة وموحدة."
+  ],
+  "assets": {
+    "patch": {
+      "file_name": "Siraj-Quran-4.1.2-linux.sirajpatch",
+      "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-linux-patch-v4.1.2/Siraj-Quran-4.1.2-linux.sirajpatch",
+      "size": 2402823,
+      "sha256": "bde6b9d4e3efb37996192f8fe45adc4d570a4143cdea4fbd5740676aa1cbe2e0"
+    }
+  },
+  "signature": {
+    "algorithm": "ed25519",
+    "key_id": "siraj-update-2026-01",
+    "value": "ri01rCyKa8oVKeigNCY4krTM3g9QQILjroXZzvNZVDweXOEnX4he9g5PWW+B889Lm52SrAFlmv5CQBu7e7wpAQ=="
+  }
 }
