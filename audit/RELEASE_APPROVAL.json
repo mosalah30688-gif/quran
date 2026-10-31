@@ -2,7 +2,7 @@
   "schema": 1,
   "approved": true,
   "approved_at": "2026-10-29T02:21:51+03:00",
-  "latest_verified_at": "2026-10-31T00:23:34+02:00",
+  "latest_verified_at": "2026-10-31T20:23:00+02:00",
   "approved_by": "repository owner — explicit approval of all latest releases and permanent GitHub retention",
   "approved_releases": [
     {
@@ -39,6 +39,21 @@
       "tag": "siraj-android-v1.4.2",
       "kind": "android-stable-after-signed-release-gate",
       "retention": "permanent"
+    },
+    {
+      "tag": "siraj-windows-patch-v4.1.3",
+      "kind": "windows-signed-stable-patch",
+      "retention": "permanent"
+    },
+    {
+      "tag": "siraj-linux-patch-v4.1.2",
+      "kind": "linux-signed-stable-patch",
+      "retention": "permanent"
+    },
+    {
+      "tag": "siraj-android-v1.4.3",
+      "kind": "android-stable-after-signed-release-gate",
+      "retention": "permanent"
     }
   ],
   "rights_scope": "Distribution approved under the per-source rights and licenses recorded in audit documentation; third-party content is not relicensed under MIT.",
@@ -46,10 +61,11 @@
   "immutability_required": true,
   "immutability_enabled": true,
   "all_approved_releases_verified_immutable": true,
-  "all_published_releases_archived_immutable": 24,
-  "archive_lock_evidence": "audit/RELEASE_ARCHIVE_LOCK_2026-10-30.json",
+  "all_published_releases_archived_immutable": 27,
+  "archive_lock_evidence": "audit/RELEASE_ARCHIVE_LOCK_2026-10-31.json",
   "release_tag_ruleset_id": 26170318,
-  "android_release_evidence": "audit/ANDROID_RELEASE_1.4.2.json",
-  "windows_patch_release_evidence": "audit/WINDOWS_PATCH_RELEASE_4.1.2.json",
-  "policy": "audit/RELEASE_RETENTION.md"
+  "android_release_evidence": "audit/ANDROID_RELEASE_1.4.3.json",
+  "windows_patch_release_evidence": "audit/WINDOWS_PATCH_RELEASE_4.1.3.json",
+  "policy": "audit/RELEASE_RETENTION.md",
+  "linux_patch_release_evidence": "audit/LINUX_PATCH_RELEASE_4.1.2.json"
 }

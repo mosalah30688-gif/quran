@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "verified_at": "2026-10-31T20:23:00+02:00",
+  "repository": "mosalah30688-gif/quran",
+  "product_source_commit": "bcdfd4538c625b7775664c42eef71353ca4d61d9",
+  "release_commit": "25a6e4284108c77c533fc0494a85355534606241",
+  "channel_commit": "0f5a775052e10d2e4527f70a6a82fcadbc4b864e",
+  "validation_run": {
+    "id": 41228310601,
+    "url": "https://github.com/mosalah30688-gif/quran/actions/runs/41228310601",
+    "conclusion": "success"
+  },
+  "publication_run": {
+    "id": 41228494158,
+    "url": "https://github.com/mosalah30688-gif/quran/actions/runs/41228494158",
+    "conclusion": "success",
+    "release_gate": "PUBLISH IMMUTABLE siraj-android-v1.4.3"
+  },
+  "release": {
+    "id": 430105435,
+    "tag": "siraj-android-v1.4.3",
+    "url": "https://github.com/mosalah30688-gif/quran/releases/tag/siraj-android-v1.4.3",
+    "published_at": "2026-10-31T18:17:49Z",
+    "draft": false,
+    "prerelease": false,
+    "immutable": true,
+    "assets": [
+      {
+        "id": 696122472,
+        "name": "Siraj-Android-1.4.3.apk",
+        "bytes": 7447224,
+        "sha256": "23c18d09e0ae3160e85dc86ca84a36d82b24adde284f9383e7693dca85738db4"
+      },
+      {
+        "id": 696122527,
+        "name": "SHA256SUMS.txt",
+        "bytes": 90,
+        "sha256": "0e1755524a5187ddd0926c5a2eb9cab89fc69b6d40a182cbce2eaabe5d3155f9"
+      }
+    ]
+  },
+  "apk": {
+    "name": "Siraj-Android-1.4.3.apk",
+    "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-android-v1.4.3/Siraj-Android-1.4.3.apk",
+    "bytes": 7447224,
+    "sha256": "23c18d09e0ae3160e85dc86ca84a36d82b24adde284f9383e7693dca85738db4",
+    "package": "com.quran.mushaf",
+    "application_label": "سراج — قرآن كريم",
+    "version_name": "1.4.3",
+    "version_code": 143,
+    "min_sdk": 22,
+    "target_sdk": 34,
+    "signer_certificate_sha256": "3f60f24c3960d662a1454fc8bdfcc2039872e6624c6e3efbbb6abc83b842027c",
+    "same_signer_as_1.4.2": true,
+    "higher_version_code_than_1.4.2": true,
+    "release_checksum_matches": true,
+    "release_asset_digest_matches": true,
+    "stable_channel_checksum_matches": true,
+    "public_download_reverified": true
+  },
+  "product_copy": {
+    "name": "سراج",
+    "description": "مصحف قرآن كريم",
+    "feature_count": 5,
+    "about_release_notes_absent": true,
+    "update_features": [
+      "صفحة «عن التطبيق» بصياغة موجزة وموحدة."
+    ],
+    "technical_update_details_absent": true
+  },
+  "packaged_source_sha256": {
+    "index.html": "4a93e36221a66381e5df36ea7bd1b44f2c50475416f98a3c1e6c7c9ed88268ad",
+    "app.js": "7dd4ff2ebbf87b326e54b288382c7d0ab1993f4d8b94bc75e2ca887dbc2baace",
+    "sw.js": "0ff85a04c0b74fd7c77a75870b48440e41873d5f9e0b322ba8d3600bf167f004"
+  },
+  "stable_channel": {
+    "path": "update/manifest.json",
+    "version": "1.4.3",
+    "apk_url_matches_release": true,
+    "sha256_matches_release": true,
+    "features_match_release": true
+  },
+  "verification": {
+    "signed_ci_release_assembly": "passed",
+    "release_unit_tests": "passed",
+    "lint_release": "passed",
+    "npm_high_severity_vulnerabilities": 0,
+    "android_bundle_verification": "passed",
+    "audio_sources": "passed",
+    "asset_provenance": "passed",
+    "data_provenance": "passed",
+    "packaged_product_copy_reverified": true,
+    "published_release_immutable": true,
+    "all_27_published_releases_immutable": true
+  },
+  "google_play": "deferred by owner; this audit covers the direct immutable GitHub APK release"
+}

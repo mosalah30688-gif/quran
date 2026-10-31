@@ -1,0 +1,89 @@
+{
+  "schema": 1,
+  "product": "siraj-quran-linux",
+  "version": "4.1.2",
+  "kind": "signed-small-patch",
+  "verified_at": "2026-10-31T20:23:00+02:00",
+  "source": {
+    "commit": "bcdfd4538c625b7775664c42eef71353ca4d61d9",
+    "tag": "siraj-linux-patch-v4.1.2",
+    "tag_object": "11e898ebc153ba9b99cb9ba264e0130adff5f9fe",
+    "release_gate_commit": "25a6e4284108c77c533fc0494a85355534606241"
+  },
+  "ci": {
+    "build_run": {
+      "id": 41228318482,
+      "url": "https://github.com/mosalah30688-gif/quran/actions/runs/41228318482",
+      "conclusion": "success"
+    },
+    "promotion_run": {
+      "id": 41228971839,
+      "url": "https://github.com/mosalah30688-gif/quran/actions/runs/41228971839",
+      "conclusion": "success"
+    }
+  },
+  "release": {
+    "id": 430106144,
+    "url": "https://github.com/mosalah30688-gif/quran/releases/tag/siraj-linux-patch-v4.1.2",
+    "published_at": "2026-10-31T18:21:53Z",
+    "draft": false,
+    "prerelease": false,
+    "immutable": true,
+    "assets": {
+      "patch": {
+        "id": 696125498,
+        "name": "Siraj-Quran-4.1.2-linux.sirajpatch",
+        "size": 2402823,
+        "sha256": "bde6b9d4e3efb37996192f8fe45adc4d570a4143cdea4fbd5740676aa1cbe2e0"
+      },
+      "checksums": {
+        "id": 696125496,
+        "name": "SHA256SUMS.txt",
+        "size": 185,
+        "sha256": "7cf2698c371c1b4d4ce450d9dabbe2ddefb77cc0be814df878a8137174d35eb2"
+      },
+      "sbom": {
+        "id": 696125505,
+        "name": "SBOM.cdx.json",
+        "size": 6434,
+        "sha256": "24c2038d87c92757a8295b89599edb15fe62587a9e09ce6ef66169e13f5058c3"
+      },
+      "channel": {
+        "id": 696125495,
+        "name": "patch-stable.json",
+        "size": 842,
+        "sha256": "cda156cd13cc2205b9b9dddab8e90797e6f83b6e84c4503a71fd894c470e13be"
+      }
+    }
+  },
+  "channel": {
+    "path": "update/linux/patch-stable.json",
+    "commit": "31dc684d43b1f6f00fa5259ccb60e8dd2049a828",
+    "version": "4.1.2",
+    "available": true,
+    "signature_algorithm": "ed25519",
+    "signature_key_id": "siraj-update-2026-01",
+    "manifest_sha256": "cda156cd13cc2205b9b9dddab8e90797e6f83b6e84c4503a71fd894c470e13be",
+    "public_key_file_sha256": "ee809a96c5e58e8f41ed7af21fe30b9bd96bad8080b548c44fb0138dd1821169",
+    "features": [
+      "صفحة «عن التطبيق» بصياغة موجزة وموحدة."
+    ],
+    "free_form_release_notes_absent": true
+  },
+  "verification": {
+    "published_release_immutable": true,
+    "release_asset_digest_matches_channel": true,
+    "channel_ed25519_signature_valid": true,
+    "downloaded_patch_sha256_valid": true,
+    "patch_archive_signature_and_all_file_hashes_valid": true,
+    "install_simulation_against_4.1.1_passed": true,
+    "patch_file_count": 16,
+    "patch_main_and_version_match_source_commit": true,
+    "full_ui_regression_passed": true,
+    "appimage_build_and_smoke_regression_passed": true,
+    "about_copy_matches_owner_policy": true,
+    "about_release_notes_absent": true,
+    "content_or_rights_payload_changed": false,
+    "all_27_published_releases_immutable": true
+  }
+}
