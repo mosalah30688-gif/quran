@@ -1,21 +1,24 @@
 {
   "schema": 1,
   "ready": true,
-  "approved_commit": "509009f0681142e6c8ec805f295243d492f11ec5",
+  "approved_commit": "bcdfd4538c625b7775664c42eef71353ca4d61d9",
   "approved_tags": [
-    "siraj-windows-patch-v4.1.2"
+    "siraj-windows-patch-v4.1.3",
+    "siraj-linux-patch-v4.1.2"
   ],
-  "approved_at": "2026-10-30T00:37:00Z",
-  "approved_by": "repository owner — explicit instruction to publish the missing Windows About update",
+  "approved_at": "2026-10-31T18:02:27Z",
+  "approved_by": "repository owner — explicit selection to publish Android, Windows and Linux",
   "blockers": [],
   "evidence": [
-    "Release source 509009f adds the dedicated About view, Fluent 3D navigation icon, current feature list, developer identity and verified contact/repository links to Windows 4.1.2.",
-    "Windows source passed Python compilation, the focused offscreen About smoke test, 40 non-UI unit tests (with only the unfetched locked tafsir fixture skipped), update-signature tests and patch-runtime tests.",
-    "The 4.1.2 change does not modify Quran, tafsir, recitation, font or other third-party content; the locked and reviewed 4.1.1 content set remains unchanged.",
-    "The tag workflow must still pass the complete Windows UI regression, locked-data verification, audio checks, portable build, SBOM generation and attestations before it can create a Draft; promotion independently verifies every Draft asset before publication."
+    "Release source bcdfd4538c625b7775664c42eef71353ca4d61d9 applies the owner-approved concise About copy to Android, Windows and Linux and removes release notes from every About view.",
+    "In-app update manifests now carry only a bounded features list; generators and promotion verification reject free-form or technical update copy.",
+    "Android 1.4.3, Windows 4.1.3 and Linux 4.1.2 use independent platform versions while the Windows and Linux tags point to this exact reviewed source commit.",
+    "Static product-copy checks, Android bundle verification, JavaScript and Python syntax checks, YAML parsing, provenance checks, signed update tooling tests and release-candidate tests passed locally.",
+    "Each tag workflow must still pass its complete platform UI regression, locked-data and audio verification, packaging, SBOM and attestation gates before it can create a Draft; promotion independently verifies every Draft asset before publication."
   ],
   "accepted_risks": [
-    "No external scholarly certification is claimed by this approval; this patch changes application UI and documentation only and retains the previously approved locked content.",
+    "PySide6 was unavailable in the local sandbox, so the full Windows and Linux UI suites are delegated to the mandatory fail-closed tag workflows.",
+    "This release changes application copy, notification policy and version metadata only; Quran, tafsir, recitation, font and other third-party content remain unchanged.",
     "Windows executables intentionally have no Authenticode signature; patch integrity is provided by Ed25519 signatures and SHA-256 asset digests."
   ]
 }
