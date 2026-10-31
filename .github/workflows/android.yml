@@ -30,7 +30,7 @@ on:
         type: boolean
         default: false
       confirmation:
-        description: 'For publication type: PUBLISH IMMUTABLE siraj-android-v1.4.3'
+        description: 'For publication type: PUBLISH IMMUTABLE siraj-android-v1.4.4'
         required: false
         type: string
 
@@ -154,7 +154,7 @@ jobs:
           assert 'everyayah.com' not in app.lower()
           assert 'TafsirStore' in app and 'Reminder' in app and 'ar.parhizgar' in app
           assert 'loadBundledData()' in app and 'recordWirdPage' in app
-          assert "APP_BUNDLE_VERSION = '1.4.3'" in html and 'الإصدار 1.4.3' in html
+          assert "APP_BUNDLE_VERSION = '1.4.4'" in html and 'الإصدار 1.4.4' in html
           approved_features = (
               'مصحف ذكي للتلاوة والاستماع والتدبر',
               'برواية حفص عن عاصم وروايات أخرى',
@@ -185,7 +185,7 @@ jobs:
           assert 'group-menu-open' in html and 'reader-view-active' in html and 'body.group-menu-open .hdr' in html
           assert 'syncReaderDockHeight' in app and 'syncAudioTimeline' in app
           assert 'syncGroupMenuLayer' in app and 'focusFirst' in app and 'restoreFocus' in app
-          assert 'siraj-shell-v9' in service_worker
+          assert 'siraj-shell-v10' in service_worker
           assert 'data-icon="tajweed"' in html and '🎵' not in html
           PY
 
@@ -253,7 +253,7 @@ jobs:
               'name': f"سراج — Android {os.environ['VERSION']}",
               'body': (
                   'إصدار Android كامل موقّع وقابل للترقية فوق النسخة السابقة.\n\n'
-                  '- صفحة «عن التطبيق» بصياغة موجزة وموحدة.\n'
+                  '- هوية أوضح لسراج ووصول منظم إلى «عن التطبيق».\n'
                   '- APK كامل للاستخدام خارج Google Play.\n'
                   '- يخضع هذا الإصدار لسياسة الاحتفاظ الدائم؛ لا تُستبدل أصوله ولا يُحذف وسمه.'
               ),
@@ -329,7 +329,7 @@ jobs:
           version = os.environ['VERSION']
           data['version'] = version
           data['files'] = ['index.html', 'app.js']
-          data['features'] = ['صفحة «عن التطبيق» بصياغة موجزة وموحدة.']
+          data['features'] = ['هوية أوضح لسراج ووصول منظم إلى «عن التطبيق».']
           data['apk'] = {
               'version': version,
               'url': 'https://github.com/mosalah30688-gif/quran/releases/download/' + os.environ['TAG'] + '/' + os.environ['ASSET'],

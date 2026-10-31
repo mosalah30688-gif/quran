@@ -84,7 +84,7 @@ def main() -> None:
     assert "lookupBatch" in app and "TafsirStore" in app
     assert "recordWirdPage" in app and "Reminder" in app
     assert "wdTargetSel" not in app and "wdAdd" not in app
-    assert "APP_BUNDLE_VERSION = '1.4.3'" in html and "الإصدار 1.4.3" in html
+    assert "APP_BUNDLE_VERSION = '1.4.4'" in html and "الإصدار 1.4.4" in html
     about_match = re.search(r'<section class="view" id="view-about">(.*?)</section>', html, re.DOTALL)
     assert about_match, "missing dedicated About view"
     about = about_match.group(1)
@@ -125,7 +125,7 @@ def main() -> None:
     assert "يتوفر تحديث جديد لسراج — الإصدار" in app and "فيه تحديث جديد" not in app
     assert "Array.isArray(m.features)" in app and "technicalTerms" in app
     assert ".upd-banner span { flex: 1; white-space: pre-line; }" in html
-    assert "siraj-shell-v9" in service_worker
+    assert "siraj-shell-v10" in service_worker
     assert "--quran-font" in html and "setFont" in html
     assert "data-icon=\"tajweed\"" in html and "🎵" not in html
 
