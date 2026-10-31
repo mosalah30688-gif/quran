@@ -1,24 +1,24 @@
 {
   "schema": 1,
   "ready": true,
-  "approved_commit": "bcdfd4538c625b7775664c42eef71353ca4d61d9",
+  "approved_commit": "8c2419f4a5dcbb3abb7ad927ccf5758d164f471c",
   "approved_tags": [
-    "siraj-windows-patch-v4.1.3",
-    "siraj-linux-patch-v4.1.2"
+    "siraj-windows-patch-v4.1.4",
+    "siraj-linux-patch-v4.1.3"
   ],
-  "approved_at": "2026-10-31T18:02:27Z",
-  "approved_by": "repository owner — explicit selection to publish Android, Windows and Linux",
+  "approved_at": "2026-10-31T19:12:00Z",
+  "approved_by": "repository owner — explicit confirmation to publish Android, Windows and Linux",
   "blockers": [],
   "evidence": [
-    "Release source bcdfd4538c625b7775664c42eef71353ca4d61d9 applies the owner-approved concise About copy to Android, Windows and Linux and removes release notes from every About view.",
-    "In-app update manifests now carry only a bounded features list; generators and promotion verification reject free-form or technical update copy.",
-    "Android 1.4.3, Windows 4.1.3 and Linux 4.1.2 use independent platform versions while the Windows and Linux tags point to this exact reviewed source commit.",
-    "Static product-copy checks, Android bundle verification, JavaScript and Python syntax checks, YAML parsing, provenance checks, signed update tooling tests and release-candidate tests passed locally.",
-    "Each tag workflow must still pass its complete platform UI regression, locked-data and audio verification, packaging, SBOM and attestation gates before it can create a Draft; promotion independently verifies every Draft asset before publication."
+    "Release source 8c2419f4a5dcbb3abb7ad927ccf5758d164f471c applies the owner-approved navigation and Siraj identity changes to Android, Windows and Linux.",
+    "Android places About as the final Settings item; Windows and Linux place About directly after Settings while showing the owned icon above an Amiri Siraj wordmark.",
+    "Android 1.4.4, Windows 4.1.4 and Linux 4.1.3 use independent platform versions and the desktop tags point to this exact reviewed source commit.",
+    "Android bundle verification, responsive browser checks, JavaScript and Python syntax checks, 86 desktop unit tests, YAML parsing, provenance checks, audio-source verification and high-severity npm audit passed locally.",
+    "Each release workflow must still pass its complete locked-data, UI, packaging, signing, SBOM and provenance gates before publication; desktop promotion independently verifies every Draft asset."
   ],
   "accepted_risks": [
-    "PySide6 was unavailable in the local sandbox, so the full Windows and Linux UI suites are delegated to the mandatory fail-closed tag workflows.",
-    "This release changes application copy, notification policy and version metadata only; Quran, tafsir, recitation, font and other third-party content remain unchanged.",
+    "The 728866816-byte locked offline tafsir store was not downloaded into the local workspace; both mandatory desktop workflows fetch, hash and verify it before their full UI suites can pass.",
+    "This release changes application identity, navigation, responsive layout and version metadata only; Quran, tafsir, recitation, font and other third-party content remain unchanged.",
     "Windows executables intentionally have no Authenticode signature; patch integrity is provided by Ed25519 signatures and SHA-256 asset digests."
   ]
 }
