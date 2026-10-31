@@ -1,0 +1,179 @@
+SIRAJ PROPRIETARY SOURCE AND END-USER LICENSE
+Version 1.0 — Effective 31 October 2026
+
+Copyright © 2026 محمد صلاح عبد الخالق (mosalah30688-gif).
+All rights reserved.
+
+IMPORTANT: READ THIS LICENSE BEFORE USING, COPYING, MODIFYING, OR DISTRIBUTING
+ANY PART OF SIRAJ. BY EXERCISING ANY RIGHT EXPRESSLY GRANTED BELOW, YOU ACCEPT
+THIS LICENSE. IF YOU DO NOT ACCEPT IT, DO NOT USE THE MATERIAL TO WHICH IT
+APPLIES.
+
+1. DEFINITIONS
+
+“Owner” means محمد صلاح عبد الخالق, identified on GitHub as
+mosalah30688-gif.
+
+“Siraj” or the “Project” means the original source code, executable code,
+documentation, project-authored text, user-interface design, and visual assets
+owned by the Owner and first published after the Historical Boundary defined
+in Section 7, except material that is expressly identified as third-party or
+subject to another license.
+
+“Official Binary” means an unmodified executable package published by the
+Owner in the official GitHub repository at
+https://github.com/mosalah30688-gif/quran or through another channel expressly
+designated by the Owner.
+
+“Personal, Non-Commercial Use” means use by a natural person for private,
+non-business purposes, without payment, revenue, commercial advantage,
+organizational deployment, or provision of services to another person or
+entity.
+
+“Third-Party Materials” means Quran text, exegesis, translations, recitations,
+fonts, libraries, runtimes, data sets, and any other material owned by or
+licensed from third parties.
+
+2. OWNERSHIP AND RESERVATION OF RIGHTS
+
+Siraj is proprietary. The Owner retains all copyright and other rights in the
+Project. No right is granted by implication, estoppel, publication of source
+code, access to the repository, or availability of an Official Binary. All
+rights not expressly granted in this License are reserved.
+
+Public visibility of the repository does not make the Project open source and
+does not authorize reuse, redistribution, or creation of derivative works.
+
+3. LIMITED END-USER LICENSE FOR OFFICIAL BINARIES
+
+Subject to continuous compliance with this License, the Owner grants a natural
+person a limited, non-exclusive, non-transferable, non-sublicensable license to
+download, install, and execute unmodified Official Binaries solely for
+Personal, Non-Commercial Use on devices that person owns or controls.
+
+This grant does not include any right to redistribute an Official Binary,
+charge for access to it, bundle it with another product, deploy it for an
+organization, operate it as a service, or use it to obtain a commercial
+advantage. Written permission from the Owner is required for any such use.
+
+4. SOURCE ACCESS AND CONTRIBUTION EXCEPTION
+
+You may view the source code in the official repository for transparency,
+security review, evaluation, and preparation of a contribution to Siraj.
+
+You may use GitHub’s standard fork and pull-request functions, and make the
+minimum copies and modifications reasonably necessary, solely to prepare and
+submit a contribution to the official repository. Every contribution is
+subject to the current Contributor License Agreement in CLA.md. No contribution
+may be merged until the Owner has recorded the contributor’s acceptance of
+that agreement.
+
+This exception does not authorize an independent release, public mirror,
+product, service, distribution, deployment, or derivative project.
+
+5. RESTRICTIONS
+
+Except where this License expressly permits an act, or where applicable law
+makes a restriction unenforceable, you must not:
+
+(a) copy, reproduce, modify, adapt, translate, or create derivative works of
+    Siraj;
+(b) publish, distribute, transmit, sublicense, sell, rent, lease, host, mirror,
+    or otherwise make Siraj available to another person;
+(c) use Siraj, its source code, or an Official Binary for a commercial,
+    professional, institutional, governmental, educational-organizational, or
+    service-provider purpose without written permission;
+(d) remove, hide, or alter copyright, license, attribution, provenance,
+    trademark, or third-party notices;
+(e) use the name “سراج”, the Siraj icon, branding, or confusingly similar
+    identifiers to endorse or identify another product or service;
+(f) bypass signature, integrity, update, or access controls; or
+(g) reverse engineer an Official Binary, except to the limited extent that
+    applicable law expressly permits despite this restriction or a governing
+    third-party license grants that right for its own component.
+
+6. THIRD-PARTY MATERIALS
+
+This License applies only to rights owned by the Owner. It does not grant,
+restrict, replace, or relicense Third-Party Materials. Each third-party item
+remains governed by its own copyright, attribution, source, and license terms.
+Those terms may grant rights that are broader or narrower than this License
+and control for that item.
+
+Relevant notices and provenance records include NOTICE.md,
+windows_app/THIRD_PARTY_NOTICES.md, mushaf_app/THIRD_PARTY_NOTICES.md,
+audit/DATA_PROVENANCE.md, and audit/THIRD_PARTY_REVIEW.md. Corresponding source
+provided for LGPL or GPL components is supplied solely to satisfy the rights
+and obligations of those component licenses; it does not place Siraj’s
+proprietary material under those licenses.
+
+7. HISTORICAL MIT GRANT
+
+Original Siraj code and project-authored material published at or before Git
+commit 4fda3631611b2eef8a630621719f9c9beef7390f were previously offered under
+the MIT License. A copy of that historical license is preserved at
+LICENSES/MIT-HISTORICAL.txt.
+
+Nothing in this License revokes or narrows rights validly granted for those
+historical copies. The historical MIT grant is irrevocable according to its
+terms. This proprietary License governs original material first introduced
+after that commit and later distributions that expressly include this License,
+to the extent the Owner holds the relevant rights.
+
+Historical MIT licensing never applied to Third-Party Materials or to the
+Siraj icon except where an item was expressly identified otherwise.
+
+8. TRADEMARKS AND IDENTITY
+
+No trademark, trade-name, logo, icon, or branding license is granted. “سراج”,
+“Siraj”, the application icon, and the Project’s visual identity may not be
+used in a way that suggests sponsorship, affiliation, authenticity, or
+endorsement without prior written permission from the Owner.
+
+9. UPDATES AND EXTERNAL SERVICES
+
+Siraj may contact update channels, recitation providers, or other documented
+external sources. Access to an external service is subject to that provider’s
+terms and availability. The Owner may modify or discontinue future updates or
+services. This clause does not permit alteration of an immutable historical
+GitHub Release.
+
+10. TERMINATION
+
+The rights granted by this License terminate automatically upon breach. After
+termination, you must stop using and delete copies governed solely by this
+License, except copies or components you are independently entitled to retain
+under a valid third-party or historical license. Sections intended by their
+nature to survive termination remain effective.
+
+11. DISCLAIMER OF WARRANTIES
+
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, SIRAJ IS PROVIDED “AS IS” AND “AS
+AVAILABLE”, WITHOUT WARRANTIES OF ANY KIND, EXPRESS, IMPLIED, OR STATUTORY,
+INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+NON-INFRINGEMENT, ACCURACY, CONTINUITY, OR ERROR-FREE OPERATION. AUTOMATED
+SOURCE, HASH, AND STRUCTURE CHECKS DO NOT CONSTITUTE RELIGIOUS, SCHOLARLY,
+MEDICAL, LEGAL, OR PROFESSIONAL CERTIFICATION.
+
+12. LIMITATION OF LIABILITY
+
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE OWNER SHALL NOT BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, CONSEQUENTIAL, OR PUNITIVE
+DAMAGES, OR FOR LOSS OF DATA, PROFITS, GOODWILL, USE, OR BUSINESS, ARISING FROM
+OR RELATED TO SIRAJ, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+13. WRITTEN PERMISSION
+
+Requests for commercial, institutional, redistribution, integration, or other
+rights not granted here must be submitted through the contact channel listed
+in README.md. Permission is effective only when granted in a written statement
+that clearly identifies its scope and is issued by the Owner.
+
+14. SEVERABILITY AND COMPLETE TERMS
+
+If a provision is held unenforceable, it shall be limited to the minimum extent
+necessary, and the remaining provisions remain effective. This License,
+together with an expressly applicable written permission, states the complete
+license from the Owner for the material it covers. A translation is provided
+in LICENSE.ar.md for convenience; if the texts conflict, this English text
+controls to the extent permitted by law.

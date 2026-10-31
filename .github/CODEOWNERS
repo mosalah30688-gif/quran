@@ -1,0 +1,12 @@
+# Default owner and required reviewer for Siraj.
+* @mosalah30688-gif
+
+# Legal, release, audit, and update controls require explicit owner review.
+/LICENSE @mosalah30688-gif
+/LICENSE.ar.md @mosalah30688-gif
+/LICENSES/ @mosalah30688-gif
+/NOTICE.md @mosalah30688-gif
+/CLA.md @mosalah30688-gif
+/audit/ @mosalah30688-gif
+/.github/workflows/ @mosalah30688-gif
+/update/ @mosalah30688-gif

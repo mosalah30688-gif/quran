@@ -2,7 +2,20 @@
   "name": "quran-app",
   "version": "1.4.4",
   "private": true,
-  "description": "سراج — مصحف قرآن كريم",
+  "description": "سراج — تطبيق قرآن كريم متعدد المنصات للقراءة والتلاوة والتفسير والحفظ",
+  "author": {
+    "name": "محمد صلاح عبد الخالق",
+    "url": "https://elkatebmohamadsalah.blogspot.com/p/c.html"
+  },
+  "license": "SEE LICENSE IN LICENSE",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mosalah30688-gif/quran.git"
+  },
+  "homepage": "https://github.com/mosalah30688-gif/quran#readme",
+  "bugs": {
+    "url": "https://github.com/mosalah30688-gif/quran/issues"
+  },
   "scripts": {
     "build:www": "bash scripts/build-www.sh",
     "android:sync": "bash scripts/build-www.sh && npx cap sync android",

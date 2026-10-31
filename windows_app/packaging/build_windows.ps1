@@ -101,6 +101,8 @@ $PortableDir = Join-Path $Release $PortableName
 Copy-Item (Join-Path $Dist "Siraj") $PortableDir -Recurse
 Copy-Item $UpdaterExe $PortableDir
 Copy-Item (Join-Path $RepoRoot "LICENSE") (Join-Path $PortableDir "LICENSE.txt")
+Copy-Item (Join-Path $RepoRoot "LICENSE.ar.md") (Join-Path $PortableDir "LICENSE.ar.md")
+Copy-Item (Join-Path $RepoRoot "NOTICE.md") (Join-Path $PortableDir "NOTICE.md")
 Copy-Item (Join-Path $AppRoot "THIRD_PARTY_NOTICES.md") (Join-Path $PortableDir "THIRD_PARTY_NOTICES.md")
 
 $LicensesDir = Join-Path $PortableDir "licenses"
@@ -109,6 +111,9 @@ $LicensesDir = Join-Path $PortableDir "licenses"
     --output $LicensesDir `
     --fail-missing
 if ($LASTEXITCODE -ne 0) { throw "Collecting Python dependency licenses failed" }
+$ProjectLicenses = Join-Path $LicensesDir "project"
+New-Item -ItemType Directory -Path $ProjectLicenses -Force | Out-Null
+Copy-Item (Join-Path $RepoRoot "LICENSES\MIT-HISTORICAL.txt") $ProjectLicenses
 $FontLicenses = Join-Path $LicensesDir "fonts"
 New-Item -ItemType Directory -Path $FontLicenses -Force | Out-Null
 Copy-Item (Join-Path $AppRoot "fonts\*.txt") $FontLicenses
@@ -146,15 +151,23 @@ if ($LASTEXITCODE -ne 0) { throw "Portable ZIP extraction smoke test failed" }
 $PortableSmokeRoot = Join-Path $PortableSmoke $PortableName
 $PortableSmokeExe = Join-Path $PortableSmokeRoot "Siraj.exe"
 $PortableSmokeFlag = Join-Path $PortableSmokeRoot "portable.flag"
-$PortableSmokeNotices = Join-Path $PortableSmokeRoot "THIRD_PARTY_NOTICES.md"
+$PortableSmokeLicense = Join-Path $PortableSmokeRoot "LICENSE.txt"
+$PortableSmokeArabicLicense = Join-Path $PortableSmokeRoot "LICENSE.ar.md"
+$PortableSmokeNotice = Join-Path $PortableSmokeRoot "NOTICE.md"
+$PortableSmokeThirdParty = Join-Path $PortableSmokeRoot "THIRD_PARTY_NOTICES.md"
 $PortableSmokeLicenses = Join-Path $PortableSmokeRoot "licenses\inventory.json"
+$PortableSmokeHistoricalLicense = Join-Path $PortableSmokeRoot "licenses\project\MIT-HISTORICAL.txt"
 if (
     -not (Test-Path $PortableSmokeExe) -or
     -not (Test-Path $PortableSmokeFlag) -or
-    -not (Test-Path $PortableSmokeNotices) -or
-    -not (Test-Path $PortableSmokeLicenses)
+    -not (Test-Path $PortableSmokeLicense) -or
+    -not (Test-Path $PortableSmokeArabicLicense) -or
+    -not (Test-Path $PortableSmokeNotice) -or
+    -not (Test-Path $PortableSmokeThirdParty) -or
+    -not (Test-Path $PortableSmokeLicenses) -or
+    -not (Test-Path $PortableSmokeHistoricalLicense)
 ) {
-    throw "Portable ZIP is missing the executable, portable marker, notices, or license inventory"
+    throw "Portable ZIP is missing the executable, portable marker, project notices, or license inventory"
 }
 Invoke-SirajSmoke $PortableSmokeExe @("--selftest") "Portable ZIP self-test"
 Remove-Item $PortableSmoke -Recurse -Force

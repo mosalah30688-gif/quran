@@ -74,11 +74,15 @@ ln -s "$ICON" AppDir/.DirIcon
 sed -e "s/@VERSION@/${VERSION}/g" -e "s/@RELEASE_DATE@/${RELEASE_DATE}/g" \
   "packaging/${APPDATA}.in" > "AppDir/usr/share/metainfo/${APPDATA}"
 cp ../LICENSE AppDir/usr/share/doc/siraj/LICENSE
+cp ../LICENSE.ar.md AppDir/usr/share/doc/siraj/LICENSE.ar.md
+cp ../NOTICE.md AppDir/usr/share/doc/siraj/NOTICE.md
 cp THIRD_PARTY_NOTICES.md AppDir/usr/share/doc/siraj/THIRD_PARTY_NOTICES.md
 python3 ../scripts/collect_python_licenses.py \
   --requirements mushaf_app/requirements.txt \
   --output mushaf_app/AppDir/usr/share/doc/siraj/licenses/python \
   --fail-missing
+mkdir -p AppDir/usr/share/doc/siraj/licenses/project
+cp ../LICENSES/MIT-HISTORICAL.txt AppDir/usr/share/doc/siraj/licenses/project/
 mkdir -p AppDir/usr/share/doc/siraj/licenses/fonts
 cp fonts/*.txt AppDir/usr/share/doc/siraj/licenses/fonts/
 cp -a binary-license-report AppDir/usr/share/doc/siraj/licenses/linux-binaries

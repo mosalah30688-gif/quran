@@ -1,0 +1,60 @@
+name: "بلاغ خلل | Bug report"
+description: "أبلغ عن خلل قابل لإعادة الإنتاج في سراج | Report a reproducible Siraj defect"
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        شكرًا على البلاغ. لا تضع بيانات شخصية أو أسرارًا. للثغرات غير المعالجة استخدم SECURITY.md بدل Issue عامة.
+        Thank you. Do not include personal data or secrets. Use SECURITY.md for unpatched vulnerabilities.
+  - type: dropdown
+    id: platform
+    attributes:
+      label: "المنصة | Platform"
+      options:
+        - Android
+        - Windows
+        - Linux
+        - Shared / مشتركة
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: "الإصدار | Version"
+      placeholder: "مثال: Android 1.4.4"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: "وصف المشكلة | Problem description"
+      description: "ما الذي حدث، وما الذي توقعت حدوثه؟ | What happened and what did you expect?"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: "خطوات إعادة الإنتاج | Reproduction steps"
+      placeholder: |
+        1. افتح...
+        2. اختر...
+        3. لاحظ...
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: "السجلات أو الصور | Logs or screenshots"
+      description: "احذف أي بيانات خاصة قبل الإرفاق. | Remove private data before attaching."
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: "التأكيد | Confirmation"
+      options:
+        - label: "تحققت من عدم وجود بلاغ مطابق مفتوح. | I checked for an existing open report."
+          required: true
+        - label: "لا يحتوي البلاغ على سر أو رمز وصول أو بيانات خاصة. | This report contains no secret, token, or private data."
+          required: true

@@ -176,11 +176,14 @@ def verify_windows_portable(path: Path, version: str) -> None:
             "SirajPortableUpdater.exe",
             "portable.flag",
             "LICENSE.txt",
+            "LICENSE.ar.md",
+            "NOTICE.md",
             "THIRD_PARTY_NOTICES.md",
+            "licenses/project/MIT-HISTORICAL.txt",
             "licenses/inventory.json",
         }
         if not required.issubset(relatives):
-            raise ValueError("Windows Portable ZIP lacks executable, marker, notices, or licenses")
+            raise ValueError("Windows Portable ZIP lacks executable, marker, project notices, or licenses")
         if any(name == "UserData" or name.startswith("UserData/") for name in relatives):
             raise ValueError("Windows Portable ZIP contains test/user data")
         if infos[prefix + "Siraj.exe"].file_size < 1_000_000:

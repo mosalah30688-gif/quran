@@ -172,8 +172,11 @@ before packaging against the SHA-256 values in `SHA256SUMS.txt`.
 Windows Portable keeps Qt/PySide shared libraries as separate files in the
 portable directory. Linux users can extract the AppImage with
 `--appimage-extract`, replace ABI-compatible Qt/PySide shared libraries built
-from these sources, and repack it with an AppImage tool. Siraj's own code is MIT
-licensed and available from the same tagged repository source.
+from these sources, and repack it with an AppImage tool. Siraj's original code
+is governed separately by the repository `LICENSE`; this archive grants no
+additional rights in that proprietary material. Historical copies previously
+released under MIT retain the rights preserved in the tagged repository at
+`LICENSES/MIT-HISTORICAL.txt`.
 
 Build instructions:
 

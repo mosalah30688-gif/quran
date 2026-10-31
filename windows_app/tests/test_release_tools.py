@@ -285,8 +285,11 @@ class ReleaseToolTests(unittest.TestCase):
                 archive.writestr(prefix + "Siraj.exe", b"MZ" + b"0" * 1_000_000)
                 archive.writestr(prefix + "SirajPortableUpdater.exe", b"MZ")
                 archive.writestr(prefix + "portable.flag", b"")
-                archive.writestr(prefix + "LICENSE.txt", b"MIT")
-                archive.writestr(prefix + "THIRD_PARTY_NOTICES.md", b"notices")
+                archive.writestr(prefix + "LICENSE.txt", b"proprietary")
+                archive.writestr(prefix + "LICENSE.ar.md", b"Arabic license")
+                archive.writestr(prefix + "NOTICE.md", b"project notice")
+                archive.writestr(prefix + "THIRD_PARTY_NOTICES.md", b"third-party notices")
+                archive.writestr(prefix + "licenses/project/MIT-HISTORICAL.txt", b"historical MIT")
                 archive.writestr(prefix + "licenses/inventory.json", b"{}")
             self.run_tool(
                 "generate_windows_update_manifest.py", "--version", "1.1.0",

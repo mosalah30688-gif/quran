@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-FileCopyrightText: 2026 محمد صلاح عبد الخالق -->
+<!-- SPDX-License-Identifier: MIT -->
 <component type="desktop-application">
   <id>com.mosalah30688.siraj.quran</id>
   <name>Siraj</name>
@@ -6,7 +8,7 @@
   <summary>A focused Quran reader with recitations and study tools</summary>
   <summary xml:lang="ar">قرآن كريم مع التلاوات والتفسير وأدوات الحفظ</summary>
   <metadata_license>MIT</metadata_license>
-  <project_license>MIT</project_license>
+  <project_license>LicenseRef-proprietary=https://github.com/mosalah30688-gif/quran/blob/main/LICENSE</project_license>
   <!-- developer_name يحافظ على توافق validator الموجود في Ubuntu 22.04. -->
   <developer_name>Siraj</developer_name>
   <description>

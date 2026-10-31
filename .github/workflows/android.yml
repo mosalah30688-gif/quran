@@ -21,6 +21,10 @@ on:
       - 'surahs.json'
       - 'tafsir-catalog.json'
       - 'fonts/**'
+      - 'LICENSE'
+      - 'LICENSE.ar.md'
+      - 'LICENSES/**'
+      - 'NOTICE.md'
       - '.github/workflows/android.yml'
   workflow_dispatch:
     inputs:
@@ -111,10 +115,12 @@ jobs:
           VERSION=$(sed -n 's/.*versionName "\([^"]*\)".*/\1/p' android/app/build.gradle | head -1)
           CODE=$(sed -n 's/.*versionCode \([0-9][0-9]*\).*/\1/p' android/app/build.gradle | head -1)
           test -n "$VERSION" && test -n "$CODE"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "code=$CODE" >> "$GITHUB_OUTPUT"
-          echo "tag=siraj-android-v$VERSION" >> "$GITHUB_OUTPUT"
-          echo "asset=Siraj-Android-$VERSION.apk" >> "$GITHUB_OUTPUT"
+          {
+            echo "version=$VERSION"
+            echo "code=$CODE"
+            echo "tag=siraj-android-v$VERSION"
+            echo "asset=Siraj-Android-$VERSION.apk"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Verify signer, upgrade version, and packaged assets
         shell: bash
@@ -122,7 +128,7 @@ jobs:
           set -euo pipefail
           APK=android/app/build/outputs/apk/release/app-release.apk
           test -s "$APK"
-          BUILD_TOOLS="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+          BUILD_TOOLS="$ANDROID_HOME/build-tools/$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -V | tail -1)"
           "$BUILD_TOOLS/apksigner" verify --verbose "$APK"
           OLD_CERT=$("$BUILD_TOOLS/apksigner" verify --print-certs update/app.apk 2>&1 | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1)
           NEW_CERT=$("$BUILD_TOOLS/apksigner" verify --print-certs "$APK" 2>&1 | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1)
@@ -144,6 +150,10 @@ jobs:
               'assets/public/fonts/AmiriQuran-Regular.ttf',
               'assets/public/fonts/NotoNaskhArabic-Variable.ttf',
               'assets/public/fonts/ScheherazadeNew-Regular.ttf',
+              'assets/public/legal/LICENSE',
+              'assets/public/legal/LICENSE.ar.md',
+              'assets/public/legal/NOTICE.md',
+              'assets/public/legal/MIT-HISTORICAL.txt',
           }
           with zipfile.ZipFile(apk) as archive:
               names = set(archive.namelist())

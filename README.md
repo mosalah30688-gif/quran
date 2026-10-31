@@ -1,264 +1,89 @@
-# سراج — قرآن كريم
+<div align="center">
+  <img src="icon.png" width="132" alt="أيقونة سراج — Siraj icon">
+  <h1>سراج — قرآن كريم</h1>
+  <p><strong>Siraj — Quran Kareem</strong></p>
+  <p>مصحف عربي متعدد المنصات للقراءة والتلاوة والتفسير والتدبر والحفظ والمتابعة اليومية.</p>
+  <p>A cross-platform Arabic Quran application for reading, recitation, exegesis, reflection, memorization, and daily progress.</p>
 
-**سراج** تطبيق قرآن عربي مفتوح المصدر متعدد المنصات، يجمع قراءة المصحف والتلاوات والتفسير والبحث ومعاني الكلمات والتجويد والحفظ والورد والختمة والأذكار والعلامات والإحصاءات في واجهة واحدة تحترم الخصوصية.
+  <p>
+    <a href="README.ar.md"><strong>العربية</strong></a>
+    ·
+    <a href="README.en.md"><strong>English</strong></a>
+  </p>
 
-> الاسم المعروض في Android وWindows وLinux هو **«سراج — قرآن كريم»**. أما `com.quran.mushaf` فهو معرّف حزمة Android تقني أُبقي لضمان ترقية مستخدمي الإصدارات السابقة، وليس اسم التطبيق.
+  <p>
+    <a href="https://github.com/mosalah30688-gif/quran/releases"><img src="https://img.shields.io/github/v/release/mosalah30688-gif/quran?include_prereleases&sort=semver&label=Releases&color=8b6914" alt="GitHub Releases"></a>
+    <img src="https://img.shields.io/badge/Android-1.4.4-3DDC84?logo=android&logoColor=white" alt="Android 1.4.4">
+    <img src="https://img.shields.io/badge/Windows-4.1.4-0078D4?logo=windows&logoColor=white" alt="Windows 4.1.4">
+    <img src="https://img.shields.io/badge/Linux-4.1.3-FCC624?logo=linux&logoColor=111" alt="Linux 4.1.3">
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-Proprietary-6f42c1" alt="Proprietary license"></a>
+  </p>
 
-## المطور والتواصل
+  <p>
+    <a href="https://github.com/mosalah30688-gif/quran/actions/workflows/android.yml"><img src="https://github.com/mosalah30688-gif/quran/actions/workflows/android.yml/badge.svg" alt="Android workflow"></a>
+    <a href="https://github.com/mosalah30688-gif/quran/actions/workflows/windows-v1.yml"><img src="https://github.com/mosalah30688-gif/quran/actions/workflows/windows-v1.yml/badge.svg" alt="Windows workflow"></a>
+    <a href="https://github.com/mosalah30688-gif/quran/actions/workflows/linux-appimage.yml"><img src="https://github.com/mosalah30688-gif/quran/actions/workflows/linux-appimage.yml/badge.svg" alt="Linux workflow"></a>
+  </p>
+</div>
 
-- **المطور:** [محمد صلاح عبد الخالق](https://elkatebmohamadsalah.blogspot.com/p/c.html)
-- **اتصل بنا:** [صفحة التواصل](https://elkatebmohamadsalah.blogspot.com/p/blog-page_827.html)
-- **المصدر والمشكلات:** [mosalah30688-gif/quran](https://github.com/mosalah30688-gif/quran)
+---
 
-## الإصدارات
+## لمحة | At a glance
 
-| المنصة | الإصدار في المصدر | آخر إصدار منشور ومعتمد | الحزمة |
-|---|---:|---:|---|
-| Android | `1.4.4` (`versionCode 144`) | `1.4.4` | APK كامل موقّع |
-| Windows | `4.1.4` | `4.1.4` | ترقيع `.sirajpatch` موقّع فوق Portable `4.1.1` |
-| Linux | `4.1.3` | `4.1.3` | ترقيع `.sirajpatch` موقّع فوق AppImage `4.1.1` |
+| | العربية | English |
+|---|---|---|
+| **المصحف** | 6,236 آية، 114 سورة، 604 صفحات، حفص وروايات أخرى | 6,236 ayat, 114 surahs, 604 pages, Hafs and additional riwayat |
+| **الصوت** | 17 قارئًا لحفص، تشغيل من آية، تكرار وتنزيل | 17 Hafs reciters, start-from-ayah, repeat, and downloads |
+| **التفسير** | 78 خيارًا مدقق المنشأ والحقوق مع بحث ومعاني وترجمات | 78 provenance- and rights-reviewed choices, search, meanings, and translations |
+| **المتابعة** | حفظ، ورد، ختمة، أذكار، علامات وإحصاءات | Memorization, wird, khatmah, adhkar, bookmarks, and statistics |
+| **الخصوصية** | لا حساب إلزامي، وبيانات القراءة الأساسية محلية | No required account; core reading data stays local |
+| **التحديث** | حزم وقنوات متحققة بالتوقيع والبصمات | Signature- and hash-verified packages and channels |
 
-الإصدارات الثلاثة منشورة ومعتمدة، ولكل منصة رقمها وقناتها المستقرة الموقّعة المستقلة. جميع إصدارات المستودع المنشورة، وعددها 30، مقفلة وغير قابلة للتغيير. لا تُحذف الإصدارات المنشورة المعتمدة ولا تُستبدل أصولها وفق [سياسة الاعتماد والاحتفاظ الدائم](audit/RELEASE_RETENTION.md).
+## الإصدارات الرسمية | Official releases
 
-## المميزات
+| المنصة | الإصدار | التوزيع | الرابط |
+|---|---:|---|---|
+| Android | `1.4.4` | APK كامل موقّع / signed full APK | [تنزيل وإثباتات / Download & evidence](https://github.com/mosalah30688-gif/quran/releases/tag/siraj-android-v1.4.4) |
+| Windows | `4.1.4` | ترقيع موقّع فوق Portable `4.1.1` | [Baseline 4.1.1](https://github.com/mosalah30688-gif/quran/releases/tag/siraj-windows-v4.1.1) · [Patch 4.1.4](https://github.com/mosalah30688-gif/quran/releases/tag/siraj-windows-patch-v4.1.4) |
+| Linux | `4.1.3` | ترقيع موقّع فوق AppImage `4.1.1` | [Baseline 4.1.1](https://github.com/mosalah30688-gif/quran/releases/tag/siraj-linux-test-v4.1.1) · [Patch 4.1.3](https://github.com/mosalah30688-gif/quran/releases/tag/siraj-linux-patch-v4.1.3) |
 
-### المصحف والقراءة
+> **Windows note:** executables are not Authenticode-signed and Windows may show SmartScreen. Update authenticity is enforced through Ed25519 signatures, SHA-256, size checks, and immutable GitHub Releases.
 
-- مصحف كامل من **6,236 آية** مع فهرس السور والأجزاء والآيات والانتقال المباشر إلى الموضع المطلوب.
-- عرض صفحة بصفحة وفق ترقيم مصحف المدينة في **604 صفحات**، مع حفظ آخر موضع والعودة إليه تلقائيًا.
-- حفص بالرسم العثماني، وحفص بالنص الإملائي المبسط، وعرض ملون لأحكام التجويد.
-- روايات وقراءات إضافية تشمل ورشًا وقالون والدوري إلى جانب حفص.
-- عرض حفص الواسع بأسلوب الشاملة: عنوان السورة والبسملة في المنتصف، ونص متصل وعلامات آيات زخرفية.
-- معالجة بصرية للبسملة في حفص كي تظهر مرة واحدة تحت عنوان السورة، مع بقاء نص المصدر وترقيمه وربط التلاوة والتفسير دون تغيير.
-- تحديد النص ونسخه، ونسخ الآية مع مرجعها، ومشاركة الآية حيث تدعم المنصة ذلك.
-- في Android، تقليب الصفحات يحتاج لمسًا مقصودًا ومتجاوبًا؛ لا تُستخدم عجلة الفأرة أو لوحة اللمس لقلب الصفحات عرضًا.
+## ما الذي يقدمه سراج؟ | What Siraj delivers
 
-### التلاوات والصوت
+- قراءة متجاوبة للمصحف بالرسم العثماني والنص المبسط والتجويد، مع تنقل بالصفحة والسورة والجزء والآية.
+- تلاوات متعددة، تشغيل وتحكم وتكرار للحفظ، وتنزيل للاستماع دون اتصال.
+- تفسير محلي ومدقق المنشأ، وترجمات، ومعاني كلمات، وبحث ينتقل مباشرة إلى الآية.
+- أدوات للحفظ والورد والختمة والأذكار والعلامات والتظليل والإحصاءات والتذكير الاختياري.
+- واجهة عربية RTL، وضعان فاتح وداكن، وأربعة خطوط عربية، وتجربة متجاوبة للهاتف والتابلت وسطح المكتب.
+- تحديثات محكومة ببوابة إصدار، وبصمات SHA-256، وتوقيع Ed25519 لسطح المكتب، وSBOM وprovenance وإصدارات immutable.
 
-- **17 قارئًا لحفص**، مع تلاوات خاصة بالروايات المتاحة.
-- تشغيل السورة كاملة أو البدء من آية محددة، مع التالي والسابق والإيقاف والمتابعة.
-- تكرار الآية ونطاقات الحفظ مع تحكم كامل بالصوت.
-- تنزيل التلاوات إلى مساحة التطبيق للاستماع دون إنترنت، وإيقاف التنزيل وحذف ملفات القارئ عند الحاجة.
-- لا يُستخدم رمز الموسيقى لميزة التجويد؛ أيقونة التجويد مستقلة وواضحة.
+Full feature, installation, architecture, verification, and build documentation:
 
-### التفسير والبحث والمعاني
+- **[الدليل العربي الكامل](README.ar.md)**
+- **[Complete English guide](README.en.md)**
 
-- **78 تفسيرًا تراثيًا مدقق الحقوق**: 73 طبعة مختارة من ملفات Quranpedia الرسمية و5 طبعات مدققة من AlQuran Cloud.
-- التفاسير الغامضة أو غير المحققة حقوقيًا محجوبة ولا تدخل الحزم المنشورة.
-- بحث محلي في القرآن، والانتقال من النتيجة إلى الآية مباشرة.
-- معاني الكلمات وترجمات متعددة لمعاني القرآن.
-- تفسير الآية المحددة مع اختيار الكتاب وحفظ الإعدادات.
-- Windows وLinux يضمان قاعدة التفاسير المحلية داخل الحزمة الكاملة.
-- Android يبقي حزمة التفاسير الكبيرة اختيارية خارج APK؛ يتحقق من حجمها و`SHA-256` وبنية SQLite قبل اعتمادها، ثم تعمل محليًا دون API.
+## الترخيص والحقوق | License and rights
 
-### الحفظ والختمة والورد
+**المواد الأصلية الجديدة في سراج مملوكة وليست مفتوحة المصدر.** تسمح [`LICENSE`](LICENSE) بتشغيل الحزم الرسمية اللاحقة التي تحملها، دون تعديل، للاستخدام الشخصي غير التجاري فقط. يمنع التعديل وإعادة التوزيع والاستغلال التجاري أو المؤسسي دون إذن كتابي. الترجمة العربية في [`LICENSE.ar.md`](LICENSE.ar.md).
 
-- وضع حفظ يخفي النص ويظهره للاختبار، مع تكرار صوتي ومراجعة آية بآية.
-- تسجيل المقاطع المحفوظة ومتابعة التقدم دون فرض مسار واحد على المستخدم.
-- ختمة مرنة تتتبع القراءة وتنبه إلى الورد **دون هدف إلزامي**.
-- تذكير اختياري داخل التطبيق وفي إشعارات النظام على Android.
-- إحصاءات للصفحات والجلسات والعادة اليومية وسلسلة الاستمرار.
+**New original Siraj material is proprietary, not open source.** For later Official Binaries that carry it, the license permits unmodified execution for personal, non-commercial use only. Modification, redistribution, commercial use, and organizational deployment require written permission.
 
-### أدوات يومية وتجربة الاستخدام
+Original material published at or before commit `4fda3631611b2eef8a630621719f9c9beef7390f` was historically offered under MIT; that grant remains valid for the copies it covered and is preserved in [`LICENSES/MIT-HISTORICAL.txt`](LICENSES/MIT-HISTORICAL.txt). Quran text, exegesis, translations, recitations, fonts, dependencies, and external data retain their own terms; see [`NOTICE.md`](NOTICE.md) and the [license-transition record](audit/LICENSE_TRANSITION_2026-10-31.md).
 
-- أذكار مصنفة مع عداد للمتابعة.
-- علامات محفوظة على الآيات وتظليل دائم والرجوع السريع إليها.
-- أربعة خطوط عربية مضمنة أو معتمدة: Amiri Quran وAmiri وNoto Naskh Arabic وScheherazade New.
-- اختيار الخط والحجم يسري على المصحف والتفاسير، لا على شاشة واحدة فقط.
-- وضعان فاتح وداكن وواجهة عربية RTL.
-- واجهة Android متجاوبة للهاتف والتابلت وفي الوضعين الرأسي والأفقي.
-- واجهة سطح المكتب متجاوبة، وشريط تنقل يضغط تلقائيًا، وفهرس منسدل لا يحجز مساحة دائمة من صفحة المصحف.
-- أيقونات تنقل Fluent 3D مخصصة مع الإبقاء على أيقونة التطبيق الأصلية.
-- أغلب بيانات القراءة الأساسية محلية، ولا يتطلب التطبيق إنشاء حساب.
+## المساهمة والأمان | Contributing and security
 
-### التحديثات الآمنة
+Code contributions require acceptance of the [Contributor License Agreement](CLA.md). Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Report unresolved vulnerabilities privately under [SECURITY.md](SECURITY.md).
 
-- يتحقق Android من الإصدار والحجم و`SHA-256` قبل عرض تثبيت APK كامل موقّع، ولا يثبت تحديثًا بصمت.
-- تتحقق حزم Windows وLinux الكاملة من قناة تحديث موقعة بـEd25519 ومن الحجم و`SHA-256`.
-- بعد حزمتي Windows وLinux الكاملتين `4.1.1` الداعمتين للترقيعات، تقبل نسختا سطح المكتب ملفات `.sirajpatch` صغيرة وموقعة للتغييرات العادية؛ يبقى التحديث الكامل للتغييرات الرئيسية أو runtime/dependencies الأصلية.
-- مفاتيح التوقيع موجودة في GitHub Secrets فقط ولا تُحفظ في المستودع.
+## المطور والتواصل | Developer and contact
 
-## أحدث التحديثات
+- **المطور / Developer:** [محمد صلاح عبد الخالق](https://elkatebmohamadsalah.blogspot.com/p/c.html)
+- **التواصل / Contact:** [الصفحة الرسمية](https://elkatebmohamadsalah.blogspot.com/p/blog-page_827.html)
+- **المستودع / Repository:** [mosalah30688-gif/quran](https://github.com/mosalah30688-gif/quran)
 
-### Android 1.4.4 — منشور
+---
 
-- هوية أوضح لسراج ووصول منظم إلى «عن التطبيق».
-- تظهر أيقونة التطبيق الحالية فوق كلمة «سراج» المكتوبة بخط Amiri، وأصبح «عن التطبيق» آخر خيار داخل الإعدادات دون إضافته إلى الشريط السفلي.
-- نُشر APK كامل موقّع حجمه 7,447,716 بايت وبصمة SHA-256 هي `e155cf8a8ca2968f4e4a07167b8f54387eb1d38e5731c1325545da28d669e2f4`.
-- الإصدار [منشور ومقفل وغير قابل للتغيير](https://github.com/mosalah30688-gif/quran/releases/tag/siraj-android-v1.4.4)، وتفاصيل تدقيقه في [`audit/ANDROID_RELEASE_1.4.4.json`](audit/ANDROID_RELEASE_1.4.4.json).
-
-### Windows 4.1.4 — منشور
-
-- هوية أوضح لسراج ووصول منظم إلى «عن التطبيق».
-- تظهر أيقونة التطبيق الحالية فوق كلمة «سراج» المكتوبة بخط Amiri، وأصبح «عن التطبيق» مباشرة تحت «الإعدادات».
-- نُشر التغيير كترقيع موقّع حجمه 2,816,294 بايت فوق الحزمة الكاملة `4.1.1`، وبصمة SHA-256 هي `7fd386ba6eaadc2e3e6d3a44230e3596c953bc91763fb497aa01d80d6c1e8170`.
-- الإصدار [منشور ومقفل وغير قابل للتغيير](https://github.com/mosalah30688-gif/quran/releases/tag/siraj-windows-patch-v4.1.4)، وتفاصيل تدقيقه في [`audit/WINDOWS_PATCH_RELEASE_4.1.4.json`](audit/WINDOWS_PATCH_RELEASE_4.1.4.json).
-
-### Linux 4.1.3 — منشور
-
-- هوية أوضح لسراج ووصول منظم إلى «عن التطبيق».
-- تظهر أيقونة التطبيق الحالية فوق كلمة «سراج» المكتوبة بخط Amiri، وأصبح «عن التطبيق» مباشرة تحت «الإعدادات».
-- نُشر التغيير كترقيع موقّع حجمه 2,403,198 بايت فوق AppImage `4.1.1`، وبصمة SHA-256 هي `795ccbdd120cdc2090de56387e111943d7101ce73f7d240e1fb07eeb52b9196a`.
-- الإصدار [منشور ومقفل وغير قابل للتغيير](https://github.com/mosalah30688-gif/quran/releases/tag/siraj-linux-patch-v4.1.3)، وتفاصيل تدقيقه في [`audit/LINUX_PATCH_RELEASE_4.1.3.json`](audit/LINUX_PATCH_RELEASE_4.1.3.json).
-
-### Android 1.4.3 — منشور
-
-- اعتماد الصياغة التعريفية الموجزة وحذف سجل التحديثات من صفحة «عن التطبيق».
-- نشر APK كامل موقّع حجمه 7,447,224 بايت وبصمة SHA-256 هي `23c18d09e0ae3160e85dc86ca84a36d82b24adde284f9383e7693dca85738db4`.
-- الإصدار [منشور ومقفل وغير قابل للتغيير](https://github.com/mosalah30688-gif/quran/releases/tag/siraj-android-v1.4.3)، وتفاصيل تدقيقه في [`audit/ANDROID_RELEASE_1.4.3.json`](audit/ANDROID_RELEASE_1.4.3.json).
-
-### Windows 4.1.3 — منشور
-
-- اعتماد الصياغة التعريفية الموجزة وإشعار تحديث لا يعرض سوى الميزات الجديدة.
-- نشر التغيير كترقيع موقّع حجمه 2,815,939 بايت فوق الحزمة الكاملة `4.1.1`.
-- الإصدار [منشور ومقفل وغير قابل للتغيير](https://github.com/mosalah30688-gif/quran/releases/tag/siraj-windows-patch-v4.1.3)، وتفاصيل تدقيقه في [`audit/WINDOWS_PATCH_RELEASE_4.1.3.json`](audit/WINDOWS_PATCH_RELEASE_4.1.3.json).
-
-### Linux 4.1.2 — منشور
-
-- اعتماد صفحة «عن التطبيق» نفسها وقاعدة إشعارات التحديث الموجزة.
-- نشر التغيير كترقيع موقّع حجمه 2,402,823 بايت فوق AppImage `4.1.1`.
-- الإصدار [منشور ومقفل وغير قابل للتغيير](https://github.com/mosalah30688-gif/quran/releases/tag/siraj-linux-patch-v4.1.2)، وتفاصيل تدقيقه في [`audit/LINUX_PATCH_RELEASE_4.1.2.json`](audit/LINUX_PATCH_RELEASE_4.1.2.json).
-
-### Windows 4.1.2 — منشور
-
-- إضافة زر وصفحة مستقلة **«عن التطبيق»** بأيقونة Fluent 3D.
-- عرض تعريف سراج والمطور والمميزات الحالية وروابط صفحة المطور والتواصل والمستودع.
-- تحسين ظهور صفحات التمرير في الوضع الداكن وتحديث اختبارات الواجهة.
-- نشر التغيير كترقيع صغير موقّع حجمه 2,816,354 بايت فوق حزمة `4.1.1`، دون إعادة تنزيل الحزمة الكاملة.
-- الإصدار [منشور ومقفل وغير قابل للتغيير](https://github.com/mosalah30688-gif/quran/releases/tag/siraj-windows-patch-v4.1.2)، وتفاصيل تدقيقه في [`audit/WINDOWS_PATCH_RELEASE_4.1.2.json`](audit/WINDOWS_PATCH_RELEASE_4.1.2.json).
-
-### Android 1.4.2 — منشور
-
-- إعطاء النافذة التي يضغطها المستخدم من «رصيدك» أو «تدبر» أو «أذكارك» الأولوية البصرية والتفاعلية فوق رصيف الصفحات والمشغل.
-- تحريك النافذة تلقائيًا فوق المشغل في الهاتف، وضبط ارتفاع قابل للتمرير في الشاشات الأفقية القصيرة، ومنع أزرار الخلفية من التقاط اللمس أثناء فتحها.
-- الإبقاء على الصفحة والمشغل ظاهرين في الخلفية مع تعتيم خفيف، وإعادة التركيز بوضوح عند الإغلاق أو اختيار التبويب.
-- اجتياز اختبارات المقدمة على خمسة مقاسات، واختبارات شاشة القراءة على سبعة مقاسات، واختبارات الصوت والبناء وlint والحقوق والتوقيع والترقية.
-- الإصدار [منشور ومقفل وغير قابل للتغيير](https://github.com/mosalah30688-gif/quran/releases/tag/siraj-android-v1.4.2)؛ حجم APK هو 7,448,072 بايت وبصمته `118d39cf405ca8a49ad9b3a62f9b127632f0fab1a53ef339b0b473ebcfbccf97`، وتفاصيل تدقيقه في [`audit/ANDROID_RELEASE_1.4.2.json`](audit/ANDROID_RELEASE_1.4.2.json).
-
-### Android 1.4.1 — منشور
-
-- إعادة تصميم شاشة المصحف بواجهة احترافية متجاوبة على الهاتف والتابلت وفي الوضعين الرأسي والأفقي.
-- تثبيت رصيف القراءة وزري الصفحة السابقة والتالية فوق شريط التنقل السفلي مع مراعاة `safe-area` ومنع تغطية آخر سطر من المصحف.
-- فصل إعدادات التلاوة عن المشغل، وإضافة خط زمني للصوت وأهداف لمس واضحة دون تداخل الأزرار والقوائم.
-- تحديث صفحة «عن التطبيق» بقائمة المميزات الحالية وتعريف المطور وروابط التواصل.
-- اجتياز اختبارات سبعة مقاسات للشاشة، وتغيير الاتجاه والوضع الداكن ومنطق التقديم والإيقاف، إلى جانب اختبارات Android وlint وتدقيق الحقوق والأصول.
-- الإصدار [منشور ومقفل وغير قابل للتغيير](https://github.com/mosalah30688-gif/quran/releases/tag/siraj-android-v1.4.1)؛ حجم APK هو 7,447,408 بايت وبصمته `f219ad68ab4e2701b2327e3241a2cf45ff0765775fd2d062c0f589589ee71faa`، وتفاصيل تدقيقه في [`audit/ANDROID_RELEASE_1.4.1.json`](audit/ANDROID_RELEASE_1.4.1.json).
-
-### Android 1.4.0
-
-- مصحف حفص العثماني والمبسط والتجويد، وعدد كل منها 6,236 آية، داخل APK.
-- فهرس 114 سورة و604 صفحات وأربعة خطوط عربية.
-- 17 قارئًا لحفص وقراءات إضافية، وتحميلات صوتية محلية.
-- حزمة اختيارية تضم 78 تفسيرًا مع تحقق الحجم والبصمة والبنية.
-- تحسينات الحفظ والورد والختمة والإشعارات والتجاوب مع الهاتف والتابلت.
-- قناة تحديث APK موقعة، وإصدار immutable مع توثيق تدقيقه في [`audit/ANDROID_RELEASE_1.4.0.json`](audit/ANDROID_RELEASE_1.4.0.json).
-
-### Windows وLinux 4.1.1
-
-- توحيد الهوية باسم **سراج — قرآن كريم**.
-- دمج قاعدة التفاسير المحلية ذات 78 خيارًا في الحزم الكاملة.
-- واجهة سطح مكتب حديثة وفهرس متجاوب وعرض حفص الواسع وإصلاح عرض البسملة.
-- قنوات تحديث كاملة وموقعة وتجهيز مسار الترقيعات الصغيرة الموقعة.
-- اجتياز تدقيق البيانات والحقوق وبوابات الإصدار على Windows وUbuntu 22.04.
-
-## المنصات والبناء
-
-### Android
-
-المشروع مبني بـCapacitor 6، ومصادر واجهته الأساسية في `index.html` و`app.js`، والنسخة المعبأة في `www/`، والمشروع الأصلي في `android/`.
-
-المتطلبات الأساسية: Node.js وnpm وJDK 17 وAndroid SDK مناسب.
-
-```bash
-npm ci
-npm run build:www
-npm run android:sync
-```
-
-لإنشاء APK محليًا وفق سكربت المشروع:
-
-```bash
-npm run android:apk
-```
-
-يشغّل workflow ‏[`.github/workflows/android.yml`](.github/workflows/android.yml) بناء Release موقّعًا فقط، ويفحص الشهادة وارتفاع `versionCode` والأصول المحلية قبل النشر. عند طلب النشر الصحيح ينشئ Release كمسودة أولًا، يرفع APK و`SHA256SUMS.txt`، يقفل الإصدار، ثم يحدّث قناة `update/manifest.json`.
-
-> تجهيز Google Play مؤجل حاليًا. لا يُفترض رفع APK المنشور مباشرة إلى Production، كما أن معرّف `com.quran.mushaf` معرّف تقني قديم وليس اسم التطبيق.
-
-### Windows 10/11 x64
-
-المسار المستقل في `windows_app/` وينتج نسخة **Portable**:
-
-- تُفك الحزمة كاملة ثم يُشغّل `Siraj.exe` بلا تثبيت أو صلاحية مدير.
-- تحفظ النسخة المحمولة بيانات المستخدم في `UserData` بجوار البرنامج ولا تستخدم Registry للإعدادات.
-- لا يُستخدم Authenticode حاليًا؛ لذلك قد يعرض Windows تحذير SmartScreen المعتاد للملف غير الموقّع.
-- تُنشر الحزمة مع `SHA256SUMS.txt` وSBOM وattestation.
-
-للتشغيل من المصدر، ثبّت متطلبات Python المذكورة في [`windows_app/README.md`](windows_app/README.md)، ثم:
-
-```bash
-python windows_app/main.py
-```
-
-راجع [`windows_app/README.md`](windows_app/README.md) لتفاصيل البناء المحمول والاختبارات والتحديث.
-
-### Linux x86_64
-
-المسار في `mushaf_app/` وينتج AppImage ومصدرًا مقابلًا وملفات بصمة وSBOM. يبني GitHub Actions الحزمة على Ubuntu 22.04، ويشغّل اختبارات الواجهة والبيانات والتلاوة من داخل AppImage وتحت X11 افتراضي قبل رفع artifact.
-
-للتشغيل من المصدر بعد تثبيت المتطلبات:
-
-```bash
-python mushaf_app/main.py
-```
-
-بعد تنزيل حزمة AppImage الكاملة `4.1.1`، امنحها صلاحية التنفيذ مرة واحدة؛ يتولى التطبيق بعد ذلك تنزيل الترقيعات المستقرة الموقّعة:
-
-```bash
-chmod +x Siraj-Quran-4.1.1-linux-x86_64.AppImage
-./Siraj-Quran-4.1.1-linux-x86_64.AppImage
-```
-
-لا ينتج هذا المسار DEB أو RPM أو مثبّتًا.
-
-## هيكل المشروع
-
-- `index.html`, `app.js`, `www/`: واجهة Android/Capacitor والأصول المعبأة.
-- `android/`: مشروع Android الأصلي والإضافات المحلية للتحديث والتفسير والتنبيهات.
-- `windows_app/`: تطبيق Windows المحمول واختباراته ووثائق بنائه.
-- `mushaf_app/`: تطبيق Linux وملفات AppImage والاختبارات.
-- `data/`: البيانات المحلية الصغيرة المسموح بتضمينها في المصدر والحزمة.
-- `scripts/`: سكربتات البناء والتحقق والتوقيع وإنشاء الترقيعات والقنوات.
-- `update/`: قنوات التحديث والنسخة الويب المتزامنة.
-- `audit/`: منشأ البيانات ومراجعة الأطراف الخارجية وأدلة الإصدارات وسياسة الاحتفاظ.
-- `.github/workflows/`: بناء واختبار ونشر الحزم والقنوات.
-
-## الاختبارات والتدقيق
-
-من أهم الفحوص غير الرسومية:
-
-```bash
-python scripts/verify_android_bundle.py
-python -m py_compile windows_app/main.py mushaf_app/main.py
-```
-
-توجد اختبارات واجهة PySide6 في:
-
-- `windows_app/tests/ui_test.py`
-- `mushaf_app/tests/ui_test.py`
-
-كما تتحقق workflows من بنية البيانات والأصول والتوقيع والبصمات والترخيص، وتمنع النشر عند عدم اجتياز بوابة `RELEASE_GATE`.
-
-## مصادر المحتوى والحقوق
-
-يعتمد المشروع على ملفات محلية ومواد من مصادر موثقة، منها:
-
-- `api.alquran.cloud` و`cdn.islamic.network`
-- `cdn.mp3quran.net`
-- `quranpedia.net`
-
-سلسلة منشأ البيانات والبصمات والمولدات موثقة في [`audit/DATA_PROVENANCE.md`](audit/DATA_PROVENANCE.md)، وسجل الحقوق والموانع في [`audit/THIRD_PARTY_REVIEW.md`](audit/THIRD_PARTY_REVIEW.md). راجع أيضًا [`windows_app/THIRD_PARTY_NOTICES.md`](windows_app/THIRD_PARTY_NOTICES.md).
-
-## الترخيص
-
-الكود الأصلي المكتوب لهذا المستودع مرخّص وفق [MIT](LICENSE). **لا** يشمل هذا الترخيص نصوص القرآن أو التفاسير أو الترجمات أو الصوتيات أو الخطوط أو البيانات والأصول الخارجية؛ تظل تلك المواد خاضعة لشروط مصادرها وتراخيصها المنفصلة، ولا يتجاوز هذا المشروع الحقوق التي منحها أصحابها.
+<div align="center">
+  <strong>سراج — قراءةٌ واعية، واستماعٌ منظم، وأدواتٌ تعين على المداومة.</strong><br>
+  <sub>Automated provenance and integrity checks do not replace qualified human scholarly review.</sub>
+</div>

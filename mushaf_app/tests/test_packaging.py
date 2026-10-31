@@ -34,6 +34,17 @@ class LinuxPackagingTests(unittest.TestCase):
         self.assertEqual(entry["Terminal"], "false")
         self.assertEqual(entry["Icon"], "com.mosalah30688.siraj.quran")
 
+    def test_appstream_declares_the_current_project_license(self):
+        metainfo = (HERE / "packaging" / "com.mosalah30688.siraj.quran.appdata.xml.in").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("<metadata_license>MIT</metadata_license>", metainfo)
+        self.assertIn(
+            "<project_license>LicenseRef-proprietary=https://github.com/"
+            "mosalah30688-gif/quran/blob/main/LICENSE</project_license>",
+            metainfo,
+        )
+
     def test_stable_channel_publishes_the_signed_latest_approved_appimage(self):
         manifest = json.loads((ROOT / "update" / "linux" / "stable.json").read_text(encoding="utf-8"))
         linux = load_version(HERE / "version.py", "linux_channel_version")

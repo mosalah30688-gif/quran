@@ -71,6 +71,15 @@ def main() -> None:
         text = (ROOT / "fonts" / name).read_text(encoding="utf-8")
         assert "SIL OPEN FONT LICENSE" in text.upper(), name
 
+    project_license = (ROOT / "LICENSE").read_text(encoding="utf-8")
+    historical_license = (ROOT / "LICENSES/MIT-HISTORICAL.txt").read_text(encoding="utf-8")
+    build_script = (ROOT / "scripts/build-www.sh").read_text(encoding="utf-8")
+    assert "SIRAJ PROPRIETARY SOURCE AND END-USER LICENSE" in project_license
+    assert "4fda3631611b2eef8a630621719f9c9beef7390f" in project_license
+    assert historical_license.startswith("MIT License\n")
+    assert "cp LICENSE LICENSE.ar.md NOTICE.md www/legal/" in build_script
+    assert "cp LICENSES/MIT-HISTORICAL.txt www/legal/" in build_script
+
     app = (ROOT / "app.js").read_text(encoding="utf-8")
     html = (ROOT / "index.html").read_text(encoding="utf-8")
     service_worker = (ROOT / "sw.js").read_text(encoding="utf-8")

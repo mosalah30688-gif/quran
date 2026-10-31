@@ -1,0 +1,49 @@
+name: "اقتراح تحسين | Feature request"
+description: "اقترح تحسينًا مركزًا لسراج | Propose a focused Siraj improvement"
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        صِف حاجة المستخدم قبل وصف الحل. الاقتراح لا يعني التزامًا بالتنفيذ أو بموعد إصدار.
+        Describe the user need before the solution. A proposal does not guarantee implementation or a release date.
+  - type: dropdown
+    id: platform
+    attributes:
+      label: "المنصة | Platform"
+      options:
+        - Android
+        - Windows
+        - Linux
+        - All platforms / جميع المنصات
+        - Documentation / التوثيق
+    validations:
+      required: true
+  - type: textarea
+    id: need
+    attributes:
+      label: "الحاجة أو المشكلة | User need or problem"
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "الحل المقترح | Proposed solution"
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: "أثر المحتوى والخصوصية والحقوق | Content, privacy, and rights impact"
+      description: "اذكر أي مصدر خارجي أو اتصال شبكة أو بيانات جديدة. | Identify any external source, network call, or new data."
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: "التأكيد | Confirmation"
+      options:
+        - label: "بحثت عن اقتراح مطابق قبل فتح هذا الطلب. | I searched for an existing proposal."
+          required: true
