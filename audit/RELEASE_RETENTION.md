@@ -11,26 +11,29 @@
 | المنصة/البيانات | الوسم | الحالة | الأصل الأساسي المقفول |
 |---|---|---|---|
 | Windows Portable | `siraj-windows-v4.1.1` | معتمد ودائم الاحتفاظ؛ خط الأساس الكامل الداعم للترقيعات | `Siraj-Quran-4.1.1-windows-portable-x64.zip` — SHA-256 `849e5bb6fa698df827beab0221eb934709d52cd741714137eccc221af4e4219b` |
-| ترقيع Windows الحالي | `siraj-windows-patch-v4.1.3` | معتمد ومستقر ودائم الاحتفاظ؛ النص التعريفي الموجز | `Siraj-Quran-4.1.3-windows.sirajpatch` — 2,815,939 بايت — SHA-256 `e73060027b49c2bd5ef577d252c10c1944fa0f13dfb5b21b6f8772108f6a0588` |
-| ترقيع Windows السابق | `siraj-windows-patch-v4.1.2` | معتمد ودائم الاحتفاظ بعد انتقال القناة إلى 4.1.3 | `Siraj-Quran-4.1.2-windows.sirajpatch` — 2,816,354 بايت — SHA-256 `fd1cec0f7a18a2f7c1db84693a286fa2edad715e3acea4d95f97fae58b7c4561` |
+| ترقيع Windows الحالي | `siraj-windows-patch-v4.1.4` | معتمد ومستقر ودائم الاحتفاظ؛ هوية أوضح ووصول منظم إلى «عن التطبيق» | `Siraj-Quran-4.1.4-windows.sirajpatch` — 2,816,294 بايت — SHA-256 `7fd386ba6eaadc2e3e6d3a44230e3596c953bc91763fb497aa01d80d6c1e8170` |
+| ترقيع Windows السابق | `siraj-windows-patch-v4.1.3` | معتمد ودائم الاحتفاظ بعد انتقال القناة إلى 4.1.4 | `Siraj-Quran-4.1.3-windows.sirajpatch` — 2,815,939 بايت — SHA-256 `e73060027b49c2bd5ef577d252c10c1944fa0f13dfb5b21b6f8772108f6a0588` |
+| ترقيع Windows الأسبق | `siraj-windows-patch-v4.1.2` | معتمد ودائم الاحتفاظ بعد انتقال القناة إلى الإصدارات الأحدث | `Siraj-Quran-4.1.2-windows.sirajpatch` — 2,816,354 بايت — SHA-256 `fd1cec0f7a18a2f7c1db84693a286fa2edad715e3acea4d95f97fae58b7c4561` |
 | Linux AppImage | `siraj-linux-test-v4.1.1` | معتمد ودائم الاحتفاظ؛ خط الأساس الكامل الداعم للترقيعات، وبقي اسم الوسم التاريخي كما هو | `Siraj-Quran-4.1.1-linux-x86_64.AppImage` — SHA-256 `1ff94ccb0f7509914ba586f5002a23e7c3b82ee4d6bc8be46118aa1c8e13aaff` |
-| ترقيع Linux الحالي | `siraj-linux-patch-v4.1.2` | معتمد ومستقر ودائم الاحتفاظ؛ النص التعريفي الموجز | `Siraj-Quran-4.1.2-linux.sirajpatch` — 2,402,823 بايت — SHA-256 `bde6b9d4e3efb37996192f8fe45adc4d570a4143cdea4fbd5740676aa1cbe2e0` |
+| ترقيع Linux الحالي | `siraj-linux-patch-v4.1.3` | معتمد ومستقر ودائم الاحتفاظ؛ هوية أوضح ووصول منظم إلى «عن التطبيق» | `Siraj-Quran-4.1.3-linux.sirajpatch` — 2,403,198 بايت — SHA-256 `795ccbdd120cdc2090de56387e111943d7101ce73f7d240e1fb07eeb52b9196a` |
+| ترقيع Linux السابق | `siraj-linux-patch-v4.1.2` | معتمد ودائم الاحتفاظ بعد انتقال القناة إلى 4.1.3 | `Siraj-Quran-4.1.2-linux.sirajpatch` — 2,402,823 بايت — SHA-256 `bde6b9d4e3efb37996192f8fe45adc4d570a4143cdea4fbd5740676aa1cbe2e0` |
 | بيانات التفاسير | `siraj-tafsir-data-v2026.10.28` | معتمدة ودائمة الاحتفاظ | `Siraj-Tafsir-Offline-2026.10.28.sqlite3` — SHA-256 `66ce7736d44679a2b6fc536635a556881d8c7f98bad47fa5622a155700c1900c` |
-| Android الحالي | `siraj-android-v1.4.3` | معتمد ومستقر ودائم الاحتفاظ؛ Release غير قابل للتغيير | `Siraj-Android-1.4.3.apk` — 7,447,224 بايت — SHA-256 `23c18d09e0ae3160e85dc86ca84a36d82b24adde284f9383e7693dca85738db4` |
-| Android السابق | `siraj-android-v1.4.2` | معتمد ودائم الاحتفاظ بعد انتقال القناة إلى 1.4.3؛ Release غير قابل للتغيير | `Siraj-Android-1.4.2.apk` — 7,448,072 بايت — SHA-256 `118d39cf405ca8a49ad9b3a62f9b127632f0fab1a53ef339b0b473ebcfbccf97` |
-| Android الأسبق | `siraj-android-v1.4.1` | معتمد ودائم الاحتفاظ بعد انتقال القناة إلى الإصدارات الأحدث؛ Release غير قابل للتغيير | `Siraj-Android-1.4.1.apk` — 7,447,408 بايت — SHA-256 `f219ad68ab4e2701b2327e3241a2cf45ff0765775fd2d062c0f589589ee71faa` |
-| Android الأقدم | `siraj-android-v1.4.0` | معتمد ودائم الاحتفاظ بعد انتقال القناة إلى الإصدارات الأحدث؛ Release غير قابل للتغيير | `Siraj-Android-1.4.0.apk` — 7,443,419 بايت — SHA-256 `c5501b6454366c1a9ab080091587ef9a8b7109ebc16cd0824a7f1b3714c9df3e` |
+| Android الحالي | `siraj-android-v1.4.4` | معتمد ومستقر ودائم الاحتفاظ؛ Release غير قابل للتغيير | `Siraj-Android-1.4.4.apk` — 7,447,716 بايت — SHA-256 `e155cf8a8ca2968f4e4a07167b8f54387eb1d38e5731c1325545da28d669e2f4` |
+| Android السابق | `siraj-android-v1.4.3` | معتمد ودائم الاحتفاظ بعد انتقال القناة إلى 1.4.4؛ Release غير قابل للتغيير | `Siraj-Android-1.4.3.apk` — 7,447,224 بايت — SHA-256 `23c18d09e0ae3160e85dc86ca84a36d82b24adde284f9383e7693dca85738db4` |
+| Android الأسبق | `siraj-android-v1.4.2` | معتمد ودائم الاحتفاظ بعد انتقال القناة إلى الإصدارات الأحدث؛ Release غير قابل للتغيير | `Siraj-Android-1.4.2.apk` — 7,448,072 بايت — SHA-256 `118d39cf405ca8a49ad9b3a62f9b127632f0fab1a53ef339b0b473ebcfbccf97` |
+| Android الأقدم | `siraj-android-v1.4.1` | معتمد ودائم الاحتفاظ بعد انتقال القناة إلى الإصدارات الأحدث؛ Release غير قابل للتغيير | `Siraj-Android-1.4.1.apk` — 7,447,408 بايت — SHA-256 `f219ad68ab4e2701b2327e3241a2cf45ff0765775fd2d062c0f589589ee71faa` |
+| Android 1.4.0 | `siraj-android-v1.4.0` | معتمد ودائم الاحتفاظ بعد انتقال القناة إلى الإصدارات الأحدث؛ Release غير قابل للتغيير | `Siraj-Android-1.4.0.apk` — 7,443,419 بايت — SHA-256 `c5501b6454366c1a9ab080091587ef9a8b7109ebc16cd0824a7f1b3714c9df3e` |
 
 إصدارات الاختبار أو الإصدارات الأقدم الموجودة حاليًا على GitHub تبقى سجلًا أرشيفيًا ولا تُحذف، حتى إن لم تكن هي القناة المستقرة الحالية.
 
 ## حالة القفل الشامل
 
-في 2026-10-30 ثُبتت الحماية التالية، وأُعيد التحقق منها بعد نشر Android `1.4.3` وWindows `4.1.3` وLinux `4.1.2` في 2026-10-31:
+في 2026-10-30 ثُبتت الحماية التالية، وأُعيد التحقق منها بعد نشر Android `1.4.4` وWindows `4.1.4` وLinux `4.1.3` في 2026-10-31:
 
 - فُعّلت خاصية **Immutable Releases** لكل الإصدارات المستقبلية.
-- أكد فحص GitHub API بعد النشر أن `immutable=true` لكل Releases المنشورة وعددها الآن 27.
+- أكد فحص GitHub API بعد النشر أن `immutable=true` لكل Releases المنشورة وعددها الآن 30، ولا توجد مسودات متبقية.
 - فُعّل ruleset رقم `26170318` على جميع tags بلا أي bypass، ويمنع الحذف والتحديث وnon-fast-forward، مع إبقاء إنشاء وسم إصدار جديد ممكنًا.
-- سجل الحالة الأحدث موجود في `RELEASE_ARCHIVE_LOCK_2026-10-31.json`، والسجل السابق محفوظ في `RELEASE_ARCHIVE_LOCK_2026-10-30.json`، ومصدر ruleset في `.github/rulesets/permanent-release-tags.json`.
+- سجل الحالة الأحدث موجود في `RELEASE_ARCHIVE_LOCK_2026-10-31_30_RELEASES.json`، والسجلان التاريخيان محفوظان في `RELEASE_ARCHIVE_LOCK_2026-10-31.json` و`RELEASE_ARCHIVE_LOCK_2026-10-30.json`، ومصدر ruleset في `.github/rulesets/permanent-release-tags.json`.
 
 هذا القفل الأرشيفي **لا يمنح ترخيصًا جديدًا للإصدارات الأقدم** ولا يوسع حقوق محتواها؛ الاعتماد الحقوقي للتوزيع يظل محصورًا في الجدول أعلاه وسجلات المصادر.
 

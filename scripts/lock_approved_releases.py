@@ -22,13 +22,16 @@ APPROVED_TAGS = (
     "siraj-windows-v4.1.1",
     "siraj-windows-patch-v4.1.2",
     "siraj-windows-patch-v4.1.3",
+    "siraj-windows-patch-v4.1.4",
     "siraj-linux-test-v4.1.1",
     "siraj-linux-patch-v4.1.2",
+    "siraj-linux-patch-v4.1.3",
     "siraj-tafsir-data-v2026.10.28",
     "siraj-android-v1.4.0",
     "siraj-android-v1.4.1",
     "siraj-android-v1.4.2",
     "siraj-android-v1.4.3",
+    "siraj-android-v1.4.4",
 )
 
 

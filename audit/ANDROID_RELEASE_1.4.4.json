@@ -1,0 +1,118 @@
+{
+  "schema": 1,
+  "verified_at": "2026-10-31T21:26:27+02:00",
+  "repository": "mosalah30688-gif/quran",
+  "product_source_commit": "8c2419f4a5dcbb3abb7ad927ccf5758d164f471c",
+  "release_commit": "a139bbf9ca7ea2e3a231a3e4e8a3302abc0e34c9",
+  "release_gate_commit": "a139bbf9ca7ea2e3a231a3e4e8a3302abc0e34c9",
+  "channel_commit": "31b88180d119be94a37d58892a2a29486ff43f2b",
+  "publication_run": {
+    "id": 41233127363,
+    "url": "https://github.com/mosalah30688-gif/quran/actions/runs/41233127363",
+    "event": "workflow_dispatch",
+    "head_commit": "a139bbf9ca7ea2e3a231a3e4e8a3302abc0e34c9",
+    "conclusion": "success",
+    "release_gate": "PUBLISH IMMUTABLE siraj-android-v1.4.4"
+  },
+  "earlier_nonpublishing_run": {
+    "id": 41232750039,
+    "url": "https://github.com/mosalah30688-gif/quran/actions/runs/41232750039",
+    "conclusion": "failure-before-artifact-staging-or-publication",
+    "reason": "Temporary Maven dependency retrieval failure; every publication step was skipped and the later approved run completed successfully."
+  },
+  "release": {
+    "id": 430133990,
+    "tag": "siraj-android-v1.4.4",
+    "tag_target_commit": "a139bbf9ca7ea2e3a231a3e4e8a3302abc0e34c9",
+    "url": "https://github.com/mosalah30688-gif/quran/releases/tag/siraj-android-v1.4.4",
+    "published_at": "2026-10-31T19:16:26Z",
+    "draft": false,
+    "prerelease": false,
+    "immutable": true,
+    "assets": [
+      {
+        "id": 696255674,
+        "name": "Siraj-Android-1.4.4.apk",
+        "bytes": 7447716,
+        "sha256": "e155cf8a8ca2968f4e4a07167b8f54387eb1d38e5731c1325545da28d669e2f4"
+      },
+      {
+        "id": 696255694,
+        "name": "SHA256SUMS.txt",
+        "bytes": 90,
+        "sha256": "b37ee24ab584ee3caa55a075122ad9bd49edd66626e55378a2cd6decaf71facc"
+      }
+    ]
+  },
+  "apk": {
+    "name": "Siraj-Android-1.4.4.apk",
+    "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-android-v1.4.4/Siraj-Android-1.4.4.apk",
+    "bytes": 7447716,
+    "sha256": "e155cf8a8ca2968f4e4a07167b8f54387eb1d38e5731c1325545da28d669e2f4",
+    "package": "com.quran.mushaf",
+    "application_label": "سراج — قرآن كريم",
+    "version_name": "1.4.4",
+    "version_code": 144,
+    "min_sdk": 22,
+    "target_sdk": 34,
+    "signature_schemes": {
+      "v1": true,
+      "v2": true,
+      "v3": false,
+      "v3_1": false,
+      "v4": false
+    },
+    "signer_certificate_sha256": "3f60f24c3960d662a1454fc8bdfcc2039872e6624c6e3efbbb6abc83b842027c",
+    "same_package_and_signer_as_1.4.3": true,
+    "higher_version_code_than_1.4.3": true,
+    "release_checksum_matches": true,
+    "release_asset_digest_matches": true,
+    "stable_channel_checksum_matches": true,
+    "public_download_reverified": true
+  },
+  "approved_identity_and_navigation": {
+    "owned_current_icon_above_siraj_wordmark": true,
+    "siraj_wordmark_uses_amiri": true,
+    "about_absent_from_bottom_navigation": true,
+    "about_is_final_settings_item": true
+  },
+  "product_copy": {
+    "name": "سراج",
+    "description": "مصحف قرآن كريم",
+    "feature_count": 5,
+    "about_release_notes_absent": true,
+    "update_features": [
+      "هوية أوضح لسراج ووصول منظم إلى «عن التطبيق»."
+    ],
+    "technical_update_details_absent": true
+  },
+  "packaged_source_sha256": {
+    "index.html": "77a0cf59da9df75c8bf2fc4916dddb0b576489ea432a3b7bdba6aa286cec45fa",
+    "app.js": "d0d83384e224c1f8def50772865d988327098dd376ca30bbc29ddad0109c1c17",
+    "sw.js": "840a14d1b79d996c2c85ecc6e19dec1faa63b04bbfdcf9d879ed0f5dcb0f73d8"
+  },
+  "stable_channel": {
+    "path": "update/manifest.json",
+    "commit": "31b88180d119be94a37d58892a2a29486ff43f2b",
+    "version": "1.4.4",
+    "apk_url_matches_release": true,
+    "sha256_matches_release": true,
+    "features_match_release": true
+  },
+  "verification": {
+    "signed_ci_release_assembly": "passed",
+    "release_unit_tests": "passed",
+    "lint_release": "passed",
+    "npm_high_severity_vulnerabilities": 0,
+    "signer_upgrade_and_packaged_assets": "passed",
+    "android_bundle_verification": "passed",
+    "responsive_browser_regression": "passed",
+    "audio_sources": "passed",
+    "asset_provenance": "passed",
+    "data_provenance": "passed",
+    "content_or_rights_payload_changed": false,
+    "published_release_immutable": true,
+    "all_30_published_releases_immutable": true
+  },
+  "google_play": "deferred by owner; this audit covers the direct immutable GitHub APK release"
+}

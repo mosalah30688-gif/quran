@@ -1,0 +1,99 @@
+{
+  "schema": 1,
+  "product": "siraj-quran-windows",
+  "version": "4.1.4",
+  "kind": "signed-small-patch",
+  "verified_at": "2026-10-31T21:26:27+02:00",
+  "source": {
+    "commit": "8c2419f4a5dcbb3abb7ad927ccf5758d164f471c",
+    "tag": "siraj-windows-patch-v4.1.4",
+    "tag_object": "820d2e2d429b7281924bff9cec76c171d7e03353",
+    "release_gate_commit": "a139bbf9ca7ea2e3a231a3e4e8a3302abc0e34c9",
+    "promotion_control_commit": "31b88180d119be94a37d58892a2a29486ff43f2b"
+  },
+  "ci": {
+    "build_run": {
+      "id": 41233116715,
+      "url": "https://github.com/mosalah30688-gif/quran/actions/runs/41233116715",
+      "conclusion": "success"
+    },
+    "promotion_run": {
+      "id": 41233895594,
+      "url": "https://github.com/mosalah30688-gif/quran/actions/runs/41233895594",
+      "conclusion": "success"
+    }
+  },
+  "release": {
+    "id": 430136390,
+    "url": "https://github.com/mosalah30688-gif/quran/releases/tag/siraj-windows-patch-v4.1.4",
+    "published_at": "2026-10-31T19:22:44Z",
+    "draft": false,
+    "prerelease": false,
+    "immutable": true,
+    "assets": {
+      "patch": {
+        "id": 696267356,
+        "name": "Siraj-Quran-4.1.4-windows.sirajpatch",
+        "size": 2816294,
+        "sha256": "7fd386ba6eaadc2e3e6d3a44230e3596c953bc91763fb497aa01d80d6c1e8170"
+      },
+      "checksums": {
+        "id": 696267353,
+        "name": "SHA256SUMS.txt",
+        "size": 187,
+        "sha256": "a1d113122fd2aea73f4f80e551b46b54a4cd6a8e32640e0eacc5b52cc1c9b61c"
+      },
+      "sbom": {
+        "id": 696267355,
+        "name": "SBOM.cdx.json",
+        "size": 6615,
+        "sha256": "8ae5cafacd71f9d7bb1a1f98f9dbed73c1c37b2b6454904aa0dd0e5290116aa7"
+      },
+      "channel": {
+        "id": 696267354,
+        "name": "patch-stable.json",
+        "size": 860,
+        "sha256": "7b9cc35783a39097ffa31dc84ee9aec68bdfeb44ffc49b58870580926fcab601"
+      }
+    }
+  },
+  "channel": {
+    "path": "update/windows/patch-stable.json",
+    "commit": "257fa066222025da4048c44eb17434148ac13609",
+    "version": "4.1.4",
+    "available": true,
+    "signature_algorithm": "ed25519",
+    "signature_key_id": "siraj-update-2026-01",
+    "manifest_sha256": "7b9cc35783a39097ffa31dc84ee9aec68bdfeb44ffc49b58870580926fcab601",
+    "public_key_file_sha256": "ee809a96c5e58e8f41ed7af21fe30b9bd96bad8080b548c44fb0138dd1821169",
+    "features": [
+      "هوية أوضح لسراج ووصول منظم إلى «عن التطبيق»."
+    ],
+    "free_form_release_notes_absent": true
+  },
+  "approved_identity_and_navigation": {
+    "owned_current_icon_above_siraj_wordmark": true,
+    "siraj_wordmark_uses_amiri": true,
+    "about_directly_below_settings": true
+  },
+  "verification": {
+    "published_release_immutable": true,
+    "exact_four_asset_set_verified": true,
+    "release_asset_digests_match_downloads": true,
+    "release_asset_digest_matches_channel": true,
+    "channel_ed25519_signature_valid": true,
+    "downloaded_patch_sha256_valid": true,
+    "patch_archive_signature_and_all_file_hashes_valid": true,
+    "github_build_provenance_verified_for_every_asset": true,
+    "sbom_verified": true,
+    "install_simulation_against_4.1.1_passed": true,
+    "patch_file_count": 18,
+    "patch_main_and_version_match_source_commit": true,
+    "full_ui_regression_passed": true,
+    "portable_build_regression_passed": true,
+    "about_copy_matches_owner_policy": true,
+    "about_release_notes_absent": true,
+    "content_or_rights_payload_changed": false,
+    "all_30_published_releases_immutable": true
+  }
+}
