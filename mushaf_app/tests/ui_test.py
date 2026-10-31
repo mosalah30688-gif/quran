@@ -70,6 +70,14 @@ try:
     # الهوية والتشغيل الرسومي
     check('Siraj window title', win.windowTitle() == 'سراج — قرآن كريم')
     check('Siraj window icon', not win.windowIcon().isNull())
+    check('sidebar brand uses the owned icon above an Amiri Siraj wordmark',
+          not win.brand_icon_label.pixmap().isNull()
+          and win.sidebar.layout().indexOf(win.brand_icon_label) < win.sidebar.layout().indexOf(win.brand_label)
+          and win.brand_label.text() == 'سراج'
+          and "font-family: 'Amiri'" in win.styleSheet())
+    check('about button is immediately below settings',
+          win.sidebar.layout().indexOf(win.nav_buttons['about'])
+          == win.sidebar.layout().indexOf(win.nav_buttons['settings']) + 1)
     check('Linux desktop identity', app.desktopFileName() == M.APP_ID)
     check('Linux compatibility release is newer than 4.0.7', M.version_tuple(M.APP_VERSION) > M.version_tuple('4.0.7'))
     check('dedicated update button is always visible',
@@ -439,6 +447,18 @@ try:
     assert_wheel_locked('settings wheel cannot change riwaya', win.riwaya_combo, win.riwaya_combo.currentIndex)
     assert_wheel_locked('touchpad cannot change reminder time',
                         win.reminder_time, lambda: win.reminder_time.time().toString('HH:mm'))
+    win.resize(1000, 620)
+    app.processEvents()
+    check('compact sidebar on small window', win.sidebar.width() == 76)
+    check('compact brand keeps the icon clearly above the Amiri wordmark',
+          win.brand_icon_label.geometry().bottom() < win.brand_label.geometry().top())
+    check('compact settings and About controls stay visible without overlap',
+          win.nav_buttons['settings'].isVisible()
+          and win.nav_buttons['about'].isVisible()
+          and win.nav_buttons['settings'].geometry().bottom()
+          < win.nav_buttons['about'].geometry().top())
+    win.resize(1440, 900)
+    app.processEvents()
     shot('settings')
     log('DONE')
 except Exception:

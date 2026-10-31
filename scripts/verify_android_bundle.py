@@ -85,8 +85,8 @@ def main() -> None:
     assert "recordWirdPage" in app and "Reminder" in app
     assert "wdTargetSel" not in app and "wdAdd" not in app
     assert "APP_BUNDLE_VERSION = '1.4.3'" in html and "الإصدار 1.4.3" in html
-    about_match = re.search(r"<summary>عن التطبيق</summary>(.*?)</details>", html, re.DOTALL)
-    assert about_match, "missing About section"
+    about_match = re.search(r'<section class="view" id="view-about">(.*?)</section>', html, re.DOTALL)
+    assert about_match, "missing dedicated About view"
     about = about_match.group(1)
     assert '<h2 class="about-title">سراج</h2>' in about and "مصحف قرآن كريم" in about
     feature_match = re.search(r'<ul class="feat" id="aboutFeatures">(.*?)</ul>', about, re.DOTALL)
@@ -102,6 +102,20 @@ def main() -> None:
     assert "أحدث التحديثات" not in about and "ABOUT_RELEASE_NOTES" not in about
     assert not any(term in about for term in ("API", "SHA-256", "APK", "Fluent 3D", "أدوات عربية نافعة"))
     assert "محمد صلاح عبد الخالق" in about and "صفحة المطور" in about and "اتصل بنا" in about
+    assert '<div class="header-brand" aria-label="سراج">' in html
+    assert '<img src="icon.png" alt="" aria-hidden="true" />' in html
+    assert '.header-brand span { font-family: Amiri, serif;' in html
+    settings_match = re.search(r'<section class="view" id="view-settings">(.*?)</section>', html, re.DOTALL)
+    assert settings_match, "missing Settings view"
+    settings = settings_match.group(1)
+    assert 'id="aboutBtn"' not in html and "$('#aboutBtn')" not in app
+    assert re.search(r'id="settingsAboutBtn".*?</button>\s*$', settings, re.DOTALL), (
+        "About must be the final Settings item"
+    )
+    assert "$('#settingsAboutBtn').addEventListener('click', () => showView('about'))" in app
+    assert "name === 'about' && b.dataset.view === 'settings'" in app
+    assert 'data-icon="about"' in settings and "about:" in app
+    assert "--mobile-nav-h: 64px" in html and "--mobile-nav-h: 58px" in html
     assert 'class="reader-dock"' in html and 'id="pPrevS"' in html and 'id="pNextS"' in html
     assert 'id="audioSeek"' in html and 'class="play-pickers"' in html and 'class="player-controls"' in html
     assert "--reader-dock-h" in html and "safe-area-inset-bottom" in html and "safe-area-inset-left" in html

@@ -78,6 +78,12 @@
     main.content { overflow-y: auto; height: 100vh; height: 100dvh; min-width: 0; position: relative; }
     .topbar { position: sticky; top: 0; z-index: 15; background: var(--bg); border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
     .topbar .title { flex: 1; font-weight: 700; font-size: 16px; }
+    .header-brand {
+      flex: 0 0 auto; min-width: 58px; display: grid; justify-items: center; gap: 1px;
+      color: var(--brand); text-decoration: none;
+    }
+    .header-brand img { width: 38px; height: 38px; object-fit: contain; display: block; }
+    .header-brand span { font-family: Amiri, serif; font-size: 22px; font-weight: 700; line-height: 1; }
     .menu-toggle { display: none; background: var(--brand); color: #fff; }
     .wrap { padding: 14px; max-width: 900px; margin: 0 auto; padding-bottom: 120px; }
     section.view { display: none; }
@@ -295,6 +301,18 @@
     ul.feat li { line-height: 1.8; padding: 8px 10px; background: var(--bg); border-radius: 10px; }
     .dev-line { font-size: 17px; margin: 4px 0; }
     .dev-bio { margin: 6px 0 0; }
+    .settings-about-link {
+      width: 100%; min-height: 72px; display: flex; align-items: center; gap: 12px;
+      text-align: right; color: var(--ink); font-family: inherit; cursor: pointer;
+      background: linear-gradient(145deg, color-mix(in srgb, var(--card) 92%, var(--brand) 8%), var(--card));
+      border-color: color-mix(in srgb, var(--brand) 24%, var(--line));
+    }
+    .settings-about-link:hover { border-color: var(--brand-2); }
+    .settings-about-link:focus-visible { outline: 3px solid var(--brand-2); outline-offset: 2px; }
+    .settings-about-copy { min-width: 0; flex: 1; display: grid; gap: 2px; }
+    .settings-about-copy strong { color: var(--brand); font-size: 16px; }
+    .settings-about-copy small { color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .settings-about-arrow { color: var(--brand); font: 700 24px/1 Arial, sans-serif; }
     a.ext { color: var(--brand); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
     a.btn { text-decoration: none; display: inline-block; }
     body:has(.player.show) .wrap { padding-bottom: calc(var(--player-h) + 28px); }
@@ -308,7 +326,7 @@
       .player #pToggle { min-width: 52px; }
     }
 
-    /* ===== تخطيط جديد: رأس ثابت بالتبويبات، والمشغل داخل المصحف، والإعدادات تحوي الفهرس وعن التطبيق ===== */
+    /* ===== رأس ثابت بالتبويبات، والمشغل داخل المصحف، وعن التطبيق آخر خيار داخل الإعدادات ===== */
     .app { display: block; }
     main.content { height: 100vh; height: 100dvh; }
     .hdr { position: sticky; top: 0; z-index: 15; background: var(--bg); border-bottom: 1px solid var(--line); }
@@ -319,8 +337,9 @@
     .navbar nav.menu { flex: 1 1 auto; min-width: 0; padding: 0; border: 0; }
     nav.menu button { width: auto; flex: 0 0 auto; white-space: nowrap; padding: 8px 12px; border-radius: 10px; }
     nav.menu button.active { background: var(--brand); color: #fff; }
-    .nav-end { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+    .nav-end { display: flex; align-items: center; flex: 0 0 auto; }
     .nav-end .btn { padding: 7px 10px; font-size: 13px; }
+    .nav-end .btn.active { background: var(--brand-2); }
     /* ===== مجموعة "المزيد": قائمة منسدلة للتفسير والحفظ والورد والإحصائيات ===== */
     .tab-group { position: relative; flex: 0 0 auto; display: flex; }
     .group-menu { position: absolute; top: calc(100% + 6px); right: 0; min-width: 170px; z-index: 40; background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.18); padding: 6px; display: flex; flex-direction: column; gap: 4px; }
@@ -365,6 +384,9 @@
     @media (max-width: 720px) {
       .hdr { position: sticky; top: 0; }
       .hdr .topbar { padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: 7px; }
+      .header-brand { min-width: 52px; }
+      .header-brand img { width: 32px; height: 32px; }
+      .header-brand span { font-size: 19px; }
       .navbar {
         position: fixed; z-index: 48; left: 0; right: 0; bottom: 0;
         align-items: stretch; gap: 4px; padding: 5px 7px max(5px, env(safe-area-inset-bottom));
@@ -389,11 +411,11 @@
       nav.menu button { width: 100%; flex: none; white-space: normal; min-height: 54px; padding: 4px 1px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; line-height: 1.1; border-radius: 11px; text-align: center; }
       nav.menu .ic { line-height: 1; }
       nav.menu .ic svg { width: 22px; height: 22px; }
-      .nav-end { flex: 0 0 48px; flex-direction: column; justify-content: center; gap: 2px; }
+      .nav-end { flex: 0 0 48px; justify-content: center; }
       .nav-end .btn { width: 46px; min-height: 54px; padding: 3px; display: grid; place-items: center; }
       .nav-end .lbl { display: none; }
       .theme-btn { width: 40px; height: 40px; }
-      .wrap { padding: 10px 8px calc(82px + env(safe-area-inset-bottom)); }
+      .wrap { padding: 10px 8px calc(var(--mobile-nav-h) + 18px + env(safe-area-inset-bottom)); }
       .card { border-radius: 13px; padding: 11px; }
       .toolbar { position: sticky; top: 50px; z-index: 9; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
       .toolbar::-webkit-scrollbar { display: none; }
@@ -570,7 +592,7 @@
       .player { padding: 10px; border-radius: 16px; }
       .player-step { min-width: 98px; padding-inline: 8px; }
       .player-toggle { width: 50px; height: 50px; }
-      .wrap, body:has(.player.show) .wrap { padding-bottom: calc(82px + env(safe-area-inset-bottom)); }
+      .wrap, body:has(.player.show) .wrap { padding-bottom: calc(var(--mobile-nav-h) + 18px + env(safe-area-inset-bottom)); }
     }
 
     @media (max-width: 390px) {
@@ -588,7 +610,10 @@
 
     @media (max-height: 500px) and (max-width: 720px) {
       :root { --mobile-nav-h: 58px; }
-      .hdr .topbar { min-height: 38px; padding-block: 5px; }
+      .hdr .topbar { min-height: 38px; padding-block: 4px; }
+      .header-brand { min-width: 40px; }
+      .header-brand img { width: 22px; height: 22px; }
+      .header-brand span { font-size: 15px; }
       .navbar { padding-top: 3px; padding-bottom: max(3px, env(safe-area-inset-bottom)); }
       nav.menu button, .nav-end .btn { min-height: 48px; }
       .reader-dock { bottom: calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 5px); }
@@ -624,6 +649,10 @@
       <header class="hdr">
         <div class="topbar">
           <button class="icon-btn back-btn" id="backBtn" hidden>→ رجوع</button>
+          <div class="header-brand" aria-label="سراج">
+            <img src="icon.png" alt="" aria-hidden="true" />
+            <span>سراج</span>
+          </div>
           <div class="title" id="topTitle">المصحف</div>
         </div>
         <div class="navbar">
@@ -652,7 +681,7 @@
           </div>
         </nav>
           <div class="nav-end">
-            <button class="btn small" id="settingsBtn" title="الإعدادات" aria-label="الإعدادات"><span class="ic" data-icon="settings" aria-hidden="true"></span><span class="lbl">الإعدادات</span></button>
+            <button class="btn small" id="settingsBtn" data-view="settings" title="الإعدادات" aria-label="الإعدادات"><span class="ic" data-icon="settings" aria-hidden="true"></span><span class="lbl">الإعدادات</span></button>
           </div>
         </div>
       </header>
@@ -1047,8 +1076,16 @@
             </div>
             <p class="muted" id="updStatus" style="margin-bottom:0"></p>
           </div>
-        <details class="card dd">
-          <summary>عن التطبيق</summary>
+          <button class="card settings-about-link" id="settingsAboutBtn" type="button" aria-label="عن التطبيق">
+            <span class="ic" data-icon="about" aria-hidden="true"></span>
+            <span class="settings-about-copy">
+              <strong>عن التطبيق</strong>
+              <small>الإصدار والمميزات والمطور والتواصل</small>
+            </span>
+            <span class="settings-about-arrow" aria-hidden="true">←</span>
+          </button>
+        </section>
+        <section class="view" id="view-about">
           <div class="card about-head">
             <img src="icon.png" alt="أيقونة تطبيق سراج" class="about-icon" />
             <div>
@@ -1080,7 +1117,6 @@
               <a class="btn ghost" href="https://github.com/mosalah30688-gif/quran" target="_blank" rel="noopener noreferrer">GitHub</a>
             </div>
           </div>
-        </details>
         </section>
       </div>
     </main>

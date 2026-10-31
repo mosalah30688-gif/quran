@@ -133,6 +133,7 @@ jobs:
           "$BUILD_TOOLS/aapt" dump badging "$APK" | grep -q "versionName='${{ steps.meta.outputs.version }}'"
           "$BUILD_TOOLS/aapt" dump badging "$APK" | grep -Fq "application-label:'سراج — قرآن كريم'"
           python3 - <<'PY'
+          import re
           import zipfile
           apk = 'android/app/build/outputs/apk/release/app-release.apk'
           required = {
@@ -165,6 +166,16 @@ jobs:
           assert '<h2 class="about-title">سراج</h2>' in html and 'مصحف قرآن كريم' in html
           assert 'أحدث التحديثات' not in html and 'مميزات سراج الحالية' not in html
           assert 'محمد صلاح عبد الخالق' in html and 'اتصل بنا' in html
+          assert '<section class="view" id="view-about">' in html
+          assert '<div class="header-brand" aria-label="سراج">' in html
+          assert '.header-brand span { font-family: Amiri, serif;' in html
+          settings = re.search(r'<section class="view" id="view-settings">(.*?)</section>', html, re.DOTALL).group(1)
+          assert 'id="aboutBtn"' not in html and "$('#aboutBtn')" not in app
+          assert re.search(r'id="settingsAboutBtn".*?</button>\s*$', settings, re.DOTALL)
+          assert "$('#settingsAboutBtn').addEventListener('click', () => showView('about'))" in app
+          assert "name === 'about' && b.dataset.view === 'settings'" in app
+          assert 'data-icon="about"' in settings and 'about:' in app
+          assert '--mobile-nav-h: 64px' in html and '--mobile-nav-h: 58px' in html
           assert 'يتوفر تحديث جديد لسراج — الإصدار' in app and 'فيه تحديث جديد' not in app
           assert 'Array.isArray(m.features)' in app and 'technicalTerms' in app
           assert '.upd-banner span { flex: 1; white-space: pre-line; }' in html

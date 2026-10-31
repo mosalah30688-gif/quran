@@ -105,6 +105,7 @@
     tajweed: '<path d="M12 2C6 2 2 6 2 11.2 2 17 7 21 13 21h1c1.8 0 3-1 3-2.5 0-1.6-1.2-2.5-2.8-2.5H13c-1 0-1.8-.8-1.8-1.7 0-1 .8-1.8 2-1.8H16c3.4 0 6-2.1 6-5C22 4.3 18 2 12 2z" fill="url(#violet)" stroke="#48236c"/><circle cx="6" cy="8" r="1.7" fill="#ff5863"/><circle cx="10" cy="5.5" r="1.7" fill="#ffbe3d"/><circle cx="14.5" cy="5.5" r="1.7" fill="#43ce7a"/><circle cx="18" cy="8.5" r="1.7" fill="#4ebeff"/>',
     words: '<path d="M2.5 3h11A2.5 2.5 0 0 1 16 5.5v5A2.5 2.5 0 0 1 13.5 13H8l-4 3 .8-3H2.5A2.5 2.5 0 0 1 0 10.5v-5A2.5 2.5 0 0 1 2.5 3z" fill="url(#blue)"/><path d="M11 12h8.5a2.5 2.5 0 0 1 2.5 2.5v3A2.5 2.5 0 0 1 19.5 20h-2l.6 2-3-2H11a2.5 2.5 0 0 1-2.5-2.5v-3A2.5 2.5 0 0 1 11 12z" fill="url(#green)"/><path d="M3 6h9M3 9h6M12 15h7M12 17.5h5" stroke="#fff" stroke-linecap="round"/>',
     adhkar: '<path d="M12 2c-5.5 0-9.5 4.3-9.5 9.5 0 4.7 3.3 8.4 7.6 9.3" fill="none" stroke="#d2a94b"/><g fill="url(#green)" stroke="#075044"><circle cx="12" cy="2" r="1.8"/><circle cx="6.8" cy="3.6" r="1.8"/><circle cx="3.3" cy="7.7" r="1.8"/><circle cx="3.2" cy="13" r="1.8"/><circle cx="6.3" cy="17.4" r="1.8"/><circle cx="11" cy="20" r="1.8"/></g><path d="M18.8 14.5l1.3 2.5-1.1 1.2 1.5 3.7-2.2.8-1.4-3.7-1.5-.2.4-2.7z" fill="url(#gold)"/>',
+    about: '<circle cx="12" cy="12" r="9.5" fill="url(#blue)" stroke="#164675"/><circle cx="12" cy="12" r="7.1" fill="url(#paper)" stroke="#b08b43"/><circle cx="12" cy="8.5" r="2.2" fill="url(#gold)"/><path d="M7.8 17.2c.6-3 2.1-4.6 4.2-4.6s3.6 1.6 4.2 4.6" fill="url(#green)" stroke="#075044"/><path d="M6.2 5.6a8 8 0 0 1 8.8-1.7" fill="none" stroke="#fff" stroke-linecap="round" opacity=".7"/>',
     settings: '<path d="M9.8 2h4.4l.7 2.5 2.1 1.2 2.5-.7 2.2 3.8-1.8 1.9v2.6l1.8 1.9-2.2 3.8-2.5-.7-2.1 1.2-.7 2.5H9.8l-.7-2.5L7 18.3l-2.5.7-2.2-3.8 1.8-1.9v-2.6L2.3 8.8 4.5 5 7 5.7l2.1-1.2z" fill="url(#metal)" stroke="#506375"/><circle cx="12" cy="12" r="4.1" fill="url(#blue)"/><circle cx="12" cy="12" r="1.8" fill="#fff" opacity=".9"/>',
   };
   function fluentIcon(name) {
@@ -276,6 +277,10 @@
     if (name !== curView && !opts.back) { navStack.push(curView); if (navStack.length > 30) navStack.shift(); }
     curView = name;
     $$('#tabs button').forEach((b) => b.classList.toggle('active', b.dataset.view === name));
+    $$('.nav-end button[data-view]').forEach((b) => {
+      const active = b.dataset.view === name || (name === 'about' && b.dataset.view === 'settings');
+      b.classList.toggle('active', active);
+    });
     $$('.tab-group').forEach((g) => g.querySelector('.group-btn').classList.toggle('active', !!g.querySelector(`[data-view="${name}"]`)));
     $('#tabs button.active')?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
     $$('section.view').forEach((s) => s.classList.toggle('active', s.id === 'view-' + name));
@@ -298,6 +303,7 @@
   function popView() { showView(navStack.pop() || 'reader', { back: true }); }
   $('#backBtn').addEventListener('click', () => handleBack());
   $('#settingsBtn').addEventListener('click', () => showView('settings'));
+  $('#settingsAboutBtn').addEventListener('click', () => showView('about'));
   function closeSide() { document.body.classList.remove('side-open'); }
 
   // القوائم المنسدلة للشريط: النافذة التي اختارها المستخدم تبقى دائمًا في الطبقة الأمامية.

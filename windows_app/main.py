@@ -443,8 +443,9 @@ def qss(t):
     QWidget {{ color: {t['text']}; font-family: 'Noto Sans Arabic'; font-size: 14px; }}
     QMainWindow, QWidget#root {{ background: {t['bg']}; }}
     QWidget#sidebar {{ background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 {t['side']}, stop:1 {t['side_hi']}); }}
-    QLabel#brand {{ color: #ffffff; font-size: 22px; font-weight: 700; padding: 18px 16px 4px 16px; }}
-    QLabel#brandSub {{ color: #bfe6d8; font-size: 12px; padding: 0 16px 14px 16px; }}
+    QLabel#brandIcon {{ padding: 0; }}
+    QLabel#brand {{ color: #ffffff; font-family: 'Amiri'; font-size: 30px; font-weight: 600; padding: 0 10px; }}
+    QLabel#brandSub {{ color: #bfe6d8; font-size: 12px; padding: 0 12px 14px 12px; }}
     QPushButton#nav {{ background: transparent; color: #cfe9df; border: none; border-radius: 12px;
                       padding: 11px 16px; text-align: right; font-size: 15px; margin: 2px 12px; }}
     QPushButton#nav:hover {{ background: rgba(255,255,255,0.08); }}
@@ -1038,10 +1039,24 @@ class Main(QMainWindow):
         side.setFixedWidth(228)
         sl = QVBoxLayout(side)
         sl.setContentsMargins(0, 0, 0, 12)
+        self.brand_icon_label = QLabel()
+        self.brand_icon_label.setObjectName('brandIcon')
+        self.brand_icon_label.setFixedSize(72, 72)
+        self.brand_icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.brand_icon_label.setToolTip('أيقونة تطبيق سراج')
+        self.brand_icon_pixmap = QPixmap(str(ICON)) if ICON.exists() else QPixmap()
+        if not self.brand_icon_pixmap.isNull():
+            self.brand_icon_label.setPixmap(self.brand_icon_pixmap.scaled(
+                60, 60, Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            ))
         self.brand_label = QLabel(APP_NAME_AR)
         self.brand_label.setObjectName('brand')
+        self.brand_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.brand_sub = QLabel(f'{APP_DESCRIPTION_AR}  ·  {APP_VERSION}')
         self.brand_sub.setObjectName('brandSub')
+        self.brand_sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        sl.addWidget(self.brand_icon_label, 0, Qt.AlignmentFlag.AlignHCenter)
         sl.addWidget(self.brand_label)
         sl.addWidget(self.brand_sub)
 
@@ -1113,17 +1128,6 @@ class Main(QMainWindow):
         self.btn_sidebar_update.setToolTip('فحص وتنزيل تحديثات سراج')
         self.btn_sidebar_update.clicked.connect(self.open_updates)
         sl.addWidget(self.btn_sidebar_update)
-        b = QPushButton('عن التطبيق')
-        b.setIcon(svg_icon('about'))
-        b.setIconSize(QSize(20, 20))
-        b.setObjectName('nav')
-        b.setCheckable(True)
-        b.clicked.connect(lambda: self.show_view('about'))
-        self.nav_group.addButton(b)
-        self.nav_buttons['about'] = b
-        self.nav_labels['about'] = 'عن التطبيق'
-        b.setToolTip('عن التطبيق والمطور والتواصل')
-        sl.addWidget(b)
         b = QPushButton('الإعدادات')
         b.setIcon(svg_icon('settings'))
         b.setIconSize(QSize(20, 20))
@@ -1134,6 +1138,17 @@ class Main(QMainWindow):
         self.nav_buttons['settings'] = b
         self.nav_labels['settings'] = 'الإعدادات'
         b.setToolTip('الإعدادات')
+        sl.addWidget(b)
+        b = QPushButton('عن التطبيق')
+        b.setIcon(svg_icon('about'))
+        b.setIconSize(QSize(20, 20))
+        b.setObjectName('nav')
+        b.setCheckable(True)
+        b.clicked.connect(lambda: self.show_view('about'))
+        self.nav_group.addButton(b)
+        self.nav_buttons['about'] = b
+        self.nav_labels['about'] = 'عن التطبيق'
+        b.setToolTip('عن التطبيق والمطور والتواصل')
         sl.addWidget(b)
         row.addWidget(side)
 
@@ -1174,15 +1189,32 @@ class Main(QMainWindow):
             and self.riwaya_id.startswith('quran-')
         )
         compact = self.width() < 1120 or reader_wide
+        short = compact and self.height() < 720
+        very_short = compact and self.height() < 640
         self.sidebar.setFixedWidth(76 if compact else 228)
-        self.brand_label.setText('سراج' if compact else APP_NAME_AR)
-        self.brand_label.setAlignment(Qt.AlignmentFlag.AlignCenter if compact else Qt.AlignmentFlag.AlignRight)
+        self.sidebar.layout().setSpacing(2 if very_short else (4 if compact else 6))
+        brand_box = 30 if very_short else (42 if compact else 72)
+        brand_art = 26 if very_short else (38 if compact else 60)
+        self.brand_icon_label.setFixedSize(brand_box, brand_box)
+        if not self.brand_icon_pixmap.isNull():
+            self.brand_icon_label.setPixmap(self.brand_icon_pixmap.scaled(
+                brand_art, brand_art, Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            ))
+        self.brand_label.setText(APP_NAME_AR)
+        self.brand_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.brand_label.setFixedHeight(27 if very_short else (32 if compact else 40))
+        self.brand_label.setStyleSheet(
+            f"font-family: 'Amiri'; font-size: {20 if very_short else 24}px; font-weight: 600; padding: 0;"
+            if compact else ''
+        )
         self.brand_sub.setVisible(not compact)
+        nav_height = 32 if very_short else (38 if short else (44 if compact else 40))
         for key, button in self.nav_buttons.items():
             button.setText('' if compact else self.nav_labels[key])
-            button.setMinimumHeight(44 if compact else 40)
+            button.setMinimumHeight(nav_height)
         self.btn_sidebar_update.setText('' if compact else 'التحديثات')
-        self.btn_sidebar_update.setMinimumHeight(44 if compact else 40)
+        self.btn_sidebar_update.setMinimumHeight(nav_height)
         margin = 12 if self.width() < 920 or reader_wide else 24
         self.content_layout.setContentsMargins(margin, 14, margin, 12)
 
