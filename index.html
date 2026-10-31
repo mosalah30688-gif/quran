@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f5b4c" />
-  <meta name="description" content="سراج — قرآن كريم: قراءة محلية متجاوبة، تلاوات، تفاسير تراثية، تجويد وحفظ." />
+  <meta name="description" content="سراج — مصحف قرآن كريم" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon.png" />
@@ -250,7 +250,7 @@
       box-shadow: 0 6px 20px rgba(0,0,0,.25);
     }
     .upd-banner[hidden] { display: none; }
-    .upd-banner span { flex: 1; }
+    .upd-banner span { flex: 1; white-space: pre-line; }
     .upd-banner button { border: 0; border-radius: 8px; padding: 6px 10px; font-size: 13px; cursor: pointer; font-family: inherit; }
     .upd-banner #updBannerBtn { background: #fff; color: #1f5e3b; font-weight: 700; }
     .upd-banner #updBannerX { background: transparent; color: #fff; font-size: 18px; padding: 2px 6px; }
@@ -1052,37 +1052,20 @@
           <div class="card about-head">
             <img src="icon.png" alt="أيقونة تطبيق سراج" class="about-icon" />
             <div>
-              <h2 class="about-title">سراج — قرآن كريم</h2>
-              <div class="muted">الإصدار 1.4.2 · مصحف محلي متجاوب للتلاوة والتفسير والحفظ ومتابعة الختمة</div>
+              <h2 class="about-title">سراج</h2>
+              <div>مصحف قرآن كريم</div>
+              <div class="muted">الإصدار 1.4.3</div>
             </div>
           </div>
 
           <div class="card">
-            <h3 style="margin-top:0">مميزات سراج الحالية</h3>
-            <ul class="feat">
-              <li>📖 مصحف كامل في 604 صفحات، بحفص بالرسم العثماني والإملائي والتجويد الملون وفهرس السور والأجزاء والآيات.</li>
-              <li>🔤 قراءة حفص، مع ورش وقالون والدوري، ومعالجة البسملة الخاصة بعرض حفص دون تغيير نص المصدر.</li>
-              <li>🔊 17 قارئًا لحفص وتلاوات للروايات، وتشغيل من آية محددة، وتحميل محلي وتحكم كامل بصوت الحفظ.</li>
-              <li>📚 78 تفسيرًا تراثيًا مدقق الحقوق في حزمة اختيارية تعمل محليًا دون API بعد التحقق من الحجم وSHA-256.</li>
-              <li>🔎 بحث محلي، ومعاني الكلمات، وترجمات متعددة، ولوحة تفسير للآية المحددة.</li>
-              <li>🧠 وضع حفظ بإخفاء النص والتكرار الصوتي والمراجعة وتسجيل المقاطع التي تم حفظها.</li>
-              <li>📅 ختمة مرنة وورد مرن بلا هدف إلزامي، وإحصائيات وعادة قراءة وتذكير اختياري داخل التطبيق وفي النظام.</li>
-              <li>⭐ محفوظات ومشاركة الآية والأذكار والرجوع التلقائي إلى آخر موضع.</li>
-              <li>🖋 أربعة خطوط عربية مع تحكم موحد في الخط والحجم للمصحف والتفسير، ووضع فاتح وداكن.</li>
-              <li>📱 واجهة متجاوبة للهاتف والتابلت في الوضعين الرأسي والأفقي، وتنقل Fluent 3D باللمس المقصود.</li>
-              <li>🔐 تحديث APK كامل موقّع مع التحقق من SHA-256 وإمكانية الترقية مع الحفاظ على بيانات المستخدم.</li>
-            </ul>
-          </div>
-
-          <div class="card">
-            <h3 style="margin-top:0">أحدث التحديثات</h3>
-            <ul class="feat">
-              <li>إصلاح تفاعل نوافذ «رصيدك» و«تدبر» و«أذكارك» لتظهر في المقدمة فوق رصيف الصفحات والمشغل وتتكيف مع المساحة المتاحة.</li>
-              <li>إعادة تصميم شاشة المصحف في Android بواجهة احترافية متجاوبة للهاتف والتابلت والوضع الأفقي.</li>
-              <li>إظهار زري الصفحة السابقة والتالية دائمًا في رصيف واضح فوق شريط التنقل السفلي.</li>
-              <li>فصل إعدادات التلاوة عن المشغل وإضافة شريط تقدم زمني وأزرار صوت كبيرة غير متداخلة.</li>
-              <li>تحديث صفحة «عن التطبيق» وتوحيد تعريف المطور وروابط التواصل بين Android وWindows وLinux.</li>
-              <li>الإبقاء على بيانات حفص والتجويد والخطوط داخل التطبيق، وحزمة التفاسير الكبيرة اختيارية.</li>
+            <h3 style="margin-top:0">المميزات</h3>
+            <ul class="feat" id="aboutFeatures">
+              <li>مصحف ذكي للتلاوة والاستماع والتدبر</li>
+              <li>برواية حفص عن عاصم وروايات أخرى</li>
+              <li>تحديد الأوراد والختمات ومتابعتها</li>
+              <li>الأذكار بعداد خاص لكل ذكر</li>
+              <li>تفاسير القرآن</li>
             </ul>
           </div>
 
@@ -1091,10 +1074,9 @@
             <p class="dev-line">
               <a class="ext" href="https://elkatebmohamadsalah.blogspot.com/p/c.html" target="_blank" rel="noopener noreferrer">محمد صلاح عبد الخالق</a>
             </p>
-            <p class="muted dev-bio">محمد صلاح عبد الخالق، مطوّر تطبيق سراج. صُمم المشروع لتقديم أدوات عربية نافعة لقراءة القرآن وحفظه ومتابعة الختمة مع توثيق المصادر والحقوق.</p>
             <div class="row" style="margin-top:10px">
               <a class="btn ghost" href="https://elkatebmohamadsalah.blogspot.com/p/c.html" target="_blank" rel="noopener noreferrer">صفحة المطور</a>
-              <a class="btn" href="https://elkatebmohamadsalah.blogspot.com/p/blog-page_827.html" target="_blank" rel="noopener noreferrer">📞 اتصل بنا</a>
+              <a class="btn" href="https://elkatebmohamadsalah.blogspot.com/p/blog-page_827.html" target="_blank" rel="noopener noreferrer">اتصل بنا</a>
               <a class="btn ghost" href="https://github.com/mosalah30688-gif/quran" target="_blank" rel="noopener noreferrer">GitHub</a>
             </div>
           </div>
@@ -1148,7 +1130,7 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.4.2';
+    window.APP_BUNDLE_VERSION = '1.4.3';
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {

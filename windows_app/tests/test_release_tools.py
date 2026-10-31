@@ -15,9 +15,11 @@ APP = Path(__file__).resolve().parents[1]
 ROOT = APP.parent
 SCRIPTS = ROOT / "scripts"
 sys.path.insert(0, str(APP))
+sys.path.insert(0, str(SCRIPTS))
 
 import patch_runtime  # noqa: E402
 import update_security  # noqa: E402
+from product_copy import validate_update_features  # noqa: E402
 
 
 class ReleaseToolTests(unittest.TestCase):
@@ -62,6 +64,8 @@ class ReleaseToolTests(unittest.TestCase):
             "1.1.1",
             "--app-dir",
             source,
+            "--feature",
+            "صفحة «عن التطبيق» بصياغة موجزة وموحدة.",
             "--output",
             patch,
         )
@@ -77,6 +81,8 @@ class ReleaseToolTests(unittest.TestCase):
         )
         self.assertEqual(installed["version"], "1.1.1")
         self.assertEqual(installed["product"], self.PRODUCT)
+        self.assertEqual(installed["features"], ["صفحة «عن التطبيق» بصياغة موجزة وموحدة."])
+        self.assertNotIn("release_notes", installed)
         self.assertTrue((patch_root / "1.1.1" / "data" / "content.json").is_file())
 
         channel = self.root / "patch-stable.json"
@@ -90,14 +96,31 @@ class ReleaseToolTests(unittest.TestCase):
             patch,
             "--base-url",
             "https://github.com/mosalah30688-gif/quran/releases/download/test",
+            "--feature",
+            "صفحة «عن التطبيق» بصياغة موجزة وموحدة.",
             "--output",
             channel,
         )
         manifest = json.loads(channel.read_text(encoding="utf-8"))
         self.assertTrue(update_security.verify_update_manifest(manifest, self.public))
+        self.assertEqual(manifest["features"], ["صفحة «عن التطبيق» بصياغة موجزة وموحدة."])
+        self.assertNotIn("release_notes", manifest)
         asset = manifest["assets"]["patch"]
         self.assertEqual(asset["size"], patch.stat().st_size)
         self.assertEqual(asset["sha256"], hashlib.sha256(patch.read_bytes()).hexdigest())
+
+    def test_update_feature_copy_rejects_technical_or_verbose_notes(self):
+        self.assertEqual(
+            validate_update_features(["صفحة «عن التطبيق» بصياغة موجزة وموحدة."]),
+            ["صفحة «عن التطبيق» بصياغة موجزة وموحدة."],
+        )
+        for value in (
+            ["ترقيع صغير موقّع بتوقيع Ed25519."],
+            ["ميزة " + ("طويلة " * 30)],
+            ["ميزة واحدة"] * 2,
+        ):
+            with self.assertRaises(ValueError):
+                validate_update_features(value)
 
     def test_full_manifest_signature_covers_complete_asset_metadata(self):
         output = self.root / "stable.json"

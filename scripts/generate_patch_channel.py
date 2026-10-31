@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 
+from product_copy import validate_update_features
 from update_signing import sign_manifest
 
 
@@ -27,7 +28,12 @@ def main() -> int:
     parser.add_argument("--runtime-api", type=int, default=1)
     parser.add_argument("--patch", required=True, type=Path)
     parser.add_argument("--base-url", required=True)
-    parser.add_argument("--notes", default="تحديث داخلي لسراج.")
+    parser.add_argument(
+        "--feature",
+        action="append",
+        default=[],
+        help="ميزة جديدة موجزة موجهة للمستخدم؛ يمكن تكرارها حتى خمس مرات",
+    )
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument(
         "--signing-seed",
@@ -47,7 +53,7 @@ def main() -> int:
         "version": args.version,
         "runtime_api": args.runtime_api,
         "published_at": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
-        "release_notes": args.notes,
+        "features": validate_update_features(args.feature),
         "assets": {
             "patch": {
                 "file_name": args.patch.name,

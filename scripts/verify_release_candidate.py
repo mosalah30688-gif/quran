@@ -12,6 +12,7 @@ import sys
 import zipfile
 from pathlib import Path, PurePosixPath
 
+from product_copy import validate_update_features
 from update_signing import verify_manifest
 
 PLATFORMS = {
@@ -202,11 +203,14 @@ def verify_patch_archive(path: Path, outer: dict, public_key: str) -> None:
         inner = json.loads(archive.read("patch.json"))
         if not verify_manifest(inner, public_key):
             raise ValueError("patch archive manifest signature is invalid")
-        for key in ("product", "version", "runtime_api"):
+        for key in ("product", "version", "runtime_api", "features"):
             if inner.get(key) != outer.get(key):
                 raise ValueError(f"patch inner/outer {key} mismatch")
         if inner.get("schema") != 1 or inner.get("kind") != "siraj-signed-patch":
             raise ValueError("invalid signed patch metadata")
+        features = inner.get("features", [])
+        if validate_update_features(features) != features or "release_notes" in inner:
+            raise ValueError("invalid in-app update feature copy")
         files = inner.get("files")
         if not isinstance(files, list) or not files:
             raise ValueError("patch contains no files")
@@ -260,6 +264,11 @@ def main() -> int:
     for key, expected in expected_top.items():
         if manifest.get(key) != expected:
             raise ValueError(f"unexpected manifest {key}: {manifest.get(key)!r}")
+    features = manifest.get("features", [])
+    if validate_update_features(features) != features:
+        raise ValueError("update features are not normalized")
+    if "release_notes" in manifest:
+        raise ValueError("free-form release notes are forbidden in the in-app update manifest")
 
     if args.kind == "patch":
         if manifest.get("kind") != "siraj-patch-channel" or manifest.get("runtime_api") != 1:

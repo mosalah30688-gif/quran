@@ -1459,7 +1459,7 @@
   });
   renderUpdateCard();
 
-  // فحص هادئ عند فتح التطبيق: لو فيه نسخة كاملة أحدث يظهر بانر بدل ما المستخدم يدوّر على الزر
+  // فحص هادئ عند فتح التطبيق: يظهر إشعار مختصر عند توفر إصدار أحدث.
   async function silentUpdateCheck() {
     try {
       if (!hasNativePlugin('ApkUpdater')) return;
@@ -1469,7 +1469,14 @@
       if (!m.apk || !m.apk.url || !m.apk.version) return;
       const nv = await nativeCall('ApkUpdater', 'getVersion').then((r) => r.version).catch(() => null);
       if (!nv || !newerVersion(m.apk.version, nv)) return;
-      $('#updBannerText').textContent = 'فيه تحديث جديد للتطبيق (' + m.apk.version + ')';
+      const technicalTerms = ['ed25519', 'sha-256', 'sha256', 'runtime', 'appimage', 'portable', 'ترقيع', 'توقيع', 'موقّع', 'حزمة', 'محرك'];
+      const features = (Array.isArray(m.features) ? m.features : []).slice(0, 5).map((item) => (
+        typeof item === 'string' ? item.trim().replace(/\s+/g, ' ') : ''
+      )).filter((item) => (
+        item && item.length <= 120 && !technicalTerms.some((term) => item.toLocaleLowerCase('ar').includes(term))
+      ));
+      $('#updBannerText').textContent = 'يتوفر تحديث جديد لسراج — الإصدار ' + m.apk.version
+        + features.map((feature) => '\n• ' + feature).join('');
       $('#updBannerBtn').onclick = () => { $('#updBanner').hidden = true; showView('settings'); checkForUpdate(); };
       $('#updBannerX').onclick = () => { $('#updBanner').hidden = true; };
       $('#updBanner').hidden = false;

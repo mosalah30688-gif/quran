@@ -92,20 +92,11 @@ CONTACT_URL = 'https://elkatebmohamadsalah.blogspot.com/p/blog-page_827.html'
 REPOSITORY_URL = 'https://github.com/mosalah30688-gif/quran'
 PLATFORM_LABEL = 'Windows Portable'
 ABOUT_FEATURES = (
-    'مصحف كامل في 604 صفحات مع فهرس السور والأجزاء والآيات والرجوع لآخر موضع.',
-    'حفص بأربعة رسوم، وورش وقالون والدوري، مع معالجة البسملة وعرض حفص المتصل.',
-    '17 قارئًا لحفص وتلاوات الروايات، مع التشغيل من آية والتنزيل المحلي والتحكم الكامل بالحفظ.',
-    '78 تفسيرًا تراثيًا مدقق الحقوق تعمل محليًا دون API، مع معاني الكلمات والترجمات.',
-    'بحث محلي، وألوان أحكام التجويد، ونسخ ومشاركة الآيات وتحديد النص.',
-    'وضع حفظ بإخفاء النص والتكرار الصوتي والمراجعة المتباعدة وتسجيل المقاطع المحفوظة.',
-    'متابعة ختمة مرنة بلا إلزام، وورد وتذكير اختياري وإحصائيات وعادة قراءة.',
-    'أذكار، ومحفوظات، وتظليل دائم للآيات، وأربعة خطوط عربية مع تحكم موحد بالحجم.',
-    'واجهة عربية RTL متجاوبة ووضع ليلي وتحديثات موقعة كاملة أو صغيرة.',
-)
-ABOUT_RELEASE_NOTES = (
-    'إضافة صفحة «عن التطبيق» مستقلة مع تعريف المطور وروابط التواصل.',
-    'تحديث قائمة المميزات لتطابق المصحف والتفاسير والتلاوات والحفظ والختمة الحالية.',
-    'الإبقاء على البيانات المحلية وقناة التحديث الموقعة من دون المساس بإعدادات المستخدم.',
+    'مصحف ذكي للتلاوة والاستماع والتدبر',
+    'برواية حفص عن عاصم وروايات أخرى',
+    'تحديد الأوراد والختمات ومتابعتها',
+    'الأذكار بعداد خاص لكل ذكر',
+    'تفاسير القرآن',
 )
 
 ARABIC_DIGITS = str.maketrans('0123456789', '٠١٢٣٤٥٦٧٨٩')
@@ -900,6 +891,29 @@ def is_newer_version(candidate, current=APP_VERSION):
         return Version(str(candidate)) > Version(str(current))
     except InvalidVersion:
         return False
+
+
+def update_notice_text(version, features=None):
+    """صياغة إشعار رسمية: الإصدار ثم الميزات الجديدة فقط، بلا تفاصيل تنفيذية."""
+    title = f'يتوفر تحديث جديد لسراج — الإصدار {version}'
+    if not isinstance(features, list):
+        return title
+    technical_terms = (
+        'ed25519', 'sha-256', 'sha256', 'runtime', 'appimage', 'portable',
+        'ترقيع', 'توقيع', 'موقّع', 'حزمة', 'محرك',
+    )
+    approved = []
+    for raw in features[:5]:
+        if not isinstance(raw, str):
+            continue
+        feature = ' '.join(raw.split())
+        if not feature or len(feature) > 120:
+            continue
+        lowered = feature.casefold()
+        if any(term in lowered for term in technical_terms):
+            continue
+        approved.append(feature)
+    return title + ''.join(f'\n• {feature}' for feature in approved)
 
 
 class Main(QMainWindow):
@@ -3240,17 +3254,16 @@ class Main(QMainWindow):
         self.about_icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         hero_lay.addWidget(self.about_icon_label)
         hero_text = QVBoxLayout()
-        title = QLabel(f'{APP_NAME_AR} — {APP_DESCRIPTION_AR}')
+        title = QLabel(APP_NAME_AR)
         title.setStyleSheet('font-size:24px; font-weight:800;')
         title.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         hero_text.addWidget(title)
+        description = QLabel('مصحف قرآن كريم')
+        description.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        hero_text.addWidget(description)
         edition = QLabel(f'الإصدار {APP_VERSION} · {PLATFORM_LABEL}')
         edition.setObjectName('muted')
         hero_text.addWidget(edition)
-        summary = QLabel('تطبيق قرآن عربي متعدد المنصات يجمع القراءة والتلاوة والتفسير والحفظ والختمة في تجربة محلية تحترم الخصوصية.')
-        summary.setWordWrap(True)
-        summary.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        hero_text.addWidget(summary)
         hero_lay.addLayout(hero_text, 1)
         lay.addWidget(hero)
 
@@ -3258,7 +3271,7 @@ class Main(QMainWindow):
         features_lay = QVBoxLayout(features_card)
         features_lay.setContentsMargins(22, 18, 22, 20)
         features_lay.setSpacing(10)
-        features_title = QLabel('مميزات سراج')
+        features_title = QLabel('المميزات')
         features_title.setStyleSheet('font-size:18px; font-weight:800;')
         features_lay.addWidget(features_title)
         self.about_features_label = QLabel('\n'.join(f'• {item}' for item in ABOUT_FEATURES))
@@ -3267,19 +3280,6 @@ class Main(QMainWindow):
         features_lay.addWidget(self.about_features_label)
         lay.addWidget(features_card)
 
-        release_card = card()
-        release_lay = QVBoxLayout(release_card)
-        release_lay.setContentsMargins(22, 18, 22, 20)
-        release_lay.setSpacing(8)
-        release_title = QLabel(f'أحدث تحديثات الإصدار {APP_VERSION}')
-        release_title.setStyleSheet('font-size:18px; font-weight:800;')
-        release_lay.addWidget(release_title)
-        self.about_updates_label = QLabel('\n'.join(f'• {item}' for item in ABOUT_RELEASE_NOTES))
-        self.about_updates_label.setWordWrap(True)
-        self.about_updates_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        release_lay.addWidget(self.about_updates_label)
-        lay.addWidget(release_card)
-
         developer_card = card()
         developer_lay = QVBoxLayout(developer_card)
         developer_lay.setContentsMargins(22, 18, 22, 20)
@@ -3287,10 +3287,7 @@ class Main(QMainWindow):
         developer_title = QLabel('المطور والتواصل')
         developer_title.setStyleSheet('font-size:18px; font-weight:800;')
         developer_lay.addWidget(developer_title)
-        self.about_developer_label = QLabel(
-            f'{DEVELOPER_NAME} — مطوّر تطبيق سراج. صُمم المشروع لتقديم أدوات عربية نافعة '
-            'لقراءة القرآن وحفظه ومتابعة الختمة مع توثيق المصادر والحقوق.'
-        )
+        self.about_developer_label = QLabel(DEVELOPER_NAME)
         self.about_developer_label.setWordWrap(True)
         self.about_developer_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         developer_lay.addWidget(self.about_developer_label)
@@ -3484,9 +3481,9 @@ class Main(QMainWindow):
             self.update_busy = False
             self.update_info = {
                 'kind': 'patch', 'version': info['version'], 'asset': asset,
-                'notes': info.get('release_notes', ''),
+                'features': info.get('features', []),
             }
-            self.update_banner_label.setText(f'يتوفر ترقيع داخلي صغير لسراج {info["version"]}')
+            self.update_banner_label.setText(update_notice_text(info['version'], info.get('features')))
             self.update_banner.show()
             self.upd_status.setText(f'الترقيع {info["version"]} متاح — توقيعه صالح')
             self.btn_check_update.setText('تنزيل الترقيع الداخلي')
@@ -3547,9 +3544,9 @@ class Main(QMainWindow):
         if valid:
             self.update_info = {
                 'kind': 'full', 'version': info['version'], 'asset': asset,
-                'notes': info.get('release_notes', ''),
+                'features': info.get('features', []),
             }
-            self.update_banner_label.setText(f'يتوفر تحديث كبير لسراج {info["version"]}')
+            self.update_banner_label.setText(update_notice_text(info['version'], info.get('features')))
             self.update_banner.show()
             self.upd_status.setText(f'الإصدار {info["version"]} متاح — حزمة كاملة موقّعة')
             self.btn_check_update.setText('تنزيل التحديث الكبير')

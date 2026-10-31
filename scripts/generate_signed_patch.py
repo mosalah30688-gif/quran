@@ -11,6 +11,7 @@ import time
 import zipfile
 from pathlib import Path, PurePosixPath
 
+from product_copy import validate_update_features
 from update_signing import sign_manifest
 
 IMMUTABLE_RUNTIME_FILES = {
@@ -74,7 +75,12 @@ def main() -> int:
     parser.add_argument("--runtime-api", type=int, default=1)
     parser.add_argument("--app-dir", required=True, type=Path)
     parser.add_argument("--include", action="append", default=[], help="مسار نسبي إضافي داخل app-dir؛ يمكن تكراره")
-    parser.add_argument("--notes", default="تحديث داخلي لسراج.")
+    parser.add_argument(
+        "--feature",
+        action="append",
+        default=[],
+        help="ميزة جديدة موجزة موجهة للمستخدم؛ يمكن تكرارها حتى خمس مرات",
+    )
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument(
         "--signing-seed",
@@ -111,7 +117,7 @@ def main() -> int:
         "version": args.version,
         "runtime_api": args.runtime_api,
         "published_at": published,
-        "release_notes": args.notes,
+        "features": validate_update_features(args.feature),
         "files": files,
     }, args.signing_seed)
     manifest_data = (json.dumps(manifest, ensure_ascii=False, indent=2) + "\n").encode("utf-8")

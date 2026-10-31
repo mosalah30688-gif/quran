@@ -77,23 +77,41 @@ def main() -> None:
     capacitor = load("capacitor.config.json")
     android_strings = (ROOT / "android/app/src/main/res/values/strings.xml").read_text(encoding="utf-8")
     assert capacitor["appName"] == "سراج — قرآن كريم"
+    assert load("manifest.json")["description"] == "مصحف قرآن كريم"
     assert '<string name="app_name">سراج — قرآن كريم</string>' in android_strings
     assert '<string name="title_activity_main">سراج — قرآن كريم</string>' in android_strings
     assert "loadBundledData()" in app
     assert "lookupBatch" in app and "TafsirStore" in app
     assert "recordWirdPage" in app and "Reminder" in app
     assert "wdTargetSel" not in app and "wdAdd" not in app
-    assert "APP_BUNDLE_VERSION = '1.4.2'" in html and "الإصدار 1.4.2" in html
-    assert "مميزات سراج الحالية" in html and "أحدث التحديثات" in html
-    assert "محمد صلاح عبد الخالق" in html and "صفحة المطور" in html and "اتصل بنا" in html
-    assert "78 تفسيرًا" in html and "17 قارئًا" in html and "ختمة مرنة وورد مرن" in html
+    assert "APP_BUNDLE_VERSION = '1.4.3'" in html and "الإصدار 1.4.3" in html
+    about_match = re.search(r"<summary>عن التطبيق</summary>(.*?)</details>", html, re.DOTALL)
+    assert about_match, "missing About section"
+    about = about_match.group(1)
+    assert '<h2 class="about-title">سراج</h2>' in about and "مصحف قرآن كريم" in about
+    feature_match = re.search(r'<ul class="feat" id="aboutFeatures">(.*?)</ul>', about, re.DOTALL)
+    assert feature_match, "missing canonical About features"
+    about_features = re.findall(r"<li>([^<]+)</li>", feature_match.group(1))
+    assert about_features == [
+        "مصحف ذكي للتلاوة والاستماع والتدبر",
+        "برواية حفص عن عاصم وروايات أخرى",
+        "تحديد الأوراد والختمات ومتابعتها",
+        "الأذكار بعداد خاص لكل ذكر",
+        "تفاسير القرآن",
+    ]
+    assert "أحدث التحديثات" not in about and "ABOUT_RELEASE_NOTES" not in about
+    assert not any(term in about for term in ("API", "SHA-256", "APK", "Fluent 3D", "أدوات عربية نافعة"))
+    assert "محمد صلاح عبد الخالق" in about and "صفحة المطور" in about and "اتصل بنا" in about
     assert 'class="reader-dock"' in html and 'id="pPrevS"' in html and 'id="pNextS"' in html
     assert 'id="audioSeek"' in html and 'class="play-pickers"' in html and 'class="player-controls"' in html
     assert "--reader-dock-h" in html and "safe-area-inset-bottom" in html and "safe-area-inset-left" in html
     assert "group-menu-open" in html and "reader-view-active" in html and "body.group-menu-open .hdr" in html
     assert "syncReaderDockHeight" in app and "syncAudioTimeline" in app and "formatAudioTime" in app
     assert "syncGroupMenuLayer" in app and "focusFirst" in app and "restoreFocus" in app
-    assert "siraj-shell-v8" in service_worker
+    assert "يتوفر تحديث جديد لسراج — الإصدار" in app and "فيه تحديث جديد" not in app
+    assert "Array.isArray(m.features)" in app and "technicalTerms" in app
+    assert ".upd-banner span { flex: 1; white-space: pre-line; }" in html
+    assert "siraj-shell-v9" in service_worker
     assert "--quran-font" in html and "setFont" in html
     assert "data-icon=\"tajweed\"" in html and "🎵" not in html
 

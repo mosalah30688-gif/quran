@@ -214,14 +214,14 @@ jobs:
               --product siraj-quran-windows \
               --version "$VERSION" \
               --app-dir windows_app \
-              --notes "ترقيع صغير موقّع لسراج Windows؛ لا يغيّر المحرك الأصلي." \
+              --feature "صفحة «عن التطبيق» بصياغة موجزة وموحدة." \
               --output "$PATCH"
             python scripts/generate_patch_channel.py \
               --product siraj-quran-windows \
               --version "$VERSION" \
               --patch "$PATCH" \
               --base-url "$BASE_URL" \
-              --notes "ترقيع صغير موقّع لسراج Windows." \
+              --feature "صفحة «عن التطبيق» بصياغة موجزة وموحدة." \
               --output publish/patch-stable.json
             PATCH_PATH="$PATCH" python - <<'PY'
           import json, os, sys, tempfile
@@ -244,6 +244,7 @@ jobs:
             cat > release-notes.md <<EOF
           # سراج ${VERSION} — ترقيع Windows موقّع
 
+          - صفحة «عن التطبيق» بصياغة موجزة وموحدة.
           - ترقيع صغير بعد حزمة Windows الكاملة الداعمة للترقيعات 4.1.1.
           - لا يحتوي مثبتًا ولا يستبدل ملفات runtime الأصلية.
           - تتحقق النسخة الانتقالية من Ed25519 وSHA-256 لكل ملف قبل تشغيله، مع رجوع آمن للنسخة المضمّنة.
@@ -256,7 +257,7 @@ jobs:
               --version "$VERSION" \
               --portable "$PORTABLE" \
               --base-url "$BASE_URL" \
-              --notes "حزمة سراج Windows Portable الكاملة؛ قناة التحديث موقعة بـ Ed25519." \
+              --feature "صفحة «عن التطبيق» بصياغة موجزة وموحدة." \
               --output publish/stable.json
             cp release/* publish/
             cat > release-notes.md <<EOF

@@ -10,6 +10,7 @@ import os
 import re
 from pathlib import Path
 
+from product_copy import validate_update_features
 from update_signing import sign_manifest
 
 
@@ -26,7 +27,12 @@ def main() -> int:
     parser.add_argument("--version", required=True)
     parser.add_argument("--appimage", required=True, type=Path)
     parser.add_argument("--base-url", required=True)
-    parser.add_argument("--notes", default="تحديث كبير جديد لسراج على Linux.")
+    parser.add_argument(
+        "--feature",
+        action="append",
+        default=[],
+        help="ميزة جديدة موجزة موجهة للمستخدم؛ يمكن تكرارها حتى خمس مرات",
+    )
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument(
         "--signing-seed",
@@ -53,7 +59,7 @@ def main() -> int:
             .isoformat()
             .replace("+00:00", "Z"),
             "minimum_linux": "Ubuntu 22.04 or equivalent x86_64",
-            "release_notes": args.notes,
+            "features": validate_update_features(args.feature),
             "assets": {
                 "appimage": {
                     "file_name": args.appimage.name,

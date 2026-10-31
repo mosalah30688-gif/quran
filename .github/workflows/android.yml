@@ -30,7 +30,7 @@ on:
         type: boolean
         default: false
       confirmation:
-        description: 'For publication type: PUBLISH IMMUTABLE siraj-android-v1.4.2'
+        description: 'For publication type: PUBLISH IMMUTABLE siraj-android-v1.4.3'
         required: false
         type: string
 
@@ -153,17 +153,28 @@ jobs:
           assert 'everyayah.com' not in app.lower()
           assert 'TafsirStore' in app and 'Reminder' in app and 'ar.parhizgar' in app
           assert 'loadBundledData()' in app and 'recordWirdPage' in app
-          assert "APP_BUNDLE_VERSION = '1.4.2'" in html and 'الإصدار 1.4.2' in html
-          assert 'مميزات سراج الحالية' in html and 'أحدث التحديثات' in html
+          assert "APP_BUNDLE_VERSION = '1.4.3'" in html and 'الإصدار 1.4.3' in html
+          approved_features = (
+              'مصحف ذكي للتلاوة والاستماع والتدبر',
+              'برواية حفص عن عاصم وروايات أخرى',
+              'تحديد الأوراد والختمات ومتابعتها',
+              'الأذكار بعداد خاص لكل ذكر',
+              'تفاسير القرآن',
+          )
+          assert all(feature in html for feature in approved_features)
+          assert '<h2 class="about-title">سراج</h2>' in html and 'مصحف قرآن كريم' in html
+          assert 'أحدث التحديثات' not in html and 'مميزات سراج الحالية' not in html
           assert 'محمد صلاح عبد الخالق' in html and 'اتصل بنا' in html
-          assert '78 تفسيرًا' in html and '17 قارئًا' in html
+          assert 'يتوفر تحديث جديد لسراج — الإصدار' in app and 'فيه تحديث جديد' not in app
+          assert 'Array.isArray(m.features)' in app and 'technicalTerms' in app
+          assert '.upd-banner span { flex: 1; white-space: pre-line; }' in html
           assert 'class="reader-dock"' in html and 'id="pPrevS"' in html and 'id="pNextS"' in html
           assert 'id="audioSeek"' in html and 'class="player-controls"' in html
           assert '--reader-dock-h' in html and 'safe-area-inset-bottom' in html and 'safe-area-inset-left' in html
           assert 'group-menu-open' in html and 'reader-view-active' in html and 'body.group-menu-open .hdr' in html
           assert 'syncReaderDockHeight' in app and 'syncAudioTimeline' in app
           assert 'syncGroupMenuLayer' in app and 'focusFirst' in app and 'restoreFocus' in app
-          assert 'siraj-shell-v8' in service_worker
+          assert 'siraj-shell-v9' in service_worker
           assert 'data-icon="tajweed"' in html and '🎵' not in html
           PY
 
@@ -231,13 +242,8 @@ jobs:
               'name': f"سراج — Android {os.environ['VERSION']}",
               'body': (
                   'إصدار Android كامل موقّع وقابل للترقية فوق النسخة السابقة.\n\n'
-                  '- مصحف حفص وتجويد وفهرس سور وخطوط محلية داخل APK.\n'
-                  '- إعادة تصميم احترافية متجاوبة لشاشة المصحف على الهاتف والتابلت رأسيًا وأفقيًا.\n'
-                  '- رصيف قراءة واضح يثبت زري الصفحة السابقة والتالية فوق شريط التنقل مع مراعاة المساحات الآمنة.\n'
-                  '- مشغل تلاوة منظم بخط زمني وأزرار لمس واضحة دون تداخل.\n'
-                  '- نوافذ رصيدك وتدبر وأذكارك تتقدم تفاعليًا فوق رصيف الصفحات والمشغل وتتكيف مع المساحة المتاحة.\n'
-                  '- 17 قارئًا، حفظ، ورد مرن وتنبيه اختياري.\n'
-                  '- تنزيل اختياري لحزمة 78 تفسيرًا تراثيًا مدقق الحقوق مع تحقق الحجم وSHA-256.\n'
+                  '- صفحة «عن التطبيق» بصياغة موجزة وموحدة.\n'
+                  '- APK كامل للاستخدام خارج Google Play.\n'
                   '- يخضع هذا الإصدار لسياسة الاحتفاظ الدائم؛ لا تُستبدل أصوله ولا يُحذف وسمه.'
               ),
               'draft': True,
@@ -312,6 +318,7 @@ jobs:
           version = os.environ['VERSION']
           data['version'] = version
           data['files'] = ['index.html', 'app.js']
+          data['features'] = ['صفحة «عن التطبيق» بصياغة موجزة وموحدة.']
           data['apk'] = {
               'version': version,
               'url': 'https://github.com/mosalah30688-gif/quran/releases/download/' + os.environ['TAG'] + '/' + os.environ['ASSET'],

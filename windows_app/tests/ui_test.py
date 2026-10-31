@@ -92,15 +92,27 @@ try:
     app.processEvents()
     wait(300)  # دع حركة الانتقال تنتهي كي تكون لقطة صفحة «عن التطبيق» مقروءة.
     check('about button opens its own view', win.stack.currentWidget() is win.views['about'])
-    check('about view lists current features',
-          '78 تفسيرًا' in win.about_features_label.text()
-          and '17 قارئًا' in win.about_features_label.text()
-          and 'متابعة ختمة' in win.about_features_label.text())
+    expected_about_features = (
+        'مصحف ذكي للتلاوة والاستماع والتدبر',
+        'برواية حفص عن عاصم وروايات أخرى',
+        'تحديد الأوراد والختمات ومتابعتها',
+        'الأذكار بعداد خاص لكل ذكر',
+        'تفاسير القرآن',
+    )
+    check('about view uses the approved concise feature copy',
+          M.ABOUT_FEATURES == expected_about_features
+          and win.about_features_label.text() == '\n'.join(f'• {item}' for item in expected_about_features)
+          and not hasattr(win, 'about_updates_label'))
     check('about view identifies developer and contact',
           M.DEVELOPER_NAME in win.about_developer_label.text()
           and win.about_contact_button.text() == 'اتصل بنا'
           and set(win.about_link_buttons) == {M.DEVELOPER_PAGE_URL, M.CONTACT_URL, M.REPOSITORY_URL}
           and all(button.property('externalUrl') == url for url, button in win.about_link_buttons.items()))
+    check('update notice shows only concise user-facing features',
+          M.update_notice_text('9.9.9', ['ميزة جديدة'])
+          == 'يتوفر تحديث جديد لسراج — الإصدار 9.9.9\n• ميزة جديدة'
+          and M.update_notice_text('9.9.9', ['ترقيع موقّع بتوقيع Ed25519'])
+          == 'يتوفر تحديث جديد لسراج — الإصدار 9.9.9')
     shot('about')
     win.show_view('reader')
     app.processEvents()

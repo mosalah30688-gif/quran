@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 
+from product_copy import validate_update_features
 from update_signing import sign_manifest
 
 
@@ -34,7 +35,12 @@ def main() -> int:
     parser.add_argument("--version", required=True)
     parser.add_argument("--portable", required=True, type=Path)
     parser.add_argument("--base-url", required=True)
-    parser.add_argument("--notes", default="تحديث جديد لسراج على Windows.")
+    parser.add_argument(
+        "--feature",
+        action="append",
+        default=[],
+        help="ميزة جديدة موجزة موجهة للمستخدم؛ يمكن تكرارها حتى خمس مرات",
+    )
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument(
         "--signing-seed",
@@ -54,7 +60,7 @@ def main() -> int:
         "version": args.version,
         "published_at": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         "minimum_windows": "10.0.17763",
-        "release_notes": args.notes,
+        "features": validate_update_features(args.feature),
         "assets": {
             "portable": asset(args.portable, args.base_url),
         },

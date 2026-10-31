@@ -60,7 +60,7 @@ jobs:
           python -m py_compile mushaf_app/main.py mushaf_app/offline_tafsir.py mushaf_app/runtime.py mushaf_app/version.py mushaf_app/tests/test_*.py
           python -m unittest discover -s mushaf_app/tests -p "test_*.py" -v
           VERSION="$(PYTHONPATH=mushaf_app python -c 'from version import APP_VERSION; print(APP_VERSION)')"
-          test "$VERSION" = "$(PYTHONPATH=windows_app python -c 'from version import APP_VERSION; print(APP_VERSION)')"
+          # Linux and Windows have independent signed channels and may publish on different patch cadences.
           echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
           if [[ "$REF_TYPE" == "tag" ]]; then
             TAG_VERSION="$REF_NAME"
@@ -225,7 +225,7 @@ jobs:
             --version "$VERSION" \
             --appimage "$APPIMAGE" \
             --base-url "$BASE_URL" \
-            --notes "سراج ${VERSION}: دمج 78 تفسيرًا محليًا للعمل دون إنترنت." \
+            --feature "صفحة «عن التطبيق» بصياغة موجزة وموحدة." \
             --output mushaf_app/release/stable.json
           python - <<'PY'
           import json, os, pathlib, sys
@@ -328,14 +328,14 @@ jobs:
               --product siraj-quran-linux \
               --version "$VERSION" \
               --app-dir mushaf_app \
-              --notes "ترقيع صغير موقّع لسراج Linux؛ لا يغيّر المحرك الأصلي." \
+              --feature "صفحة «عن التطبيق» بصياغة موجزة وموحدة." \
               --output "$PATCH"
             python scripts/generate_patch_channel.py \
               --product siraj-quran-linux \
               --version "$VERSION" \
               --patch "$PATCH" \
               --base-url "$BASE_URL" \
-              --notes "ترقيع صغير موقّع لسراج Linux." \
+              --feature "صفحة «عن التطبيق» بصياغة موجزة وموحدة." \
               --output publish/patch-stable.json
             PATCH_PATH="$PATCH" python - <<'PY'
           import json, os, sys, tempfile
@@ -358,6 +358,7 @@ jobs:
             cat > release-notes.md <<EOF
           # سراج ${VERSION} — ترقيع Linux موقّع
 
+          - صفحة «عن التطبيق» بصياغة موجزة وموحدة.
           - ترقيع صغير بعد حزمة Linux الكاملة الداعمة للترقيعات 4.1.1.
           - لا يستبدل AppImage أو مكتبات runtime الأصلية.
           - تتحقق النسخة الانتقالية من Ed25519 وSHA-256 لكل ملف قبل تشغيله، مع رجوع آمن للنسخة المضمّنة.
@@ -370,7 +371,7 @@ jobs:
               --version "$VERSION" \
               --appimage "$APPIMAGE" \
               --base-url "$BASE_URL" \
-              --notes "حزمة سراج Linux AppImage الكاملة." \
+              --feature "صفحة «عن التطبيق» بصياغة موجزة وموحدة." \
               --output publish/stable.json
             cp release/* publish/
             cat > release-notes.md <<EOF

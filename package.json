@@ -1,8 +1,8 @@
 {
   "name": "quran-app",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "private": true,
-  "description": "سراج — قرآن كريم: مصحف محلي متجاوب بالتلاوات والتفسير والتجويد والحفظ",
+  "description": "سراج — مصحف قرآن كريم",
   "scripts": {
     "build:www": "bash scripts/build-www.sh",
     "android:sync": "bash scripts/build-www.sh && npx cap sync android",
