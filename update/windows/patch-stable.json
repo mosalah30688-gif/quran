@@ -4,23 +4,23 @@
   "product": "siraj-quran-windows",
   "channel": "stable",
   "available": true,
-  "version": "4.1.3",
+  "version": "4.1.4",
   "runtime_api": 1,
-  "published_at": "2026-10-31T18:20:11Z",
+  "published_at": "2026-10-31T19:21:39Z",
   "features": [
-    "صفحة «عن التطبيق» بصياغة موجزة وموحدة."
+    "هوية أوضح لسراج ووصول منظم إلى «عن التطبيق»."
   ],
   "assets": {
     "patch": {
-      "file_name": "Siraj-Quran-4.1.3-windows.sirajpatch",
-      "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-windows-patch-v4.1.3/Siraj-Quran-4.1.3-windows.sirajpatch",
-      "size": 2815939,
-      "sha256": "e73060027b49c2bd5ef577d252c10c1944fa0f13dfb5b21b6f8772108f6a0588"
+      "file_name": "Siraj-Quran-4.1.4-windows.sirajpatch",
+      "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-windows-patch-v4.1.4/Siraj-Quran-4.1.4-windows.sirajpatch",
+      "size": 2816294,
+      "sha256": "7fd386ba6eaadc2e3e6d3a44230e3596c953bc91763fb497aa01d80d6c1e8170"
     }
   },
   "signature": {
     "algorithm": "ed25519",
     "key_id": "siraj-update-2026-01",
-    "value": "wyTe4aGpM5ij8WUdMMIOaGSoiodFSlqNB5zCw/VPPhbke4XrM1oCFvSVs+2cq+B4J5+LhIgaI8Hd+qMLSmlxCw=="
+    "value": "1uETBMCVWWmXEXd/foQKm2lEuESsrZ+bKBhdV79IsAp9K254y1dvZ4oh5aFTUI5+prIRy/cB+HldNDcu4LG8Aw=="
   }
 }
