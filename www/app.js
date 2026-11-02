@@ -65,32 +65,14 @@
 
   const DEFAULTS = {
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
-    translation: '', font: 'Amiri Quran', size: 26, tajweed: false, dark: false,
+    translation: '', font: 'Amiri Quran', size: 26, dark: false,
     tajweedScopes: {},
   };
+  const SELECTABLE_MUSHAFS = new Set([
+    'quran-uthmani', 'quran-simple', 'quran-uthmani-min', 'warsh', 'qalun', 'duri',
+  ]);
   const VIEW_TITLES = { reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', wird: 'الورد', stats: 'الإحصائيات', adhkar: 'الأذكار', search: 'البحث', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق', tajweed: 'أحكام التجويد', meanings: 'المعاني' };
   const Cap = window.Capacitor || null;
-
-  // قواعد التجويد بحسب رموز مصدر quran-tajweed في alquran.cloud (الاسم، الشرح)
-  const TJ_RULES = {
-    h: ['همزة الوصل', 'تُنطق في أول الكلام فقط، وتسقط في الوصل.'],
-    l: ['لام شمسية', 'لا تُنطق اللام، وتُدغم في الحرف الشمسي بعدها.'],
-    s: ['حرف غير ملفوظ', 'حرف مكتوب ولا يُنطق في هذا الموضع.'],
-    n: ['مد طبيعي', 'يُمد الصوت حركتين.'],
-    p: ['مد جائز', 'يُمد الصوت حركتين أو أربعاً أو ست حركات.'],
-    m: ['مد لازم', 'يُمد الصوت ست حركات ولا يجوز قصره.'],
-    o: ['مد واجب متصل', 'يُمد الصوت أربع أو خمس حركات.'],
-    q: ['قلقلة', 'نبرة ارتداد خفيفة عند سكون أحد حروف (قطب جد).'],
-    c: ['إخفاء شفوي', 'إخفاء الميم الساكنة عند الباء، مع غنة.'],
-    f: ['إخفاء', 'إخفاء النون الساكنة أو التنوين مع غنة.'],
-    w: ['إدغام شفوي', 'إدغام الميم الساكنة في ميم بعدها، مع غنة.'],
-    i: ['إقلاب', 'قلب النون الساكنة أو التنوين ميماً عند الباء، مع غنة.'],
-    a: ['إدغام بغنة', 'إدغام النون الساكنة أو التنوين في (ي ن م و) مع غنة.'],
-    u: ['إدغام بلا غنة', 'إدغام النون الساكنة أو التنوين في (ل ر) بلا غنة.'],
-    d: ['إدغام متجانسين', 'حرفان من مخرج واحد، يُدغم الأول في الثاني.'],
-    b: ['إدغام متقاربين', 'حرفان متقاربان في المخرج، يُدغم الأول في الثاني.'],
-    g: ['غنة', 'صوت من الخيشوم يُمد حركتين.'],
-  };
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -136,15 +118,22 @@
   const settings = Object.assign({}, DEFAULTS, store.get('settings', {}));
   const savedTajweedScopes = settings.tajweedScopes && typeof settings.tajweedScopes === 'object'
     && !Array.isArray(settings.tajweedScopes) ? settings.tajweedScopes : {};
+  // كان quran-tajweed خيار مصحف ملوّن. أزيل نهائيًا من القارئ، وتُرحّل إعداداته
+  // إلى مصحف حفص العثماني مع إبقاء نطاق التعلم المحلي إن كان المستخدم اختاره.
+  if (settings.riwaya === 'quran-tajweed') settings.riwaya = DEFAULTS.riwaya;
+  if (!SELECTABLE_MUSHAFS.has(settings.riwaya)) settings.riwaya = DEFAULTS.riwaya;
+  if (!savedTajweedScopes['quran-uthmani'] && savedTajweedScopes['quran-tajweed']) {
+    savedTajweedScopes['quran-uthmani'] = savedTajweedScopes['quran-tajweed'];
+  }
+  delete settings.tajweed;
   settings.tajweedScopes = {};
-  ['quran-uthmani', 'quran-simple', 'quran-uthmani-min', 'quran-tajweed', 'warsh', 'qalun', 'duri']
-    .forEach((settingId) => {
-      const value = savedTajweedScopes[settingId];
-      if (typeof value === 'string'
-          && /^[a-z0-9][a-z0-9._-]*(\/[a-z0-9][a-z0-9._-]*){3}$/.test(value)) {
-        settings.tajweedScopes[settingId] = value;
-      }
-    });
+  SELECTABLE_MUSHAFS.forEach((settingId) => {
+    const value = savedTajweedScopes[settingId];
+    if (typeof value === 'string'
+        && /^[a-z0-9][a-z0-9._-]*(\/[a-z0-9][a-z0-9._-]*){3}$/.test(value)) {
+      settings.tajweedScopes[settingId] = value;
+    }
+  });
   const saveSettings = () => store.set('settings', settings);
   const allowedFonts = new Set(['Amiri Quran', 'Amiri', 'Noto Naskh Arabic', 'Scheherazade New']);
   if (!allowedFonts.has(settings.font)) settings.font = DEFAULTS.font;
@@ -202,7 +191,8 @@
   // ---------- الحالة ----------
   let surahs = [];
   let localHafs = null;
-  let localTajweed = [];
+  // المصدر الموسوم داخلي لأمثلة تبويب التعلم فقط، ولا يدخل عارض المصحف.
+  let tajweedExampleRows = [];
   let tajweedLearningCatalog = null;
   let tajweedScopeRegistry = null;
   let tajweedRuntimeCurricula = [];
@@ -211,7 +201,6 @@
   let tajweedSession = { queue: [], index: 0, revealed: false, answered: 0 };
   const hafsPages = { uthmani: new Map(), simple: new Map() };
   const hafsByRef = { uthmani: new Map(), simple: new Map() };
-  const tajweedByRef = new Map();
   const pageByRef = new Map();
   const globalByRef = new Map();
   const cache = new Map();          // JSON محلل من الأصول المحلية أو طلبات الشبكة الاختيارية
@@ -389,7 +378,7 @@
     ]);
     surahs = Array.isArray(surahData) ? surahData : [];
     localHafs = hafsData;
-    localTajweed = Array.isArray(tajweedData) ? tajweedData : [];
+    tajweedExampleRows = Array.isArray(tajweedData) ? tajweedData : [];
     tajweedLearningCatalog = learningCatalog;
     tajweedScopeRegistry = scopeRegistry;
     tajweedRuntimeCurricula = [];
@@ -427,7 +416,6 @@
     }
     indexHafsRows('uthmani', localHafs.uthmani || []);
     indexHafsRows('simple', localHafs.simple || []);
-    localTajweed.forEach((row) => tajweedByRef.set(refKey(row[0], row[1]), clean(row[3])));
     buildTajweedLearningCards();
     tafsirCatalog = catalog;
     const classical = (catalog.books || []).map((book) => [
@@ -443,37 +431,6 @@
     const bitrate = OFFLINE_SRC[reciter] || 128;
     const global = globalByRef.get(refKey(s, a));
     return global ? `https://cdn.islamic.network/quran/audio/${bitrate}/${reciter}/${global}.mp3` : null;
-  }
-
-  function renderTajweed(raw) {
-    let s = esc(clean(raw));
-    s = s.replace(/\[([a-z]+)(?::\d+)?\[([^\[\]]*)\]/g, '<span class="tj-$1">$2</span>');
-    return s.replace(/\[|\]/g, '');
-  }
-
-  function renderIndependentTajweed(curriculum, surah, ayah, text) {
-    if (!TajweedCurriculumLoaderAPI || !curriculum) return esc(text);
-    const segments = TajweedCurriculumLoaderAPI.annotatedSegments(
-      curriculum, surah, ayah, clean(text)
-    );
-    return segments.map((segment) => {
-      if (!segment.rules.length) return esc(segment.text);
-      const ids = segment.rules.map((rule) => rule.id).join(',');
-      const names = segment.rules.map((rule) => rule.name).join('، ');
-      const colors = [...new Set(segment.rules.map((rule) => rule.color)
-        .filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color)))];
-      if (!colors.length) return esc(segment.text);
-      let style = `color:${colors[0]};text-decoration:underline dotted ${colors[0]};text-underline-offset:.16em`;
-      if (colors.length > 1) {
-        const step = 100 / colors.length;
-        const stops = colors.flatMap((color, index) => [
-          `${color} ${(index * step).toFixed(2)}%`,
-          `${color} ${((index + 1) * step).toFixed(2)}%`,
-        ]).join(',');
-        style += `;background-image:linear-gradient(90deg,${stops});background-repeat:no-repeat;background-size:100% 2px;background-position:0 100%`;
-      }
-      return `<span class="tj-independent-mark" data-tj-rules="${esc(ids)}" title="${esc(names)}" style="${style}">${esc(segment.text)}</span>`;
-    }).join('');
   }
 
   const HAFS_BASMALAS = [
@@ -661,7 +618,7 @@
 
   async function loadPage(p) {
     if (p < 1 || p > TOTAL_PAGES) return null;
-    const key = p + '|' + [settings.riwaya, settings.reciter, settings.tafsir, settings.translation, settings.tajweed, tafsirPack.ready].join('|');
+    const key = p + '|' + [settings.riwaya, settings.reciter, settings.tafsir, settings.translation, tafsirPack.ready].join('|');
     if (pageCache.has(key)) return pageCache.get(key);
     if (isRiw()) {
       const byPage = await loadRiwaya(settings.riwaya);
@@ -672,13 +629,10 @@
         if (re[2].type === 'surah') return re[2].base + String(x.s).padStart(3, '0') + '.mp3';
         return re[2].base + String(x.s).padStart(3, '0') + String(x.n).padStart(3, '0') + '.mp3';
       };
-      const approvedCurriculum = settings.tajweed ? currentApprovedTajweedCurriculum() : null;
       const obj = { p, ayahs: (byPage[p] || []).map((x) => ({
         ...x,
         juz: juzOf(x.s, x.n),
-        html: approvedCurriculum
-          ? renderIndependentTajweed(approvedCurriculum, x.s, x.n, x.text)
-          : esc(x.text),
+        html: esc(x.text),
         audio: urlOf(x),
         tafsir: '',
         tr: '',
@@ -719,19 +673,16 @@
       } catch { tafsirTexts = new Array(base.length).fill(''); }
     }
 
-    const showTajweed = settings.riwaya === 'quran-tajweed' || settings.tajweed;
     const ayahs = base.map((a, i) => {
-      const displaySource = displayHafsSource(a.s, a.n, a.text);
-      const tajweedSource = showTajweed ? tajweedByRef.get(refKey(a.s, a.n)) : null;
-      const markup = tajweedSource ? displayHafsSource(a.s, a.n, tajweedSource) : null;
+      const displayText = plainTajweed(displayHafsSource(a.s, a.n, a.text));
       return {
         s: a.s,
         n: a.n,
         g: a.g,
         page: p,
         juz: a.juz,
-        text: plainTajweed(displaySource),
-        html: markup ? renderTajweed(markup) : esc(plainTajweed(displaySource)),
+        text: displayText,
+        html: esc(displayText),
         audio: ayahAudioUrl(settings.reciter, a.s, a.n),
         tafsir: tafsirTexts[i] || '',
         tr: settings.translation ? (translated[i]?.text || '') : '',
@@ -958,15 +909,8 @@
     const g = Number((end || ay).dataset.g);
     const a = state.pg && state.pg.ayahs.find((x) => x.g === g);
     if (!a) return;
+    // صفحة المصحف تختار الآية فقط؛ شرح التجويد مستقل داخل تبويب «أحكام التجويد».
     selectAyah(a);
-    // التفسير والترجمة يظهران من زر "التفسير" فقط. الكلمة الملونة تعرض قاعدة التجويد
-    const independent = !end && e.target.closest('[data-tj-rules]');
-    if (independent) {
-      showIndependentTajweedPanel(independent.dataset.tjRules.split(',').filter(Boolean));
-      return;
-    }
-    const tj = !end && e.target.closest('[class^="tj-"]');
-    if (tj) showTajweedPanel((tj.className.match(/tj-([a-z])/) || [])[1]);
   });
 
   $('#playSurah').addEventListener('change', (e) => {
@@ -1022,7 +966,6 @@
     $('#transLabel').style.display = hasTr ? 'block' : 'none';
     $('#tafsirTrans').style.display = hasTr ? 'block' : 'none';
     $('#tafsirTrans').textContent = hasTr ? (a.tr || 'لا توجد ترجمة لهذه الآية.') : '';
-    $('#tjPanel').classList.remove('show');
     $('#meanPanel').classList.remove('show');
     $('#tafsirPanel').classList.add('show');
   }
@@ -1049,31 +992,6 @@
     syncPlayControls();
     if (surahChanged) renderIndex();
   }
-
-  // ---------- نافذة التجويد ----------
-  function showTajweedPanel(code) {
-    const rule = TJ_RULES[code];
-    if (!rule) return;
-    $('#tjTitle').textContent = rule[0];
-    $('#tjBody').textContent = rule[1];
-    $('#tafsirPanel').classList.remove('show');
-    $('#tjPanel').classList.add('show');
-    $('#meanPanel').classList.remove('show');
-  }
-
-  function showIndependentTajweedPanel(ruleIds) {
-    const curriculum = currentApprovedTajweedCurriculum();
-    if (!curriculum || !Array.isArray(ruleIds)) return;
-    const wanted = new Set(ruleIds);
-    const rules = curriculum.rules.filter((rule) => wanted.has(rule.id));
-    if (!rules.length) return;
-    $('#tjTitle').textContent = rules.map((rule) => rule.name).join('، ');
-    $('#tjBody').textContent = rules.map((rule) => `${rule.name}: ${rule.answer}`).join('\n\n');
-    $('#tafsirPanel').classList.remove('show');
-    $('#tjPanel').classList.add('show');
-    $('#meanPanel').classList.remove('show');
-  }
-  $('#tjClose').addEventListener('click', () => $('#tjPanel').classList.remove('show'));
 
   // ---------- قسم التفسير ----------
   function renderTafsirView() {
@@ -1129,7 +1047,6 @@
   function handleBack() {
     if (document.body.classList.contains('group-menu-open')) { closeGroups({ restoreFocus: true }); return; }
     if ($('#tafsirPanel').classList.contains('show')) { $('#tafsirPanel').classList.remove('show'); return; }
-    if ($('#tjPanel').classList.contains('show')) { $('#tjPanel').classList.remove('show'); return; }
     if (document.body.classList.contains('side-open')) { closeSide(); return; }
     if (navStack.length) { popView(); return; }
     if (curView !== 'reader') { showView('reader', { back: true }); return; }
@@ -1639,8 +1556,8 @@
     const selected = candidates.find((curriculum) =>
       TajweedCurriculumLoaderAPI.scopeKey(curriculum.scope) === selectedKey);
     note.textContent = selected
-      ? `${selected.displayName}؛ لا يختلط تقدمها أو علاماتها بأي طريق أو وجه آخر.`
-      : 'يلزم اختيار نطاق كامل قبل عرض التعلم أو ألوان التجويد.';
+      ? `${selected.displayName}؛ لا يختلط تقدمه أو أمثلته بأي طريق أو وجه آخر.`
+      : 'يلزم اختيار الرواية والطريق والوجه والطبعة قبل عرض منهج التجويد.';
   }
 
   function tafsirOptionsHtml() {
@@ -1663,7 +1580,6 @@
     $('#setFont').value = settings.font;
     $('#setSize').value = settings.size;
     $('#sizeVal').textContent = settings.size + 'px';
-    $('#setTajweed').checked = !!settings.tajweed;
     fillSmartSettings();
     applyTypography();
   }
@@ -1685,9 +1601,6 @@
     if (key === 'tafsir') { $('#setTafsir').value = value; $('#tfBook').value = value; }
     if (key === 'translation') { $('#setTranslation').value = value; $('#tfTrans').value = value; }
     if (key === 'riwaya' && curView === 'tajweed') renderTajweedView();
-    if (key === 'tajweed' && value && isRiw() && !currentApprovedTajweedCurriculum()) {
-      toast('لا توجد طبقة ألوان معتمدة لهذا النطاق؛ سيبقى نص المصحف بلا تلوين.');
-    }
     pageCache.clear();
     if (state.sel) {
       showPage(state.page, { selG: state.sel.g, save: false }).then(() => {
@@ -1704,17 +1617,11 @@
     else delete settings.tajweedScopes[settings.riwaya];
     saveSettings();
     syncTajweedScopeSelector();
-    pageCache.clear();
     if (curView === 'tajweed') renderTajweedView();
-    if (settings.tajweed && isRiw() && !currentApprovedTajweedCurriculum()) {
-      toast('هذا النطاق غير معتمد للألوان بعد؛ سيبقى نص المصحف بلا تلوين.');
-    }
-    if (state.sel) showPage(state.page, { selG: state.sel.g, save: false });
   });
   $('#setReciter').addEventListener('change', (e) => onSettingChange('reciter', e.target.value));
   $('#setTafsir').addEventListener('change', (e) => onSettingChange('tafsir', e.target.value));
   $('#setTranslation').addEventListener('change', (e) => onSettingChange('translation', e.target.value));
-  $('#setTajweed').addEventListener('change', (e) => onSettingChange('tajweed', e.target.checked));
   $('#setFont').addEventListener('change', (e) => {
     settings.font = e.target.value;
     saveSettings();
@@ -2370,18 +2277,10 @@
     return pointer ? candidate : null;
   }
 
-  function currentApprovedTajweedCurriculum() {
-    const curriculum = currentTajweedCurriculum();
-    return curriculum?.status === 'APPROVED'
-      && curriculum.publishableAsApproved === true
-      && curriculum.annotationIndex instanceof Map
-      ? curriculum : null;
-  }
-
   function firstTajweedExample(code) {
     const escaped = String(code).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const pattern = new RegExp(`\\[${escaped}(?::\\d+)?\\[([^\\[\\]]*)\\]`);
-    for (const row of localTajweed) {
+    for (const row of tajweedExampleRows) {
       const raw = clean(row[3]);
       const match = pattern.exec(raw);
       if (!match) continue;
@@ -2411,8 +2310,6 @@
           name: rule.name,
           prompt: rule.prompt,
           answer: rule.answer,
-          tagCode: typeof rule.tagCode === 'string' ? rule.tagCode : '',
-          color: /^#[0-9A-Fa-f]{6}$/.test(rule.color || '') ? rule.color : '',
           example,
           curriculumId: curriculum.id,
           reviewStatus: curriculum.status,
@@ -2427,12 +2324,9 @@
     return tajweedLearningCards.filter((card) => TajweedLearningAPI.scopeKey(card.scope) === key);
   }
 
-  function coloredTajweedExample(card) {
+  function tajweedLearningExample(card) {
     if (!card?.example) return '';
-    const marker = card.color
-      ? `style="color:${card.color}"`
-      : `class="tj-${esc(card.tagCode)}"`;
-    return `<span ${marker}>${esc(card.example.text)}</span>`;
+    return `<span class="tj-example-mark">${esc(card.example.text)}</span>`;
   }
 
   function persistTajweedLearning() {
@@ -2446,7 +2340,7 @@
     $('#tjLearningCard').hidden = true;
     if (!TajweedLearningAPI || !tajweedLearningEngine || !tajweedLearningCatalog || !tajweedScopeRegistry) {
       $('#tjLearningScope').textContent = selectedLabel;
-      $('#tjLearningWarning').textContent = 'جارٍ تحميل طبقة التعلم المحلية…';
+      $('#tjLearningWarning').textContent = 'جارٍ تحميل منهج التجويد المحلي…';
       $('#tjStartLearning').disabled = true;
       $('#tjList').innerHTML = '';
       return;
@@ -2461,11 +2355,11 @@
       const hasUnloadedPointer = tajweedCurriculumLoadErrors.some((failure) =>
         entryArtifacts.has(failure.artifact));
       const blockedReason = needsScopeChoice
-        ? 'توجد عدة طرق أو أوجه مستقلة؛ اختر النطاق الكامل من الإعدادات قبل بدء التعلم.'
+        ? 'توجد عدة طرق أو أوجه مستقلة؛ اختر النطاق الكامل داخل تبويب «أحكام التجويد» قبل بدء التعلم.'
         : (hasUnloadedPointer
-          ? 'تعذّر التحقق من بصمة حزمة التجويد أو ربطها النصي؛ حُجبت الطبقة احترازيًا.'
+          ? 'تعذّر التحقق من بصمة حزمة التجويد أو ربطها النصي؛ حُجب المنهج احترازيًا.'
           : (registryEntry?.blockedReasonAr
-            || 'فشل التحقق من سجل نطاق التجويد؛ حُجبت الطبقة احترازيًا.'));
+            || 'فشل التحقق من سجل نطاق التجويد؛ حُجب المنهج احترازيًا.'));
       $('#tjLearningScope').textContent = `${selectedLabel} · الطريق والوجه والطبعة: غير مثبتة`;
       $('#tjReviewBadge').textContent = registryEntry?.status === 'BLOCKED_NO_APPROVED_CORPUS'
         ? 'محجوب لغياب المصدر المعتمد' : 'محجوب احترازيًا';
@@ -2477,7 +2371,7 @@
       $('#tjStartLearning').disabled = true;
       $('#tjResetLearning').disabled = true;
       $('#tjLearningEmpty').textContent = 'يلزم مصدر مستقل يحدد الرواية والطريق والوجه والطبعة، ثم مراجعة بشرية مؤهلة واعتماد نشر ثانٍ.';
-      $('#tjList').innerHTML = '<div class="muted">لا تُعرض أحكام حفص أو أي طبقة عامة بدلًا من نطاق هذا المصحف.</div>';
+      $('#tjList').innerHTML = '<div class="muted">لا تُعرض أحكام حفص أو أي مادة عامة بدلًا من المنهج الخاص بنطاق هذا المصحف.</div>';
       return;
     }
 
@@ -2503,7 +2397,7 @@
         : 'اكتملت بطاقات اليوم وفق الحد المحلي.');
     $('#tjList').innerHTML = cards.map((card) => {
       const example = card.example
-        ? `<div class="muted" style="margin-top:4px">مثال: ${coloredTajweedExample(card)} — ${esc(surahName(card.example.surah))} ${toArabicDigits(card.example.ayah)}</div>`
+        ? `<div class="muted" style="margin-top:4px">مثال: ${tajweedLearningExample(card)} — ${esc(surahName(card.example.surah))} ${toArabicDigits(card.example.ayah)}</div>`
         : '';
       return `<div class="wird-line"><span><strong>${esc(card.name)}</strong><div class="muted">${esc(card.answer)}</div>${example}</span></div>`;
     }).join('');
@@ -2522,7 +2416,7 @@
     $('#tjCardTitle').textContent = card.name;
     $('#tjCardPrompt').textContent = card.prompt;
     $('#tjCardExample').innerHTML = card.example
-      ? `${coloredTajweedExample(card)}<div class="muted">${esc(surahName(card.example.surah))} — الآية ${toArabicDigits(card.example.ayah)}</div>`
+      ? `${tajweedLearningExample(card)}<div class="muted">${esc(surahName(card.example.surah))} — الآية ${toArabicDigits(card.example.ayah)}</div>`
       : '<span class="muted">لا يوجد مثال موسوم في المصدر الحالي.</span>';
     $('#tjCardAnswerText').textContent = card.answer;
     $('#tjCardAnswer').hidden = true;
@@ -2585,7 +2479,7 @@
     tajweedLearningEngine.resetScope(curriculum.scope);
     persistTajweedLearning();
     renderTajweedView();
-    toast('مُسح تقدم هذه الطبعة');
+    toast('مُسح تقدم هذا النطاق');
   });
 
   // ---------- معاني الكلمات (من الموسوعة القرآنية) ----------
@@ -2603,7 +2497,6 @@
     $('#meanTitle').textContent = `${surahName(a.s)} - الآية ${toArabicDigits(a.n)}`;
     $('#meanAyah').textContent = plainAyah(a.html);
     $('#meanBody').innerHTML = '<div class="muted">جاري التحميل...</div>';
-    $('#tjPanel').classList.remove('show');
     $('#tafsirPanel').classList.remove('show');
     $('#meanPanel').classList.add('show');
     loadMeanings().then((all) => {
@@ -3580,6 +3473,7 @@
       }
     }
     fillSettings();
+    if (curView === 'tajweed') renderTajweedView();
     await refreshTafsirPackStatus();
     await loadSurahs();
     const last = getLast();

@@ -224,9 +224,12 @@ jobs:
           assert 'new SmartContextAPI.SmartContextEngine' in app
           assert 'new TajweedLearningAPI.TajweedLearningEngine' in app
           assert 'TajweedCurriculumLoaderAPI.loadRegistryCurricula' in app
-          assert 'currentApprovedTajweedCurriculum' in app and 'renderIndependentTajweed' in app
+          assert 'id="tjIndependentNote"' in html and 'لا يغيّر نص المصحف ولا يلوّنه' in html
+          assert 'value="quran-tajweed"' not in html and 'id="setTajweed"' not in html
+          assert 'currentApprovedTajweedCurriculum' not in app
+          assert 'renderIndependentTajweed' not in app and 'data-tj-rules' not in app
           assert 'replaceUpdateDataAssets' in app and 'SIRAJ_UPDATE_DATA_FILES' in app
-          assert 'لا تُعرض أحكام حفص أو أي طبقة عامة' in app
+          assert 'لا تُعرض أحكام حفص أو أي مادة عامة' in app
           assert "markShown(candidate, suggestionId, 'suggestion')" in app
           assert 'TafsirStore' in app and 'Reminder' in app and 'ar.parhizgar' in app
           assert 'loadBundledData()' in app and 'recordWirdPage' in app

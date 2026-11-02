@@ -18,7 +18,7 @@ const schema = readJson('tajweed-curriculum.schema.json');
 
 test('scope registry covers every selectable mushaf once and forbids fallback', () => {
   const expected = new Set([
-    'quran-uthmani', 'quran-simple', 'quran-uthmani-min', 'quran-tajweed',
+    'quran-uthmani', 'quran-simple', 'quran-uthmani-min',
     'warsh', 'qalun', 'duri',
   ]);
   const seen = new Set();
@@ -60,6 +60,9 @@ test('registry fingerprints bind text assets and the isolated Hafs draft', () =>
   assert.deepEqual(Object.keys(catalog.curricula[0].display).sort(),
     ['editionAr', 'nameAr', 'riwayahAr', 'tariqAr', 'wajhAr'].sort());
   assert.equal(catalog.curricula[0].display.riwayahAr, hafs.riwayah.labelAr);
+  assert.deepEqual(catalog.curricula[0].appliesToSettings,
+    ['quran-uthmani', 'quran-simple', 'quran-uthmani-min']);
+  assert.match(hafs.textEdition.sourceNoteAr, /لا يُعرض هذا الملف كمصحف ملوّن/);
 });
 
 test('curriculum schema keeps source, annotation and two-person review gates', () => {
@@ -144,5 +147,5 @@ test('runtime requires an exact registry pointer before exposing a curriculum', 
   assert.match(app, /candidates\.length > 1/);
   assert.match(app, /settings\.tajweedScopes\[settings\.riwaya\]/);
   assert.match(app, /لا نختار طريقًا أو وجهًا ضمنيًا/);
-  assert.match(app, /لا تُعرض أحكام حفص أو أي طبقة عامة/);
+  assert.match(app, /لا تُعرض أحكام حفص أو أي مادة عامة/);
 });

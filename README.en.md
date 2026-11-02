@@ -69,7 +69,7 @@ Release evidence:
 - The complete Quran: **6,236 ayat** across **114 surahs**.
 - Page-by-page navigation using the **604-page** Madinah Mushaf page mapping.
 - Surah, juz, and ayah index with direct navigation and last-position restoration.
-- Hafs in Uthmani script, simplified orthography, and color-coded tajweed.
+- Hafs in Uthmani script and simplified orthography, with tajweed explanations in a separate tab that never recolors or alters the Mushaf text.
 - Additional riwayat, including Warsh, Qalun, and Al-Duri alongside Hafs.
 - A wide Hafs reading layout with centered surah title and basmalah, continuous text, and ornamental ayah markers.
 - Presentation-layer basmalah handling so it appears once without changing source data, numbering, recitation mapping, or tafsir mapping.

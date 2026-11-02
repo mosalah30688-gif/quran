@@ -126,10 +126,13 @@ def main() -> None:
     assert "new SmartContextAPI.SmartContextEngine" in app
     assert "new TajweedLearningAPI.TajweedLearningEngine" in app
     assert "TajweedCurriculumLoaderAPI.loadRegistryCurricula" in app
-    assert "currentApprovedTajweedCurriculum" in app and "renderIndependentTajweed" in app
+    assert 'id="tjIndependentNote"' in html and "لا يغيّر نص المصحف ولا يلوّنه" in html
+    assert 'value="quran-tajweed"' not in html and 'id="setTajweed"' not in html
+    assert "currentApprovedTajweedCurriculum" not in app
+    assert "renderIndependentTajweed" not in app and "data-tj-rules" not in app
     assert "replaceUpdateDataAssets" in app and "SIRAJ_UPDATE_DATA_FILES" in app
     assert "FORBIDDEN_BETWEEN_SCOPES" in app
-    assert "لا تُعرض أحكام حفص أو أي طبقة عامة" in app
+    assert "لا تُعرض أحكام حفص أو أي مادة عامة" in app
     assert "markShown(candidate, suggestionId, 'suggestion')" in app
     assert "lookupBatch" in app and "TafsirStore" in app
     assert "recordWirdPage" in app and "Reminder" in app
@@ -185,7 +188,7 @@ def main() -> None:
     assert "--quran-font" in html and "setFont" in html
     assert "data-icon=\"tajweed\"" in html and "🎵" not in html
 
-    print("Verified Android local bundle: 6,236 Hafs/tajweed rows, 604 pages, 78 licensed tafsirs, four fonts")
+    print("Verified Android local bundle: 6,236 Hafs rows plus internal tajweed examples, 604 pages, 78 licensed tafsirs, four fonts")
 
 
 if __name__ == "__main__":

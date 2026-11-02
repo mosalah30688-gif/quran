@@ -4,13 +4,13 @@
   "curricula": [
     {
       "id": "hafs-alquran-cloud-draft-v1",
-      "displayName": "حفص عن عاصم — علامات مصدر quran-tajweed",
+      "displayName": "حفص عن عاصم — أمثلة تعليمية من مصدر quran-tajweed",
       "display": {
-        "nameAr": "حفص عن عاصم — طريق ووجه غير موثقين — طبعة quran-tajweed التجريبية",
+        "nameAr": "حفص عن عاصم — طريق ووجه غير موثقين — مسودة شرح تجريبية",
         "riwayahAr": "حفص عن عاصم",
         "tariqAr": "الطريق غير موثق في المصدر",
         "wajhAr": "الوجه غير موثق في المصدر",
-        "editionAr": "طبعة quran-tajweed التجريبية الأولى"
+        "editionAr": "مسودة تعلم تجريبية من مصدر quran-tajweed"
       },
       "scope": {
         "riwayah": "hafs-an-asim",
@@ -21,8 +21,7 @@
       "appliesToSettings": [
         "quran-uthmani",
         "quran-simple",
-        "quran-uthmani-min",
-        "quran-tajweed"
+        "quran-uthmani-min"
       ],
       "status": "PENDING_SCHOLARLY_REVIEW",
       "publishableAsApproved": false,
