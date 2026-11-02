@@ -1,0 +1,934 @@
+{
+  "schemaVersion": 1,
+  "packetId": "siraj-non-hafs-wajh-review-2026-11-02",
+  "updatedAt": "2026-11-02",
+  "purpose": "QUALIFIED_HUMAN_WAJH_AND_EDITION_DECISION_PACKET_ONLY",
+  "status": "AWAITING_QUALIFIED_REVIEWER",
+  "publishableAsApproved": false,
+  "containsQuranText": false,
+  "containsCopiedRuleProse": false,
+  "containsTrainingExamples": false,
+  "containsAnnotationSpans": false,
+  "inputs": {
+    "sourceRegistry": "audit/sources/tajweed-riwayat/2026-11-02/SOURCE.json",
+    "topicInventory": "audit/sources/tajweed-riwayat/2026-11-02/RULE_INVENTORY.json",
+    "duriCountAudit": "audit/sources/tajweed-riwayat/2026-11-02/DURI_COUNT_AUDIT.json",
+    "quranpediaSnapshotRegistry": "audit/sources/quranpedia/2026-11-02/SOURCE.json",
+    "candidateRegistry": "audit/tajweed-source-candidates.json",
+    "runtimeScopeRegistry": "tajweed-scope-registry.json"
+  },
+  "reviewContract": {
+    "reviewerMustBeQualifiedInExactRiwayahAndTariq": true,
+    "fullScopeReviewNotSampling": true,
+    "everyDecisionItemMustBeResolved": true,
+    "selectedPracticesMustBeMutuallyCompatible": true,
+    "sourceLocatorRequiredPerDecision": true,
+    "editionAndCountMustBeExplicit": true,
+    "reviewEvidenceHashRequired": true,
+    "rightsApprovalIsSeparate": true,
+    "secondPersonReleaseApprovalRequired": true,
+    "machineMaySelectOrApprove": false,
+    "runtimeActivationAllowed": false
+  },
+  "scopes": [
+    {
+      "settingId": "warsh",
+      "proposedScope": {
+        "riwayah": "warsh-an-nafi",
+        "tariq": "al-azraq-via-al-shatibiyyah",
+        "wajh": "pending-qualified-review",
+        "edition": "quranpedia-mushaf-4-2026-11-02-crosschecked-kfgqpc-warsh-v3"
+      },
+      "routeStatus": "DOCUMENTED",
+      "wajhStatus": "NOT_SELECTED",
+      "editionStatus": "PENDING_QUALIFIED_CONFIRMATION",
+      "sourceEvidenceIds": [
+        "quranpedia-warsh-intro",
+        "libya-warsh-method-2022",
+        "kfgqpc-warsh-v3"
+      ],
+      "textBindingCandidate": {
+        "runtimeAsset": "quran-riwayat.json",
+        "runtimeAssetSha256": "a3a7ef91c036f2ff4f62df3dba12c0c2f9d50211792a5b6cf574f4cf85b9938c",
+        "dataset": "warsh",
+        "verseRecords": 6214,
+        "quranpediaSnapshot": "audit/sources/quranpedia/2026-11-02/mushafs-4.json.gz",
+        "quranpediaSnapshotSha256": "fb79026f75ad8fef6ab9752ee7fda4b8ff312ae45937016a1f8ecac70ebfd1b6",
+        "canonicalPayloadSha256WithoutTopLevelLicense": "abd940919c897fa930f0a449e113f4fb8219709a48857d45783c39320f3fdc0d",
+        "status": "CANDIDATE_PENDING_WAJH_AND_QUALIFIED_REVIEW"
+      },
+      "countAudit": null,
+      "decisionItems": [
+        {
+          "decisionId": "warsh.istiadha",
+          "topicId": "istiadha",
+          "titleAr": "الاستعاذة",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 79,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «الاستعاذة» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.basmala",
+          "topicId": "basmala",
+          "titleAr": "البسملة",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 82,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «البسملة» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.mim-al-jam",
+          "topicId": "mim-al-jam",
+          "titleAr": "ميم الجمع",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 84,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «ميم الجمع» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.ha-al-kinaya",
+          "topicId": "ha-al-kinaya",
+          "titleAr": "هاء الكناية",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 86,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «هاء الكناية» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.madd-wa-qasr",
+          "topicId": "madd-wa-qasr",
+          "titleAr": "المد والقصر",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 89,
+          "decisionKind": "FIX_COMPATIBLE_PRACTICE",
+          "reviewQuestionAr": "ثبّت الممارسة المختارة لباب «المد والقصر» ضمن وجه واحد متوافق، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.hamzatayn-min-kalima",
+          "topicId": "hamzatayn-min-kalima",
+          "titleAr": "الهمزتان من كلمة",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 95,
+          "decisionKind": "FIX_COMPATIBLE_PRACTICE",
+          "reviewQuestionAr": "ثبّت الممارسة المختارة لباب «الهمزتان من كلمة» ضمن وجه واحد متوافق، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.hamzatayn-min-kalimatayn",
+          "topicId": "hamzatayn-min-kalimatayn",
+          "titleAr": "الهمزتان من كلمتين",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 100,
+          "decisionKind": "FIX_COMPATIBLE_PRACTICE",
+          "reviewQuestionAr": "ثبّت الممارسة المختارة لباب «الهمزتان من كلمتين» ضمن وجه واحد متوافق، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.hamz-mufrad",
+          "topicId": "hamz-mufrad",
+          "titleAr": "الهمز المفرد",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 104,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «الهمز المفرد» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.izhar-wa-idgham",
+          "topicId": "izhar-wa-idgham",
+          "titleAr": "الإظهار والإدغام",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 108,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «الإظهار والإدغام» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.fath-wa-imala",
+          "topicId": "fath-wa-imala",
+          "titleAr": "الفتح والإمالة",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 112,
+          "decisionKind": "FIX_COMPATIBLE_PRACTICE",
+          "reviewQuestionAr": "ثبّت الممارسة المختارة لباب «الفتح والإمالة» ضمن وجه واحد متوافق، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.raat",
+          "topicId": "raat",
+          "titleAr": "الراءات",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 116,
+          "decisionKind": "FIX_COMPATIBLE_PRACTICE",
+          "reviewQuestionAr": "ثبّت الممارسة المختارة لباب «الراءات» ضمن وجه واحد متوافق، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.lamat",
+          "topicId": "lamat",
+          "titleAr": "اللامات",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 119,
+          "decisionKind": "FIX_COMPATIBLE_PRACTICE",
+          "reviewQuestionAr": "ثبّت الممارسة المختارة لباب «اللامات» ضمن وجه واحد متوافق، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.waqf-awakhir-al-kalim",
+          "topicId": "waqf-awakhir-al-kalim",
+          "titleAr": "الوقف على أواخر الكلم",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 121,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «الوقف على أواخر الكلم» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.waqf-marsum-al-khatt",
+          "topicId": "waqf-marsum-al-khatt",
+          "titleAr": "الوقف على مرسوم الخط",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 125,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «الوقف على مرسوم الخط» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.yaat-al-idafa",
+          "topicId": "yaat-al-idafa",
+          "titleAr": "ياءات الإضافة",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 128,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «ياءات الإضافة» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.yaat-al-zawaid",
+          "topicId": "yaat-al-zawaid",
+          "titleAr": "الياءات الزوائد",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 131,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «الياءات الزوائد» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.tarkib-al-wujuh-appendix",
+          "topicId": "tarkib-al-wujuh-appendix",
+          "titleAr": "ملحق تركيب الأوجه في رواية ورش",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 134,
+          "decisionKind": "FIX_CROSS_TOPIC_COMPATIBILITY",
+          "reviewQuestionAr": "ثبّت تركيبًا واحدًا متوافقًا لباب «ملحق تركيب الأوجه في رواية ورش» مع جميع قرارات الوجه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        }
+      ],
+      "specialGates": [
+        {
+          "gateId": "warsh-compatible-face-composition",
+          "status": "PENDING_QUALIFIED_REVIEW",
+          "blocking": true,
+          "sourceIds": [
+            "libya-warsh-method-2022"
+          ],
+          "locator": "printed page 134",
+          "requiredOutcomeAr": "تثبيت تركيب واحد متوافق لجميع الاختيارات، لا جمع أوجه متعارضة ولا اعتماد افتراضي."
+        },
+        {
+          "gateId": "warsh-rule-and-derived-data-rights",
+          "status": "BLOCKED_NO_REDISTRIBUTION_GRANT",
+          "blocking": true,
+          "sourceIds": [
+            "quranpedia-dumps-2026-11-02",
+            "libya-warsh-method-2022"
+          ],
+          "locator": "rights conclusion in SOURCE.json",
+          "requiredOutcomeAr": "تسجيل إذن صريح يغطي قاعدة الأحكام والبيانات المشتقة، مستقلًا عن ترخيص نص القرآن."
+        }
+      ],
+      "reviewAssignment": {
+        "status": "NOT_ASSIGNED",
+        "reviewerName": null,
+        "reviewerQualification": null,
+        "exactRouteExperience": null,
+        "assignedAt": null
+      },
+      "finalDecision": {
+        "status": "PENDING",
+        "selectedWajhId": null,
+        "selectedWajhLabelAr": null,
+        "selectedEditionId": null,
+        "selectedEditionSha256": null,
+        "editionEvidenceLocator": null,
+        "selectedCountTraditionId": null,
+        "selectedTotalAyahs": null,
+        "selectedSurahCountTableSha256": null,
+        "compatibilityAttestationAr": null,
+        "completedDecisionCount": 0,
+        "reviewEvidenceSha256": null
+      },
+      "secondPersonReleaseApproval": {
+        "status": "NOT_STARTED",
+        "approverName": null,
+        "approverQualification": null,
+        "approvalDate": null,
+        "approvedArtifactSha256": null
+      },
+      "publishableAsApproved": false
+    },
+    {
+      "settingId": "qalun",
+      "proposedScope": {
+        "riwayah": "qalun-an-nafi",
+        "tariq": "abu-nashit-via-al-shatibiyyah",
+        "wajh": "pending-qualified-review",
+        "edition": "quranpedia-mushaf-7-2026-11-02-crosschecked-kfgqpc-qalun-v3"
+      },
+      "routeStatus": "DOCUMENTED",
+      "wajhStatus": "NOT_SELECTED",
+      "editionStatus": "PENDING_QUALIFIED_CONFIRMATION",
+      "sourceEvidenceIds": [
+        "quranpedia-qalun-intro",
+        "libya-qalun-method-2022",
+        "kfgqpc-qalun-v3"
+      ],
+      "textBindingCandidate": {
+        "runtimeAsset": "quran-riwayat.json",
+        "runtimeAssetSha256": "a3a7ef91c036f2ff4f62df3dba12c0c2f9d50211792a5b6cf574f4cf85b9938c",
+        "dataset": "qalun",
+        "verseRecords": 6214,
+        "quranpediaSnapshot": "audit/sources/quranpedia/2026-11-02/mushafs-7.json.gz",
+        "quranpediaSnapshotSha256": "f51234f98a96e3521b2a7c02d2c457158151867dbc720f1a2fadeaa3436d3809",
+        "canonicalPayloadSha256WithoutTopLevelLicense": "363e16e8067622cb94ecfc86e922319f7aa238fb19e689b329ea1cffcd547d9c",
+        "status": "CANDIDATE_PENDING_WAJH_AND_QUALIFIED_REVIEW"
+      },
+      "countAudit": null,
+      "decisionItems": [
+        {
+          "decisionId": "qalun.istiadha",
+          "topicId": "istiadha",
+          "titleAr": "الاستعاذة",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 79,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «الاستعاذة» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.basmala",
+          "topicId": "basmala",
+          "titleAr": "البسملة",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 82,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «البسملة» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.mim-al-jam",
+          "topicId": "mim-al-jam",
+          "titleAr": "ميم الجمع",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 85,
+          "decisionKind": "FIX_COMPATIBLE_PRACTICE",
+          "reviewQuestionAr": "ثبّت الممارسة المختارة لباب «ميم الجمع» ضمن وجه واحد متوافق، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.ha-al-kinaya",
+          "topicId": "ha-al-kinaya",
+          "titleAr": "هاء الكناية",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 87,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «هاء الكناية» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.madd-wa-qasr",
+          "topicId": "madd-wa-qasr",
+          "titleAr": "المد والقصر",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 90,
+          "decisionKind": "FIX_COMPATIBLE_PRACTICE",
+          "reviewQuestionAr": "ثبّت الممارسة المختارة لباب «المد والقصر» ضمن وجه واحد متوافق، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.hamzatayn-min-kalima",
+          "topicId": "hamzatayn-min-kalima",
+          "titleAr": "الهمزتان من كلمة",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 93,
+          "decisionKind": "FIX_COMPATIBLE_PRACTICE",
+          "reviewQuestionAr": "ثبّت الممارسة المختارة لباب «الهمزتان من كلمة» ضمن وجه واحد متوافق، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.hamzatayn-min-kalimatayn",
+          "topicId": "hamzatayn-min-kalimatayn",
+          "titleAr": "الهمزتان من كلمتين",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 98,
+          "decisionKind": "FIX_COMPATIBLE_PRACTICE",
+          "reviewQuestionAr": "ثبّت الممارسة المختارة لباب «الهمزتان من كلمتين» ضمن وجه واحد متوافق، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.hamz-mufrad",
+          "topicId": "hamz-mufrad",
+          "titleAr": "الهمز المفرد",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 101,
+          "decisionKind": "FIX_COMPATIBLE_PRACTICE",
+          "reviewQuestionAr": "ثبّت الممارسة المختارة لباب «الهمز المفرد» ضمن وجه واحد متوافق، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.izhar-wa-idgham",
+          "topicId": "izhar-wa-idgham",
+          "titleAr": "الإظهار والإدغام",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 104,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «الإظهار والإدغام» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.fath-wa-imala",
+          "topicId": "fath-wa-imala",
+          "titleAr": "الفتح والإمالة",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 109,
+          "decisionKind": "FIX_COMPATIBLE_PRACTICE",
+          "reviewQuestionAr": "ثبّت الممارسة المختارة لباب «الفتح والإمالة» ضمن وجه واحد متوافق، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.waqf-awakhir-al-kalim",
+          "topicId": "waqf-awakhir-al-kalim",
+          "titleAr": "الوقف على أواخر الكلم",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 112,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «الوقف على أواخر الكلم» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.waqf-marsum-al-khatt",
+          "topicId": "waqf-marsum-al-khatt",
+          "titleAr": "الوقف على مرسوم الخط",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 116,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «الوقف على مرسوم الخط» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.yaat-al-idafa",
+          "topicId": "yaat-al-idafa",
+          "titleAr": "ياءات الإضافة",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 119,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «ياءات الإضافة» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.yaat-al-zawaid",
+          "topicId": "yaat-al-zawaid",
+          "titleAr": "الياءات الزوائد",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 122,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «الياءات الزوائد» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        }
+      ],
+      "specialGates": [
+        {
+          "gateId": "qalun-compatible-face-composition",
+          "status": "PENDING_QUALIFIED_REVIEW",
+          "blocking": true,
+          "sourceIds": [
+            "libya-qalun-method-2022"
+          ],
+          "locator": "chapter 3, printed pages 75-124",
+          "requiredOutcomeAr": "تثبيت وجه واحد كامل ومتوافق بين أبواب الأصول قبل إنشاء أي منهج."
+        },
+        {
+          "gateId": "qalun-rule-and-derived-data-rights",
+          "status": "BLOCKED_NO_REDISTRIBUTION_GRANT",
+          "blocking": true,
+          "sourceIds": [
+            "quranpedia-dumps-2026-11-02",
+            "libya-qalun-method-2022"
+          ],
+          "locator": "rights conclusion in SOURCE.json",
+          "requiredOutcomeAr": "تسجيل إذن صريح يغطي قاعدة الأحكام والبيانات المشتقة، مستقلًا عن ترخيص نص القرآن."
+        }
+      ],
+      "reviewAssignment": {
+        "status": "NOT_ASSIGNED",
+        "reviewerName": null,
+        "reviewerQualification": null,
+        "exactRouteExperience": null,
+        "assignedAt": null
+      },
+      "finalDecision": {
+        "status": "PENDING",
+        "selectedWajhId": null,
+        "selectedWajhLabelAr": null,
+        "selectedEditionId": null,
+        "selectedEditionSha256": null,
+        "editionEvidenceLocator": null,
+        "selectedCountTraditionId": null,
+        "selectedTotalAyahs": null,
+        "selectedSurahCountTableSha256": null,
+        "compatibilityAttestationAr": null,
+        "completedDecisionCount": 0,
+        "reviewEvidenceSha256": null
+      },
+      "secondPersonReleaseApproval": {
+        "status": "NOT_STARTED",
+        "approverName": null,
+        "approverQualification": null,
+        "approvalDate": null,
+        "approvedArtifactSha256": null
+      },
+      "publishableAsApproved": false
+    },
+    {
+      "settingId": "duri",
+      "proposedScope": {
+        "riwayah": "al-duri-an-abi-amr",
+        "tariq": "abu-al-zaraa-via-al-shatibiyyah",
+        "wajh": "pending-qualified-review",
+        "edition": "kfgqpc-duri-v2-quranpedia-mushaf-6-count-scope-unresolved"
+      },
+      "routeStatus": "DOCUMENTED",
+      "wajhStatus": "NOT_SELECTED",
+      "editionStatus": "BLOCKED_COUNT_SCOPE_AND_DATA_INTEGRITY",
+      "sourceEvidenceIds": [
+        "quranpedia-duri-intro",
+        "duri-fawh-al-itr-2006",
+        "duri-oiu-study-2016",
+        "duri-fayyad-shatibiyyah",
+        "kfgqpc-duri-v2",
+        "quranpedia-duri-svg-2026-07-13"
+      ],
+      "textBindingCandidate": {
+        "runtimeAsset": "quran-riwayat.json",
+        "runtimeAssetSha256": "a3a7ef91c036f2ff4f62df3dba12c0c2f9d50211792a5b6cf574f4cf85b9938c",
+        "dataset": "duri",
+        "verseRecords": 6218,
+        "quranpediaSnapshot": "audit/sources/quranpedia/2026-11-02/mushafs-6.json.gz",
+        "quranpediaSnapshotSha256": "a147439fe592e038b910e1d36ed536c5b65778313b35bee55320f4c5f9a89703",
+        "canonicalPayloadSha256WithoutTopLevelLicense": "5db0d43d0a369aaa4366b4a1fb9b6b3a7d6c680eb2f3a195557a094cf594a164",
+        "status": "REJECTED_AS_OFFSET_AUTHORITY_KNOWN_67_9_SPLIT"
+      },
+      "countAudit": {
+        "path": "audit/sources/tajweed-riwayat/2026-11-02/DURI_COUNT_AUDIT.json",
+        "status": "QUARANTINED_PUBLISHER_OR_QUALIFIED_SCHOLAR_CLARIFICATION_REQUIRED",
+        "observedTotals": [
+          6214,
+          6217,
+          6218
+        ],
+        "automaticRepairAllowed": false
+      },
+      "decisionItems": [
+        {
+          "decisionId": "duri.basmala",
+          "topicId": "basmala",
+          "titleAr": "البسملة",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 53,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «البسملة» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.mim-al-jam",
+          "topicId": "mim-al-jam",
+          "titleAr": "ميم الجمع",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 53,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «ميم الجمع» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.ha-al-kinaya",
+          "topicId": "ha-al-kinaya",
+          "titleAr": "هاء الكناية",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 54,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «هاء الكناية» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.idgham-saghir",
+          "topicId": "idgham-saghir",
+          "titleAr": "الإدغام الصغير",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 55,
+          "decisionKind": "FIX_COMPATIBLE_PRACTICE",
+          "reviewQuestionAr": "ثبّت الممارسة المختارة لباب «الإدغام الصغير» ضمن وجه واحد متوافق، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.waqf-marsum-al-khatt",
+          "topicId": "waqf-marsum-al-khatt",
+          "titleAr": "الوقف على مرسوم الخط",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 59,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «الوقف على مرسوم الخط» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.madd-wa-qasr",
+          "topicId": "madd-wa-qasr",
+          "titleAr": "المد والقصر",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 60,
+          "decisionKind": "FIX_COMPATIBLE_PRACTICE",
+          "reviewQuestionAr": "ثبّت الممارسة المختارة لباب «المد والقصر» ضمن وجه واحد متوافق، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.fath-imala-taqlil",
+          "topicId": "fath-imala-taqlil",
+          "titleAr": "الفتح والإمالة والتقليل",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 61,
+          "decisionKind": "FIX_COMPATIBLE_PRACTICE",
+          "reviewQuestionAr": "ثبّت الممارسة المختارة لباب «الفتح والإمالة والتقليل» ضمن وجه واحد متوافق، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.hamz-mufrad",
+          "topicId": "hamz-mufrad",
+          "titleAr": "الهمز المفرد",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 64,
+          "decisionKind": "FIX_COMPATIBLE_PRACTICE",
+          "reviewQuestionAr": "ثبّت الممارسة المختارة لباب «الهمز المفرد» ضمن وجه واحد متوافق، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.hamzatayn-min-kalima",
+          "topicId": "hamzatayn-min-kalima",
+          "titleAr": "الهمزتان من كلمة",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 65,
+          "decisionKind": "FIX_COMPATIBLE_PRACTICE",
+          "reviewQuestionAr": "ثبّت الممارسة المختارة لباب «الهمزتان من كلمة» ضمن وجه واحد متوافق، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.hamzatayn-min-kalimatayn",
+          "topicId": "hamzatayn-min-kalimatayn",
+          "titleAr": "الهمزتان من كلمتين",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 67,
+          "decisionKind": "FIX_COMPATIBLE_PRACTICE",
+          "reviewQuestionAr": "ثبّت الممارسة المختارة لباب «الهمزتان من كلمتين» ضمن وجه واحد متوافق، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.yaat-al-idafa",
+          "topicId": "yaat-al-idafa",
+          "titleAr": "ياءات الإضافة",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 69,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «ياءات الإضافة» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.yaat-al-zawaid",
+          "topicId": "yaat-al-zawaid",
+          "titleAr": "الياءات الزوائد",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 76,
+          "decisionKind": "CONFIRM_SCOPE_PRACTICE",
+          "reviewQuestionAr": "أكّد ممارسة باب «الياءات الزوائد» في الوجه المختار، أو صرّح بعدم تعدد الوجه فيه، وسجّل موضع الدليل.",
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "reviewerSourceLocator": null,
+          "reviewerNoteAr": null
+        }
+      ],
+      "specialGates": [
+        {
+          "gateId": "duri-count-tradition",
+          "status": "BLOCKED_EXTERNAL_CLARIFICATION",
+          "blocking": true,
+          "sourceIds": [
+            "quranpedia-duri-intro",
+            "kfgqpc-duri-v2",
+            "faraid-al-hisan-counting"
+          ],
+          "locator": "DURI_COUNT_AUDIT.json",
+          "requiredOutcomeAr": "حسم موثق للعدد المقصود وجدول السور للطبعة نفسها من الناشر أو مختص مؤهل."
+        },
+        {
+          "gateId": "duri-quranpedia-67-9-regression",
+          "status": "BLOCKED_SOURCE_CORRECTION_OR_REPLACEMENT",
+          "blocking": true,
+          "sourceIds": [
+            "quranpedia-dumps-2026-11-02",
+            "kfgqpc-duri-v2",
+            "quranpedia-duri-svg-2026-07-13"
+          ],
+          "locator": "surah 67, Hafs reference 9",
+          "requiredOutcomeAr": "استخدام أصل مصحح ومثبت البصمة؛ يمنع الإصلاح الآلي أو حذف سجل اعتباطًا."
+        },
+        {
+          "gateId": "duri-large-idgham-separation",
+          "status": "PENDING_QUALIFIED_REVIEW",
+          "blocking": true,
+          "sourceIds": [
+            "duri-oiu-study-2016",
+            "duri-fayyad-shatibiyyah"
+          ],
+          "locator": "Duri and Susi principle sections",
+          "requiredOutcomeAr": "تأكيد مستقل يمنع نسبة الإدغام الكبير للدوري من عرض عام يخص قراءة أبي عمرو أو السوسي."
+        },
+        {
+          "gateId": "duri-rule-and-derived-data-rights",
+          "status": "BLOCKED_NO_REDISTRIBUTION_GRANT",
+          "blocking": true,
+          "sourceIds": [
+            "quranpedia-dumps-2026-11-02",
+            "duri-fawh-al-itr-2006",
+            "duri-oiu-study-2016"
+          ],
+          "locator": "rights conclusion in SOURCE.json",
+          "requiredOutcomeAr": "تسجيل إذن صريح يغطي قاعدة الأحكام والبيانات المشتقة، مستقلًا عن ترخيص نص القرآن."
+        }
+      ],
+      "reviewAssignment": {
+        "status": "NOT_ASSIGNED",
+        "reviewerName": null,
+        "reviewerQualification": null,
+        "exactRouteExperience": null,
+        "assignedAt": null
+      },
+      "finalDecision": {
+        "status": "PENDING",
+        "selectedWajhId": null,
+        "selectedWajhLabelAr": null,
+        "selectedEditionId": null,
+        "selectedEditionSha256": null,
+        "editionEvidenceLocator": null,
+        "selectedCountTraditionId": null,
+        "selectedTotalAyahs": null,
+        "selectedSurahCountTableSha256": null,
+        "compatibilityAttestationAr": null,
+        "completedDecisionCount": 0,
+        "reviewEvidenceSha256": null
+      },
+      "secondPersonReleaseApproval": {
+        "status": "NOT_STARTED",
+        "approverName": null,
+        "approverQualification": null,
+        "approvalDate": null,
+        "approvedArtifactSha256": null
+      },
+      "publishableAsApproved": false
+    }
+  ],
+  "releaseGate": {
+    "status": "BLOCKED",
+    "runtimeChanges": 0,
+    "approvedCurricula": 0,
+    "requiredBeforeActivation": [
+      "complete-qualified-review-response-for-every-decision",
+      "one-compatible-wajh-profile-per-scope",
+      "exact-edition-and-count-resolution",
+      "licensed-rule-and-derived-data-corpus",
+      "exact-text-hash-binding",
+      "independent-second-person-release-approval"
+    ]
+  }
+}

@@ -34,15 +34,18 @@
 - `SOURCE.json`: سجل المصادر والبصمات والحقوق ونطاقات الرواية والطريق.
 - `RULE_INVENTORY.json`: خريطة موضوعات ومواقع صفحات فقط؛ ليست قواعد ولا curriculum.
 - `DURI_COUNT_AUDIT.json`: أدلة تعارض `6214/6217` وانحدار `6218` وجدول فروق السور.
-- `../quranpedia/2026-11-02/`: النصوص المرخصة المثبتة البصمة مع الرخصة والـmanifest والنسبة.
+- `WAJH_REVIEW_PACKET.json`: حزمة قرار فارغة ومقفلة تغطي 17 قرارًا لورش و14 لقالون و12 للدوري؛ لا تحتوي اختيارًا آليًا ولا اعتمادًا.
+- `WAJH_REVIEW_GUIDE.ar.md`: تعليمات المراجع المؤهل والحقول المطلوبة وحواجز الحقوق والاعتماد الثاني.
+- `../../quranpedia/2026-11-02/`: النصوص المرخصة المثبتة البصمة مع الرخصة والـmanifest والنسبة.
 
 ## التحقق
 
 ```bash
 python3 scripts/verify_tajweed_reference_sources.py
+python3 scripts/verify_tajweed_wajh_review_packet.py
 python3 scripts/verify_tajweed_source_candidates.py
 python3 scripts/verify_tajweed_scopes.py
-node --test tests/tajweed-reference-sources.test.js tests/tajweed-source-candidates.test.js
+node --test tests/tajweed-reference-sources.test.js tests/tajweed-wajh-review-packet.test.js tests/tajweed-source-candidates.test.js
 ```
 
 النتيجة المقصودة: تثبيت الطرق الثلاث مع بقاء الوجه والـcorpus والحقوق المشتقة والمراجعة محجورة، وصفر مناهج مستقلة مفعلة في runtime.

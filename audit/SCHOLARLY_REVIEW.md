@@ -21,10 +21,14 @@
 | `adhkar.json` | `52e0c5fb07d6e1b2cbb06f1e54f5945ae6345202fedad4fc4c4a0e0349c46df9` | النص والمصدر/التخريج وعدد التكرار لكل عنصر |
 | `tajweed.json` | `812002f31940efaa4e4aa7035f5f379598eb5e57b468ba7757d73e669f106b44` | صحة أسماء الأحكام وشروحها المختصرة |
 | `tajweed-learning-catalog.json` | `a88ca2f3febcb8b530adc24073a03f30fc4441c3102d9300454b24b8b3e52dee` | مسودة تعلم حفص وهويتها العربية الصريحة: صحة الأحكام والأمثلة وربط كل مثال بعلامته، وتصنيف المستويات والمجموعات التعليمية؛ الحالة `PENDING_SCHOLARLY_REVIEW` والطريق والوجه موسومان بأنهما غير موثقين |
-| `tajweed-scope-registry.json` | `ffbee3681f786a67f12642e2e73ec646164e567744bb231e2f2ebd63aedbd77e` | صحة فصل حفص وورش وقالون والدوري، وربط كل نطاق بنصه ومصادره، ومنع الرجوع بين النطاقات |
+| `tajweed-scope-registry.json` | `ace20aeda40ce8aa809141f82f36831f92ee4bf6e489a6fb288801ff236246ca` | صحة فصل حفص وورش وقالون والدوري، وربط كل نطاق بنصه ومصادره، ومنع الرجوع بين النطاقات |
 | `tajweed-curriculum.schema.json` | `4490ce244e559e6ac8edd19b7d26319b39f6a8434e49c94e0ec1906c29e4d775` | عقد حزم التجويد: الرواية والطريق والوجه والطبعة وتسمياتها العربية المراجعة، بصمات النص والمصادر، العلامات، والمراجعة البشرية واعتماد النشر الثاني |
-| `audit/tajweed-source-candidates.json` | `74c129df87f0e711a1021eedbe6be53a2b1d8df9607c9303f62164df182fbe17` | سجل مرشحات ورش وقالون والدوري المحجورة وموانع الحقوق والربط والمراجعة؛ ليس محتوى runtime |
+| `audit/tajweed-source-candidates.json` | `5643f35ceb6fc4056460ccccb444b09d346f42d58b5fdea39b4023f386e507b6` | سجل مرشحات ورش وقالون والدوري المحجورة وموانع الحقوق والربط والمراجعة؛ ليس محتوى runtime |
 | `audit/tajweed-candidates/warsh-al-azraq-qud-v1.analysis.json` | `0434d843d286e081253e00b516e2926bbf8fcda175bc04eba49ecb495c7136cd` | تقرير metadata-only لحزمة ورش/الأزرق: سلامة تقنية وتغطية 6,214 آية و46 معرف حكم، مع إثبات فشل بوابات النشر |
+| `audit/sources/tajweed-riwayat/2026-11-02/SOURCE.json` | `986066540c7b1ca7c1ef927f55736c18b8f5bd774f2591883d9534af30ef5b94` | مراجع الطرق والطبعات المرشحة ونتائج الحقوق، بلا اعتماد وجه أو corpus |
+| `audit/sources/tajweed-riwayat/2026-11-02/RULE_INVENTORY.json` | `dc77dddc7466a3862d572b8c97b9bc136276de14609090683a59b0c452cfce2f` | خريطة تغطية موضوعية metadata-only: ورش 17، قالون 14، الدوري 12 |
+| `audit/sources/tajweed-riwayat/2026-11-02/DURI_COUNT_AUDIT.json` | `9f33f42ed0e9201f6ad32c69bba9825e606e613ceb17dc3e42c99b9f50425077` | تعارض العدد 6214/6217 وانحدار 6218 عند شطر `67:9`؛ لا تصحيح آلي |
+| `audit/sources/tajweed-riwayat/2026-11-02/WAJH_REVIEW_PACKET.json` | `ea83545143fcc82cdc151d6695496975efbcffbfcd9e3fd653ddc3265fc49437` | حزمة قرار فارغة قابلة للتحقق؛ جميع اختيارات الوجه والطبعة والعدد والمراجعين والاعتماد الثاني غير مملوءة |
 
 ### حالة طبقات التجويد المستقلة
 
