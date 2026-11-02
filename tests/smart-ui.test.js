@@ -17,6 +17,10 @@ const tajweedLoader = read('tajweed-curriculum-loader.js');
 const tajweedCatalog = JSON.parse(read('tajweed-learning-catalog.json'));
 const build = read('scripts/build-www.sh');
 const publish = read('scripts/publish-update.sh');
+const androidWorkflow = read('.github/workflows/android.yml');
+const windowsWorkflow = read('.github/workflows/windows-v1.yml');
+const linuxWorkflow = read('.github/workflows/linux-appimage.yml');
+const updateFeatureReader = read('scripts/read_update_features.py');
 const sw = read('sw.js');
 const androidManifest = read('android/app/src/main/AndroidManifest.xml');
 const smartPlugin = read('android/app/src/main/java/com/quran/mushaf/SmartDevicePlugin.java');
@@ -102,6 +106,24 @@ test('JSON update overlay is hashed, stored outside localStorage, and fail-close
   assert.match(app, /TajweedCurriculumLoaderAPI\.loadRegistryCurricula/);
   assert.match(publish, /hashlib\.sha256/);
   assert.match(publish, /tajweed-curricula/);
+});
+
+test('every published update carries a concise what-is-new notification', () => {
+  assert.match(app, /function publicUpdateFeatures\(manifest\)/);
+  assert.match(app, /\\nالجديد:/);
+  assert.match(app, /!availableVersion \|\| !features\.length/);
+  assert.match(app, /newerVersion\(m\.version, currentVersion\(\)\)/);
+  assert.match(publish, /validate_update_features\(sys\.argv\[2:\]\)/);
+  assert.match(publish, /manifest\["features"\] = features/);
+  assert.match(publish, /manifest\.get\("features"\) == features/);
+  assert.match(androidWorkflow, /UPDATE_FEATURES: \$\{\{ inputs\.features \}\}/);
+  assert.doesNotMatch(androidWorkflow, /data\['features'\] = \['هوية أوضح/);
+  assert.match(updateFeatureReader, /features_version != app_version/);
+  for (const workflow of [windowsWorkflow, linuxWorkflow]) {
+    assert.match(workflow, /scripts\/read_update_features\.py/);
+    assert.match(workflow, /FEATURE_ARGS=\(\)/);
+    assert.doesNotMatch(workflow, /--feature "هوية أوضح لسراج/);
+  }
 });
 
 test('independent reader colors require an approved exact-scope curriculum', () => {

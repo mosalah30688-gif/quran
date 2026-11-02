@@ -59,6 +59,7 @@ jobs:
         run: |
           python -m py_compile mushaf_app/main.py mushaf_app/offline_tafsir.py mushaf_app/runtime.py mushaf_app/version.py mushaf_app/tests/test_*.py
           python -m unittest discover -s mushaf_app/tests -p "test_*.py" -v
+          python scripts/read_update_features.py mushaf_app/version.py
           VERSION="$(PYTHONPATH=mushaf_app python -c 'from version import APP_VERSION; print(APP_VERSION)')"
           # Linux and Windows have independent signed channels and may publish on different patch cadences.
           echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
@@ -221,11 +222,15 @@ jobs:
           VERSION="${GITHUB_REF_NAME#siraj-linux-test-v}"
           APPIMAGE="mushaf_app/release/Siraj-Quran-${VERSION}-linux-x86_64.AppImage"
           BASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}"
+          mapfile -t UPDATE_FEATURES < <(python scripts/read_update_features.py mushaf_app/version.py)
+          test "${#UPDATE_FEATURES[@]}" -gt 0
+          FEATURE_ARGS=()
+          for feature in "${UPDATE_FEATURES[@]}"; do FEATURE_ARGS+=(--feature "$feature"); done
           python scripts/generate_linux_update_manifest.py \
             --version "$VERSION" \
             --appimage "$APPIMAGE" \
             --base-url "$BASE_URL" \
-            --feature "هوية أوضح لسراج ووصول منظم إلى «عن التطبيق»." \
+            "${FEATURE_ARGS[@]}" \
             --output mushaf_app/release/stable.json
           python - <<'PY'
           import json, os, pathlib, sys
@@ -319,6 +324,11 @@ jobs:
           VERSION="${GITHUB_REF_NAME#siraj-linux-patch-v}"
           VERSION="${VERSION#siraj-linux-v}"
           BASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}"
+          mapfile -t UPDATE_FEATURES < <(python scripts/read_update_features.py mushaf_app/version.py)
+          test "${#UPDATE_FEATURES[@]}" -gt 0
+          FEATURE_ARGS=()
+          for feature in "${UPDATE_FEATURES[@]}"; do FEATURE_ARGS+=(--feature "$feature"); done
+          FEATURE_NOTES="$(printf -- '- %s\n' "${UPDATE_FEATURES[@]}")"
           rm -rf publish
           mkdir publish
 
@@ -328,14 +338,14 @@ jobs:
               --product siraj-quran-linux \
               --version "$VERSION" \
               --app-dir mushaf_app \
-              --feature "هوية أوضح لسراج ووصول منظم إلى «عن التطبيق»." \
+              "${FEATURE_ARGS[@]}" \
               --output "$PATCH"
             python scripts/generate_patch_channel.py \
               --product siraj-quran-linux \
               --version "$VERSION" \
               --patch "$PATCH" \
               --base-url "$BASE_URL" \
-              --feature "هوية أوضح لسراج ووصول منظم إلى «عن التطبيق»." \
+              "${FEATURE_ARGS[@]}" \
               --output publish/patch-stable.json
             PATCH_PATH="$PATCH" python - <<'PY'
           import json, os, sys, tempfile
@@ -358,7 +368,7 @@ jobs:
             cat > release-notes.md <<EOF
           # سراج ${VERSION} — ترقيع Linux موقّع
 
-          - هوية أوضح لسراج ووصول منظم إلى «عن التطبيق».
+          ${FEATURE_NOTES}
           - ترقيع صغير بعد حزمة Linux الكاملة الداعمة للترقيعات 4.1.1.
           - لا يستبدل AppImage أو مكتبات runtime الأصلية.
           - تتحقق النسخة الانتقالية من Ed25519 وSHA-256 لكل ملف قبل تشغيله، مع رجوع آمن للنسخة المضمّنة.
@@ -371,12 +381,13 @@ jobs:
               --version "$VERSION" \
               --appimage "$APPIMAGE" \
               --base-url "$BASE_URL" \
-              --feature "هوية أوضح لسراج ووصول منظم إلى «عن التطبيق»." \
+              "${FEATURE_ARGS[@]}" \
               --output publish/stable.json
             cp release/* publish/
             cat > release-notes.md <<EOF
           # سراج ${VERSION} — قرآن كريم لنظام Linux
 
+          ${FEATURE_NOTES}
           - AppImage لنظام x86_64، مبني على Ubuntu 22.04.
           - حزمة corresponding-source المرفقة تحتوي المصادر المطابقة للمكونات الخاضعة لـLGPL/GPL.
           - راجع SHA256SUMS.txt وSBOM.cdx.json.

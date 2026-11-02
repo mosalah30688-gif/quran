@@ -20,6 +20,7 @@ sys.path.insert(0, str(SCRIPTS))
 import patch_runtime  # noqa: E402
 import update_security  # noqa: E402
 from product_copy import validate_update_features  # noqa: E402
+from read_update_features import read_update_features  # noqa: E402
 
 
 class ReleaseToolTests(unittest.TestCase):
@@ -108,6 +109,20 @@ class ReleaseToolTests(unittest.TestCase):
         asset = manifest["assets"]["patch"]
         self.assertEqual(asset["size"], patch.stat().st_size)
         self.assertEqual(asset["sha256"], hashlib.sha256(patch.read_bytes()).hexdigest())
+
+    def test_platform_update_features_are_refreshed_for_this_version(self):
+        features = read_update_features(APP / "version.py")
+        self.assertGreaterEqual(len(features), 1)
+        self.assertLessEqual(len(features), 5)
+        stale = self.root / "version.py"
+        stale.write_text(
+            'APP_VERSION = "9.9.9"\n'
+            'UPDATE_FEATURES_VERSION = "9.9.8"\n'
+            'UPDATE_FEATURES = ("ميزة جديدة للمستخدم.",)\n',
+            encoding="utf-8",
+        )
+        with self.assertRaises(ValueError):
+            read_update_features(stale)
 
     def test_update_feature_copy_rejects_technical_or_verbose_notes(self):
         self.assertEqual(

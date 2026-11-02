@@ -20,6 +20,7 @@ on:
       - 'package-lock.json'
       - 'scripts/build-www.sh'
       - 'scripts/publish-update.sh'
+      - 'scripts/product_copy.py'
       - 'scripts/verify_android_bundle.py'
       - 'scripts/verify_audio_sources.py'
       - 'scripts/verify_asset_provenance.py'
@@ -51,6 +52,10 @@ on:
         default: false
       confirmation:
         description: 'For publication type: PUBLISH IMMUTABLE siraj-android-v1.4.4'
+        required: false
+        type: string
+      features:
+        description: 'What is new for users; separate up to five concise features with | (required for publication)'
         required: false
         type: string
 
@@ -248,7 +253,7 @@ jobs:
           assert 'data-icon="about"' in settings and 'about:' in app
           assert '--mobile-nav-h: 64px' in html and '--mobile-nav-h: 58px' in html
           assert 'يتوفر تحديث جديد لسراج — الإصدار' in app and 'فيه تحديث جديد' not in app
-          assert 'Array.isArray(m.features)' in app and 'technicalTerms' in app
+          assert 'publicUpdateFeatures' in app and 'technicalTerms' in app and '\\nالجديد:' in app
           assert '.upd-banner span { flex: 1; white-space: pre-line; }' in html
           assert 'class="reader-dock"' in html and 'id="pPrevS"' in html and 'id="pNextS"' in html
           assert 'id="audioSeek"' in html and 'class="player-controls"' in html
@@ -294,6 +299,21 @@ jobs:
           test "${{ github.ref }}" = 'refs/heads/main'
           test "$CONFIRMATION" = "PUBLISH IMMUTABLE $TAG"
 
+      - name: Require fresh user-facing update features
+        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        env:
+          UPDATE_FEATURES: ${{ inputs.features }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from scripts.product_copy import validate_update_features
+          features = validate_update_features(os.environ.get('UPDATE_FEATURES', '').split('|'))
+          if not features:
+              raise SystemExit('at least one user-facing update feature is required')
+          print('\n'.join('• ' + feature for feature in features))
+          PY
+
       - name: Require a new release tag
         if: github.event_name == 'workflow_dispatch' && inputs.publish
         env:
@@ -317,20 +337,19 @@ jobs:
           TAG: ${{ steps.meta.outputs.tag }}
           VERSION: ${{ steps.meta.outputs.version }}
           ASSET: ${{ steps.meta.outputs.asset }}
+          UPDATE_FEATURES: ${{ inputs.features }}
         run: |
           set -euo pipefail
           python3 - <<'PY' > "$RUNNER_TEMP/create-release.json"
           import json, os
+          from scripts.product_copy import validate_update_features
+          features = validate_update_features(os.environ['UPDATE_FEATURES'].split('|'))
+          feature_lines = '\n'.join('- ' + feature for feature in features)
           print(json.dumps({
               'tag_name': os.environ['TAG'],
               'target_commitish': os.environ['GITHUB_SHA'],
               'name': f"سراج — Android {os.environ['VERSION']}",
-              'body': (
-                  'إصدار Android كامل موقّع وقابل للترقية فوق النسخة السابقة.\n\n'
-                  '- هوية أوضح لسراج ووصول منظم إلى «عن التطبيق».\n'
-                  '- APK كامل للاستخدام خارج Google Play.\n'
-                  '- يخضع هذا الإصدار لسياسة الاحتفاظ الدائم؛ لا تُستبدل أصوله ولا يُحذف وسمه.'
-              ),
+              'body': 'الجديد في هذا الإصدار:\n\n' + feature_lines,
               'draft': True,
               'prerelease': False,
           }, ensure_ascii=False))
@@ -391,16 +410,17 @@ jobs:
           TAG: ${{ steps.meta.outputs.tag }}
           ASSET: ${{ steps.meta.outputs.asset }}
           APK_SHA256: ${{ steps.artifacts.outputs.sha256 }}
+          UPDATE_FEATURES: ${{ inputs.features }}
         run: |
           set -euo pipefail
-          bash scripts/publish-update.sh "$VERSION"
+          IFS='|' read -r -a FEATURES <<< "$UPDATE_FEATURES"
+          bash scripts/publish-update.sh "$VERSION" "${FEATURES[@]}"
           python3 - <<'PY'
           import json, os
           from pathlib import Path
           path = Path('update/manifest.json')
           data = json.loads(path.read_text(encoding='utf-8'))
           version = os.environ['VERSION']
-          data['features'] = ['هوية أوضح لسراج ووصول منظم إلى «عن التطبيق».']
           data['apk'] = {
               'version': version,
               'url': 'https://github.com/mosalah30688-gif/quran/releases/download/' + os.environ['TAG'] + '/' + os.environ['ASSET'],

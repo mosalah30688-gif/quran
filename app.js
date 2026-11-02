@@ -1851,24 +1851,35 @@
   });
   renderUpdateCard();
 
-  // فحص هادئ عند فتح التطبيق: يظهر إشعار مختصر عند توفر إصدار أحدث.
+  function publicUpdateFeatures(manifest) {
+    const technicalTerms = ['ed25519', 'sha-256', 'sha256', 'runtime', 'appimage', 'portable', 'ترقيع', 'توقيع', 'موقّع', 'حزمة', 'محرك'];
+    return (Array.isArray(manifest?.features) ? manifest.features : []).slice(0, 5).map((item) => (
+      typeof item === 'string' ? item.trim().replace(/\s+/g, ' ') : ''
+    )).filter((item, index, items) => (
+      item && item.length <= 120 && items.indexOf(item) === index
+      && !technicalTerms.some((term) => item.toLocaleLowerCase('ar').includes(term))
+    ));
+  }
+
+  // فحص هادئ عند فتح التطبيق: يظهر الإصدار ثم الميزات الجديدة فقط، بلا تفاصيل فنية.
   async function silentUpdateCheck() {
     try {
-      if (!hasNativePlugin('ApkUpdater')) return;
       const mres = await fetch(UPDATE_BASE + 'manifest.json?t=' + Date.now(), { cache: 'no-store' });
       if (!mres.ok) return;
       const m = await mres.json();
-      if (!m.apk || !m.apk.url || !m.apk.version) return;
-      const nv = await nativeCall('ApkUpdater', 'getVersion').then((r) => r.version).catch(() => null);
-      if (!nv || !newerVersion(m.apk.version, nv)) return;
-      const technicalTerms = ['ed25519', 'sha-256', 'sha256', 'runtime', 'appimage', 'portable', 'ترقيع', 'توقيع', 'موقّع', 'حزمة', 'محرك'];
-      const features = (Array.isArray(m.features) ? m.features : []).slice(0, 5).map((item) => (
-        typeof item === 'string' ? item.trim().replace(/\s+/g, ' ') : ''
-      )).filter((item) => (
-        item && item.length <= 120 && !technicalTerms.some((term) => item.toLocaleLowerCase('ar').includes(term))
-      ));
-      $('#updBannerText').textContent = 'يتوفر تحديث جديد لسراج — الإصدار ' + m.apk.version
-        + features.map((feature) => '\n• ' + feature).join('');
+      let availableVersion = '';
+      if (m.apk?.url && m.apk?.version && hasNativePlugin('ApkUpdater')) {
+        const nativeVersion = await nativeCall('ApkUpdater', 'getVersion')
+          .then((result) => result.version).catch(() => null);
+        if (nativeVersion && newerVersion(m.apk.version, nativeVersion)) availableVersion = m.apk.version;
+      }
+      if (!availableVersion && m.version && newerVersion(m.version, currentVersion())) {
+        availableVersion = m.version;
+      }
+      const features = publicUpdateFeatures(m);
+      if (!availableVersion || !features.length) return;
+      $('#updBannerText').textContent = 'يتوفر تحديث جديد لسراج — الإصدار ' + availableVersion
+        + '\nالجديد:' + features.map((feature) => '\n• ' + feature).join('');
       $('#updBannerBtn').onclick = () => { $('#updBanner').hidden = true; showView('settings'); checkForUpdate(); };
       $('#updBannerX').onclick = () => { $('#updBanner').hidden = true; };
       $('#updBanner').hidden = false;

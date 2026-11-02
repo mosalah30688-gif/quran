@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
 # يجهز ترقية الواجهة وملفات JSON المقفلة، مع إبقاء قنوات APK وسطح المكتب الحالية.
-# الاستخدام: bash scripts/publish-update.sh 1.4.5
+# الاستخدام: bash scripts/publish-update.sh 1.4.5 "الميزة الأولى" "الميزة الثانية"
 set -euo pipefail
 VER="${1:?اكتب رقم الإصدار، مثال: 1.4.5}"
 if [[ ! "$VER" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   echo "رقم الإصدار يجب أن يكون بصيغة x.y.z" >&2
   exit 2
 fi
+shift
+if (( $# < 1 )); then
+  echo "اكتب ميزة جديدة واحدة على الأقل ليظهر إشعار «الجديد» للمستخدم." >&2
+  exit 2
+fi
 cd "$(dirname "$0")/.."
-python3 - "$VER" <<'PY'
+python3 - "$VER" "$@" <<'PY'
 from __future__ import annotations
 
 import hashlib
@@ -17,10 +22,22 @@ import shutil
 import sys
 from pathlib import Path
 
+from scripts.product_copy import validate_update_features
+
 version = sys.argv[1]
+features = validate_update_features(sys.argv[2:])
+if not features:
+    raise SystemExit("at least one user-facing update feature is required")
 root = Path.cwd()
 update = root / "update"
 update.mkdir(exist_ok=True)
+manifest_path = update / "manifest.json"
+try:
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+except (FileNotFoundError, json.JSONDecodeError):
+    manifest = {}
+if manifest.get("features") == features:
+    raise SystemExit("update features must describe what is new, not repeat the current release")
 base = [
     "index.html",
     "smart-context.js",
@@ -55,12 +72,8 @@ for relative in files:
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(source, target)
 
-manifest_path = update / "manifest.json"
-try:
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-except (FileNotFoundError, json.JSONDecodeError):
-    manifest = {}
 manifest["version"] = version
+manifest["features"] = features
 manifest["files"] = files
 manifest["sha256"] = {
     relative: hashlib.sha256((update / relative).read_bytes()).hexdigest()

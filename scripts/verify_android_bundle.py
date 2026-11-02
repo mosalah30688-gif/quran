@@ -173,7 +173,7 @@ def main() -> None:
     assert "syncReaderDockHeight" in app and "syncAudioTimeline" in app and "formatAudioTime" in app
     assert "syncGroupMenuLayer" in app and "focusFirst" in app and "restoreFocus" in app
     assert "يتوفر تحديث جديد لسراج — الإصدار" in app and "فيه تحديث جديد" not in app
-    assert "Array.isArray(m.features)" in app and "technicalTerms" in app
+    assert "publicUpdateFeatures" in app and "technicalTerms" in app and "\\nالجديد:" in app
     assert ".upd-banner span { flex: 1; white-space: pre-line; }" in html
     assert "siraj-shell-v15" in service_worker
     assert "'./smart-context.js'" in service_worker and "'./smart-services.js'" in service_worker

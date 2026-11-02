@@ -60,9 +60,10 @@ jobs:
             python -c "import os,base64; from nacl.signing import SigningKey; seed=base64.b64decode(os.environ['WINDOWS_UPDATE_SIGNING_SEED']); expected=open('windows_app/assets/update_public_key.txt').read().strip(); assert SigningKey(seed).verify_key.encode().hex()==expected, 'Update signing seed does not match embedded public key'"
           }
 
-      - name: Validate version and tag
+      - name: Validate version, update features and tag
         shell: pwsh
         run: |
+          python scripts/read_update_features.py windows_app/version.py
           $Version = python -c "import sys; sys.path.insert(0,'windows_app'); import version; print(version.APP_VERSION)"
           if ("${{ github.ref_type }}" -eq "tag") {
             $TagVersion = "${{ github.ref_name }}" `
@@ -205,6 +206,11 @@ jobs:
           VERSION="${GITHUB_REF_NAME#siraj-windows-patch-v}"
           VERSION="${VERSION#siraj-windows-v}"
           BASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}"
+          mapfile -t UPDATE_FEATURES < <(python scripts/read_update_features.py windows_app/version.py)
+          test "${#UPDATE_FEATURES[@]}" -gt 0
+          FEATURE_ARGS=()
+          for feature in "${UPDATE_FEATURES[@]}"; do FEATURE_ARGS+=(--feature "$feature"); done
+          FEATURE_NOTES="$(printf -- '- %s\n' "${UPDATE_FEATURES[@]}")"
           rm -rf publish
           mkdir publish
 
@@ -214,14 +220,14 @@ jobs:
               --product siraj-quran-windows \
               --version "$VERSION" \
               --app-dir windows_app \
-              --feature "هوية أوضح لسراج ووصول منظم إلى «عن التطبيق»." \
+              "${FEATURE_ARGS[@]}" \
               --output "$PATCH"
             python scripts/generate_patch_channel.py \
               --product siraj-quran-windows \
               --version "$VERSION" \
               --patch "$PATCH" \
               --base-url "$BASE_URL" \
-              --feature "هوية أوضح لسراج ووصول منظم إلى «عن التطبيق»." \
+              "${FEATURE_ARGS[@]}" \
               --output publish/patch-stable.json
             PATCH_PATH="$PATCH" python - <<'PY'
           import json, os, sys, tempfile
@@ -244,7 +250,7 @@ jobs:
             cat > release-notes.md <<EOF
           # سراج ${VERSION} — ترقيع Windows موقّع
 
-          - هوية أوضح لسراج ووصول منظم إلى «عن التطبيق».
+          ${FEATURE_NOTES}
           - ترقيع صغير بعد حزمة Windows الكاملة الداعمة للترقيعات 4.1.1.
           - لا يحتوي مثبتًا ولا يستبدل ملفات runtime الأصلية.
           - تتحقق النسخة الانتقالية من Ed25519 وSHA-256 لكل ملف قبل تشغيله، مع رجوع آمن للنسخة المضمّنة.
@@ -257,11 +263,13 @@ jobs:
               --version "$VERSION" \
               --portable "$PORTABLE" \
               --base-url "$BASE_URL" \
-              --feature "هوية أوضح لسراج ووصول منظم إلى «عن التطبيق»." \
+              "${FEATURE_ARGS[@]}" \
               --output publish/stable.json
             cp release/* publish/
             cat > release-notes.md <<EOF
           # سراج ${VERSION} — قرآن كريم لويندوز
+
+          ${FEATURE_NOTES}
 
           نسخة Portable فقط؛ لا يوجد مثبت.
 
