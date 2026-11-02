@@ -7,7 +7,7 @@ mkdir -p www/fonts www/legal
 cp \
   index.html smart-context.js smart-services.js tajweed-learning.js app.js manifest.json sw.js icon.png icon-192.png \
   quran-search.json quran-meanings.json adhkar.json quran-riwayat.json \
-  quran-hafs.json quran-tajweed.json tajweed-learning-catalog.json surahs.json tafsir-catalog.json \
+  quran-hafs.json quran-tajweed.json tajweed-learning-catalog.json tajweed-scope-registry.json surahs.json tafsir-catalog.json \
   www/
 cp \
   fonts/AmiriQuran-arabic.woff2 \

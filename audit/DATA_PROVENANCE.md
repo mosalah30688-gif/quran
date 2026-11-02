@@ -1,7 +1,7 @@
-# سلسلة منشأ بيانات سراج 1.1.0
+# سلسلة منشأ بيانات سراج 1.4.4
 
-**تاريخ القفل:** 2026-10-28  
-**النطاق:** ملفات JSON وقاعدة التفسير SQLite المضمّنة في Windows Portable وLinux AppImage
+**تاريخ القفل:** 2026-11-02
+**النطاق:** ملفات JSON وقاعدة التفسير SQLite وطبقات التعلم المضمّنة في Android وWindows وLinux
 
 يمكن إعادة التحقق بالأمر:
 
@@ -14,6 +14,7 @@ python scripts/fetch_offline_tafsir_data.py --verify
 python scripts/build_offline_tafsir.py --verify
 python scripts/generate_adhkar_data.py --verify
 python scripts/verify_tajweed_learning.py
+python scripts/verify_tajweed_scopes.py
 ```
 
 ## خريطة الملفات
@@ -28,6 +29,8 @@ python scripts/verify_tajweed_learning.py
 | `adhkar.json` | مجموعة `asellam/HisnElMuslim` عند commit `872764ca013116c905f7fc9c3dc972c27cd37d4a` تحت MIT، مع آيتين من مصدر القرآن المقفول | `audit/sources/hisn-el-muslim/.../SOURCE.json`, `audit/sources/adhkar-curation-1.1.0.json`, و`scripts/generate_adhkar_data.py`؛ لكل عنصر مرجع ظاهر في التطبيق |
 | `tajweed.json` | شروح واجهة أصلية كتبها المشروع لرموز مصدر التجويد | `audit/sources/project-authored-data.json`؛ حقوقها واضحة، لكن اعتماد دقتها العلمية ما زال ضمن المراجعة البشرية |
 | `tajweed-learning-catalog.json` | تحويل منظم لشروح `tajweed.json` وأكواد علامات لقطة `quran-tajweed.json` المقفلة، دون إدخال متن خارجي جديد | `scripts/verify_tajweed_learning.py` يثبت التطابق ووجود الأمثلة ويقفل النطاق على حفص بقيمتي طريق/وجه صريحتين بأن المصدر غير محدد، مع `PENDING_SCHOLARLY_REVIEW`; الروايات الأخرى تفشل مغلقًا |
+| `tajweed-scope-registry.json`, `tajweed-curriculum.schema.json` | سجل وعقد أنشأهما المشروع لتنظيم المصادر؛ لا يضيفان حكمًا شرعيًا أو علامة تجويد | `scripts/verify_tajweed_scopes.py` يطابق كل اختيار مصحف مع روايته ونصه وبصمته، يمنع fallback بين النطاقات، ويفرض على أي حزمة مستقبلية مصدرًا مرخصًا مقفولًا ومراجعة مؤهلة واعتماد نشر ثانٍ |
+| `tajweed-curricula/*.json` | حزمة مستقلة لكل `riwayah/tariq/wajh/edition` بعد تثبيت المصدر والترخيص | المجلد فارغ حاليًا عمدًا؛ لا تُنشأ حزمة لورش أو قالون أو الدوري من تخمين أو من قواعد حفص، وتبقى حالتها `BLOCKED_NO_APPROVED_CORPUS` |
 
 ## شروط المصادر
 

@@ -86,6 +86,7 @@ def main() -> None:
     smart_services = (ROOT / "smart-services.js").read_text(encoding="utf-8")
     tajweed_learning = (ROOT / "tajweed-learning.js").read_text(encoding="utf-8")
     tajweed_catalog = (ROOT / "tajweed-learning-catalog.json").read_text(encoding="utf-8")
+    tajweed_registry = load("tajweed-scope-registry.json")
     html = (ROOT / "index.html").read_text(encoding="utf-8")
     service_worker = (ROOT / "sw.js").read_text(encoding="utf-8")
     capacitor = load("capacitor.config.json")
@@ -108,6 +109,9 @@ def main() -> None:
     assert "buildCandidates" in smart_services and "open_adhkar:morning" in smart_services
     assert "TajweedLearningEngine" in tajweed_learning and "reviewedEntry" in tajweed_learning
     assert "PENDING_SCHOLARLY_REVIEW" in tajweed_catalog and "source-unspecified" in tajweed_catalog
+    assert tajweed_registry["scopeKey"] == "riwayah/tariq/wajh/edition"
+    assert tajweed_registry["fallbackPolicy"] == "FORBIDDEN_BETWEEN_SCOPES"
+    assert "tajweed-scope-registry.json" in build_script
     assert "run(null, 'smart-context.js')" in html
     assert "run(null, 'smart-services.js')" in html
     assert "run(null, 'tajweed-learning.js')" in html
@@ -116,7 +120,8 @@ def main() -> None:
     assert "لا يرسل ملف عادات إلى خادم" in html
     assert "new SmartContextAPI.SmartContextEngine" in app
     assert "new TajweedLearningAPI.TajweedLearningEngine" in app
-    assert "لن يطبق سراج قواعد حفص عليها" in app
+    assert "FORBIDDEN_BETWEEN_SCOPES" in app
+    assert "لا تُعرض أحكام حفص أو أي طبقة عامة" in app
     assert "markShown(candidate, suggestionId, 'suggestion')" in app
     assert "lookupBatch" in app and "TafsirStore" in app
     assert "recordWirdPage" in app and "Reminder" in app
@@ -162,10 +167,11 @@ def main() -> None:
     assert "يتوفر تحديث جديد لسراج — الإصدار" in app and "فيه تحديث جديد" not in app
     assert "Array.isArray(m.features)" in app and "technicalTerms" in app
     assert ".upd-banner span { flex: 1; white-space: pre-line; }" in html
-    assert "siraj-shell-v13" in service_worker
+    assert "siraj-shell-v14" in service_worker
     assert "'./smart-context.js'" in service_worker and "'./smart-services.js'" in service_worker
     assert "'./tajweed-learning.js'" in service_worker
     assert "'./tajweed-learning-catalog.json'" in service_worker
+    assert "'./tajweed-scope-registry.json'" in service_worker
     assert "--quran-font" in html and "setFont" in html
     assert "data-icon=\"tajweed\"" in html and "🎵" not in html
 

@@ -1,0 +1,333 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://siraj.local/schema/tajweed-curriculum-v1.json",
+  "title": "Siraj independently scoped tajweed curriculum",
+  "description": "A source-locked rule and annotation package for exactly one riwayah/tariq/wajh/edition scope. Quran text remains in its own immutable asset.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "packageId",
+    "status",
+    "publishableAsApproved",
+    "scope",
+    "textBinding",
+    "sources",
+    "rules",
+    "annotations",
+    "review"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "packageId": {
+      "$ref": "#/$defs/token"
+    },
+    "status": {
+      "enum": [
+        "DRAFT",
+        "PENDING_SCHOLARLY_REVIEW",
+        "APPROVED"
+      ]
+    },
+    "publishableAsApproved": {
+      "type": "boolean"
+    },
+    "scope": {
+      "$ref": "#/$defs/scope"
+    },
+    "textBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "asset",
+        "dataset",
+        "sha256",
+        "offsetUnit",
+        "normalization"
+      ],
+      "properties": {
+        "asset": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "offsetUnit": {
+          "const": "unicode-code-point"
+        },
+        "normalization": {
+          "enum": [
+            "NONE",
+            "NFC"
+          ]
+        },
+        "dataset": {
+          "$ref": "#/$defs/token"
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sourceId",
+          "title",
+          "uri",
+          "snapshotDate",
+          "sha256",
+          "licenseEvidence"
+        ],
+        "properties": {
+          "sourceId": {
+            "$ref": "#/$defs/token"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uri": {
+            "type": "string",
+            "format": "uri"
+          },
+          "snapshotDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "sha256": {
+            "$ref": "#/$defs/sha256"
+          },
+          "licenseEvidence": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "nameAr",
+          "summaryAr",
+          "detailAr",
+          "color",
+          "sourceRefs"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/token"
+          },
+          "nameAr": {
+            "type": "string",
+            "minLength": 1
+          },
+          "summaryAr": {
+            "type": "string",
+            "minLength": 1
+          },
+          "detailAr": {
+            "type": "string",
+            "minLength": 1
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          },
+          "sourceRefs": {
+            "$ref": "#/$defs/nonEmptyUniqueTokens"
+          }
+        }
+      }
+    },
+    "annotations": {
+      "description": "Independent spans that reference immutable Quran text; the text itself must not be copied or silently rewritten here.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "surah",
+          "ayah",
+          "start",
+          "end",
+          "ruleId",
+          "sourceRefs"
+        ],
+        "properties": {
+          "surah": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 114
+          },
+          "ayah": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "start": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "end": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "ruleId": {
+            "$ref": "#/$defs/token"
+          },
+          "sourceRefs": {
+            "$ref": "#/$defs/nonEmptyUniqueTokens"
+          },
+          "noteAr": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "NOT_REVIEWED",
+            "CHANGES_REQUESTED",
+            "APPROVED"
+          ]
+        },
+        "reviewerName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewerQualification": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "reviewedSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "releaseApprover": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "APPROVED"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "publishableAsApproved": {
+            "const": true
+          },
+          "review": {
+            "required": [
+              "status",
+              "reviewerName",
+              "reviewerQualification",
+              "reviewDate",
+              "reviewedSha256",
+              "releaseApprover",
+              "evidence"
+            ],
+            "properties": {
+              "status": {
+                "const": "APPROVED"
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "publishableAsApproved": {
+            "const": false
+          },
+          "review": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "NOT_REVIEWED",
+                  "CHANGES_REQUESTED"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "token": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "riwayah",
+        "tariq",
+        "wajh",
+        "edition"
+      ],
+      "properties": {
+        "riwayah": {
+          "$ref": "#/$defs/token"
+        },
+        "tariq": {
+          "$ref": "#/$defs/token"
+        },
+        "wajh": {
+          "$ref": "#/$defs/token"
+        },
+        "edition": {
+          "$ref": "#/$defs/token"
+        }
+      }
+    },
+    "nonEmptyUniqueTokens": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/token"
+      }
+    }
+  }
+}

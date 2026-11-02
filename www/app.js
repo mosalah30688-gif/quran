@@ -191,6 +191,7 @@
   let localHafs = null;
   let localTajweed = [];
   let tajweedLearningCatalog = null;
+  let tajweedScopeRegistry = null;
   let tajweedLearningCards = [];
   let tajweedSession = { queue: [], index: 0, revealed: false, answered: 0 };
   const hafsPages = { uthmani: new Map(), simple: new Map() };
@@ -261,15 +262,17 @@
   }
 
   async function loadBundledData() {
-    const [surahData, hafsData, tajweedData, catalog, learningCatalog] = await Promise.all([
+    const [surahData, hafsData, tajweedData, catalog, learningCatalog, scopeRegistry] = await Promise.all([
       getJSON('surahs.json'), getJSON('quran-hafs.json'),
       getJSON('quran-tajweed.json'), getJSON('tafsir-catalog.json'),
       getJSON('tajweed-learning-catalog.json').catch(() => null),
+      getJSON('tajweed-scope-registry.json').catch(() => null),
     ]);
     surahs = Array.isArray(surahData) ? surahData : [];
     localHafs = hafsData;
     localTajweed = Array.isArray(tajweedData) ? tajweedData : [];
     tajweedLearningCatalog = learningCatalog;
+    tajweedScopeRegistry = scopeRegistry;
     indexHafsRows('uthmani', localHafs.uthmani || []);
     indexHafsRows('simple', localHafs.simple || []);
     localTajweed.forEach((row) => tajweedByRef.set(refKey(row[0], row[1]), clean(row[3])));
@@ -2022,11 +2025,34 @@
   });
 
   // ---------- تعلم التجويد المحلي بالمراجعة المتباعدة ----------
+  function currentTajweedRegistryEntry() {
+    if (tajweedScopeRegistry?.fallbackPolicy !== 'FORBIDDEN_BETWEEN_SCOPES') return null;
+    const entries = tajweedScopeRegistry?.settings;
+    if (!Array.isArray(entries)) return null;
+    return entries.find((entry) => Array.isArray(entry.settingIds)
+      && entry.settingIds.includes(settings.riwaya)) || null;
+  }
+
+  function sameTajweedScope(left, right) {
+    if (!TajweedLearningAPI) return false;
+    const leftScope = TajweedLearningAPI.normalizeScope(left);
+    const rightScope = TajweedLearningAPI.normalizeScope(right);
+    return !!leftScope && !!rightScope
+      && TajweedLearningAPI.scopeKey(leftScope) === TajweedLearningAPI.scopeKey(rightScope);
+  }
+
   function currentTajweedCurriculum() {
+    const entry = currentTajweedRegistryEntry();
     const curricula = tajweedLearningCatalog?.curricula;
-    if (!Array.isArray(curricula)) return null;
-    return curricula.find((item) => Array.isArray(item.appliesToSettings)
-      && item.appliesToSettings.includes(settings.riwaya)) || null;
+    if (!entry || !Array.isArray(entry.curricula) || !Array.isArray(curricula)) return null;
+    const candidate = curricula.find((item) => Array.isArray(item.appliesToSettings)
+      && item.appliesToSettings.includes(settings.riwaya));
+    if (!candidate) return null;
+    const pointer = entry.curricula.find((item) => item?.artifact === 'tajweed-learning-catalog.json'
+      && item.status === candidate.status
+      && item.publishableAsApproved === candidate.publishableAsApproved
+      && sameTajweedScope(item.scope, candidate.scope));
+    return pointer ? candidate : null;
   }
 
   function firstTajweedExample(code) {
@@ -2082,10 +2108,11 @@
   }
 
   function renderTajweedView() {
+    const registryEntry = currentTajweedRegistryEntry();
     const curriculum = currentTajweedCurriculum();
     const selectedLabel = $('#setRiwaya').selectedOptions[0]?.textContent || settings.riwaya;
     $('#tjLearningCard').hidden = true;
-    if (!TajweedLearningAPI || !tajweedLearningEngine || !tajweedLearningCatalog) {
+    if (!TajweedLearningAPI || !tajweedLearningEngine || !tajweedLearningCatalog || !tajweedScopeRegistry) {
       $('#tjLearningScope').textContent = selectedLabel;
       $('#tjLearningWarning').textContent = 'جارٍ تحميل طبقة التعلم المحلية…';
       $('#tjStartLearning').disabled = true;
@@ -2093,17 +2120,20 @@
       return;
     }
     if (!curriculum) {
-      $('#tjLearningScope').textContent = selectedLabel;
-      $('#tjReviewBadge').textContent = 'غير متاح لهذه الرواية';
-      $('#tjLearningWarning').textContent = 'لا توجد حاليًا طبقة أحكام وأمثلة مراجعة علميًا لهذه الرواية وطريقها. لن يطبق سراج قواعد حفص عليها، ولن يعرض محتوى عامًا بوصفه معتمدًا.';
+      const blockedReason = registryEntry?.blockedReasonAr
+        || 'فشل التحقق من سجل نطاق التجويد؛ حُجبت الطبقة احترازيًا.';
+      $('#tjLearningScope').textContent = `${selectedLabel} · الطريق والوجه والطبعة: غير مثبتة`;
+      $('#tjReviewBadge').textContent = registryEntry?.status === 'BLOCKED_NO_APPROVED_CORPUS'
+        ? 'محجوب لغياب المصدر المعتمد' : 'محجوب احترازيًا';
+      $('#tjLearningWarning').textContent = blockedReason;
       $('#tjDueCount').textContent = '٠';
       $('#tjLearningCount').textContent = '٠';
       $('#tjMatureCount').textContent = '٠';
       $('#tjAccuracy').textContent = '٠٪';
       $('#tjStartLearning').disabled = true;
       $('#tjResetLearning').disabled = true;
-      $('#tjLearningEmpty').textContent = 'يلزم مصدر مستقل يحدد الرواية والطريق والوجه والطبعة، ثم مراجعة بشرية مؤهلة.';
-      $('#tjList').innerHTML = '<div class="muted">لا تُعرض أحكام حفص في هذا المصحف.</div>';
+      $('#tjLearningEmpty').textContent = 'يلزم مصدر مستقل يحدد الرواية والطريق والوجه والطبعة، ثم مراجعة بشرية مؤهلة واعتماد نشر ثانٍ.';
+      $('#tjList').innerHTML = '<div class="muted">لا تُعرض أحكام حفص أو أي طبقة عامة بدلًا من نطاق هذا المصحف.</div>';
       return;
     }
 

@@ -84,8 +84,9 @@ test('smart and tajweed engines are included in offline and update channels', ()
     assert.match(source, /smart-services\.js/);
     assert.match(source, /tajweed-learning\.js/);
     assert.match(source, /tajweed-learning-catalog\.json/);
+    assert.match(source, /tajweed-scope-registry\.json/);
   }
-  assert.match(sw, /siraj-shell-v13/);
+  assert.match(sw, /siraj-shell-v14/);
 });
 
 test('tajweed spaced review is local, scoped, and wired to feedback events', () => {
@@ -96,7 +97,7 @@ test('tajweed spaced review is local, scoped, and wired to feedback events', () 
   assert.match(app, /new TajweedLearningAPI\.TajweedLearningEngine/);
   assert.match(app, /type: 'TAJWEED_ANSWER'/);
   assert.match(app, /type: 'COMPLETE_TAJWEED_LESSON'/);
-  assert.match(app, /لن يطبق سراج قواعد حفص عليها/);
+  assert.match(app, /لا تُعرض أحكام حفص أو أي طبقة عامة/);
   assert.match(app, /tajweedLearningEngine\.resetScope/);
 });
 
