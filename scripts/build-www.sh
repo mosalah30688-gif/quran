@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 rm -rf www
 mkdir -p www/fonts www/legal
 cp \
-  index.html smart-context.js app.js manifest.json sw.js icon.png icon-192.png \
+  index.html smart-context.js smart-services.js app.js manifest.json sw.js icon.png icon-192.png \
   quran-search.json quran-meanings.json adhkar.json quran-riwayat.json \
   quran-hafs.json quran-tajweed.json surahs.json tafsir-catalog.json \
   www/

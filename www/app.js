@@ -143,6 +143,35 @@
   if (!allowedTranslations.has(settings.translation)) settings.translation = '';
   saveSettings();
 
+  // ---------- السياق والعادات المحلية (اختياري وبلا شبكة) ----------
+  const SmartContextAPI = window.SirajSmartContext || null;
+  const SmartServicesAPI = window.SirajSmartServices || null;
+  const SMART_STATE_KEY = 'smart-context';
+  let smartEngine = SmartContextAPI
+    ? new SmartContextAPI.SmartContextEngine(store.get(SMART_STATE_KEY, null)) : null;
+  let smartSaveTimer = null;
+  let smartSuggestionTimer = null;
+  let smartCurrent = null;
+  let smartSessionStartedAt = Date.now();
+  let smartLastInteractionAt = Date.now();
+
+  function persistSmartContext(immediate = false) {
+    if (!smartEngine) return;
+    clearTimeout(smartSaveTimer);
+    const save = () => store.set(SMART_STATE_KEY, smartEngine.snapshot());
+    if (immediate) save();
+    else smartSaveTimer = setTimeout(save, 250);
+  }
+
+  function smartRecord(event, options = {}) {
+    if (!smartEngine || !smartEngine.config.enabled) return null;
+    const saved = smartEngine.record(event);
+    if (!saved) return null;
+    persistSmartContext(!!options.immediate);
+    if (!options.silent) queueSmartSuggestion(1400);
+    return saved;
+  }
+
   // ---------- الحالة ----------
   let surahs = [];
   let localHafs = null;
@@ -274,6 +303,7 @@
   const navStack = [];
   let curView = 'reader';
   function showView(name, opts = {}) {
+    const previousView = curView;
     if (name !== curView && !opts.back) { navStack.push(curView); if (navStack.length > 30) navStack.shift(); }
     curView = name;
     $$('#tabs button').forEach((b) => b.classList.toggle('active', b.dataset.view === name));
@@ -298,6 +328,13 @@
     if (name === 'memo') renderMemoReview();
     syncReaderLayout();
     if (name === 'reader') requestAnimationFrame(syncReaderDockHeight);
+    if (name !== previousView) {
+      if (name === 'memo') smartRecord({ type: 'SERVICE_OPEN', service: 'memorization' });
+      else if (name === 'tajweed') smartRecord({ type: 'OPEN_TAJWEED', service: 'tajweed' });
+      else if (name === 'tafsir') smartRecord({ type: 'OPEN_TAFSIR', service: 'tafsir' });
+    }
+    if (name === 'settings' || name === 'about') hideSmartSuggestion();
+    else queueSmartSuggestion(1800);
     $('#content').scrollTop = 0;
   }
   function popView() { showView(navStack.pop() || 'reader', { back: true }); }
@@ -554,6 +591,7 @@
     }
     recordRead(p);
     recordWirdPage(p);
+    recordSmartReadPage(p, sel);
     if (opts.save !== false) saveLast();
   }
 
@@ -937,6 +975,22 @@
     requestAnimationFrame(syncReaderDockHeight);
   }
 
+  let smartLastPlayedRef = '';
+  let smartLastPlayedAt = 0;
+  function recordSmartRecitation(a) {
+    if (!a) return;
+    const ref = `${a.s}:${a.n}`;
+    const now = Date.now();
+    if (ref === smartLastPlayedRef && now - smartLastPlayedAt < 10 * 60 * 1000) return;
+    smartLastPlayedRef = ref;
+    smartLastPlayedAt = now;
+    smartRecord({
+      type: 'PLAY_RECITATION',
+      service: 'recitation',
+      context: { page: Number(a.page || state.page), riwayah: settings.riwaya, source: 'player' },
+    });
+  }
+
   async function playAyah(a) {
     if (isRiw() && !riwAudioOk()) { toast('اختر قارئاً لهذه الرواية من الإعدادات'); return; }
     if (!a) { stopPlayback(); return; }
@@ -953,6 +1007,7 @@
     if (prevObj) URL.revokeObjectURL(prevObj);
     audio.play().catch(() => toast('تعذر تشغيل الصوت. اضغط تشغيل مرة أخرى.'));
     play.active = true;
+    recordSmartRecitation(a);
     // تقليب الصفحة تلقائياً مع التلاوة
     if (a.page && a.page !== state.page && play.follow) {
       state.sel = a; state.selSurah = a.s;
@@ -1198,6 +1253,10 @@
     const k = memoKey(memo.s, memo.start, memo.end);
     if (!prog[k]) prog[k] = { s: memo.s, from: memo.start, to: memo.end, step: 0, due: addDaysKey(todayKey(), 1) };
     saveMemoProgress(prog);
+    smartRecord({
+      type: 'START_MEMORIZATION', service: 'memorization',
+      context: { count: memo.ayahs.length, source: 'memo' },
+    });
     toast('سيعود المقطع للمراجعة غداً');
     renderMemoReview();
   });
@@ -1232,11 +1291,19 @@
       item.step = Math.min(MEMO_GAPS.length - 1, (item.step || 0) + 1);
       item.due = addDaysKey(todayKey(), MEMO_GAPS[item.step]);
       saveMemoProgress(prog);
+      smartRecord({
+        type: 'COMPLETE_MEMORIZATION', service: 'memorization',
+        context: { count: Math.max(1, Number(item.to) - Number(item.from) + 1), source: 'mastered' },
+      });
       renderMemoReview();
     } else if (btn.dataset.act === 'again') {
       item.step = 0;
       item.due = addDaysKey(todayKey(), 1);
       saveMemoProgress(prog);
+      smartRecord({
+        type: 'COMPLETE_MEMORIZATION', service: 'memorization',
+        context: { count: Math.max(1, Number(item.to) - Number(item.from) + 1), source: 'repeat' },
+      });
       renderMemoReview();
     } else if (btn.dataset.act === 'open') {
       $('#memoSurah').value = String(item.s);
@@ -1333,6 +1400,7 @@
     $('#setSize').value = settings.size;
     $('#sizeVal').textContent = settings.size + 'px';
     $('#setTajweed').checked = !!settings.tajweed;
+    fillSmartSettings();
     applyTypography();
   }
   function applyTypography() {
@@ -2120,9 +2188,15 @@
     renderFluentIcons($('#adhkarMenu'));
   }
   loadAdhkar().then(renderAdhkarMenu).catch(() => { $('#adhkarMenu').innerHTML = '<div class="muted" style="padding:8px">تعذّر تحميل الأذكار.</div>'; });
-  function openAdhkarCat(id) {
+  function openAdhkarCat(id, options = {}) {
     const cat = (adhkarCats || []).find((c) => c.id === id);
     if (!cat) return;
+    if (options.track !== false && SmartServicesAPI) {
+      smartRecord({
+        type: 'SERVICE_OPEN', service: SmartServicesAPI.serviceForAdhkar(id),
+        context: { category: id, source: 'adhkar' },
+      });
+    }
     const counts = getAdhCounts();
     $('#adhkarHome').hidden = true;
     $('#adhkarCat').hidden = false;
@@ -2154,12 +2228,25 @@
     if (!b) return;
     const card = b.closest('[data-key]');
     const key = card.dataset.key, max = Number(card.dataset.count);
+    const categoryId = key.split(':')[0];
+    const category = (adhkarCats || []).find((item) => item.id === categoryId);
     const counts = getAdhCounts();
+    const complete = () => !!(category && category.items.length && category.items.every((item, index) => (
+      Number(counts.c[`${categoryId}:${index}`] || 0) >= Number(item.count)
+    )));
+    const wasComplete = complete();
     const cur = counts.c[key] || 0;
     // عند الإتمام: الضغطة التالية تعيد العداد للصفر
     counts.c[key] = cur >= max ? 0 : cur + 1;
     store.set(ADH_KEY, counts);
-    openAdhkarCat(key.split(':')[0]);
+    if (!wasComplete && complete()) {
+      const service = SmartServicesAPI ? SmartServicesAPI.serviceForAdhkar(categoryId) : 'adhkar';
+      smartRecord({
+        type: 'COMPLETE_ADHKAR', service,
+        context: { category: categoryId, count: category.items.length, source: 'counter' },
+      });
+    }
+    openAdhkarCat(categoryId, { track: false });
   });
 
   // ---------- إحصائيات القراءة ----------
@@ -2176,6 +2263,19 @@
     st.days[k] = arr;
     store.set(STATS_KEY, st);
     if (curView === 'stats') renderStats();
+  }
+  let smartLastReadPage = 0;
+  let smartLastReadAt = 0;
+  function recordSmartReadPage(p) {
+    const now = Date.now();
+    if (smartLastReadPage === Number(p) && now - smartLastReadAt < 15 * 60 * 1000) return;
+    smartLastReadPage = Number(p);
+    smartLastReadAt = now;
+    smartRecord({
+      type: 'READ_PAGE',
+      service: 'wird',
+      context: { page: Number(p), riwayah: settings.riwaya, source: 'reader' },
+    });
   }
   function renderStats() {
     const st = getStats();
@@ -2364,6 +2464,10 @@
   function checkInAppWirdReminder() {
     const w = getWird();
     if (!w.reminderEnabled) return;
+    if (smartEngine?.config.enabled) {
+      const context = smartEngine.evaluate([], smartSignals()).context;
+      if (context.likelySleeping || context.quietHours) return;
+    }
     const now = new Date();
     const current = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     const key = `wird-notified-${todayKey()}`;
@@ -2393,6 +2497,280 @@
     toast('بدأت ختمة جديدة');
   });
 
+  // ---------- الاقتراحات الذكية المحلية ----------
+  let smartLastDecision = null;
+
+  function smartCompletedServices() {
+    const completed = new Set();
+    if (!smartEngine) return completed;
+    const today = todayKey();
+    const completionTypes = new Set([
+      'SERVICE_COMPLETE', 'COMPLETE_MEMORIZATION', 'COMPLETE_ADHKAR',
+      'COMPLETE_TAJWEED_LESSON', 'NOTIFICATION_COMPLETE', 'SUGGESTION_COMPLETE',
+    ]);
+    smartEngine.events.forEach((event) => {
+      if (SmartContextAPI.dateKey(event.at) !== today) return;
+      if (event.type === 'READ_PAGE' && event.service === 'wird') completed.add('wird');
+      if (completionTypes.has(event.type)) completed.add(event.service);
+    });
+    return completed;
+  }
+
+  function smartKnownServices() {
+    if (!smartEngine) return [];
+    return [...new Set(smartEngine.events
+      .filter((event) => event.service && event.service !== 'app')
+      .map((event) => event.service))];
+  }
+
+  function memoDueCount() {
+    const today = todayKey();
+    return Object.values(getMemoProgress()).filter((item) => item && item.due <= today).length;
+  }
+
+  function smartCandidateInput() {
+    const habit = readingHabit();
+    const wird = getWird();
+    return {
+      readToday: habit.today,
+      wirdPointer: wird.pointer,
+      readingAverage: habit.average,
+      memoDue: memoDueCount(),
+      completedServices: [...smartCompletedServices()],
+      knownServices: smartKnownServices(),
+    };
+  }
+
+  function smartSignals() {
+    const now = Date.now();
+    return {
+      screenInteractive: document.visibilityState !== 'hidden',
+      lastDeviceActiveAt: smartLastInteractionAt,
+      busy: (play.active && !audio.paused) || !!document.querySelector('.panel-tafsir.show'),
+      sessionDurationMs: Math.max(0, now - smartSessionStartedAt),
+    };
+  }
+
+  function hideSmartSuggestion(clear = true) {
+    const card = $('#smartSuggestion');
+    if (card) card.hidden = true;
+    if (clear) smartCurrent = null;
+  }
+
+  function primarySmartBlock(decision) {
+    if (!decision) return null;
+    if (decision.context?.likelySleeping) return 'LIKELY_SLEEPING';
+    if (decision.context?.quietHours) return 'QUIET_HOURS';
+    const priority = ['ENGINE_DISABLED', 'DAILY_CAP', 'COOLDOWN', 'BELOW_THRESHOLD'];
+    for (const reason of priority) {
+      if (decision.blocked?.some((item) => item.reason === reason)) return reason;
+    }
+    return null;
+  }
+
+  function fillSmartSettings() {
+    const enabled = $('#setSmartEnabled');
+    if (!enabled) return;
+    if (!smartEngine || !SmartServicesAPI) {
+      enabled.checked = false;
+      enabled.disabled = true;
+      $('#smartLocalStatus').textContent = 'محرك الاقتراحات غير متاح في هذه الحزمة.';
+      return;
+    }
+    const cfg = smartEngine.config;
+    enabled.disabled = false;
+    enabled.checked = !!cfg.enabled;
+    $('#smartQuietStart').value = cfg.quietStart;
+    $('#smartQuietEnd').value = cfg.quietEnd;
+    $('#smartDailyMax').value = String(cfg.maxDailyInterventions);
+    $('#smartCooldown').value = String(cfg.cooldownMinutes);
+    $('#smartRetention').value = String(cfg.retentionDays);
+    $('#smartLocalStatus').textContent = cfg.enabled
+      ? `مفعّلة · ${toArabicDigits(smartEngine.events.length)} حدثًا تشغيليًا محدودًا محفوظًا محليًا لمدة ${toArabicDigits(cfg.retentionDays)} يومًا كحد أقصى.`
+      : `متوقفة؛ لا تُسجّل أحداثًا جديدة ولا تعرض اقتراحات. السجل المحلي الحالي: ${toArabicDigits(smartEngine.events.length)}.`;
+    if (!cfg.enabled) {
+      $('#smartDecisionStatus').textContent = 'التفعيل اختياري، وبياناتك لا تغادر الجهاز.';
+    } else if (smartLastDecision?.selected) {
+      $('#smartDecisionStatus').textContent = 'آخر قرار: عُرض اقتراح محلي مع سبب قابل للعرض.';
+    } else {
+      const reason = primarySmartBlock(smartLastDecision);
+      $('#smartDecisionStatus').textContent = reason
+        ? `آخر قرار: ${SmartServicesAPI.describeBlock(reason)}`
+        : 'لا يوجد اقتراح مناسب الآن.';
+    }
+  }
+
+  function queueSmartSuggestion(delay = 1200) {
+    clearTimeout(smartSuggestionTimer);
+    if (!smartEngine?.config.enabled || !SmartServicesAPI) return;
+    smartSuggestionTimer = setTimeout(renderSmartSuggestion, Math.max(0, Number(delay) || 0));
+  }
+
+  function renderSmartSuggestion() {
+    if (!smartEngine?.config.enabled || !SmartServicesAPI || document.hidden
+        || curView === 'settings' || curView === 'about'
+        || (play.active && !audio.paused)
+        || !!document.querySelector('.panel-tafsir.show')
+        || !$('#imgModal').hidden
+        || document.body.classList.contains('group-menu-open')) {
+      hideSmartSuggestion();
+      fillSmartSettings();
+      return;
+    }
+    const elapsed = Date.now() - smartSessionStartedAt;
+    if (elapsed < 6000) {
+      queueSmartSuggestion(6000 - elapsed);
+      return;
+    }
+    const candidates = SmartServicesAPI.buildCandidates(smartCandidateInput(), Date.now());
+    const decision = smartEngine.evaluate(candidates, smartSignals());
+    smartLastDecision = decision;
+    if (!decision.selected) {
+      hideSmartSuggestion();
+      fillSmartSettings();
+      return;
+    }
+    const selected = decision.selected;
+    const candidate = selected.candidate;
+    const suggestionId = `${candidate.id}:${Date.now()}`.slice(0, 64);
+    smartCurrent = { selection: selected, id: suggestionId };
+    $('#smartSuggestionTitle').textContent = candidate.title || 'اقتراح من سراج';
+    $('#smartSuggestionBody').textContent = candidate.body || '';
+    $('#smartSuggestionOpen').textContent = candidate.cta || 'فتح';
+    $('#smartSuggestionWhy').textContent = SmartServicesAPI.explainSelection(selected);
+    $('#smartSuggestion').hidden = false;
+    smartEngine.markShown(candidate, suggestionId, 'suggestion');
+    persistSmartContext();
+    fillSmartSettings();
+  }
+
+  async function runSmartAction(action) {
+    if (action === 'open_wird') {
+      const wird = getWird();
+      showView('reader');
+      await showPage(wird.pointer, { scroll: true });
+      return;
+    }
+    if (String(action).startsWith('open_adhkar:')) {
+      const category = String(action).split(':')[1];
+      await loadAdhkar();
+      showView('adhkar');
+      openAdhkarCat(category);
+      return;
+    }
+    if (action === 'open_memorization') { showView('memo'); return; }
+    if (action === 'open_tajweed') { showView('tajweed'); return; }
+    if (action === 'open_recitation') { showView('reader'); return; }
+  }
+
+  function recordSmartFeedback(action) {
+    if (!smartEngine || !smartCurrent) return null;
+    const current = smartCurrent;
+    const recorded = smartEngine.feedback(
+      current.selection.candidate.service, action, current.id, 'suggestion',
+    );
+    persistSmartContext();
+    return { current, recorded };
+  }
+
+  $('#smartSuggestionOpen').addEventListener('click', async () => {
+    const result = recordSmartFeedback('open');
+    if (!result) return;
+    const action = result.current.selection.candidate.action;
+    hideSmartSuggestion();
+    await runSmartAction(action);
+  });
+  $('#smartSuggestionLater').addEventListener('click', () => {
+    recordSmartFeedback('snooze');
+    hideSmartSuggestion();
+    fillSmartSettings();
+  });
+  $('#smartSuggestionDismiss').addEventListener('click', () => {
+    recordSmartFeedback('dismiss');
+    hideSmartSuggestion();
+    fillSmartSettings();
+  });
+
+  function smartConfigFromControls() {
+    return {
+      quietStart: $('#smartQuietStart').value || '22:30',
+      quietEnd: $('#smartQuietEnd').value || '06:30',
+      maxDailyInterventions: Number($('#smartDailyMax').value) || 3,
+      cooldownMinutes: Number($('#smartCooldown').value) || 120,
+      retentionDays: Number($('#smartRetention').value) || 35,
+    };
+  }
+
+  $('#setSmartEnabled').addEventListener('change', (event) => {
+    if (!smartEngine) return;
+    smartEngine.configure({ ...smartConfigFromControls(), enabled: event.target.checked });
+    persistSmartContext(true);
+    if (smartEngine.config.enabled) {
+      smartSessionStartedAt = Date.now();
+      smartLastInteractionAt = Date.now();
+      smartRecord({
+        type: 'APP_OPEN', service: 'app',
+        context: { riwayah: settings.riwaya, source: 'opt_in' },
+      }, { silent: true });
+      queueSmartSuggestion(6500);
+      toast('فُعّلت الاقتراحات المحلية');
+    } else {
+      clearTimeout(smartSuggestionTimer);
+      hideSmartSuggestion();
+      toast('توقفت الاقتراحات الذكية');
+    }
+    fillSmartSettings();
+  });
+  ['smartQuietStart', 'smartQuietEnd', 'smartDailyMax', 'smartCooldown', 'smartRetention']
+    .forEach((id) => $(`#${id}`).addEventListener('change', () => {
+      if (!smartEngine) return;
+      smartEngine.configure(smartConfigFromControls());
+      persistSmartContext(true);
+      hideSmartSuggestion();
+      queueSmartSuggestion(1800);
+      fillSmartSettings();
+    }));
+  $('#smartDeleteData').addEventListener('click', () => {
+    if (!smartEngine) return;
+    if (!confirm('حذف سجل العادات والاقتراحات المحلي؟ لن تُحذف قراءتك أو علاماتك أو إعدادات المصحف.')) return;
+    smartEngine.reset();
+    smartLastDecision = null;
+    persistSmartContext(true);
+    hideSmartSuggestion();
+    fillSmartSettings();
+    toast('حُذف سجل الاقتراحات المحلي');
+  });
+
+  function recordSmartSessionEnd() {
+    if (!smartEngine?.config.enabled) return;
+    const now = Date.now();
+    if (now - (recordSmartSessionEnd.lastAt || 0) < 2000) return;
+    recordSmartSessionEnd.lastAt = now;
+    smartRecord({
+      type: 'READING_SESSION_END', service: 'app',
+      durationMs: Math.max(0, now - smartSessionStartedAt),
+      context: { source: curView },
+    }, { immediate: true, silent: true });
+  }
+  document.addEventListener('pointerdown', () => { smartLastInteractionAt = Date.now(); }, { passive: true });
+  document.addEventListener('keydown', () => { smartLastInteractionAt = Date.now(); }, { passive: true });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      recordSmartSessionEnd();
+      clearTimeout(smartSuggestionTimer);
+      hideSmartSuggestion();
+    } else {
+      smartSessionStartedAt = Date.now();
+      smartLastInteractionAt = Date.now();
+      smartRecord({
+        type: 'APP_FOREGROUND', service: 'app',
+        context: { riwayah: settings.riwaya, source: curView },
+      }, { silent: true });
+      queueSmartSuggestion(5000);
+    }
+  });
+  window.addEventListener('pagehide', recordSmartSessionEnd);
+
   // ---------- التشغيل الأولي ----------
   renderFluentIcons();
   applyTheme();
@@ -2402,6 +2780,11 @@
   renderBookmarks();
   renderLast();
   renderWird();
+  smartRecord({
+    type: 'APP_OPEN', service: 'app',
+    context: { riwayah: settings.riwaya, source: 'launch' },
+  }, { silent: true });
+  queueSmartSuggestion(6500);
   if (getWird().reminderEnabled && getReminderNative()) saveWirdReminder();
   attachTafsirProgress();
   checkInAppWirdReminder();

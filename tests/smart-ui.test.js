@@ -1,0 +1,87 @@
+'use strict';
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const root = path.resolve(__dirname, '..');
+const read = (name) => fs.readFileSync(path.join(root, name), 'utf8');
+
+const app = read('app.js');
+const html = read('index.html');
+const context = read('smart-context.js');
+const services = read('smart-services.js');
+const build = read('scripts/build-www.sh');
+const publish = read('scripts/publish-update.sh');
+const sw = read('sw.js');
+
+test('smart scripts load in dependency order before the application', () => {
+  const fallback = html.slice(html.indexOf('if (!applied)'));
+  const contextAt = fallback.indexOf("run(null, 'smart-context.js')");
+  const servicesAt = fallback.indexOf("run(null, 'smart-services.js')");
+  const appAt = fallback.indexOf("run(null, 'app.js')");
+  assert.ok(contextAt >= 0 && servicesAt > contextAt && appAt > servicesAt);
+});
+
+test('opt-in and local privacy controls are visible and explicit', () => {
+  for (const id of [
+    'setSmartEnabled', 'smartQuietStart', 'smartQuietEnd', 'smartDailyMax',
+    'smartCooldown', 'smartRetention', 'smartDeleteData',
+  ]) assert.match(html, new RegExp(`id="${id}"`));
+  assert.match(html, /اختيارك صريح ويمكن إيقافه/);
+  assert.match(html, /لا يقرأ الرسائل أو المواقع التي تزورها أو الحافظة/);
+  assert.match(html, /لا يرسل ملف عادات إلى خادم/);
+});
+
+test('smart modules have no network primitive', () => {
+  const source = context + '\n' + services;
+  assert.doesNotMatch(source, /\bfetch\s*\(/);
+  assert.doesNotMatch(source, /XMLHttpRequest|WebSocket|sendBeacon/);
+});
+
+test('UI records all integrated service families with bounded event names', () => {
+  for (const event of [
+    'APP_OPEN', 'APP_FOREGROUND', 'READING_SESSION_END', 'READ_PAGE',
+    'PLAY_RECITATION', 'SERVICE_OPEN', 'COMPLETE_ADHKAR',
+    'START_MEMORIZATION', 'COMPLETE_MEMORIZATION', 'OPEN_TAFSIR', 'OPEN_TAJWEED',
+  ]) assert.match(app, new RegExp(`type: '${event}'`));
+  assert.match(app, /new SmartContextAPI\.SmartContextEngine/);
+  assert.match(app, /smartEngine\.snapshot\(\)/);
+});
+
+test('suggestion card exposes action, deferral, dismissal, and explanation', () => {
+  for (const id of [
+    'smartSuggestion', 'smartSuggestionOpen', 'smartSuggestionLater',
+    'smartSuggestionDismiss', 'smartSuggestionWhy',
+  ]) assert.match(html, new RegExp(`id="${id}"`));
+  assert.match(app, /markShown\(candidate, suggestionId, 'suggestion'\)/);
+  assert.match(app, /recordSmartFeedback\('open'\)/);
+  assert.match(app, /recordSmartFeedback\('snooze'\)/);
+  assert.match(app, /recordSmartFeedback\('dismiss'\)/);
+});
+
+test('sleep, quiet hours, caps, and cooldown remain hard gates', () => {
+  assert.match(context, /if \(context\.likelySleeping\) return 'LIKELY_SLEEPING'/);
+  assert.match(context, /if \(context\.quietHours\) return 'QUIET_HOURS'/);
+  assert.match(context, /return 'DAILY_CAP'/);
+  assert.match(context, /return 'COOLDOWN'/);
+  assert.doesNotMatch(context, /allowDuringSleep|allowDuringQuiet/);
+});
+
+test('both smart files are included in offline and update channels', () => {
+  for (const source of [build, publish, sw]) {
+    assert.match(source, /smart-context\.js/);
+    assert.match(source, /smart-services\.js/);
+  }
+  assert.match(sw, /siraj-shell-v12/);
+});
+
+test('About remains the last settings control after adding smart settings', () => {
+  const settings = html.match(/<section class="view" id="view-settings">([\s\S]*?)<\/section>/);
+  assert.ok(settings);
+  const smartAt = settings[1].indexOf('id="smartSettingsCard"');
+  const aboutAt = settings[1].indexOf('id="settingsAboutBtn"');
+  assert.ok(smartAt >= 0 && aboutAt > smartAt);
+  assert.match(settings[1].slice(aboutAt), /<\/button>\s*$/);
+});

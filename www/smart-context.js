@@ -27,6 +27,8 @@
     'COMPLETE_TAJWEED_LESSON', 'TAJWEED_ANSWER',
     'NOTIFICATION_SHOWN', 'NOTIFICATION_OPEN', 'NOTIFICATION_COMPLETE',
     'NOTIFICATION_SNOOZE', 'NOTIFICATION_NOT_NOW', 'NOTIFICATION_DISMISS',
+    'SUGGESTION_SHOWN', 'SUGGESTION_OPEN', 'SUGGESTION_COMPLETE',
+    'SUGGESTION_SNOOZE', 'SUGGESTION_NOT_NOW', 'SUGGESTION_DISMISS',
   ]);
 
   const ACTIVITY_TYPES = new Set([
@@ -38,15 +40,17 @@
 
   const COMPLETION_TYPES = new Set([
     'SERVICE_COMPLETE', 'COMPLETE_MEMORIZATION', 'COMPLETE_ADHKAR',
-    'COMPLETE_TAJWEED_LESSON', 'NOTIFICATION_COMPLETE',
+    'COMPLETE_TAJWEED_LESSON', 'NOTIFICATION_COMPLETE', 'SUGGESTION_COMPLETE',
   ]);
 
   const POSITIVE_FEEDBACK_TYPES = new Set([
-    'NOTIFICATION_OPEN', 'NOTIFICATION_COMPLETE',
+    'NOTIFICATION_OPEN', 'NOTIFICATION_COMPLETE', 'SUGGESTION_OPEN',
+    'SUGGESTION_COMPLETE',
   ]);
 
   const NEGATIVE_FEEDBACK_TYPES = new Set([
-    'NOTIFICATION_NOT_NOW', 'NOTIFICATION_DISMISS',
+    'NOTIFICATION_NOT_NOW', 'NOTIFICATION_DISMISS', 'SUGGESTION_NOT_NOW',
+    'SUGGESTION_DISMISS',
   ]);
 
   const ALLOWED_CONTEXT_KEYS = new Set([
@@ -125,10 +129,10 @@
       halfLifeDays: Math.round(clamp(value('halfLifeDays'), 3, 30)),
       maxDailyInterventions: Math.round(clamp(value('maxDailyInterventions'), 1, 8)),
       cooldownMinutes: Math.round(clamp(value('cooldownMinutes'), 30, 720)),
-      quietStart: /^\d{2}:\d{2}$/.test(input.quietStart || '')
-        ? input.quietStart : DEFAULT_CONFIG.quietStart,
-      quietEnd: /^\d{2}:\d{2}$/.test(input.quietEnd || '')
-        ? input.quietEnd : DEFAULT_CONFIG.quietEnd,
+      quietStart: parseTime(input.quietStart, -1) >= 0
+        ? String(input.quietStart) : DEFAULT_CONFIG.quietStart,
+      quietEnd: parseTime(input.quietEnd, -1) >= 0
+        ? String(input.quietEnd) : DEFAULT_CONFIG.quietEnd,
       minimumScore: clamp(value('minimumScore'), 0.3, 0.95),
       minimumLearningSamples: Math.round(clamp(value('minimumLearningSamples'), 3, 30)),
     };
@@ -182,7 +186,9 @@
       seen.add(identity);
       cleaned.push(event);
     });
-    cleaned.sort((a, b) => a.at - b.at || a.type.localeCompare(b.type));
+    // Array#sort is stable in supported runtimes, so equal timestamps keep the
+    // actual recording order (shown before the immediate feedback that follows).
+    cleaned.sort((a, b) => a.at - b.at);
     return cleaned.slice(-MAX_EVENTS);
   }
 
@@ -283,7 +289,9 @@
         profile.negative[bin] += weight;
         profile.feedbackWeight += weight;
       }
-      if (event.type === 'NOTIFICATION_SNOOZE') profile.feedbackWeight += weight * 0.2;
+      if (event.type === 'NOTIFICATION_SNOOZE' || event.type === 'SUGGESTION_SNOOZE') {
+        profile.feedbackWeight += weight * 0.2;
+      }
       if (['DEVICE_ACTIVE', 'SCREEN_ON', 'APP_OPEN', 'APP_FOREGROUND'].includes(event.type)) {
         deviceActivity[bin] += weight;
       }
@@ -395,11 +403,15 @@
     const quietHours = isWithinWrapped(currentMinute, quietStart, quietEnd);
     const dayStart = new Date(now);
     dayStart.setHours(0, 0, 0, 0);
-    const shownToday = eventCountSince(model.events, 'NOTIFICATION_SHOWN', dayStart.getTime());
+    const shownToday = eventCountSince(model.events, 'NOTIFICATION_SHOWN', dayStart.getTime())
+      + eventCountSince(model.events, 'SUGGESTION_SHOWN', dayStart.getTime());
     const sixHoursAgo = now - 6 * 60 * 60 * 1000;
-    const shownRecently = eventCountSince(model.events, 'NOTIFICATION_SHOWN', sixHoursAgo);
+    const shownRecently = eventCountSince(model.events, 'NOTIFICATION_SHOWN', sixHoursAgo)
+      + eventCountSince(model.events, 'SUGGESTION_SHOWN', sixHoursAgo);
     const dismissedRecently = eventCountSince(model.events, 'NOTIFICATION_DISMISS', now - 7 * DAY_MS)
-      + eventCountSince(model.events, 'NOTIFICATION_NOT_NOW', now - 7 * DAY_MS);
+      + eventCountSince(model.events, 'NOTIFICATION_NOT_NOW', now - 7 * DAY_MS)
+      + eventCountSince(model.events, 'SUGGESTION_DISMISS', now - 7 * DAY_MS)
+      + eventCountSince(model.events, 'SUGGESTION_NOT_NOW', now - 7 * DAY_MS);
     const fatigue = clamp(
       shownToday / Math.max(1, cfg.maxDailyInterventions)
       + shownRecently * 0.14 + dismissedRecently * 0.05,
@@ -483,7 +495,7 @@
     if (context.likelySleeping) return 'LIKELY_SLEEPING';
     if (context.quietHours) return 'QUIET_HOURS';
     if (context.shownToday >= cfg.maxDailyInterventions) return 'DAILY_CAP';
-    const latest = lastEvent(model.events, 'NOTIFICATION_SHOWN');
+    const latest = lastEvent(model.events, ['NOTIFICATION_SHOWN', 'SUGGESTION_SHOWN']);
     if (latest && now - latest.at < cfg.cooldownMinutes * 60 * 1000) return 'COOLDOWN';
     if (serviceCompletedToday(model.events, candidate.service, candidate.completionTypes, now)) {
       return 'ALREADY_COMPLETED';
@@ -556,11 +568,20 @@
   }
 
   const FEEDBACK_EVENTS = Object.freeze({
-    open: 'NOTIFICATION_OPEN',
-    complete: 'NOTIFICATION_COMPLETE',
-    snooze: 'NOTIFICATION_SNOOZE',
-    not_now: 'NOTIFICATION_NOT_NOW',
-    dismiss: 'NOTIFICATION_DISMISS',
+    notification: Object.freeze({
+      open: 'NOTIFICATION_OPEN',
+      complete: 'NOTIFICATION_COMPLETE',
+      snooze: 'NOTIFICATION_SNOOZE',
+      not_now: 'NOTIFICATION_NOT_NOW',
+      dismiss: 'NOTIFICATION_DISMISS',
+    }),
+    suggestion: Object.freeze({
+      open: 'SUGGESTION_OPEN',
+      complete: 'SUGGESTION_COMPLETE',
+      snooze: 'SUGGESTION_SNOOZE',
+      not_now: 'SUGGESTION_NOT_NOW',
+      dismiss: 'SUGGESTION_DISMISS',
+    }),
   });
 
   class SmartContextEngine {
@@ -595,17 +616,19 @@
       return chooseIntervention(candidates, this.events, input, this.clock(), this.config);
     }
 
-    markShown(candidate, notificationId) {
+    markShown(candidate, notificationId, surface = 'notification') {
       if (!candidate || !candidate.service) return null;
+      const kind = surface === 'suggestion' ? 'suggestion' : 'notification';
       return this.record({
-        type: 'NOTIFICATION_SHOWN',
+        type: kind === 'suggestion' ? 'SUGGESTION_SHOWN' : 'NOTIFICATION_SHOWN',
         service: candidate.service,
         context: { notificationId: String(notificationId || candidate.id || '').slice(0, 64) },
       });
     }
 
-    feedback(service, action, notificationId) {
-      const type = FEEDBACK_EVENTS[action];
+    feedback(service, action, notificationId, surface = 'notification') {
+      const kind = surface === 'suggestion' ? 'suggestion' : 'notification';
+      const type = FEEDBACK_EVENTS[kind][action];
       if (!type) return null;
       return this.record({
         type,

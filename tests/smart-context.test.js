@@ -66,6 +66,18 @@ test('event sanitizer rejects unknown, expired, and implausibly future events', 
   assert.equal(Smart.sanitizeEvent({ type: 'APP_OPEN', service: 'app', at: now + 6 * 60000 }, now), null);
 });
 
+test('configuration keeps documented defaults and rejects invalid clock values', () => {
+  const defaults = Smart.normalizeConfig({});
+  assert.equal(defaults.retentionDays, 35);
+  assert.equal(defaults.halfLifeDays, 14);
+  assert.equal(defaults.minimumLearningSamples, 7);
+  assert.equal(defaults.quietStart, '22:30');
+  assert.equal(defaults.quietEnd, '06:30');
+  const invalid = Smart.normalizeConfig({ quietStart: '99:99', quietEnd: '12:75' });
+  assert.equal(invalid.quietStart, '22:30');
+  assert.equal(invalid.quietEnd, '06:30');
+});
+
 test('pruning sorts, deduplicates, and removes invalid records', () => {
   const now = localTime(20, 12);
   const events = Smart.pruneEvents([
@@ -75,6 +87,20 @@ test('pruning sorts, deduplicates, and removes invalid records', () => {
     { type: 'NOPE', service: 'app', at: now },
   ], now, baseConfig());
   assert.deepEqual(events.map((item) => item.id), ['a', 'b']);
+});
+
+test('local event history has a hard size cap in addition to retention', () => {
+  const now = localTime(20, 12);
+  const events = Array.from({ length: 4105 }, (_, index) => ({
+    id: `event-${index}`,
+    type: 'APP_OPEN',
+    service: 'app',
+    at: now - (4105 - index) * 1000,
+  }));
+  const pruned = Smart.pruneEvents(events, now, baseConfig());
+  assert.equal(pruned.length, 4000);
+  assert.equal(pruned.at(-1).id, 'event-4104');
+  assert.equal(pruned[0].id, 'event-105');
 });
 
 test('habit model favors the learned time window', () => {
@@ -284,6 +310,22 @@ test('SmartContextEngine persists a minimal snapshot and supports reset', () => 
   assert.equal(JSON.stringify(state).includes('discard'), false);
   engine.reset();
   assert.equal(engine.snapshot().events.length, 0);
+});
+
+test('in-app suggestions share fatigue gates without being mislabeled as notifications', () => {
+  const now = localTime(20, 12);
+  const engine = new Smart.SmartContextEngine({ config: baseConfig() }, { now: () => now });
+  const item = candidate();
+  engine.markShown(item, 'suggestion-1', 'suggestion');
+  engine.feedback('wird', 'open', 'suggestion-1', 'suggestion');
+  assert.deepEqual(engine.snapshot().events.map((event) => event.type), [
+    'SUGGESTION_SHOWN', 'SUGGESTION_OPEN',
+  ]);
+  const decision = engine.evaluate([candidate({ id: 'another' })], {
+    screenInteractive: true, lastDeviceActiveAt: now,
+  });
+  assert.equal(decision.selected, null);
+  assert.equal(decision.blocked[0].reason, 'COOLDOWN');
 });
 
 test('invalid feedback actions and malformed candidates fail closed', () => {

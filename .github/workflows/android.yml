@@ -7,7 +7,8 @@ on:
       - 'android/**'
       - 'app.js'
       - 'smart-context.js'
-      - 'tests/smart-context.test.js'
+      - 'smart-services.js'
+      - 'tests/*.test.js'
       - 'index.html'
       - 'manifest.json'
       - 'sw.js'
@@ -76,6 +77,7 @@ jobs:
         run: |
           node --check app.js
           node --check smart-context.js
+          node --check smart-services.js
           npm run test:smart
           python3 scripts/verify_android_bundle.py
           python3 scripts/verify_audio_sources.py
@@ -148,7 +150,7 @@ jobs:
           apk = 'android/app/build/outputs/apk/release/app-release.apk'
           required = {
               'assets/public/app.js', 'assets/public/smart-context.js',
-              'assets/public/index.html', 'assets/public/sw.js',
+              'assets/public/smart-services.js', 'assets/public/index.html', 'assets/public/sw.js',
               'assets/public/quran-hafs.json', 'assets/public/quran-tajweed.json',
               'assets/public/surahs.json', 'assets/public/tafsir-catalog.json',
               'assets/public/fonts/Amiri-Regular.ttf',
@@ -165,11 +167,18 @@ jobs:
               assert not (required - names), required - names
               app = archive.read('assets/public/app.js').decode()
               smart_context = archive.read('assets/public/smart-context.js').decode()
+              smart_services = archive.read('assets/public/smart-services.js').decode()
               html = archive.read('assets/public/index.html').decode()
               service_worker = archive.read('assets/public/sw.js').decode()
           assert 'everyayah.com' not in app.lower()
           assert 'SmartContextEngine' in smart_context and 'LIKELY_SLEEPING' in smart_context
+          assert 'buildCandidates' in smart_services and 'open_adhkar:morning' in smart_services
           assert "run(null, 'smart-context.js')" in html
+          assert "run(null, 'smart-services.js')" in html
+          assert 'id="setSmartEnabled"' in html and 'id="smartSuggestion"' in html
+          assert 'لا يرسل ملف عادات إلى خادم' in html
+          assert 'new SmartContextAPI.SmartContextEngine' in app
+          assert "markShown(candidate, suggestionId, 'suggestion')" in app
           assert 'TafsirStore' in app and 'Reminder' in app and 'ar.parhizgar' in app
           assert 'loadBundledData()' in app and 'recordWirdPage' in app
           assert "APP_BUNDLE_VERSION = '1.4.4'" in html and 'الإصدار 1.4.4' in html
@@ -203,8 +212,8 @@ jobs:
           assert 'group-menu-open' in html and 'reader-view-active' in html and 'body.group-menu-open .hdr' in html
           assert 'syncReaderDockHeight' in app and 'syncAudioTimeline' in app
           assert 'syncGroupMenuLayer' in app and 'focusFirst' in app and 'restoreFocus' in app
-          assert 'siraj-shell-v11' in service_worker
-          assert "'./smart-context.js'" in service_worker
+          assert 'siraj-shell-v12' in service_worker
+          assert "'./smart-context.js'" in service_worker and "'./smart-services.js'" in service_worker
           assert 'data-icon="tajweed"' in html and '🎵' not in html
           PY
 
@@ -340,6 +349,7 @@ jobs:
           set -euo pipefail
           cp index.html update/index.html
           cp smart-context.js update/smart-context.js
+          cp smart-services.js update/smart-services.js
           cp app.js update/app.js
           python3 - <<'PY'
           import json, os
@@ -348,7 +358,7 @@ jobs:
           data = json.loads(path.read_text(encoding='utf-8'))
           version = os.environ['VERSION']
           data['version'] = version
-          data['files'] = ['index.html', 'smart-context.js', 'app.js']
+          data['files'] = ['index.html', 'smart-context.js', 'smart-services.js', 'app.js']
           data['features'] = ['هوية أوضح لسراج ووصول منظم إلى «عن التطبيق».']
           data['apk'] = {
               'version': version,
@@ -359,7 +369,7 @@ jobs:
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add update/manifest.json update/index.html update/smart-context.js update/app.js
+          git add update/manifest.json update/index.html update/smart-context.js update/smart-services.js update/app.js
           if ! git diff --cached --quiet; then
             git commit -m "Android $VERSION: advance stable immutable release channel [skip ci]"
             git push origin HEAD:main
