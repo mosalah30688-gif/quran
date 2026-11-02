@@ -121,7 +121,14 @@ test('packet remains metadata-only and outside runtime assets', () => {
       for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
         const fullPath = path.join(current, entry.name);
         if (entry.isDirectory()) stack.push(fullPath);
-        else assert.equal(entry.name.toLowerCase().includes('wajh-review'), false, fullPath);
+        else {
+          const lower = entry.name.toLowerCase();
+          assert.equal(
+            lower.includes('wajh-review') || lower.includes('wajh_review'),
+            false,
+            fullPath,
+          );
+        }
       }
     }
   }

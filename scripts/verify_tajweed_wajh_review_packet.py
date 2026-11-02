@@ -479,8 +479,11 @@ def verify_not_runtime() -> None:
     for base in forbidden_roots:
         if not base.exists():
             continue
-        leaked = [path for path in base.rglob("*")
-                  if path.is_file() and "wajh-review" in path.name.lower()]
+        leaked = [
+            path for path in base.rglob("*")
+            if path.is_file()
+            and any(marker in path.name.lower() for marker in ("wajh-review", "wajh_review"))
+        ]
         if leaked:
             raise VerificationError(
                 f"wajh review packet leaked into runtime: {leaked[0].relative_to(ROOT)}"

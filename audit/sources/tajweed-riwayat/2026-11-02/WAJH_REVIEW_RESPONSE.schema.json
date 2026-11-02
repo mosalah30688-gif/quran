@@ -1,0 +1,613 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://siraj.app/schemas/tajweed-wajh-review-response-v1.json",
+  "title": "Siraj non-Hafs wajh scholarly review response",
+  "description": "Structural evidence contract only. Schema validity is not scholarly approval and never authorizes publication or runtime activation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "containsAnnotationSpans",
+    "containsCopiedRuleProse",
+    "containsQuranText",
+    "containsTrainingExamples",
+    "packetBinding",
+    "publishableAsApproved",
+    "responseId",
+    "runtimeActivationRequested",
+    "schemaVersion",
+    "scholarlyAccuracyDeterminedBySoftware",
+    "scopeResponses",
+    "status",
+    "structuralValidationOnly",
+    "updatedAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "responseId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+    },
+    "updatedAt": {
+      "oneOf": [
+        {
+          "type": "string",
+          "format": "date"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status": {
+      "enum": [
+        "DRAFT",
+        "IN_PROGRESS",
+        "SCIENTIFIC_REVIEW_COMPLETE"
+      ]
+    },
+    "packetBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "packetId",
+        "packetSha256"
+      ],
+      "properties": {
+        "packetId": {
+          "const": "siraj-non-hafs-wajh-review-2026-11-02"
+        },
+        "packetSha256": {
+          "const": "ea83545143fcc82cdc151d6695496975efbcffbfcd9e3fd653ddc3265fc49437"
+        }
+      }
+    },
+    "structuralValidationOnly": {
+      "const": true
+    },
+    "scholarlyAccuracyDeterminedBySoftware": {
+      "const": false
+    },
+    "publishableAsApproved": {
+      "const": false
+    },
+    "runtimeActivationRequested": {
+      "const": false
+    },
+    "containsQuranText": {
+      "const": false
+    },
+    "containsCopiedRuleProse": {
+      "const": false
+    },
+    "containsTrainingExamples": {
+      "const": false
+    },
+    "containsAnnotationSpans": {
+      "const": false
+    },
+    "scopeResponses": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "$ref": "#/$defs/scopeResponse"
+      }
+    }
+  },
+  "$defs": {
+    "reviewer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attestationExactRoute",
+        "attestationFullReviewNotSampling",
+        "attestationNoCrossScopeInference",
+        "evidenceLocator",
+        "evidenceSha256",
+        "exactRouteExperience",
+        "name",
+        "organization",
+        "qualification",
+        "qualificationEvidenceLocator",
+        "reviewCompletedAt",
+        "reviewStartedAt"
+      ],
+      "properties": {
+        "name": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "qualification": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "qualificationEvidenceLocator": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "exactRouteExperience": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "organization": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reviewStartedAt": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reviewCompletedAt": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidenceLocator": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidenceSha256": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "attestationFullReviewNotSampling": {
+          "type": "boolean"
+        },
+        "attestationExactRoute": {
+          "type": "boolean"
+        },
+        "attestationNoCrossScopeInference": {
+          "type": "boolean"
+        }
+      }
+    },
+    "decisionResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decisionId",
+        "printedPage",
+        "reviewerNoteAr",
+        "selectedPracticeId",
+        "selectedPracticeLabelAr",
+        "sourceId",
+        "sourceLocator",
+        "status",
+        "topicId"
+      ],
+      "properties": {
+        "decisionId": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+        },
+        "topicId": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+        },
+        "sourceId": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+        },
+        "printedPage": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "status": {
+          "enum": [
+            "APPROVED",
+            "CHANGES_REQUESTED",
+            "PENDING",
+            "REJECTED"
+          ]
+        },
+        "selectedPracticeId": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "selectedPracticeLabelAr": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sourceLocator": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reviewerNoteAr": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "selectedProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "compatibilityAttestationAr",
+        "countTraditionId",
+        "editionEvidenceLocator",
+        "editionId",
+        "editionSha256",
+        "status",
+        "surahCountTableSha256",
+        "totalAyahs",
+        "wajhId",
+        "wajhLabelAr"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "PENDING",
+            "APPROVED_BY_REVIEWER"
+          ]
+        },
+        "wajhId": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "wajhLabelAr": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "editionId": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "editionSha256": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "editionEvidenceLocator": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "countTraditionId": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "totalAyahs": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "surahCountTableSha256": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "compatibilityAttestationAr": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "secondPersonApproval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "approvalDate",
+        "approverName",
+        "approverQualification",
+        "evidenceLocator",
+        "evidenceSha256",
+        "reviewedScopePayloadSha256",
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "NOT_STARTED",
+            "APPROVED",
+            "CHANGES_REQUESTED",
+            "REJECTED"
+          ]
+        },
+        "approverName": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "approverQualification": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "approvalDate": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reviewedScopePayloadSha256": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidenceLocator": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidenceSha256": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "scopeResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidateEdition",
+        "decisionResponses",
+        "responseStatus",
+        "reviewer",
+        "secondPersonApproval",
+        "selectedProfile",
+        "settingId",
+        "targetRoute"
+      ],
+      "properties": {
+        "settingId": {
+          "enum": [
+            "warsh",
+            "qalun",
+            "duri"
+          ]
+        },
+        "targetRoute": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "riwayah",
+            "tariq"
+          ],
+          "properties": {
+            "riwayah": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+            },
+            "tariq": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+            }
+          }
+        },
+        "candidateEdition": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+        },
+        "responseStatus": {
+          "enum": [
+            "CHANGES_REQUESTED",
+            "IN_PROGRESS",
+            "PENDING",
+            "REJECTED",
+            "SCIENTIFICALLY_APPROVED",
+            "SUBMITTED_FOR_SECOND_APPROVAL"
+          ]
+        },
+        "reviewer": {
+          "$ref": "#/$defs/reviewer"
+        },
+        "decisionResponses": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/decisionResponse"
+          }
+        },
+        "selectedProfile": {
+          "$ref": "#/$defs/selectedProfile"
+        },
+        "secondPersonApproval": {
+          "$ref": "#/$defs/secondPersonApproval"
+        }
+      }
+    }
+  }
+}

@@ -29,6 +29,9 @@
 | `audit/sources/tajweed-riwayat/2026-11-02/RULE_INVENTORY.json` | `dc77dddc7466a3862d572b8c97b9bc136276de14609090683a59b0c452cfce2f` | خريطة تغطية موضوعية metadata-only: ورش 17، قالون 14، الدوري 12 |
 | `audit/sources/tajweed-riwayat/2026-11-02/DURI_COUNT_AUDIT.json` | `9f33f42ed0e9201f6ad32c69bba9825e606e613ceb17dc3e42c99b9f50425077` | تعارض العدد 6214/6217 وانحدار 6218 عند شطر `67:9`؛ لا تصحيح آلي |
 | `audit/sources/tajweed-riwayat/2026-11-02/WAJH_REVIEW_PACKET.json` | `ea83545143fcc82cdc151d6695496975efbcffbfcd9e3fd653ddc3265fc49437` | حزمة قرار فارغة قابلة للتحقق؛ جميع اختيارات الوجه والطبعة والعدد والمراجعين والاعتماد الثاني غير مملوءة |
+| `audit/sources/tajweed-riwayat/2026-11-02/WAJH_REVIEW_RESPONSE.schema.json` | `881498744e1076ae479f3b9474a046a5efdd6bad41c3a1d9b171fc04e01d233f` | عقد جواب المراجع: اكتمال القرارات والأدلة، وفصل المراجع عن المعتمد الثاني، مع بقاء بوابة النشر مغلقة |
+| `audit/sources/tajweed-riwayat/2026-11-02/WAJH_REVIEW_RESPONSE_TEMPLATE.json` | `c4d60adaed2db7507e90693b0ab9a962a8b2b883f37f8c6c5e1a696b4b3ae270` | قالب فارغ مربوط ببصمة حزمة القرار؛ لا يحتوي قرارًا علميًا أو بيانات قرآن أو اعتمادًا |
+| `audit/sources/tajweed-riwayat/2026-11-02/WAJH_REVIEW_GUIDE.ar.md` | `cb017ee6ed925170dcc2ac5826221b37ce4c91d2851cbf549fb06310a1c5487d` | تعليمات التسليم وإكمال المراجعة والاعتماد الثاني، مع تنبيه صريح أن التحقق البنيوي ليس حكمًا علميًا |
 
 ### حالة طبقات التجويد المستقلة
 

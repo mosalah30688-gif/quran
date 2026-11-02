@@ -1,0 +1,631 @@
+{
+  "schemaVersion": 1,
+  "responseId": "siraj-non-hafs-wajh-response-draft-2026-11-02",
+  "updatedAt": null,
+  "status": "DRAFT",
+  "packetBinding": {
+    "packetId": "siraj-non-hafs-wajh-review-2026-11-02",
+    "packetSha256": "ea83545143fcc82cdc151d6695496975efbcffbfcd9e3fd653ddc3265fc49437"
+  },
+  "structuralValidationOnly": true,
+  "scholarlyAccuracyDeterminedBySoftware": false,
+  "publishableAsApproved": false,
+  "runtimeActivationRequested": false,
+  "containsQuranText": false,
+  "containsCopiedRuleProse": false,
+  "containsTrainingExamples": false,
+  "containsAnnotationSpans": false,
+  "scopeResponses": [
+    {
+      "settingId": "warsh",
+      "targetRoute": {
+        "riwayah": "warsh-an-nafi",
+        "tariq": "al-azraq-via-al-shatibiyyah"
+      },
+      "candidateEdition": "quranpedia-mushaf-4-2026-11-02-crosschecked-kfgqpc-warsh-v3",
+      "responseStatus": "PENDING",
+      "reviewer": {
+        "name": null,
+        "qualification": null,
+        "qualificationEvidenceLocator": null,
+        "exactRouteExperience": null,
+        "organization": null,
+        "reviewStartedAt": null,
+        "reviewCompletedAt": null,
+        "evidenceLocator": null,
+        "evidenceSha256": null,
+        "attestationFullReviewNotSampling": false,
+        "attestationExactRoute": false,
+        "attestationNoCrossScopeInference": false
+      },
+      "decisionResponses": [
+        {
+          "decisionId": "warsh.istiadha",
+          "topicId": "istiadha",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 79,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.basmala",
+          "topicId": "basmala",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 82,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.mim-al-jam",
+          "topicId": "mim-al-jam",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 84,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.ha-al-kinaya",
+          "topicId": "ha-al-kinaya",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 86,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.madd-wa-qasr",
+          "topicId": "madd-wa-qasr",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 89,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.hamzatayn-min-kalima",
+          "topicId": "hamzatayn-min-kalima",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 95,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.hamzatayn-min-kalimatayn",
+          "topicId": "hamzatayn-min-kalimatayn",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 100,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.hamz-mufrad",
+          "topicId": "hamz-mufrad",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 104,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.izhar-wa-idgham",
+          "topicId": "izhar-wa-idgham",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 108,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.fath-wa-imala",
+          "topicId": "fath-wa-imala",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 112,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.raat",
+          "topicId": "raat",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 116,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.lamat",
+          "topicId": "lamat",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 119,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.waqf-awakhir-al-kalim",
+          "topicId": "waqf-awakhir-al-kalim",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 121,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.waqf-marsum-al-khatt",
+          "topicId": "waqf-marsum-al-khatt",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 125,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.yaat-al-idafa",
+          "topicId": "yaat-al-idafa",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 128,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.yaat-al-zawaid",
+          "topicId": "yaat-al-zawaid",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 131,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "warsh.tarkib-al-wujuh-appendix",
+          "topicId": "tarkib-al-wujuh-appendix",
+          "sourceId": "libya-warsh-method-2022",
+          "printedPage": 134,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        }
+      ],
+      "selectedProfile": {
+        "status": "PENDING",
+        "wajhId": null,
+        "wajhLabelAr": null,
+        "editionId": null,
+        "editionSha256": null,
+        "editionEvidenceLocator": null,
+        "countTraditionId": null,
+        "totalAyahs": null,
+        "surahCountTableSha256": null,
+        "compatibilityAttestationAr": null
+      },
+      "secondPersonApproval": {
+        "status": "NOT_STARTED",
+        "approverName": null,
+        "approverQualification": null,
+        "approvalDate": null,
+        "reviewedScopePayloadSha256": null,
+        "evidenceLocator": null,
+        "evidenceSha256": null
+      }
+    },
+    {
+      "settingId": "qalun",
+      "targetRoute": {
+        "riwayah": "qalun-an-nafi",
+        "tariq": "abu-nashit-via-al-shatibiyyah"
+      },
+      "candidateEdition": "quranpedia-mushaf-7-2026-11-02-crosschecked-kfgqpc-qalun-v3",
+      "responseStatus": "PENDING",
+      "reviewer": {
+        "name": null,
+        "qualification": null,
+        "qualificationEvidenceLocator": null,
+        "exactRouteExperience": null,
+        "organization": null,
+        "reviewStartedAt": null,
+        "reviewCompletedAt": null,
+        "evidenceLocator": null,
+        "evidenceSha256": null,
+        "attestationFullReviewNotSampling": false,
+        "attestationExactRoute": false,
+        "attestationNoCrossScopeInference": false
+      },
+      "decisionResponses": [
+        {
+          "decisionId": "qalun.istiadha",
+          "topicId": "istiadha",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 79,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.basmala",
+          "topicId": "basmala",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 82,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.mim-al-jam",
+          "topicId": "mim-al-jam",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 85,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.ha-al-kinaya",
+          "topicId": "ha-al-kinaya",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 87,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.madd-wa-qasr",
+          "topicId": "madd-wa-qasr",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 90,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.hamzatayn-min-kalima",
+          "topicId": "hamzatayn-min-kalima",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 93,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.hamzatayn-min-kalimatayn",
+          "topicId": "hamzatayn-min-kalimatayn",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 98,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.hamz-mufrad",
+          "topicId": "hamz-mufrad",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 101,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.izhar-wa-idgham",
+          "topicId": "izhar-wa-idgham",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 104,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.fath-wa-imala",
+          "topicId": "fath-wa-imala",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 109,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.waqf-awakhir-al-kalim",
+          "topicId": "waqf-awakhir-al-kalim",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 112,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.waqf-marsum-al-khatt",
+          "topicId": "waqf-marsum-al-khatt",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 116,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.yaat-al-idafa",
+          "topicId": "yaat-al-idafa",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 119,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "qalun.yaat-al-zawaid",
+          "topicId": "yaat-al-zawaid",
+          "sourceId": "libya-qalun-method-2022",
+          "printedPage": 122,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        }
+      ],
+      "selectedProfile": {
+        "status": "PENDING",
+        "wajhId": null,
+        "wajhLabelAr": null,
+        "editionId": null,
+        "editionSha256": null,
+        "editionEvidenceLocator": null,
+        "countTraditionId": null,
+        "totalAyahs": null,
+        "surahCountTableSha256": null,
+        "compatibilityAttestationAr": null
+      },
+      "secondPersonApproval": {
+        "status": "NOT_STARTED",
+        "approverName": null,
+        "approverQualification": null,
+        "approvalDate": null,
+        "reviewedScopePayloadSha256": null,
+        "evidenceLocator": null,
+        "evidenceSha256": null
+      }
+    },
+    {
+      "settingId": "duri",
+      "targetRoute": {
+        "riwayah": "al-duri-an-abi-amr",
+        "tariq": "abu-al-zaraa-via-al-shatibiyyah"
+      },
+      "candidateEdition": "kfgqpc-duri-v2-quranpedia-mushaf-6-count-scope-unresolved",
+      "responseStatus": "PENDING",
+      "reviewer": {
+        "name": null,
+        "qualification": null,
+        "qualificationEvidenceLocator": null,
+        "exactRouteExperience": null,
+        "organization": null,
+        "reviewStartedAt": null,
+        "reviewCompletedAt": null,
+        "evidenceLocator": null,
+        "evidenceSha256": null,
+        "attestationFullReviewNotSampling": false,
+        "attestationExactRoute": false,
+        "attestationNoCrossScopeInference": false
+      },
+      "decisionResponses": [
+        {
+          "decisionId": "duri.basmala",
+          "topicId": "basmala",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 53,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.mim-al-jam",
+          "topicId": "mim-al-jam",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 53,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.ha-al-kinaya",
+          "topicId": "ha-al-kinaya",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 54,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.idgham-saghir",
+          "topicId": "idgham-saghir",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 55,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.waqf-marsum-al-khatt",
+          "topicId": "waqf-marsum-al-khatt",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 59,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.madd-wa-qasr",
+          "topicId": "madd-wa-qasr",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 60,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.fath-imala-taqlil",
+          "topicId": "fath-imala-taqlil",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 61,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.hamz-mufrad",
+          "topicId": "hamz-mufrad",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 64,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.hamzatayn-min-kalima",
+          "topicId": "hamzatayn-min-kalima",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 65,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.hamzatayn-min-kalimatayn",
+          "topicId": "hamzatayn-min-kalimatayn",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 67,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.yaat-al-idafa",
+          "topicId": "yaat-al-idafa",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 69,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        },
+        {
+          "decisionId": "duri.yaat-al-zawaid",
+          "topicId": "yaat-al-zawaid",
+          "sourceId": "duri-oiu-study-2016",
+          "printedPage": 76,
+          "status": "PENDING",
+          "selectedPracticeId": null,
+          "selectedPracticeLabelAr": null,
+          "sourceLocator": null,
+          "reviewerNoteAr": null
+        }
+      ],
+      "selectedProfile": {
+        "status": "PENDING",
+        "wajhId": null,
+        "wajhLabelAr": null,
+        "editionId": null,
+        "editionSha256": null,
+        "editionEvidenceLocator": null,
+        "countTraditionId": null,
+        "totalAyahs": null,
+        "surahCountTableSha256": null,
+        "compatibilityAttestationAr": null
+      },
+      "secondPersonApproval": {
+        "status": "NOT_STARTED",
+        "approverName": null,
+        "approverQualification": null,
+        "approvalDate": null,
+        "reviewedScopePayloadSha256": null,
+        "evidenceLocator": null,
+        "evidenceSha256": null
+      }
+    }
+  ]
+}
