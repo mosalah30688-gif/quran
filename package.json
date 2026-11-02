@@ -20,6 +20,7 @@
     "build:www": "bash scripts/build-www.sh",
     "android:sync": "bash scripts/build-www.sh && npx cap sync android",
     "android:apk": "bash scripts/build-apk.sh",
+    "test:smart": "node --test tests/smart-context.test.js",
     "postinstall": "node scripts/patch-capacitor-cli-tar.js"
   },
   "dependencies": {

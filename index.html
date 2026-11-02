@@ -1193,7 +1193,12 @@
       });
       document.head.innerHTML = doc.head.innerHTML;
       document.body.innerHTML = doc.body.innerHTML;
-      Object.keys(files).forEach(function (f) { if (/\.js$/.test(f)) run(files[f], null); });
+      // محرك السياق يجب أن يُحمّل قبل app.js سواء من APK أو من ترقيع الواجهة.
+      if (files['smart-context.js']) run(files['smart-context.js'], null);
+      Object.keys(files).filter(function (f) {
+        return /\.js$/.test(f) && f !== 'smart-context.js' && f !== 'app.js';
+      }).sort().forEach(function (f) { run(files[f], null); });
+      if (files['app.js']) run(files['app.js'], null);
       return true;
     }
 
@@ -1226,7 +1231,10 @@
       applied = false;
     }
 
-    if (!applied) run(null, 'app.js');
+    if (!applied) {
+      run(null, 'smart-context.js');
+      run(null, 'app.js');
+    }
   })();
   </script>
 </body>

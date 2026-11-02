@@ -6,6 +6,8 @@ on:
     paths:
       - 'android/**'
       - 'app.js'
+      - 'smart-context.js'
+      - 'tests/smart-context.test.js'
       - 'index.html'
       - 'manifest.json'
       - 'sw.js'
@@ -73,6 +75,8 @@ jobs:
       - name: Verify JavaScript, licensed data, audio, and owned assets
         run: |
           node --check app.js
+          node --check smart-context.js
+          npm run test:smart
           python3 scripts/verify_android_bundle.py
           python3 scripts/verify_audio_sources.py
           python3 scripts/verify_asset_provenance.py
@@ -143,7 +147,8 @@ jobs:
           import zipfile
           apk = 'android/app/build/outputs/apk/release/app-release.apk'
           required = {
-              'assets/public/app.js', 'assets/public/index.html', 'assets/public/sw.js',
+              'assets/public/app.js', 'assets/public/smart-context.js',
+              'assets/public/index.html', 'assets/public/sw.js',
               'assets/public/quran-hafs.json', 'assets/public/quran-tajweed.json',
               'assets/public/surahs.json', 'assets/public/tafsir-catalog.json',
               'assets/public/fonts/Amiri-Regular.ttf',
@@ -159,9 +164,12 @@ jobs:
               names = set(archive.namelist())
               assert not (required - names), required - names
               app = archive.read('assets/public/app.js').decode()
+              smart_context = archive.read('assets/public/smart-context.js').decode()
               html = archive.read('assets/public/index.html').decode()
               service_worker = archive.read('assets/public/sw.js').decode()
           assert 'everyayah.com' not in app.lower()
+          assert 'SmartContextEngine' in smart_context and 'LIKELY_SLEEPING' in smart_context
+          assert "run(null, 'smart-context.js')" in html
           assert 'TafsirStore' in app and 'Reminder' in app and 'ar.parhizgar' in app
           assert 'loadBundledData()' in app and 'recordWirdPage' in app
           assert "APP_BUNDLE_VERSION = '1.4.4'" in html and 'الإصدار 1.4.4' in html
@@ -195,7 +203,8 @@ jobs:
           assert 'group-menu-open' in html and 'reader-view-active' in html and 'body.group-menu-open .hdr' in html
           assert 'syncReaderDockHeight' in app and 'syncAudioTimeline' in app
           assert 'syncGroupMenuLayer' in app and 'focusFirst' in app and 'restoreFocus' in app
-          assert 'siraj-shell-v10' in service_worker
+          assert 'siraj-shell-v11' in service_worker
+          assert "'./smart-context.js'" in service_worker
           assert 'data-icon="tajweed"' in html and '🎵' not in html
           PY
 
@@ -330,6 +339,7 @@ jobs:
         run: |
           set -euo pipefail
           cp index.html update/index.html
+          cp smart-context.js update/smart-context.js
           cp app.js update/app.js
           python3 - <<'PY'
           import json, os
@@ -338,7 +348,7 @@ jobs:
           data = json.loads(path.read_text(encoding='utf-8'))
           version = os.environ['VERSION']
           data['version'] = version
-          data['files'] = ['index.html', 'app.js']
+          data['files'] = ['index.html', 'smart-context.js', 'app.js']
           data['features'] = ['هوية أوضح لسراج ووصول منظم إلى «عن التطبيق».']
           data['apk'] = {
               'version': version,
@@ -349,7 +359,7 @@ jobs:
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add update/manifest.json update/index.html update/app.js
+          git add update/manifest.json update/index.html update/smart-context.js update/app.js
           if ! git diff --cached --quiet; then
             git commit -m "Android $VERSION: advance stable immutable release channel [skip ci]"
             git push origin HEAD:main
