@@ -57,7 +57,7 @@ jobs:
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
         run: |
-          python -m py_compile mushaf_app/main.py mushaf_app/offline_tafsir.py mushaf_app/runtime.py mushaf_app/version.py mushaf_app/tests/test_*.py
+          python -m py_compile mushaf_app/main.py mushaf_app/tajweed_learning.py mushaf_app/offline_tafsir.py mushaf_app/runtime.py mushaf_app/version.py mushaf_app/tests/test_*.py
           python -m unittest discover -s mushaf_app/tests -p "test_*.py" -v
           python scripts/read_update_features.py mushaf_app/version.py
           VERSION="$(PYTHONPATH=mushaf_app python -c 'from version import APP_VERSION; print(APP_VERSION)')"

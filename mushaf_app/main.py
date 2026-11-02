@@ -33,6 +33,7 @@ from PySide6.QtWidgets import (
 
 from offline_tafsir import OfflineTafsirStore
 from patch_runtime import install_patch_archive
+import tajweed_learning
 from reading_tracker import (
     TOTAL_PAGES, clear_tracking, estimated_finish, habit_average, khatma_progress,
     khatma_state, reading_count, reading_counts, reading_streak, record_reading,
@@ -92,6 +93,13 @@ def load(name):
 SURAHS = load('surahs.json')
 JUZ_START = [tuple(x) for x in load('juz.json')]
 TAJWEED = load('tajweed.json')
+TAJWEED_QURAN = load('quran-tajweed.json')
+TAJWEED_LEARNING_CATALOG = load('tajweed-learning-catalog.json')
+HAFS_TAJWEED_CURRICULUM = next(
+    item for item in TAJWEED_LEARNING_CATALOG['curricula']
+    if item['scope']['riwayah'] == 'hafs-an-asim'
+)
+TAJWEED_LEARNING_CARDS = tajweed_learning.build_cards(HAFS_TAJWEED_CURRICULUM, TAJWEED_QURAN)
 MEANINGS = load('quran-meanings.json')['ayahs']
 ADHKAR = load('adhkar.json')['categories']
 SEARCH_AYAHS = load('quran-search.json')['ayahs']
@@ -914,6 +922,13 @@ class Main(QMainWindow):
             riwaya = 'quran-uthmani'
         self.riwaya_id = riwaya
         self.book = Book(riwaya)
+        try:
+            saved_tajweed = json.loads(self.settings.value('tajweed_learning_v2', '{}', type=str))
+        except (TypeError, ValueError):
+            saved_tajweed = {}
+        self.tj_learning_state = tajweed_learning.normalize_state(saved_tajweed)
+        self.tj_session = None
+        self.tj_summary = ''
         self.page = min(max(self.settings.value('page', 1, type=int), 1), TOTAL_PAGES)
         self._rendered_page = None
         khatma_state(self.settings, self.page)
@@ -1845,6 +1860,8 @@ class Main(QMainWindow):
             self.stop_play()
         self.riwaya_id = rid
         self.settings.setValue('riwaya', rid)
+        self.tj_session = None
+        self.tj_summary = ''
         self.book = Book(rid)
         self.page = min(self.page, TOTAL_PAGES)
         show_index = not rid.startswith('quran-')
@@ -2063,18 +2080,285 @@ class Main(QMainWindow):
         lay = QVBoxLayout(w)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(12)
-        lay.addWidget(heading('أحكام التجويد', 'القواعد السبعة عشر مع شرح مختصر لكل حكم'))
+        lay.addWidget(heading('أحكام التجويد', 'مسار مستقل للفهم والتمييز والتطبيق'))
         self.tj_browser = QTextBrowser()
+        self.tj_browser.setOpenLinks(False)
+        self.tj_browser.setOpenExternalLinks(False)
+        self.tj_browser.anchorClicked.connect(self.on_tajweed_link)
         lay.addWidget(self.tj_browser, 1)
         return w
 
+    def _save_tajweed_learning(self):
+        self.settings.setValue(
+            'tajweed_learning_v2',
+            json.dumps(self.tj_learning_state, ensure_ascii=False, separators=(',', ':')),
+        )
+        self.settings.sync()
+
+    @staticmethod
+    def _tj_button(action, label, primary=False):
+        background = '#0f7a5c' if primary else '#eef5f2'
+        color = '#ffffff' if primary else '#0f6b52'
+        return (
+            f'<a href="tajweed:{html.escape(action, quote=True)}" '
+            f'style="display:inline-block;text-decoration:none;background:{background};color:{color};'
+            'border:1px solid #9fc9ba;border-radius:8px;padding:7px 12px;margin:3px;">'
+            f'{html.escape(label)}</a>'
+        )
+
+    def _tajweed_reference_html(self):
+        groups = {}
+        for rule in HAFS_TAJWEED_CURRICULUM['rules']:
+            learning = rule.get('learning') or {}
+            category = learning.get('categoryNameAr', 'أساسيات التجويد')
+            groups.setdefault(category, []).append(rule)
+        parts = ['<h2>مرجع الأحكام ومساراتها التعليمية</h2>',
+                 '<p style="color:#6b7b75">لكل حكم ثلاث مراحل: فهم، ثم تمييز، ثم تطبيق. '
+                 'المرجع لا يغيّر المصحف الملوّن أو شرح الكلمات التفاعلي.</p>']
+        for category, rules in groups.items():
+            parts.append(f'<h3 style="color:#0f7a5c">{html.escape(category)}</h3>')
+            for rule in rules:
+                parts.append(
+                    f'<p><b>{html.escape(str(rule["name"]))}</b><br>'
+                    f'{html.escape(str(rule["answer"]))}</p>'
+                )
+        return ''.join(parts)
+
+    def _tajweed_home_html(self):
+        scope = HAFS_TAJWEED_CURRICULUM['scope']
+        stats = tajweed_learning.path_stats(
+            TAJWEED_LEARNING_CARDS, self.tj_learning_state, scope,
+        )
+        plan = tajweed_learning.adaptive_plan(
+            TAJWEED_LEARNING_CARDS, self.tj_learning_state, scope,
+        )
+        mastery = round(stats['mastery'] * 100)
+        config = self.tj_learning_state['config']
+        profiles = {
+            'gentle': (3, 10, 'هادئ'),
+            'balanced': (5, 20, 'متوازن'),
+            'intensive': (10, 40, 'مكثف'),
+        }
+        current = next((key for key, values in profiles.items()
+                        if config['newPerDay'] == values[0]
+                        and config['reviewsPerDay'] == values[1]), 'balanced')
+        weak_count = sum(item['reason'] == 'weak-review' for item in plan)
+        due_count = sum(item['kind'] == 'review' and item['reason'] != 'weak-review' for item in plan)
+        fresh_count = sum(item['kind'] == 'new' for item in plan)
+        plan_parts = []
+        if weak_count:
+            plan_parts.append(f'{ar(weak_count)} يحتاج تثبيتًا')
+        if due_count:
+            plan_parts.append(f'{ar(due_count)} مراجعة مستحقة')
+        if fresh_count:
+            plan_parts.append(f'{ar(fresh_count)} نشاط جديد')
+        plan_text = '، '.join(plan_parts) if plan_parts else 'لا توجد أنشطة مستحقة الآن'
+        profile_buttons = ''.join(
+            self._tj_button(f'intensity/{key}', f'{label}{" ✓" if key == current else ""}')
+            for key, (_new, _reviews, label) in profiles.items()
+        )
+        summary = (
+            f'<div style="border:1px solid #d7e2dc;border-radius:12px;padding:12px">'
+            '<h2 style="margin-top:0;color:#0f7a5c">مسار تعلم التجويد المكثف</h2>'
+            '<p style="background:#eef5f2;color:#1d2a26;border-right:4px solid #0f7a5c;padding:8px">'
+            f'{html.escape(str(HAFS_TAJWEED_CURRICULUM["scopeWarning"]))}</p>'
+            '<table width="100%" cellspacing="8"><tr>'
+            f'<td align="center"><b>{ar(stats["due"])}</b><br>مستحقة</td>'
+            f'<td align="center"><b>{ar(stats["learning"])}</b><br>قيد التعلم</td>'
+            f'<td align="center"><b>{ar(stats["mastered"])}</b><br>راسخة</td>'
+            f'<td align="center"><b>{ar(mastery)}٪</b><br>إتقان المسار</td>'
+            f'<td align="center"><b>{ar(stats["weak"])}</b><br>تحتاج تثبيتًا</td>'
+            '</tr></table>'
+            f'<p><b>التقدم:</b> {ar(stats["introduced"])} من {ar(stats["total"])} نشاط</p>'
+            f'<p><b>خطة اليوم:</b> {html.escape(plan_text)}. يبدأ سراج بالأضعف ثم المستحق ثم الجديد.</p>'
+            f'<p><b>كثافة المسار:</b> {profile_buttons}</p>'
+            f'{self._tj_button("start", "بدء جلسة تكيفية", True)}'
+            f'{self._tj_button("reset", "مسح تقدم هذه الطبعة")}'
+            '</div>'
+        )
+        if self.tj_summary:
+            summary += (
+                '<div style="border:1px solid #9fc9ba;border-radius:10px;padding:10px;margin-top:10px">'
+                f'<b>ملخص الجلسة</b><p>{html.escape(self.tj_summary)}</p></div>'
+            )
+        return summary + self._tajweed_reference_html()
+
+    def _tajweed_session_html(self):
+        session = self.tj_session
+        if not session or session['index'] >= len(session['queue']):
+            self.tj_session = None
+            return self._tajweed_home_html()
+        item = session['queue'][session['index']]
+        card = item['card']
+        activity_labels = {
+            'learn': 'فهم القاعدة', 'recognize': 'تمييز من المثال', 'apply': 'تطبيق عملي',
+        }
+        out = [
+            '<div style="border:1px solid #9fc9ba;border-radius:12px;padding:14px">',
+            f'<p><b>النشاط {ar(session["index"] + 1)} من {ar(len(session["queue"]))}</b> · '
+            f'{html.escape(activity_labels.get(card["activityType"], "تعلم"))}</p>',
+            f'<h2 style="color:#0f7a5c">{html.escape(str(card["name"]))}</h2>',
+            f'<p style="font-size:15pt">{html.escape(str(card["prompt"]))}</p>',
+        ]
+        example = card.get('example')
+        if isinstance(example, dict) and example.get('text'):
+            ayah_text = str(example.get('ayahText') or example['text'])
+            marked_text = str(example['text'])
+            position = ayah_text.find(marked_text)
+            color = tajweed_learning.TAG_COLORS.get(card.get('tagCode'), '#0f7a5c')
+            if position >= 0:
+                example_html = (
+                    html.escape(ayah_text[:position])
+                    + f'<span style="color:{color};font-weight:700">{html.escape(marked_text)}</span>'
+                    + html.escape(ayah_text[position + len(marked_text):])
+                )
+            else:
+                example_html = html.escape(ayah_text)
+            surah = int(example.get('surah', 0))
+            ayah = int(example.get('ayah', 0))
+            reference = (f'سورة {SURAHS[surah - 1]["name"]}، الآية {ar(ayah)}'
+                         if 1 <= surah <= len(SURAHS) and ayah > 0 else 'مثال من المصحف المحلي')
+            out.append(
+                '<div style="background:#fbf6e6;color:#1d2a26;border:1px solid #d8c89c;border-radius:10px;'
+                'padding:10px;margin:10px 0"><b>مثال من موضع معلّم في المصحف:</b>'
+                f'<p style="font-family:Amiri;font-size:19pt;line-height:2">{example_html}</p>'
+                f'<small>{html.escape(reference)}</small></div>'
+            )
+        if card['activityType'] == 'recognize' and not session['revealed']:
+            options = tajweed_learning.recognition_options(card, TAJWEED_LEARNING_CARDS)
+            out.append('<p>اختر الحكم المطابق:</p>')
+            out.extend(self._tj_button(f'option/{option["id"]}', option['label']) for option in options)
+        if session.get('quizFeedback'):
+            out.append(f'<p><b>{html.escape(session["quizFeedback"])}</b></p>')
+        if not session['revealed']:
+            out.append(self._tj_button('reveal', 'لا أعرف — إظهار الشرح'
+                                       if card['activityType'] == 'recognize' else 'إظهار الشرح', True))
+        else:
+            out.append(
+                f'<div style="background:#eef5f2;color:#1d2a26;border-radius:10px;padding:10px;margin-top:10px">'
+                f'{html.escape(str(card["answer"]))}</div>'
+            )
+            ratings = [('again', 'أعدها'), ('hard', 'صعب'), ('good', 'جيد'), ('easy', 'سهل')]
+            if card['activityType'] == 'recognize' and session.get('quizCorrect') is False:
+                ratings = [('again', 'أعدها')]
+            out.append('<p>قيّم ثباتك ليحدد سراج الموعد التالي:</p>')
+            out.extend(self._tj_button(f'rate/{rating}', label, rating in ('good', 'easy'))
+                       for rating, label in ratings)
+        out.append(self._tj_button('end', 'إنهاء الجلسة'))
+        out.append('</div>')
+        return ''.join(out)
+
     def render_tajweed(self):
-        t = THEMES[self.theme_name]
-        rows = ''.join(
-            f'<p style="margin-bottom:14px"><b style="font-size:16pt; color:{t["brand"]}">{html.escape(name)}</b>'
-            f'<br><span>{html.escape(desc)}</span></p>'
-            for name, desc in TAJWEED.values())
-        self.tj_browser.setHtml(f'<html><body dir="rtl">{rows}</body></html>')
+        if not self.riwaya_id.startswith('quran-'):
+            label = RIWAYA_NAMES.get(self.riwaya_id, self.riwaya_id)
+            body = (
+                '<div style="border:1px solid #d4a24c;border-radius:12px;padding:12px">'
+                f'<h2>{html.escape(label)}</h2>'
+                '<p>لا يوجد بعدُ منهج مستقل موثق الطريق والوجه والطبعة لهذه الرواية؛ '
+                'لذلك لا يستخدم سراج منهج حفص بديلًا عنها.</p></div>'
+                '<h2>المرجع العام الموجود سابقًا</h2>'
+                '<p style="color:#6b7b75">يبقى هذا المرجع العام ظاهرًا كما كان، لكنه ليس منهجًا خاصًا بهذه الرواية.</p>'
+                + ''.join(f'<p><b>{html.escape(name)}</b><br>{html.escape(desc)}</p>'
+                          for name, desc in TAJWEED.values())
+            )
+        else:
+            body = self._tajweed_session_html() if self.tj_session else self._tajweed_home_html()
+        self.tj_browser.setHtml(f'<html><body dir="rtl" style="line-height:1.8">{body}</body></html>')
+
+    def on_tajweed_link(self, url):
+        value = url.toString()
+        if not value.startswith('tajweed:'):
+            return
+        action = value.split(':', 1)[1]
+        if not self.riwaya_id.startswith('quran-'):
+            self.tj_session = None
+            self.render_tajweed()
+            return
+        scope = HAFS_TAJWEED_CURRICULUM['scope']
+        if action == 'start':
+            queue = tajweed_learning.adaptive_plan(
+                TAJWEED_LEARNING_CARDS, self.tj_learning_state, scope,
+            )
+            if not queue:
+                self.statusBar().showMessage('لا توجد مراجعات أو أنشطة جديدة الآن', 3500)
+                return
+            self.tj_summary = ''
+            self.tj_session = {
+                'queue': queue, 'index': 0, 'revealed': False, 'answered': 0,
+                'ratings': {'again': 0, 'hard': 0, 'good': 0, 'easy': 0},
+                'quizCorrect': None, 'quizTotal': 0, 'quizCorrectCount': 0,
+                'quizFeedback': '',
+            }
+        elif action == 'end':
+            if self.tj_session and self.tj_session['answered']:
+                self.tj_summary = f'أجبت عن {ar(self.tj_session["answered"])} نشاطًا قبل إنهاء الجلسة.'
+            self.tj_session = None
+        elif action == 'reveal' and self.tj_session:
+            item = self.tj_session['queue'][self.tj_session['index']]
+            if item['card']['activityType'] == 'recognize' and self.tj_session['quizCorrect'] is None:
+                self.tj_session['quizCorrect'] = False
+                self.tj_session['quizTotal'] += 1
+                self.tj_session['quizFeedback'] = 'سُجلت «لا أعرف»؛ ستعود البطاقة قريبًا.'
+            self.tj_session['revealed'] = True
+        elif action.startswith('option/') and self.tj_session and not self.tj_session['revealed']:
+            selected = action.split('/', 1)[1]
+            item = self.tj_session['queue'][self.tj_session['index']]
+            correct = selected == item['card']['baseId']
+            self.tj_session['quizCorrect'] = correct
+            self.tj_session['quizTotal'] += 1
+            self.tj_session['quizCorrectCount'] += int(correct)
+            self.tj_session['quizFeedback'] = (
+                'إجابة صحيحة؛ راجع طريقة الأداء.' if correct
+                else f'الإجابة الصحيحة: {item["card"]["ruleName"]}. ستعود البطاقة للتثبيت.'
+            )
+            self.tj_session['revealed'] = True
+        elif action.startswith('rate/') and self.tj_session and self.tj_session['revealed']:
+            rating = action.split('/', 1)[1]
+            item = self.tj_session['queue'][self.tj_session['index']]
+            if item['card']['activityType'] == 'recognize' and self.tj_session['quizCorrect'] is False:
+                rating = 'again'
+            state = tajweed_learning.apply_review(self.tj_learning_state, item['card'], rating)
+            if state is not None:
+                self.tj_learning_state = state
+                self._save_tajweed_learning()
+                self.tj_session['ratings'][rating] += 1
+                self.tj_session['answered'] += 1
+                self.tj_session['index'] += 1
+                self.tj_session['revealed'] = False
+                self.tj_session['quizCorrect'] = None
+                self.tj_session['quizFeedback'] = ''
+                if self.tj_session['index'] >= len(self.tj_session['queue']):
+                    session = self.tj_session
+                    quiz = (f'، والتمييز الصحيح {ar(session["quizCorrectCount"])} من '
+                            f'{ar(session["quizTotal"])}' if session['quizTotal'] else '')
+                    self.tj_summary = (
+                        f'اكتملت {ar(session["answered"])} أنشطة؛ '
+                        f'تحتاج إعادة {ar(session["ratings"]["again"])}{quiz}.'
+                    )
+                    self.tj_session = None
+        elif action.startswith('intensity/'):
+            profile = action.split('/', 1)[1]
+            values = {'gentle': (3, 10), 'balanced': (5, 20), 'intensive': (10, 40)}.get(profile)
+            if values:
+                self.tj_learning_state['config'] = {
+                    'newPerDay': values[0], 'reviewsPerDay': values[1],
+                }
+                self._save_tajweed_learning()
+        elif action == 'reset':
+            answer = QMessageBox.question(
+                self, 'مسح تقدم التجويد', 'مسح تقدم تعلم التجويد لهذه الطبعة فقط؟',
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if answer == QMessageBox.StandardButton.Yes:
+                prefix = f'{tajweed_learning.scope_key(scope)}::'
+                self.tj_learning_state['progress'] = {
+                    key: entry for key, entry in self.tj_learning_state['progress'].items()
+                    if not key.startswith(prefix)
+                }
+                self.tj_session = None
+                self.tj_summary = ''
+                self._save_tajweed_learning()
+        self.render_tajweed()
 
     # ---------- الأذكار ----------
     def build_adhkar(self):

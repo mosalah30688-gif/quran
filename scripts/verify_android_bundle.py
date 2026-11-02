@@ -21,8 +21,12 @@ def assert_same(left: str, right: str) -> None:
 def main() -> None:
     assert_same("quran-hafs.json", "mushaf_app/data/hafs.json")
     assert_same("quran-tajweed.json", "windows_app/data/quran-tajweed.json")
+    assert_same("quran-tajweed.json", "mushaf_app/data/quran-tajweed.json")
     assert_same("surahs.json", "mushaf_app/data/surahs.json")
     assert_same("tafsir-catalog.json", "mushaf_app/data/tafsir-catalog.json")
+    assert_same("tajweed-learning-catalog.json", "windows_app/data/tajweed-learning-catalog.json")
+    assert_same("tajweed-learning-catalog.json", "mushaf_app/data/tajweed-learning-catalog.json")
+    assert_same("windows_app/tajweed_learning.py", "mushaf_app/tajweed_learning.py")
 
     hafs = load("quran-hafs.json")
     tajweed = load("quran-tajweed.json")

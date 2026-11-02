@@ -10,6 +10,16 @@
       "kind": "project-authored explanatory glossary",
       "license": "MIT as original project text",
       "note": "These short rule names and explanations are project-authored UI copy keyed to AlQuran Cloud quran-tajweed markup. Rights provenance is clear; scholarly tajweed review remains pending."
+    },
+    {
+      "paths": [
+        "windows_app/data/tajweed-learning-catalog.json",
+        "mushaf_app/data/tajweed-learning-catalog.json"
+      ],
+      "sha256": "a88ca2f3febcb8b530adc24073a03f30fc4441c3102d9300454b24b8b3e52dee",
+      "kind": "derived scoped tajweed learning catalogue and project-authored pedagogy metadata",
+      "license": "Project-authored structure/UI text; underlying quran-tajweed identifiers retain their documented source terms",
+      "note": "Byte-identical desktop copies of the locked root catalogue. The three-stage pedagogy and adaptive metadata add no new tajweed ruling; scholarly review remains pending and non-Hafs curricula fail closed."
     }
   ]
 }
