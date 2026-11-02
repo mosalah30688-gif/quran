@@ -13,6 +13,7 @@ const html = read('index.html');
 const context = read('smart-context.js');
 const services = read('smart-services.js');
 const tajweedLearning = read('tajweed-learning.js');
+const tajweedLoader = read('tajweed-curriculum-loader.js');
 const tajweedCatalog = JSON.parse(read('tajweed-learning-catalog.json'));
 const build = read('scripts/build-www.sh');
 const publish = read('scripts/publish-update.sh');
@@ -28,9 +29,10 @@ test('smart scripts load in dependency order before the application', () => {
   const contextAt = fallback.indexOf("run(null, 'smart-context.js')");
   const servicesAt = fallback.indexOf("run(null, 'smart-services.js')");
   const tajweedAt = fallback.indexOf("run(null, 'tajweed-learning.js')");
+  const loaderAt = fallback.indexOf("run(null, 'tajweed-curriculum-loader.js')");
   const appAt = fallback.indexOf("run(null, 'app.js')");
   assert.ok(contextAt >= 0 && servicesAt > contextAt && tajweedAt > servicesAt
-    && appAt > tajweedAt);
+    && loaderAt > tajweedAt && appAt > loaderAt);
 });
 
 test('opt-in and local privacy controls are visible and explicit', () => {
@@ -44,7 +46,7 @@ test('opt-in and local privacy controls are visible and explicit', () => {
 });
 
 test('smart modules have no network primitive', () => {
-  const source = context + '\n' + services + '\n' + tajweedLearning;
+  const source = context + '\n' + services + '\n' + tajweedLearning + '\n' + tajweedLoader;
   assert.doesNotMatch(source, /\bfetch\s*\(/);
   assert.doesNotMatch(source, /XMLHttpRequest|WebSocket|sendBeacon/);
 });
@@ -83,10 +85,23 @@ test('smart and tajweed engines are included in offline and update channels', ()
     assert.match(source, /smart-context\.js/);
     assert.match(source, /smart-services\.js/);
     assert.match(source, /tajweed-learning\.js/);
+    assert.match(source, /tajweed-curriculum-loader\.js/);
     assert.match(source, /tajweed-learning-catalog\.json/);
     assert.match(source, /tajweed-scope-registry\.json/);
   }
-  assert.match(sw, /siraj-shell-v14/);
+  assert.match(sw, /siraj-shell-v15/);
+});
+
+test('JSON update overlay is hashed, stored outside localStorage, and fail-closed', () => {
+  assert.match(html, /SIRAJ_UPDATE_DATA_FILES/);
+  assert.match(html, /SIRAJ_UPDATE_VERSION/);
+  assert.match(app, /siraj-update-assets/);
+  assert.match(app, /replaceUpdateDataAssets\(manifest\.version, dataFiles\)/);
+  assert.match(app, /verifyDownloadedUpdateFile\(f, txt, manifest\.sha256\)/);
+  assert.match(app, /missing update asset/);
+  assert.match(app, /TajweedCurriculumLoaderAPI\.loadRegistryCurricula/);
+  assert.match(publish, /hashlib\.sha256/);
+  assert.match(publish, /tajweed-curricula/);
 });
 
 test('tajweed spaced review is local, scoped, and wired to feedback events', () => {

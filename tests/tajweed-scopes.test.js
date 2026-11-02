@@ -112,7 +112,9 @@ test('runtime requires an exact registry pointer before exposing a curriculum', 
   const app = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
   assert.match(app, /FORBIDDEN_BETWEEN_SCOPES/);
   assert.match(app, /sameTajweedScope\(item\.scope, candidate\.scope\)/);
+  assert.match(app, /item\.sha256 === candidate\.artifactSha256/);
   assert.match(app, /item\.status === candidate\.status/);
   assert.match(app, /item\.publishableAsApproved === candidate\.publishableAsApproved/);
+  assert.match(app, /candidates\.length !== 1/);
   assert.match(app, /لا تُعرض أحكام حفص أو أي طبقة عامة/);
 });

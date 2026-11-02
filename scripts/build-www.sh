@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 rm -rf www
 mkdir -p www/fonts www/legal
 cp \
-  index.html smart-context.js smart-services.js tajweed-learning.js app.js manifest.json sw.js icon.png icon-192.png \
+  index.html smart-context.js smart-services.js tajweed-learning.js tajweed-curriculum-loader.js app.js manifest.json sw.js icon.png icon-192.png \
   quran-search.json quran-meanings.json adhkar.json quran-riwayat.json \
   quran-hafs.json quran-tajweed.json tajweed-learning-catalog.json tajweed-scope-registry.json surahs.json tafsir-catalog.json \
   www/
@@ -18,6 +18,10 @@ cp \
   www/fonts/
 cp LICENSE LICENSE.ar.md NOTICE.md www/legal/
 cp LICENSES/MIT-HISTORICAL.txt www/legal/
+if compgen -G 'tajweed-curricula/*.json' >/dev/null; then
+  mkdir -p www/tajweed-curricula
+  cp tajweed-curricula/*.json www/tajweed-curricula/
+fi
 printf 'www ready: '
 find www -mindepth 1 -maxdepth 1 -printf '%f\n' | sort | tr '\n' ' '
 printf '\n'

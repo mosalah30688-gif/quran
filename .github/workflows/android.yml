@@ -9,6 +9,7 @@ on:
       - 'smart-context.js'
       - 'smart-services.js'
       - 'tajweed-learning.js'
+      - 'tajweed-curriculum-loader.js'
       - 'tajweed-learning-catalog.json'
       - 'tests/*.test.js'
       - 'index.html'
@@ -18,6 +19,7 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'scripts/build-www.sh'
+      - 'scripts/publish-update.sh'
       - 'scripts/verify_android_bundle.py'
       - 'scripts/verify_audio_sources.py'
       - 'scripts/verify_asset_provenance.py'
@@ -90,6 +92,7 @@ jobs:
           node --check smart-context.js
           node --check smart-services.js
           node --check tajweed-learning.js
+          node --check tajweed-curriculum-loader.js
           npm run test:smart
           python3 scripts/verify_tajweed_learning.py
           python3 scripts/verify_tajweed_scopes.py
@@ -143,8 +146,10 @@ jobs:
             echo "asset=Siraj-Android-$VERSION.apk"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Verify signer, upgrade version, and packaged assets
+      - name: Verify signer, version gate, and packaged assets
         shell: bash
+        env:
+          REQUIRE_UPGRADE: ${{ github.event_name == 'workflow_dispatch' && inputs.publish }}
         run: |
           set -euo pipefail
           APK=android/app/build/outputs/apk/release/app-release.apk
@@ -156,7 +161,11 @@ jobs:
           test -n "$OLD_CERT" && test "$NEW_CERT" = "$OLD_CERT"
           OLD_CODE=$("$BUILD_TOOLS/aapt" dump badging update/app.apk | sed -n "s/.*versionCode='\([0-9]*\)'.*/\1/p" | head -1)
           NEW_CODE=$("$BUILD_TOOLS/aapt" dump badging "$APK" | sed -n "s/.*versionCode='\([0-9]*\)'.*/\1/p" | head -1)
-          test "$NEW_CODE" -gt "$OLD_CODE"
+          if [[ "$REQUIRE_UPGRADE" == "true" ]]; then
+            test "$NEW_CODE" -gt "$OLD_CODE"
+          else
+            test "$NEW_CODE" -ge "$OLD_CODE"
+          fi
           "$BUILD_TOOLS/aapt" dump badging "$APK" | grep -q "versionName='${{ steps.meta.outputs.version }}'"
           "$BUILD_TOOLS/aapt" dump badging "$APK" | grep -Fq "application-label:'سراج — قرآن كريم'"
           python3 - <<'PY'
@@ -166,9 +175,11 @@ jobs:
           required = {
               'assets/public/app.js', 'assets/public/smart-context.js',
               'assets/public/smart-services.js', 'assets/public/tajweed-learning.js',
+              'assets/public/tajweed-curriculum-loader.js',
               'assets/public/index.html', 'assets/public/sw.js',
               'assets/public/quran-hafs.json', 'assets/public/quran-tajweed.json',
               'assets/public/tajweed-learning-catalog.json',
+              'assets/public/tajweed-scope-registry.json',
               'assets/public/surahs.json', 'assets/public/tafsir-catalog.json',
               'assets/public/fonts/Amiri-Regular.ttf',
               'assets/public/fonts/AmiriQuran-Regular.ttf',
@@ -186,6 +197,7 @@ jobs:
               smart_context = archive.read('assets/public/smart-context.js').decode()
               smart_services = archive.read('assets/public/smart-services.js').decode()
               tajweed_learning = archive.read('assets/public/tajweed-learning.js').decode()
+              tajweed_loader = archive.read('assets/public/tajweed-curriculum-loader.js').decode()
               tajweed_catalog = archive.read('assets/public/tajweed-learning-catalog.json').decode()
               html = archive.read('assets/public/index.html').decode()
               service_worker = archive.read('assets/public/sw.js').decode()
@@ -193,16 +205,20 @@ jobs:
           assert 'SmartContextEngine' in smart_context and 'LIKELY_SLEEPING' in smart_context
           assert 'buildCandidates' in smart_services and 'open_adhkar:morning' in smart_services
           assert 'TajweedLearningEngine' in tajweed_learning and 'reviewedEntry' in tajweed_learning
+          assert 'loadRegistryCurricula' in tajweed_loader and 'PACKAGE_HASH_MISMATCH' in tajweed_loader
           assert 'PENDING_SCHOLARLY_REVIEW' in tajweed_catalog and 'source-unspecified' in tajweed_catalog
           assert "run(null, 'smart-context.js')" in html
           assert "run(null, 'smart-services.js')" in html
           assert "run(null, 'tajweed-learning.js')" in html
+          assert "run(null, 'tajweed-curriculum-loader.js')" in html
           assert 'id="setSmartEnabled"' in html and 'id="smartSuggestion"' in html
           assert 'id="tjStartLearning"' in html and 'id="tjLearningCard"' in html
           assert 'لا يرسل ملف عادات إلى خادم' in html
           assert 'new SmartContextAPI.SmartContextEngine' in app
           assert 'new TajweedLearningAPI.TajweedLearningEngine' in app
-          assert 'لن يطبق سراج قواعد حفص عليها' in app
+          assert 'TajweedCurriculumLoaderAPI.loadRegistryCurricula' in app
+          assert 'replaceUpdateDataAssets' in app and 'SIRAJ_UPDATE_DATA_FILES' in app
+          assert 'لا تُعرض أحكام حفص أو أي طبقة عامة' in app
           assert "markShown(candidate, suggestionId, 'suggestion')" in app
           assert 'TafsirStore' in app and 'Reminder' in app and 'ar.parhizgar' in app
           assert 'loadBundledData()' in app and 'recordWirdPage' in app
@@ -237,9 +253,10 @@ jobs:
           assert 'group-menu-open' in html and 'reader-view-active' in html and 'body.group-menu-open .hdr' in html
           assert 'syncReaderDockHeight' in app and 'syncAudioTimeline' in app
           assert 'syncGroupMenuLayer' in app and 'focusFirst' in app and 'restoreFocus' in app
-          assert 'siraj-shell-v13' in service_worker
+          assert 'siraj-shell-v15' in service_worker
           assert "'./smart-context.js'" in service_worker and "'./smart-services.js'" in service_worker
           assert "'./tajweed-learning.js'" in service_worker and "'./tajweed-learning-catalog.json'" in service_worker
+          assert "'./tajweed-curriculum-loader.js'" in service_worker and 'curriculumArtifacts' in service_worker
           assert 'data-icon="tajweed"' in html and '🎵' not in html
           PY
 
@@ -373,20 +390,13 @@ jobs:
           APK_SHA256: ${{ steps.artifacts.outputs.sha256 }}
         run: |
           set -euo pipefail
-          cp index.html update/index.html
-          cp smart-context.js update/smart-context.js
-          cp smart-services.js update/smart-services.js
-          cp tajweed-learning.js update/tajweed-learning.js
-          cp tajweed-learning-catalog.json update/tajweed-learning-catalog.json
-          cp app.js update/app.js
+          bash scripts/publish-update.sh "$VERSION"
           python3 - <<'PY'
           import json, os
           from pathlib import Path
           path = Path('update/manifest.json')
           data = json.loads(path.read_text(encoding='utf-8'))
           version = os.environ['VERSION']
-          data['version'] = version
-          data['files'] = ['index.html', 'smart-context.js', 'smart-services.js', 'tajweed-learning.js', 'tajweed-learning-catalog.json', 'app.js']
           data['features'] = ['هوية أوضح لسراج ووصول منظم إلى «عن التطبيق».']
           data['apk'] = {
               'version': version,
@@ -397,7 +407,7 @@ jobs:
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add update/manifest.json update/index.html update/smart-context.js update/smart-services.js update/tajweed-learning.js update/tajweed-learning-catalog.json update/app.js
+          git add -A update
           if ! git diff --cached --quiet; then
             git commit -m "Android $VERSION: advance stable immutable release channel [skip ci]"
             git push origin HEAD:main

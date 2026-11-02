@@ -79,12 +79,13 @@ def main() -> None:
     assert historical_license.startswith("MIT License\n")
     assert "cp LICENSE LICENSE.ar.md NOTICE.md www/legal/" in build_script
     assert "cp LICENSES/MIT-HISTORICAL.txt www/legal/" in build_script
-    assert "index.html smart-context.js smart-services.js tajweed-learning.js app.js" in build_script
+    assert "tajweed-learning.js tajweed-curriculum-loader.js app.js" in build_script
 
     app = (ROOT / "app.js").read_text(encoding="utf-8")
     smart_context = (ROOT / "smart-context.js").read_text(encoding="utf-8")
     smart_services = (ROOT / "smart-services.js").read_text(encoding="utf-8")
     tajweed_learning = (ROOT / "tajweed-learning.js").read_text(encoding="utf-8")
+    tajweed_loader = (ROOT / "tajweed-curriculum-loader.js").read_text(encoding="utf-8")
     tajweed_catalog = (ROOT / "tajweed-learning-catalog.json").read_text(encoding="utf-8")
     tajweed_registry = load("tajweed-scope-registry.json")
     html = (ROOT / "index.html").read_text(encoding="utf-8")
@@ -108,6 +109,7 @@ def main() -> None:
     assert "SmartContextEngine" in smart_context and "LIKELY_SLEEPING" in smart_context
     assert "buildCandidates" in smart_services and "open_adhkar:morning" in smart_services
     assert "TajweedLearningEngine" in tajweed_learning and "reviewedEntry" in tajweed_learning
+    assert "loadRegistryCurricula" in tajweed_loader and "PACKAGE_HASH_MISMATCH" in tajweed_loader
     assert "PENDING_SCHOLARLY_REVIEW" in tajweed_catalog and "source-unspecified" in tajweed_catalog
     assert tajweed_registry["scopeKey"] == "riwayah/tariq/wajh/edition"
     assert tajweed_registry["fallbackPolicy"] == "FORBIDDEN_BETWEEN_SCOPES"
@@ -115,11 +117,14 @@ def main() -> None:
     assert "run(null, 'smart-context.js')" in html
     assert "run(null, 'smart-services.js')" in html
     assert "run(null, 'tajweed-learning.js')" in html
+    assert "run(null, 'tajweed-curriculum-loader.js')" in html
     assert 'id="setSmartEnabled"' in html and 'id="smartSuggestion"' in html
     assert 'id="tjStartLearning"' in html and 'id="tjLearningCard"' in html
     assert "لا يرسل ملف عادات إلى خادم" in html
     assert "new SmartContextAPI.SmartContextEngine" in app
     assert "new TajweedLearningAPI.TajweedLearningEngine" in app
+    assert "TajweedCurriculumLoaderAPI.loadRegistryCurricula" in app
+    assert "replaceUpdateDataAssets" in app and "SIRAJ_UPDATE_DATA_FILES" in app
     assert "FORBIDDEN_BETWEEN_SCOPES" in app
     assert "لا تُعرض أحكام حفص أو أي طبقة عامة" in app
     assert "markShown(candidate, suggestionId, 'suggestion')" in app
@@ -167,9 +172,11 @@ def main() -> None:
     assert "يتوفر تحديث جديد لسراج — الإصدار" in app and "فيه تحديث جديد" not in app
     assert "Array.isArray(m.features)" in app and "technicalTerms" in app
     assert ".upd-banner span { flex: 1; white-space: pre-line; }" in html
-    assert "siraj-shell-v14" in service_worker
+    assert "siraj-shell-v15" in service_worker
     assert "'./smart-context.js'" in service_worker and "'./smart-services.js'" in service_worker
     assert "'./tajweed-learning.js'" in service_worker
+    assert "'./tajweed-curriculum-loader.js'" in service_worker
+    assert "curriculumArtifacts" in service_worker
     assert "'./tajweed-learning-catalog.json'" in service_worker
     assert "'./tajweed-scope-registry.json'" in service_worker
     assert "--quran-font" in html and "setFont" in html

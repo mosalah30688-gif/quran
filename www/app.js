@@ -147,6 +147,7 @@
   const SmartContextAPI = window.SirajSmartContext || null;
   const SmartServicesAPI = window.SirajSmartServices || null;
   const TajweedLearningAPI = window.SirajTajweedLearning || null;
+  const TajweedCurriculumLoaderAPI = window.SirajTajweedCurriculumLoader || null;
   const SMART_STATE_KEY = 'smart-context';
   const TAJWEED_LEARNING_KEY = 'tajweed-learning';
   const SMART_NATIVE_KEY = 'smart-native';
@@ -192,6 +193,8 @@
   let localTajweed = [];
   let tajweedLearningCatalog = null;
   let tajweedScopeRegistry = null;
+  let tajweedRuntimeCurricula = [];
+  let tajweedCurriculumLoadErrors = [];
   let tajweedLearningCards = [];
   let tajweedSession = { queue: [], index: 0, revealed: false, answered: 0 };
   const hafsPages = { uthmani: new Map(), simple: new Map() };
@@ -199,7 +202,8 @@
   const tajweedByRef = new Map();
   const pageByRef = new Map();
   const globalByRef = new Map();
-  const cache = new Map();          // طلبات الشبكة الاختيارية (ترجمة/مصادر احتياطية)
+  const cache = new Map();          // JSON محلل من الأصول المحلية أو طلبات الشبكة الاختيارية
+  const textCache = new Map();      // النص الخام مطلوب للتحقق من بصمات حزم التجويد
   const pageCache = new Map();      // صفحات جاهزة (مُعالجة)
   const audio = new Audio();
   audio.preload = 'auto';
@@ -237,11 +241,114 @@
     toast._t = setTimeout(() => t.classList.remove('show'), 1800);
   }
 
-  async function getJSON(url) {
-    if (cache.has(url)) return cache.get(url);
+  const UPDATE_ASSET_DB = 'siraj-update-assets';
+  const UPDATE_ASSET_STORE = 'assets';
+  let updateAssetDbPromise = null;
+
+  function safeLocalAssetName(url) {
+    const value = String(url || '');
+    if (/^[a-z][a-z0-9+.-]*:/i.test(value) || value.includes('?') || value.includes('#')) return '';
+    const normalized = value.replace(/^\.\//, '');
+    return (/^[a-z0-9][a-z0-9._-]*\.(?:html|js|json)$/i.test(normalized)
+      || /^tajweed-curricula\/[a-z0-9][a-z0-9._-]*\.json$/.test(normalized))
+      ? normalized : '';
+  }
+
+  function openUpdateAssetDb() {
+    if (!window.indexedDB) return Promise.reject(new Error('IndexedDB unavailable'));
+    if (updateAssetDbPromise) return updateAssetDbPromise;
+    updateAssetDbPromise = new Promise((resolve, reject) => {
+      const request = window.indexedDB.open(UPDATE_ASSET_DB, 1);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(UPDATE_ASSET_STORE)) {
+          db.createObjectStore(UPDATE_ASSET_STORE, { keyPath: 'name' });
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error('update asset database'));
+      request.onblocked = () => reject(new Error('update asset database blocked'));
+    });
+    updateAssetDbPromise.catch(() => { updateAssetDbPromise = null; });
+    return updateAssetDbPromise;
+  }
+
+  function waitForUpdateTransaction(transaction) {
+    return new Promise((resolve, reject) => {
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error || new Error('update asset transaction'));
+      transaction.onabort = () => reject(transaction.error || new Error('update asset transaction aborted'));
+    });
+  }
+
+  async function readUpdateDataAsset(name, version) {
+    const db = await openUpdateAssetDb();
+    const transaction = db.transaction(UPDATE_ASSET_STORE, 'readonly');
+    const request = transaction.objectStore(UPDATE_ASSET_STORE).get(name);
+    const record = await new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error || new Error('update asset read'));
+    });
+    return record && record.version === version && typeof record.text === 'string'
+      ? record.text : null;
+  }
+
+  async function replaceUpdateDataAssets(version, files) {
+    const db = await openUpdateAssetDb();
+    const transaction = db.transaction(UPDATE_ASSET_STORE, 'readwrite');
+    const storeRef = transaction.objectStore(UPDATE_ASSET_STORE);
+    storeRef.clear();
+    Object.keys(files).forEach((name) => {
+      storeRef.put({ name, version, text: files[name] });
+    });
+    await waitForUpdateTransaction(transaction);
+  }
+
+  async function clearUpdateDataAssets() {
+    if (!window.indexedDB) return;
+    try {
+      const db = await openUpdateAssetDb();
+      const transaction = db.transaction(UPDATE_ASSET_STORE, 'readwrite');
+      transaction.objectStore(UPDATE_ASSET_STORE).clear();
+      await waitForUpdateTransaction(transaction);
+    } catch { /* الملفات القديمة غير فعالة بلا مؤشر التحديث المحلي */ }
+  }
+
+  function updateOverlayText(url) {
+    const normalized = safeLocalAssetName(url);
+    const files = window.SIRAJ_UPDATE_FILES;
+    if (!normalized || !files || !Object.prototype.hasOwnProperty.call(files, normalized)) return null;
+    return typeof files[normalized] === 'string' ? files[normalized] : null;
+  }
+
+  async function getTextAsset(url) {
+    if (textCache.has(url)) return textCache.get(url);
+    const normalized = safeLocalAssetName(url);
+    const overlaid = updateOverlayText(url);
+    if (overlaid !== null) {
+      textCache.set(url, overlaid);
+      return overlaid;
+    }
+    const dataFiles = Array.isArray(window.SIRAJ_UPDATE_DATA_FILES)
+      ? window.SIRAJ_UPDATE_DATA_FILES : [];
+    if (normalized && dataFiles.includes(normalized)) {
+      const text = await readUpdateDataAsset(normalized, String(window.SIRAJ_UPDATE_VERSION || ''));
+      if (!text || !text.trim()) throw new Error('missing update asset ' + normalized);
+      textCache.set(url, text);
+      return text;
+    }
     const res = await fetch(url);
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    const json = await res.json();
+    const text = await res.text();
+    if (!text.trim()) throw new Error('empty asset');
+    textCache.set(url, text);
+    return text;
+  }
+
+  async function getJSON(url) {
+    if (cache.has(url)) return cache.get(url);
+    const text = await getTextAsset(url);
+    const json = JSON.parse(text);
     cache.set(url, json);
     return json;
   }
@@ -265,14 +372,36 @@
     const [surahData, hafsData, tajweedData, catalog, learningCatalog, scopeRegistry] = await Promise.all([
       getJSON('surahs.json'), getJSON('quran-hafs.json'),
       getJSON('quran-tajweed.json'), getJSON('tafsir-catalog.json'),
-      getJSON('tajweed-learning-catalog.json').catch(() => null),
-      getJSON('tajweed-scope-registry.json').catch(() => null),
+      getJSON('tajweed-learning-catalog.json'),
+      getJSON('tajweed-scope-registry.json'),
     ]);
     surahs = Array.isArray(surahData) ? surahData : [];
     localHafs = hafsData;
     localTajweed = Array.isArray(tajweedData) ? tajweedData : [];
     tajweedLearningCatalog = learningCatalog;
     tajweedScopeRegistry = scopeRegistry;
+    tajweedRuntimeCurricula = [];
+    tajweedCurriculumLoadErrors = [];
+    if (TajweedCurriculumLoaderAPI && learningCatalog && scopeRegistry) {
+      try {
+        const catalogSha256 = await TajweedCurriculumLoaderAPI.sha256Text(
+          await getTextAsset('tajweed-learning-catalog.json')
+        );
+        const baseCurricula = Array.isArray(learningCatalog.curricula)
+          ? learningCatalog.curricula.map((item) => Object.assign({}, item, {
+            artifact: 'tajweed-learning-catalog.json', artifactSha256: catalogSha256,
+          })) : [];
+        const independent = await TajweedCurriculumLoaderAPI.loadRegistryCurricula({
+          registry: scopeRegistry,
+          getText: getTextAsset,
+        });
+        tajweedRuntimeCurricula = [...baseCurricula, ...independent.curricula];
+        tajweedCurriculumLoadErrors = independent.errors;
+      } catch {
+        tajweedRuntimeCurricula = [];
+        tajweedCurriculumLoadErrors = [{ artifact: '', code: 'RUNTIME_GATE_FAILED' }];
+      }
+    }
     indexHafsRows('uthmani', localHafs.uthmani || []);
     indexHafsRows('simple', localHafs.simple || []);
     localTajweed.forEach((row) => tajweedByRef.set(refKey(row[0], row[1]), clean(row[3])));
@@ -469,9 +598,7 @@
   let riwPages = {};
   async function loadRiwaya(id) {
     if (!riwAll) {
-      const res = await fetch('quran-riwayat.json');
-      if (!res.ok) throw new Error('riwaya');
-      riwAll = (await res.json()).riwayat || {};
+      riwAll = (await getJSON('quran-riwayat.json')).riwayat || {};
     }
     if (!riwPages[id]) {
       const byPage = {};
@@ -1499,6 +1626,27 @@
     return false;
   }
 
+  function validUpdateManifestFiles(files) {
+    if (!Array.isArray(files) || !files.includes('index.html') || !files.includes('app.js')
+        || files.length > 128 || new Set(files).size !== files.length) return false;
+    return files.every((name) => safeLocalAssetName(name) === name);
+  }
+
+  async function verifyDownloadedUpdateFile(name, text, hashes) {
+    const hasHashManifest = hashes && typeof hashes === 'object' && !Array.isArray(hashes);
+    const expected = hasHashManifest && typeof hashes[name] === 'string' ? hashes[name] : '';
+    const isData = name.endsWith('.json');
+    if ((isData || hasHashManifest) && !/^[0-9a-f]{64}$/.test(expected)) {
+      throw new Error('missing update hash');
+    }
+    if (!expected) return;
+    if (!TajweedCurriculumLoaderAPI) {
+      throw new Error('bad update hash');
+    }
+    const actual = await TajweedCurriculumLoaderAPI.sha256Text(text);
+    if (actual !== expected) throw new Error('update hash mismatch');
+  }
+
   // نسخة كاملة (APK): تُنزَّل وتُفتح نافذة التثبيت عند المستخدم
   async function installNewApk(apk, st) {
     const perm = await nativeCall('ApkUpdater', 'canInstall');
@@ -1511,6 +1659,7 @@
     // النسخة الكاملة تحمل واجهتها، فنزيل التحديث الداخلي السابق حتى لا يغطي عليها
     localStorage.removeItem(UPDATE_KEY);
     localStorage.removeItem('quran-update-pending');
+    await clearUpdateDataAssets();
     await nativeCall('ApkUpdater', 'downloadAndInstall', { url: apk.url, sha256: apk.sha256 || '' });
     st.textContent = 'اضغط تثبيت في النافذة لإكمال التحديث.';
   }
@@ -1523,7 +1672,7 @@
       const mres = await fetch(UPDATE_BASE + 'manifest.json?t=' + Date.now(), { cache: 'no-store' });
       if (!mres.ok) throw new Error('manifest');
       const manifest = await mres.json();
-      if (!manifest.version || !Array.isArray(manifest.files) || !manifest.files.includes('index.html')) throw new Error('bad manifest');
+      if (!manifest.version || !validUpdateManifestFiles(manifest.files)) throw new Error('bad manifest');
       // نسخة كاملة أحدث على الهاتف؟ تُثبَّت بدل تحديث الواجهة وحدها
       if (manifest.apk && manifest.apk.url && manifest.apk.version && hasNativePlugin('ApkUpdater')) {
         const nv = await nativeCall('ApkUpdater', 'getVersion').then((r) => r.version).catch(() => null);
@@ -1540,16 +1689,24 @@
         return;
       }
       st.textContent = 'جاري تنزيل الإصدار ' + manifest.version + '...';
-      const files = {};
+      const shellFiles = Object.create(null);
+      const dataFiles = Object.create(null);
       for (const f of manifest.files) {
         const r = await fetch(UPDATE_BASE + f + '?t=' + Date.now(), { cache: 'no-store' });
         if (!r.ok) throw new Error('file ' + f);
         const txt = await r.text();
         if (!txt.trim()) throw new Error('empty ' + f);
-        files[f] = txt;
+        await verifyDownloadedUpdateFile(f, txt, manifest.sha256);
+        if (f.endsWith('.json')) dataFiles[f] = txt;
+        else shellFiles[f] = txt;
       }
-      localStorage.setItem(UPDATE_KEY, JSON.stringify({ version: manifest.version, files: files }));
-      st.textContent = 'تم التنزيل، جاري تطبيق التحديث...';
+      await replaceUpdateDataAssets(manifest.version, dataFiles);
+      localStorage.setItem(UPDATE_KEY, JSON.stringify({
+        version: manifest.version,
+        files: shellFiles,
+        dataFiles: Object.keys(dataFiles),
+      }));
+      st.textContent = 'تم التنزيل والتحقق، جاري تطبيق التحديث...';
       setTimeout(() => location.reload(), 400);
     } catch (e) {
       st.textContent = 'تعذّر التحديث. تأكد من الاتصال بالإنترنت وحاول مرة أخرى.';
@@ -1557,8 +1714,10 @@
     }
   }
   $('#btnUpdate').addEventListener('click', checkForUpdate);
-  $('#btnRestore').addEventListener('click', () => {
+  $('#btnRestore').addEventListener('click', async () => {
     localStorage.removeItem(UPDATE_KEY);
+    localStorage.removeItem('quran-update-pending');
+    await clearUpdateDataAssets();
     location.reload();
   });
   renderUpdateCard();
@@ -1958,9 +2117,7 @@
   // فهرس الآيات يُحمَّل مرة واحدة عند أول بحث، ثم يعمل بدون اتصال
   async function loadSearchIndex() {
     if (srIndex) return srIndex;
-    const res = await fetch('quran-search.json');
-    if (!res.ok) throw new Error('index');
-    const j = await res.json();
+    const j = await getJSON('quran-search.json');
     srIndex = j.ayahs.map(([s, a, t]) => ({ s, a, t, n: srNorm(t) }));
     return srIndex;
   }
@@ -2043,12 +2200,14 @@
 
   function currentTajweedCurriculum() {
     const entry = currentTajweedRegistryEntry();
-    const curricula = tajweedLearningCatalog?.curricula;
-    if (!entry || !Array.isArray(entry.curricula) || !Array.isArray(curricula)) return null;
-    const candidate = curricula.find((item) => Array.isArray(item.appliesToSettings)
+    if (!entry || !Array.isArray(entry.curricula) || !Array.isArray(tajweedRuntimeCurricula)) return null;
+    const candidates = tajweedRuntimeCurricula.filter((item) => Array.isArray(item.appliesToSettings)
       && item.appliesToSettings.includes(settings.riwaya));
-    if (!candidate) return null;
-    const pointer = entry.curricula.find((item) => item?.artifact === 'tajweed-learning-catalog.json'
+    // لا نختار طريقًا أو وجهًا ضمنيًا إذا وصلت أكثر من حزمة للنطاق نفسه.
+    if (candidates.length !== 1) return null;
+    const candidate = candidates[0];
+    const pointer = entry.curricula.find((item) => item?.artifact === candidate.artifact
+      && item.sha256 === candidate.artifactSha256
       && item.status === candidate.status
       && item.publishableAsApproved === candidate.publishableAsApproved
       && sameTajweedScope(item.scope, candidate.scope));
@@ -2074,13 +2233,13 @@
 
   function buildTajweedLearningCards() {
     tajweedLearningCards = [];
-    const curricula = tajweedLearningCatalog?.curricula;
+    const curricula = tajweedRuntimeCurricula;
     if (!Array.isArray(curricula) || !TajweedLearningAPI) return;
     curricula.forEach((curriculum) => {
       const scope = TajweedLearningAPI.normalizeScope(curriculum.scope);
       if (!scope || !Array.isArray(curriculum.rules)) return;
       curriculum.rules.forEach((rule) => {
-        const example = firstTajweedExample(rule.tagCode);
+        const example = rule.example || (rule.tagCode ? firstTajweedExample(rule.tagCode) : null);
         tajweedLearningCards.push({
           id: rule.id,
           scope,
@@ -2088,7 +2247,8 @@
           name: rule.name,
           prompt: rule.prompt,
           answer: rule.answer,
-          tagCode: rule.tagCode,
+          tagCode: typeof rule.tagCode === 'string' ? rule.tagCode : '',
+          color: /^#[0-9A-Fa-f]{6}$/.test(rule.color || '') ? rule.color : '',
           example,
           curriculumId: curriculum.id,
           reviewStatus: curriculum.status,
@@ -2101,6 +2261,14 @@
     if (!curriculum || !TajweedLearningAPI) return [];
     const key = TajweedLearningAPI.scopeKey(curriculum.scope);
     return tajweedLearningCards.filter((card) => TajweedLearningAPI.scopeKey(card.scope) === key);
+  }
+
+  function coloredTajweedExample(card) {
+    if (!card?.example) return '';
+    const marker = card.color
+      ? `style="color:${card.color}"`
+      : `class="tj-${esc(card.tagCode)}"`;
+    return `<span ${marker}>${esc(card.example.text)}</span>`;
   }
 
   function persistTajweedLearning() {
@@ -2120,8 +2288,14 @@
       return;
     }
     if (!curriculum) {
-      const blockedReason = registryEntry?.blockedReasonAr
-        || 'فشل التحقق من سجل نطاق التجويد؛ حُجبت الطبقة احترازيًا.';
+      const entryArtifacts = new Set((Array.isArray(registryEntry?.curricula)
+        ? registryEntry.curricula : []).map((pointer) => pointer?.artifact).filter(Boolean));
+      const hasUnloadedPointer = tajweedCurriculumLoadErrors.some((failure) =>
+        entryArtifacts.has(failure.artifact));
+      const blockedReason = hasUnloadedPointer
+        ? 'تعذّر التحقق من بصمة حزمة التجويد أو ربطها النصي؛ حُجبت الطبقة احترازيًا.'
+        : (registryEntry?.blockedReasonAr
+          || 'فشل التحقق من سجل نطاق التجويد؛ حُجبت الطبقة احترازيًا.');
       $('#tjLearningScope').textContent = `${selectedLabel} · الطريق والوجه والطبعة: غير مثبتة`;
       $('#tjReviewBadge').textContent = registryEntry?.status === 'BLOCKED_NO_APPROVED_CORPUS'
         ? 'محجوب لغياب المصدر المعتمد' : 'محجوب احترازيًا';
@@ -2157,7 +2331,7 @@
         : 'اكتملت بطاقات اليوم وفق الحد المحلي.');
     $('#tjList').innerHTML = cards.map((card) => {
       const example = card.example
-        ? `<div class="muted" style="margin-top:4px">مثال: <span class="tj-${esc(card.tagCode)}">${esc(card.example.text)}</span> — ${esc(surahName(card.example.surah))} ${toArabicDigits(card.example.ayah)}</div>`
+        ? `<div class="muted" style="margin-top:4px">مثال: ${coloredTajweedExample(card)} — ${esc(surahName(card.example.surah))} ${toArabicDigits(card.example.ayah)}</div>`
         : '';
       return `<div class="wird-line"><span><strong>${esc(card.name)}</strong><div class="muted">${esc(card.answer)}</div>${example}</span></div>`;
     }).join('');
@@ -2176,7 +2350,7 @@
     $('#tjCardTitle').textContent = card.name;
     $('#tjCardPrompt').textContent = card.prompt;
     $('#tjCardExample').innerHTML = card.example
-      ? `<span class="tj-${esc(card.tagCode)}">${esc(card.example.text)}</span><div class="muted">${esc(surahName(card.example.surah))} — الآية ${toArabicDigits(card.example.ayah)}</div>`
+      ? `${coloredTajweedExample(card)}<div class="muted">${esc(surahName(card.example.surah))} — الآية ${toArabicDigits(card.example.ayah)}</div>`
       : '<span class="muted">لا يوجد مثال موسوم في المصدر الحالي.</span>';
     $('#tjCardAnswerText').textContent = card.answer;
     $('#tjCardAnswer').hidden = true;
@@ -2247,9 +2421,7 @@
   let meanToken = 0;
   async function loadMeanings() {
     if (meanData) return meanData;
-    const res = await fetch('quran-meanings.json');
-    if (!res.ok) throw new Error('meanings');
-    meanData = (await res.json()).ayahs || {};
+    meanData = (await getJSON('quran-meanings.json')).ayahs || {};
     return meanData;
   }
   function showMeaningsPanel() {
@@ -2408,9 +2580,7 @@
   const ADH_KEY = 'adhkar-counts';
   async function loadAdhkar() {
     if (adhkarCats) return adhkarCats;
-    const res = await fetch('adhkar.json');
-    if (!res.ok) throw new Error('adhkar');
-    adhkarCats = (await res.json()).categories || [];
+    adhkarCats = (await getJSON('adhkar.json')).categories || [];
     return adhkarCats;
   }
   // العدادات تبدأ من جديد كل يوم
@@ -3222,14 +3392,24 @@
   setInterval(checkInAppWirdReminder, 60 * 1000);
 
   // القرآن والسور والتجويد وفهرس التفاسير أصول مضمّنة: يبدأ التطبيق دون شبكة.
-  loadBundledData().catch(() => {
-    toast('تعذر فتح بعض بيانات المصحف المحلية.');
-  }).finally(async () => {
+  (async function initializeBundledData() {
+    try {
+      await loadBundledData();
+      // لا يُعد التحديث ناجحًا قبل تحميل JSON والتحقق من حزم التجويد المقفلة.
+      localStorage.removeItem('quran-update-pending');
+    } catch {
+      toast('تعذر فتح بعض بيانات المصحف المحلية.');
+      if (localStorage.getItem('quran-update-pending')) {
+        localStorage.removeItem(UPDATE_KEY);
+        localStorage.removeItem('quran-update-pending');
+        await clearUpdateDataAssets();
+        location.reload();
+        return;
+      }
+    }
     fillSettings();
     await refreshTafsirPackStatus();
     await loadSurahs();
-    // التطبيق اشتغل بنجاح: نلغي علامة التحديث المعلّق
-    localStorage.removeItem('quran-update-pending');
     const last = getLast();
     if (last && last.p) {
       await showPage(last.p, { selG: last.g, save: false });
@@ -3242,7 +3422,7 @@
       smartPendingNativeAction = '';
       await runSmartAction(action);
     }
-  });
+  })();
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     navigator.serviceWorker.register('sw.js').catch(() => {});

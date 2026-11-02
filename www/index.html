@@ -1295,9 +1295,27 @@
       document.body.appendChild(el);
     }
 
+    function validUpdateFile(name) {
+      return /^[a-z0-9][a-z0-9._-]*\.(?:html|js|json)$/i.test(name)
+        || /^tajweed-curricula\/[a-z0-9][a-z0-9._-]*\.json$/.test(name);
+    }
+
     function applyUpdate(up) {
       var files = up.files || {};
-      if (!files['index.html']) return false;
+      var names = files && typeof files === 'object' ? Object.keys(files) : [];
+      if (!files['index.html'] || !names.length || names.some(function (name) {
+        return !validUpdateFile(name) || typeof files[name] !== 'string' || !files[name].trim();
+      })) return false;
+      var dataFiles = Array.isArray(up.dataFiles) ? up.dataFiles.slice() : [];
+      if (dataFiles.some(function (name, index) {
+        return !/^([a-z0-9][a-z0-9._-]*\.json|tajweed-curricula\/[a-z0-9][a-z0-9._-]*\.json)$/.test(name)
+          || dataFiles.indexOf(name) !== index;
+      })) return false;
+      var exposed = Object.create(null);
+      names.forEach(function (name) { exposed[name] = files[name]; });
+      window.SIRAJ_UPDATE_FILES = Object.freeze(exposed);
+      window.SIRAJ_UPDATE_DATA_FILES = Object.freeze(dataFiles);
+      window.SIRAJ_UPDATE_VERSION = String(up.version || '');
       var doc = new DOMParser().parseFromString(files['index.html'], 'text/html');
       var self = doc.getElementById('boot-loader');
       if (self) self.parentNode.removeChild(self);
@@ -1351,9 +1369,13 @@
     }
 
     if (!applied) {
+      window.SIRAJ_UPDATE_FILES = Object.freeze(Object.create(null));
+      window.SIRAJ_UPDATE_DATA_FILES = Object.freeze([]);
+      window.SIRAJ_UPDATE_VERSION = '';
       run(null, 'smart-context.js');
       run(null, 'smart-services.js');
       run(null, 'tajweed-learning.js');
+      run(null, 'tajweed-curriculum-loader.js');
       run(null, 'app.js');
     }
   })();
