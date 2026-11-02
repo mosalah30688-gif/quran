@@ -217,3 +217,88 @@ test('queue and review decisions are deterministic for the same state and clock'
   assert.deepEqual(a.review(cards[0], 'good'), b.review(cards[0], 'good'));
   assert.deepEqual(a.snapshot(), b.snapshot());
 });
+
+test('adaptive path unlocks recognition only after its learning prerequisite succeeds', () => {
+  const learn = { ...card('madd', HAFS, 1), baseId: 'madd', name: 'مد', category: 'madd' };
+  const recognize = {
+    ...card('madd.recognize', HAFS, 2), baseId: 'madd', name: 'تمييز المد',
+    category: 'madd', activityType: 'recognize', stage: 2, prerequisites: ['madd'],
+  };
+  const emptyPlan = Learning.buildAdaptivePlan(
+    [learn, recognize], { config: { newPerDay: 10 } }, HAFS, at(20),
+  );
+  assert.deepEqual(emptyPlan.map((item) => item.card.id), ['madd']);
+
+  const key = Learning.normalizeCard(learn).key;
+  const unlockedPlan = Learning.buildAdaptivePlan([learn, recognize], {
+    config: { newPerDay: 10 },
+    progress: { [key]: {
+      introducedAt: at(1), lastReviewedAt: at(1), dueAt: at(21),
+      reviewCount: 1, correctCount: 1, repetitions: 1, lastRating: 'good',
+    } },
+  }, HAFS, at(20));
+  assert.deepEqual(unlockedPlan.map((item) => item.card.id), ['madd.recognize']);
+  assert.equal(unlockedPlan[0].reason, 'new-unlocked');
+});
+
+test('adaptive plan places weak due activities before stable due activities', () => {
+  const weak = { ...card('weak', HAFS, 1), name: 'ضعيف', category: 'noon' };
+  const stable = { ...card('stable', HAFS, 2), name: 'راسخ', category: 'madd' };
+  const progress = {
+    [Learning.normalizeCard(weak).key]: {
+      introducedAt: at(1), dueAt: at(19), lastReviewedAt: at(18),
+      reviewCount: 6, correctCount: 2, lapses: 3, lastRating: 'again',
+    },
+    [Learning.normalizeCard(stable).key]: {
+      introducedAt: at(1), dueAt: at(18), lastReviewedAt: at(17),
+      reviewCount: 6, correctCount: 6, repetitions: 4, intervalDays: 20, lastRating: 'good',
+    },
+  };
+  const plan = Learning.buildAdaptivePlan(
+    [stable, weak], { config: { reviewsPerDay: 20 }, progress }, HAFS, at(20),
+  );
+  assert.deepEqual(plan.map((item) => item.card.id), ['weak', 'stable']);
+  assert.equal(plan[0].reason, 'weak-review');
+  assert.equal(plan[1].reason, 'due-review');
+});
+
+test('path statistics expose mastery, weak areas, and locked activities locally', () => {
+  const learn = { ...card('rule', HAFS, 1), name: 'حكم', category: 'noon' };
+  const recognize = {
+    ...card('rule.recognize', HAFS, 2), baseId: 'rule', name: 'تمييز',
+    category: 'noon', activityType: 'recognize', prerequisites: ['rule'],
+  };
+  const state = { progress: {
+    [Learning.normalizeCard(learn).key]: {
+      introducedAt: at(1), dueAt: at(30), lastReviewedAt: at(19),
+      reviewCount: 4, correctCount: 1, repetitions: 0, lapses: 2, lastRating: 'again',
+    },
+  } };
+  const stats = Learning.pathStatsForScope([learn, recognize], state, HAFS, at(20));
+  assert.equal(stats.total, 2);
+  assert.equal(stats.introduced, 1);
+  assert.equal(stats.weak, 1);
+  assert.equal(stats.locked, 1);
+  assert.equal(stats.unlocked, 0);
+  assert.equal(stats.categories[0].id, 'noon');
+  assert.ok(stats.mastery >= 0 && stats.mastery <= 1);
+});
+
+test('recognition choices are deterministic, scoped, and contain one correct answer', () => {
+  const roots = ['madd', 'ikhfa', 'iqlab', 'ghunnah'].map((id, index) => ({
+    ...card(id, HAFS, index + 1), baseId: id, name: `name ${id}`,
+    category: index ? 'noon' : 'madd', activityType: 'learn',
+  }));
+  const recognition = {
+    ...card('madd.recognize', HAFS, 20), baseId: 'madd', name: 'تمييز',
+    category: 'madd', activityType: 'recognize', prerequisites: ['madd'],
+  };
+  const foreign = { ...card('foreign', WARSH), name: 'foreign', activityType: 'learn' };
+  const first = Learning.recognitionOptions(recognition, [...roots, recognition, foreign]);
+  const second = Learning.recognitionOptions(recognition, [...roots, recognition, foreign]);
+  assert.deepEqual(first, second);
+  assert.equal(first.length, 4);
+  assert.equal(first.filter((option) => option.correct).length, 1);
+  assert.equal(first.find((option) => option.correct).id, 'madd');
+  assert.equal(first.some((option) => option.id === 'foreign'), false);
+});

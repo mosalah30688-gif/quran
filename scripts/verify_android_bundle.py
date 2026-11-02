@@ -175,7 +175,7 @@ def main() -> None:
     assert "يتوفر تحديث جديد لسراج — الإصدار" in app and "فيه تحديث جديد" not in app
     assert "publicUpdateFeatures" in app and "technicalTerms" in app and "\\nالجديد:" in app
     assert ".upd-banner span { flex: 1; white-space: pre-line; }" in html
-    assert "siraj-shell-v15" in service_worker
+    assert "siraj-shell-v16" in service_worker
     assert "'./smart-context.js'" in service_worker and "'./smart-services.js'" in service_worker
     assert "'./tajweed-learning.js'" in service_worker
     assert "'./tajweed-curriculum-loader.js'" in service_worker

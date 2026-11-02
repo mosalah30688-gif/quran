@@ -93,7 +93,7 @@ test('smart and tajweed engines are included in offline and update channels', ()
     assert.match(source, /tajweed-learning-catalog\.json/);
     assert.match(source, /tajweed-scope-registry\.json/);
   }
-  assert.match(sw, /siraj-shell-v15/);
+  assert.match(sw, /siraj-shell-v16/);
 });
 
 test('JSON update overlay is hashed, stored outside localStorage, and fail-closed', () => {
@@ -146,13 +146,31 @@ test('independent reader colors require an approved exact-scope curriculum', () 
 test('tajweed spaced review is local, scoped, and wired to feedback events', () => {
   for (const id of [
     'tjStartLearning', 'tjLearningCard', 'tjRevealAnswer', 'tjCardAnswer',
-    'tjResetLearning', 'tjLearningStats',
+    'tjResetLearning', 'tjLearningStats', 'tjMastery', 'tjWeakCount',
+    'tjUnlockedCount', 'tjPathFill', 'tjIntensity', 'tjQuizChoices',
+    'tjSessionSummary',
   ]) assert.match(html, new RegExp(`id="${id}"`));
   assert.match(app, /new TajweedLearningAPI\.TajweedLearningEngine/);
+  assert.match(app, /tajweedLearningEngine\.plan\(/);
+  assert.match(app, /tajweedLearningEngine\.pathStats\(/);
+  assert.match(app, /TajweedLearningAPI\.recognitionOptions\(/);
+  assert.match(app, /activityType: 'recognize'/);
+  assert.match(app, /activityType: 'apply'/);
   assert.match(app, /type: 'TAJWEED_ANSWER'/);
   assert.match(app, /type: 'COMPLETE_TAJWEED_LESSON'/);
   assert.match(app, /لا تُعرض أحكام حفص أو أي طبقة عامة/);
   assert.match(app, /tajweedLearningEngine\.resetScope/);
+});
+
+test('learning expansion preserves the existing colored reader and word explanations', () => {
+  assert.match(html, /<option value="quran-tajweed">حفص - بألوان أحكام التجويد<\/option>/);
+  assert.match(html, /id="setTajweed"/);
+  assert.match(html, /id="tjPanel"/);
+  assert.match(html, /\.tj-n \{ color:/);
+  assert.match(app, /function renderTajweed\(raw\)/);
+  assert.match(app, /function showTajweedPanel\(code\)/);
+  assert.match(app, /settings\.riwaya === 'quran-tajweed' \|\| settings\.tajweed/);
+  assert.match(app, /if \(tj\) showTajweedPanel/);
 });
 
 test('tajweed catalogue is fail-closed until scholarly and path review', () => {
@@ -161,6 +179,10 @@ test('tajweed catalogue is fail-closed until scholarly and path review', () => {
   assert.equal(hafs.publishableAsApproved, false);
   assert.equal(hafs.scope.tariq, 'source-unspecified');
   assert.equal(hafs.rules.length, 17);
+  assert.deepEqual(hafs.pedagogy.activityStages, ['learn', 'recognize', 'apply']);
+  assert.equal(hafs.pedagogy.planningPolicy, 'WEAK_FIRST_THEN_DUE_THEN_NEW');
+  assert.ok(hafs.rules.every((rule) => rule.learning.activities.length === 3));
+  assert.ok(hafs.rules.every((rule) => rule.learning.level >= 1 && rule.learning.level <= 3));
   assert.deepEqual(tajweedCatalog.unavailable.map((item) => item.settingId).sort(),
     ['duri', 'qalun', 'warsh']);
 });

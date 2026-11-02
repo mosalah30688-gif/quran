@@ -1,9 +1,9 @@
 /*
- * Siraj Tajweed Learning Engine v1
+ * Siraj Tajweed Learning Engine v2
  *
- * Deterministic, local spaced repetition. Curriculum text is deliberately kept
- * outside this file so every riwayah/tariq/wajh/edition remains an independent,
- * reviewable data layer.
+ * Deterministic, local adaptive learning and spaced repetition. Curriculum text
+ * stays outside this file so every riwayah/tariq/wajh/edition remains an
+ * independent, reviewable data layer.
  */
 (function (root, factory) {
   const api = factory();
@@ -17,7 +17,10 @@
   const TEN_MINUTES_MS = 10 * 60 * 1000;
   const MAX_INTERVAL_DAYS = 365;
   const RATINGS = Object.freeze(['again', 'hard', 'good', 'easy']);
+  const ACTIVITY_TYPES = Object.freeze(['learn', 'recognize', 'apply']);
   const DEFAULT_CONFIG = Object.freeze({ newPerDay: 5, reviewsPerDay: 20 });
+  const WEAK_THRESHOLD = 0.45;
+  const MASTERY_THRESHOLD = 0.7;
 
   function clamp(value, low, high) {
     const number = Number(value);
@@ -51,7 +54,28 @@
     const id = token(value.id);
     const scope = normalizeScope(value.scope);
     if (!id || !scope) return null;
-    return { ...value, id, scope, key: `${scopeKey(scope)}::${id}` };
+    const baseId = token(value.baseId) || id;
+    const activityType = ACTIVITY_TYPES.includes(value.activityType) ? value.activityType : 'learn';
+    const category = token(value.category) || 'general';
+    const prerequisites = [];
+    (Array.isArray(value.prerequisites) ? value.prerequisites : []).slice(0, 12).forEach((item) => {
+      const prerequisite = token(item);
+      if (prerequisite && prerequisite !== id && !prerequisites.includes(prerequisite)) {
+        prerequisites.push(prerequisite);
+      }
+    });
+    return {
+      ...value,
+      id,
+      baseId,
+      scope,
+      activityType,
+      category,
+      level: Math.round(clamp(value.level == null ? 1 : value.level, 1, 10)),
+      stage: Math.round(clamp(value.stage == null ? 1 : value.stage, 1, 10)),
+      prerequisites,
+      key: `${scopeKey(scope)}::${id}`,
+    };
   }
 
   function normalizeConfig(value) {
@@ -152,6 +176,34 @@
     });
   }
 
+  function entryMastery(value) {
+    const entry = normalizeEntry(value);
+    if (!entry.introducedAt && !entry.reviewCount) return 0;
+    const accuracy = entry.reviewCount ? entry.correctCount / entry.reviewCount : 0;
+    const repetition = Math.min(1, entry.repetitions / 3);
+    const stability = Math.min(1, entry.intervalDays / 21);
+    const lapsePenalty = Math.min(0.45, entry.lapses * 0.07 + (entry.leech ? 0.12 : 0));
+    return clamp(0.15 + (repetition * 0.4) + (accuracy * 0.3) + (stability * 0.15)
+      - lapsePenalty, 0, 1);
+  }
+
+  function entryWeakness(value) {
+    const entry = normalizeEntry(value);
+    if (!entry.introducedAt && !entry.reviewCount) return 0;
+    const accuracy = entry.reviewCount ? entry.correctCount / entry.reviewCount : 0;
+    const recent = entry.lastRating === 'again' ? 0.22 : (entry.lastRating === 'hard' ? 0.1 : 0);
+    return clamp(((1 - accuracy) * 0.45) + (Math.min(1, entry.lapses / 4) * 0.28)
+      + recent + (entry.leech ? 0.2 : 0), 0, 1);
+  }
+
+  function prerequisitesMet(card, progress, cardsById) {
+    return card.prerequisites.every((id) => {
+      if (!cardsById.has(id)) return false;
+      const entry = progress[`${scopeKey(card.scope)}::${id}`];
+      return !!entry && !entry.suspended && entry.correctCount > 0 && entry.lastRating !== 'again';
+    });
+  }
+
   function buildQueue(cards, stateValue, scope, nowValue = Date.now()) {
     const state = normalizeState(stateValue);
     const now = Number(nowValue);
@@ -178,6 +230,72 @@
     return [...due, ...fresh];
   }
 
+  function interleaveCategories(cards) {
+    const pool = [...cards];
+    const result = [];
+    let previous = '';
+    while (pool.length) {
+      let index = pool.findIndex((card) => card.category !== previous);
+      if (index < 0) index = 0;
+      const [card] = pool.splice(index, 1);
+      result.push(card);
+      previous = card.category;
+    }
+    return result;
+  }
+
+  function buildAdaptivePlan(cards, stateValue, scope, nowValue = Date.now()) {
+    const state = normalizeState(stateValue);
+    const now = Number(nowValue);
+    const all = scopedCards(cards, scope);
+    const wanted = scopeKey(scope);
+    if (!wanted) return [];
+    const prefix = `${wanted}::`;
+    const scopedEntries = Object.entries(state.progress).filter(([key]) => key.startsWith(prefix));
+    const reviewedToday = scopedEntries.filter(([, entry]) => sameLocalDay(entry.lastReviewedAt, now)).length;
+    const introducedToday = scopedEntries.filter(([, entry]) => sameLocalDay(entry.introducedAt, now)).length;
+    const reviewSlots = Math.max(0, state.config.reviewsPerDay - reviewedToday);
+    const newSlots = Math.max(0, state.config.newPerDay - introducedToday);
+    const cardsById = new Map(all.map((card) => [card.id, card]));
+
+    const due = all.filter((card) => {
+      const entry = state.progress[card.key];
+      return entry && !entry.suspended && entry.dueAt <= now;
+    }).sort((left, right) => {
+      const a = state.progress[left.key], b = state.progress[right.key];
+      return Number(b.leech) - Number(a.leech)
+        || entryWeakness(b) - entryWeakness(a)
+        || a.dueAt - b.dueAt
+        || left.stage - right.stage
+        || left.id.localeCompare(right.id);
+    }).slice(0, reviewSlots).map((card) => {
+      const progress = state.progress[card.key];
+      const weakness = entryWeakness(progress);
+      return {
+        card,
+        kind: 'review',
+        reason: progress.leech || weakness >= WEAK_THRESHOLD ? 'weak-review' : 'due-review',
+        weakness,
+        progress,
+      };
+    });
+
+    const sortedFresh = all.filter((card) => !state.progress[card.key]
+      && prerequisitesMet(card, state.progress, cardsById))
+      .sort((left, right) => left.level - right.level
+        || left.stage - right.stage
+        || (Number(left.order) || 0) - (Number(right.order) || 0)
+        || left.id.localeCompare(right.id));
+    const fresh = interleaveCategories(sortedFresh).slice(0, newSlots).map((card) => ({
+      card,
+      kind: 'new',
+      reason: card.prerequisites.length ? 'new-unlocked' : 'new-foundation',
+      weakness: 0,
+      progress: null,
+    }));
+    return [...due, ...fresh];
+  }
+
   function statsForScope(stateValue, scope, nowValue = Date.now()) {
     const state = normalizeState(stateValue);
     const prefix = `${scopeKey(scope) || '!'}::`;
@@ -201,6 +319,100 @@
     };
   }
 
+  function pathStatsForScope(cards, stateValue, scope, nowValue = Date.now()) {
+    const state = normalizeState(stateValue);
+    const now = Number(nowValue);
+    const all = scopedCards(cards, scope);
+    const cardsById = new Map(all.map((card) => [card.id, card]));
+    const categories = new Map();
+    let introduced = 0, mastered = 0, weak = 0, due = 0, unlocked = 0, locked = 0;
+    let masterySum = 0;
+    all.forEach((card) => {
+      const entry = state.progress[card.key];
+      const mastery = entry ? entryMastery(entry) : 0;
+      const weakness = entry ? entryWeakness(entry) : 0;
+      if (entry) introduced += 1;
+      if (entry && mastery >= MASTERY_THRESHOLD) mastered += 1;
+      if (entry && (entry.leech || weakness >= WEAK_THRESHOLD)) weak += 1;
+      if (entry && !entry.suspended && entry.dueAt <= now) due += 1;
+      if (!entry) {
+        if (prerequisitesMet(card, state.progress, cardsById)) unlocked += 1;
+        else locked += 1;
+      }
+      masterySum += mastery;
+      if (!categories.has(card.category)) categories.set(card.category, {
+        id: card.category,
+        total: 0,
+        introduced: 0,
+        mastered: 0,
+        weak: 0,
+        mastery: 0,
+        order: Number(card.order) || 0,
+      });
+      const category = categories.get(card.category);
+      category.total += 1;
+      category.introduced += entry ? 1 : 0;
+      category.mastered += entry && mastery >= MASTERY_THRESHOLD ? 1 : 0;
+      category.weak += entry && (entry.leech || weakness >= WEAK_THRESHOLD) ? 1 : 0;
+      category.mastery += mastery;
+      category.order = Math.min(category.order, Number(card.order) || category.order);
+    });
+    const categoryStats = [...categories.values()].map((category) => ({
+      ...category,
+      mastery: category.total ? category.mastery / category.total : 0,
+    })).sort((left, right) => left.order - right.order || left.id.localeCompare(right.id));
+    return {
+      total: all.length,
+      introduced,
+      mastered,
+      learning: introduced - mastered,
+      weak,
+      due,
+      unlocked,
+      locked,
+      mastery: all.length ? masterySum / all.length : 0,
+      categories: categoryStats,
+    };
+  }
+
+  function stableHash(value) {
+    let hash = 2166136261;
+    const text = String(value);
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return hash >>> 0;
+  }
+
+  function recognitionOptions(cardValue, cards, limit = 4) {
+    const target = normalizeCard(cardValue);
+    if (!target || target.activityType !== 'recognize') return [];
+    const optionLimit = Math.round(clamp(limit, 2, 6));
+    const roots = [];
+    const seen = new Set();
+    scopedCards(cards, target.scope).forEach((card) => {
+      if (card.activityType !== 'learn' || seen.has(card.baseId)
+          || typeof card.name !== 'string' || !card.name.trim()) return;
+      seen.add(card.baseId);
+      roots.push(card);
+    });
+    const answer = roots.find((card) => card.baseId === target.baseId);
+    if (!answer || roots.length < 2) return [];
+    const distractors = roots.filter((card) => card.baseId !== target.baseId)
+      .sort((left, right) => Number(right.category === target.category)
+        - Number(left.category === target.category)
+        || stableHash(`${target.key}/${left.baseId}`) - stableHash(`${target.key}/${right.baseId}`)
+        || left.baseId.localeCompare(right.baseId))
+      .slice(0, optionLimit - 1);
+    return [answer, ...distractors].map((card) => ({
+      id: card.baseId,
+      label: card.name.trim(),
+      correct: card.baseId === target.baseId,
+    })).sort((left, right) => stableHash(`option/${target.key}/${left.id}`)
+      - stableHash(`option/${target.key}/${right.id}`) || left.id.localeCompare(right.id));
+  }
+
   class TajweedLearningEngine {
     constructor(stateValue, options) {
       const state = normalizeState(stateValue);
@@ -216,6 +428,10 @@
 
     queue(cards, scope) {
       return buildQueue(cards, this.snapshot(), scope, this.clock());
+    }
+
+    plan(cards, scope) {
+      return buildAdaptivePlan(cards, this.snapshot(), scope, this.clock());
     }
 
     review(cardValue, rating) {
@@ -246,6 +462,10 @@
       return statsForScope(this.snapshot(), scope, this.clock());
     }
 
+    pathStats(cards, scope) {
+      return pathStatsForScope(cards, this.snapshot(), scope, this.clock());
+    }
+
     snapshot() {
       const progress = {};
       Object.keys(this.progress).forEach((key) => { progress[key] = { ...this.progress[key] }; });
@@ -256,15 +476,23 @@
   return Object.freeze({
     SCHEMA_VERSION,
     RATINGS,
+    ACTIVITY_TYPES,
     DEFAULT_CONFIG,
+    WEAK_THRESHOLD,
+    MASTERY_THRESHOLD,
     TajweedLearningEngine,
     normalizeScope,
     scopeKey,
     normalizeCard,
     normalizeState,
     reviewedEntry,
+    entryMastery,
+    entryWeakness,
     buildQueue,
+    buildAdaptivePlan,
     statsForScope,
+    pathStatsForScope,
+    recognitionOptions,
     localDateKey,
   });
 });

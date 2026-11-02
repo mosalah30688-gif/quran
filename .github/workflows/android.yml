@@ -261,7 +261,7 @@ jobs:
           assert 'group-menu-open' in html and 'reader-view-active' in html and 'body.group-menu-open .hdr' in html
           assert 'syncReaderDockHeight' in app and 'syncAudioTimeline' in app
           assert 'syncGroupMenuLayer' in app and 'focusFirst' in app and 'restoreFocus' in app
-          assert 'siraj-shell-v15' in service_worker
+          assert 'siraj-shell-v16' in service_worker
           assert "'./smart-context.js'" in service_worker and "'./smart-services.js'" in service_worker
           assert "'./tajweed-learning.js'" in service_worker and "'./tajweed-learning-catalog.json'" in service_worker
           assert "'./tajweed-curriculum-loader.js'" in service_worker and 'curriculumArtifacts' in service_worker

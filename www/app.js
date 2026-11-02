@@ -208,7 +208,12 @@
   let tajweedRuntimeCurricula = [];
   let tajweedCurriculumLoadErrors = [];
   let tajweedLearningCards = [];
-  let tajweedSession = { queue: [], index: 0, revealed: false, answered: 0 };
+  const emptyTajweedSession = () => ({
+    queue: [], index: 0, revealed: false, answered: 0,
+    ratings: { again: 0, hard: 0, good: 0, easy: 0 },
+    quizCorrect: null, quizTotal: 0, quizCorrectCount: 0,
+  });
+  let tajweedSession = emptyTajweedSession();
   const hafsPages = { uthmani: new Map(), simple: new Map() };
   const hafsByRef = { uthmani: new Map(), simple: new Map() };
   const tajweedByRef = new Map();
@@ -2404,18 +2409,59 @@
       if (!scope || !Array.isArray(curriculum.rules)) return;
       curriculum.rules.forEach((rule) => {
         const example = rule.example || (rule.tagCode ? firstTajweedExample(rule.tagCode) : null);
-        tajweedLearningCards.push({
-          id: rule.id,
+        const learning = rule.learning && typeof rule.learning === 'object' ? rule.learning : {};
+        const category = /^[a-z0-9][a-z0-9_.-]*$/.test(learning.categoryId || '')
+          ? learning.categoryId : 'general';
+        const categoryName = typeof learning.categoryNameAr === 'string'
+          && learning.categoryNameAr.trim() ? learning.categoryNameAr.trim() : 'أساسيات التجويد';
+        const level = Math.min(3, Math.max(1, Number(learning.level) || 1));
+        const baseOrder = (Number(rule.order) || 0) * 10;
+        const shared = {
+          baseId: rule.id,
           scope,
-          order: Number(rule.order) || 0,
           name: rule.name,
-          prompt: rule.prompt,
-          answer: rule.answer,
           tagCode: typeof rule.tagCode === 'string' ? rule.tagCode : '',
           color: /^#[0-9A-Fa-f]{6}$/.test(rule.color || '') ? rule.color : '',
           example,
+          category,
+          categoryName,
+          level,
           curriculumId: curriculum.id,
           reviewStatus: curriculum.status,
+        };
+        // نحافظ على معرّف البطاقة الأصلية كي لا يضيع تقدم المستخدمين الحاليين.
+        tajweedLearningCards.push({
+          ...shared,
+          id: rule.id,
+          order: baseOrder + 1,
+          stage: 1,
+          activityType: 'learn',
+          prerequisites: [],
+          prompt: rule.prompt,
+          answer: rule.answer,
+        });
+        if (!example) return;
+        tajweedLearningCards.push({
+          ...shared,
+          id: `${rule.id}.recognize`,
+          order: baseOrder + 2,
+          stage: 2,
+          activityType: 'recognize',
+          prerequisites: [rule.id],
+          name: 'تمييز الحكم من المثال',
+          prompt: 'ما الحكم التجويدي الملوّن في هذا المثال؟ اختر الإجابة ثم راجع الشرح.',
+          answer: `الحكم هو «${rule.name}». ${rule.answer}`,
+        });
+        tajweedLearningCards.push({
+          ...shared,
+          id: `${rule.id}.apply`,
+          order: baseOrder + 3,
+          stage: 3,
+          activityType: 'apply',
+          prerequisites: [`${rule.id}.recognize`],
+          name: `تطبيق «${rule.name}»`,
+          prompt: `اقرأ المثال وطبّق حكم «${rule.name}»، ثم اشرح طريقة الأداء بصوتك قبل كشف الجواب.`,
+          answer: rule.answer,
         });
       });
     });
@@ -2437,6 +2483,48 @@
 
   function persistTajweedLearning() {
     if (tajweedLearningEngine) store.set(TAJWEED_LEARNING_KEY, tajweedLearningEngine.snapshot());
+  }
+
+  const TAJWEED_INTENSITY = Object.freeze({
+    gentle: { newPerDay: 3, reviewsPerDay: 10 },
+    balanced: { newPerDay: 5, reviewsPerDay: 20 },
+    intensive: { newPerDay: 10, reviewsPerDay: 40 },
+  });
+  const TAJWEED_ACTIVITY_LABELS = Object.freeze({
+    learn: 'تعلّم الحكم', recognize: 'تمييز من المثال', apply: 'تطبيق عملي',
+  });
+
+  function tajweedIntensityName() {
+    if (!tajweedLearningEngine) return 'balanced';
+    const config = tajweedLearningEngine.config;
+    return Object.keys(TAJWEED_INTENSITY).find((name) => {
+      const profile = TAJWEED_INTENSITY[name];
+      return config.newPerDay === profile.newPerDay && config.reviewsPerDay === profile.reviewsPerDay;
+    }) || 'balanced';
+  }
+
+  function tajweedPlanText(plan) {
+    const counts = { weak: 0, due: 0, fresh: 0 };
+    plan.forEach((item) => {
+      if (item.reason === 'weak-review') counts.weak += 1;
+      else if (item.kind === 'review') counts.due += 1;
+      else counts.fresh += 1;
+    });
+    const parts = [];
+    if (counts.weak) parts.push(`${toArabicDigits(counts.weak)} موضع يحتاج تثبيتًا`);
+    if (counts.due) parts.push(`${toArabicDigits(counts.due)} مراجعة مستحقة`);
+    if (counts.fresh) parts.push(`${toArabicDigits(counts.fresh)} نشاط جديد`);
+    return parts.length
+      ? `الخطة التكيفية: ${parts.join('، ')}. يبدأ سراج بالأضعف ثم المستحق ثم الجديد.`
+      : 'لا توجد أنشطة مستحقة الآن؛ سيظهر النشاط التالي في موعده المحلي.';
+  }
+
+  function tajweedCategoryLabels(cards) {
+    const labels = new Map();
+    cards.forEach((card) => {
+      if (!labels.has(card.category)) labels.set(card.category, card.categoryName || 'أساسيات التجويد');
+    });
+    return labels;
   }
 
   function renderTajweedView() {
@@ -2474,8 +2562,17 @@
       $('#tjLearningCount').textContent = '٠';
       $('#tjMatureCount').textContent = '٠';
       $('#tjAccuracy').textContent = '٠٪';
+      $('#tjMastery').textContent = '٠٪';
+      $('#tjWeakCount').textContent = '٠';
+      $('#tjUnlockedCount').textContent = '٠';
+      $('#tjPathProgress').textContent = '٠ من ٠ نشاط';
+      $('#tjPathFill').style.width = '0%';
+      $('#tjPlanExplanation').textContent = blockedReason;
+      $('#tjWeakAreas').textContent = '';
+      $('#tjIntensity').disabled = true;
       $('#tjStartLearning').disabled = true;
       $('#tjResetLearning').disabled = true;
+      $('#tjSessionSummary').hidden = true;
       $('#tjLearningEmpty').textContent = 'يلزم مصدر مستقل يحدد الرواية والطريق والوجه والطبعة، ثم مراجعة بشرية مؤهلة واعتماد نشر ثانٍ.';
       $('#tjList').innerHTML = '<div class="muted">لا تُعرض أحكام حفص أو أي طبقة عامة بدلًا من نطاق هذا المصحف.</div>';
       return;
@@ -2483,7 +2580,12 @@
 
     const cards = cardsForCurriculum(curriculum);
     const stats = tajweedLearningEngine.stats(curriculum.scope);
-    const queue = tajweedLearningEngine.queue(cards, curriculum.scope);
+    const pathStats = tajweedLearningEngine.pathStats(cards, curriculum.scope);
+    const plan = tajweedLearningEngine.plan(cards, curriculum.scope);
+    const scopeId = TajweedLearningAPI.scopeKey(curriculum.scope);
+    if ($('#tjSessionSummary').dataset.scope && $('#tjSessionSummary').dataset.scope !== scopeId) {
+      $('#tjSessionSummary').hidden = true;
+    }
     $('#tjLearningScope').textContent = curriculum.display
       ? `${curriculum.display.riwayahAr} · ${curriculum.display.tariqAr} · ${curriculum.display.wajhAr} · ${curriculum.display.editionAr}`
       : `${curriculum.displayName} · الطريق: ${curriculum.scope.tariq} · الوجه: ${curriculum.scope.wajh}`;
@@ -2491,22 +2593,53 @@
       ? 'مراجع علميًا' : 'قيد المراجعة العلمية';
     $('#tjLearningWarning').textContent = curriculum.scopeWarning;
     $('#tjDueCount').textContent = toArabicDigits(stats.due);
-    $('#tjLearningCount').textContent = toArabicDigits(stats.learning);
-    $('#tjMatureCount').textContent = toArabicDigits(stats.mature);
+    $('#tjLearningCount').textContent = toArabicDigits(pathStats.learning);
+    $('#tjMatureCount').textContent = toArabicDigits(pathStats.mastered);
     $('#tjAccuracy').textContent = toArabicDigits(Math.round(stats.accuracy * 100)) + '٪';
-    $('#tjStartLearning').disabled = !queue.length;
+    $('#tjMastery').textContent = toArabicDigits(Math.round(pathStats.mastery * 100)) + '٪';
+    $('#tjWeakCount').textContent = toArabicDigits(pathStats.weak);
+    $('#tjUnlockedCount').textContent = toArabicDigits(pathStats.unlocked);
+    $('#tjPathProgress').textContent = `${toArabicDigits(pathStats.introduced)} من ${toArabicDigits(pathStats.total)} نشاط`;
+    $('#tjPathFill').style.width = `${Math.round(pathStats.mastery * 100)}%`;
+    $('#tjIntensity').disabled = false;
+    $('#tjIntensity').value = tajweedIntensityName();
+    $('#tjPlanExplanation').textContent = tajweedPlanText(plan);
+    const categoryLabels = tajweedCategoryLabels(cards);
+    const weakCategories = pathStats.categories.filter((category) => category.weak > 0);
+    $('#tjWeakAreas').textContent = weakCategories.length
+      ? `يحتاج تثبيتًا: ${weakCategories.map((category) => `${categoryLabels.get(category.id)} (${toArabicDigits(category.weak)})`).join('، ')}`
+      : (pathStats.introduced ? 'لا توجد مجموعة ضعيفة الآن؛ تستمر المراجعة حسب المواعيد.' : 'ابدأ بالمفاهيم الأساسية، ثم يفتح التمييز والتطبيق تدريجيًا.');
+    $('#tjStartLearning').disabled = !plan.length;
     $('#tjResetLearning').disabled = !stats.total;
-    $('#tjLearningEmpty').textContent = queue.length
-      ? `جلسة اليوم: ${toArabicDigits(queue.length)} بطاقة؛ المراجعات المستحقة تسبق الأحكام الجديدة.`
+    $('#tjLearningEmpty').textContent = plan.length
+      ? `جلسة اليوم: ${toArabicDigits(plan.length)} نشاط موزع بين الفهم والتمييز والتطبيق.`
       : (stats.nextDueAt > Date.now()
         ? `لا توجد مراجعة الآن. الموعد التالي: ${new Date(stats.nextDueAt).toLocaleString('ar-EG')}.`
-        : 'اكتملت بطاقات اليوم وفق الحد المحلي.');
-    $('#tjList').innerHTML = cards.map((card) => {
-      const example = card.example
-        ? `<div class="muted" style="margin-top:4px">مثال: ${coloredTajweedExample(card)} — ${esc(surahName(card.example.surah))} ${toArabicDigits(card.example.ayah)}</div>`
-        : '';
-      return `<div class="wird-line"><span><strong>${esc(card.name)}</strong><div class="muted">${esc(card.answer)}</div>${example}</span></div>`;
-    }).join('');
+        : 'اكتملت أنشطة اليوم وفق مستوى الكثافة المختار.');
+
+    const referenceCards = cards.filter((card) => card.activityType === 'learn');
+    const learningProgress = tajweedLearningEngine.snapshot().progress;
+    const groups = new Map();
+    referenceCards.forEach((card) => {
+      if (!groups.has(card.category)) groups.set(card.category, []);
+      groups.get(card.category).push(card);
+    });
+    $('#tjList').innerHTML = [...groups.entries()].map(([category, items]) => `
+      <section class="tj-rule-group">
+        <h4>${esc(categoryLabels.get(category))}</h4>
+        ${items.map((card) => {
+          const example = card.example
+            ? `<div class="muted" style="margin-top:4px">مثال: ${coloredTajweedExample(card)} — ${esc(surahName(card.example.surah))} ${toArabicDigits(card.example.ayah)}</div>`
+            : '';
+          const introduced = cards.filter((activity) => activity.baseId === card.baseId)
+            .filter((activity) => {
+              const normalized = TajweedLearningAPI.normalizeCard(activity);
+              return normalized && learningProgress[normalized.key];
+            }).length;
+          const total = cards.filter((activity) => activity.baseId === card.baseId).length;
+          return `<div class="wird-line"><span><strong>${esc(card.name)}</strong><div class="muted">${esc(card.answer)}</div>${example}</span><small class="smart-badge">${toArabicDigits(introduced)}/${toArabicDigits(total)} مراحل</small></div>`;
+        }).join('')}
+      </section>`).join('');
   }
 
   function renderTajweedLearningCard() {
@@ -2517,8 +2650,10 @@
     }
     const card = item.card;
     tajweedSession.revealed = false;
+    tajweedSession.quizCorrect = null;
     $('#tjLearningCard').hidden = false;
-    $('#tjCardProgress').textContent = `البطاقة ${toArabicDigits(tajweedSession.index + 1)} من ${toArabicDigits(tajweedSession.queue.length)} · ${item.kind === 'review' ? 'مراجعة' : 'جديدة'}`;
+    $('#tjCardProgress').textContent = `النشاط ${toArabicDigits(tajweedSession.index + 1)} من ${toArabicDigits(tajweedSession.queue.length)} · ${item.kind === 'review' ? 'مراجعة' : 'جديد'}`;
+    $('#tjCardStage').textContent = TAJWEED_ACTIVITY_LABELS[card.activityType] || 'تعلّم';
     $('#tjCardTitle').textContent = card.name;
     $('#tjCardPrompt').textContent = card.prompt;
     $('#tjCardExample').innerHTML = card.example
@@ -2526,46 +2661,113 @@
       : '<span class="muted">لا يوجد مثال موسوم في المصدر الحالي.</span>';
     $('#tjCardAnswerText').textContent = card.answer;
     $('#tjCardAnswer').hidden = true;
+    $('#tjQuizFeedback').textContent = '';
+    const curriculum = currentTajweedCurriculum();
+    const options = card.activityType === 'recognize' && curriculum
+      ? TajweedLearningAPI.recognitionOptions(card, cardsForCurriculum(curriculum)) : [];
+    $('#tjQuizChoices').hidden = !options.length;
+    $('#tjQuizChoices').innerHTML = options.map((option) => `
+      <button class="tj-choice" data-tj-option="${esc(option.id)}">${esc(option.label)}</button>`).join('');
+    $('#tjRevealAnswer').textContent = options.length ? 'لا أعرف — إظهار الإجابة' : 'إظهار الشرح';
     $('#tjRevealAnswer').hidden = false;
+    $('#tjLearningCard').querySelectorAll('[data-tj-rating]').forEach((button) => {
+      button.disabled = false;
+    });
+  }
+
+  function revealTajweedAnswer(fromQuiz = false) {
+    const item = tajweedSession.queue[tajweedSession.index];
+    if (!item || tajweedSession.revealed) return;
+    const isRecognition = item.card.activityType === 'recognize' && !$('#tjQuizChoices').hidden;
+    if (isRecognition && !fromQuiz) {
+      tajweedSession.quizCorrect = false;
+      tajweedSession.quizTotal += 1;
+      $('#tjQuizFeedback').textContent = 'سُجلت «لا أعرف». راجع الإجابة وستعود قريبًا للتثبيت.';
+      $('#tjQuizChoices').querySelectorAll('[data-tj-option]').forEach((button) => {
+        button.disabled = true;
+        if (button.dataset.tjOption === item.card.baseId) button.classList.add('correct');
+      });
+    }
+    tajweedSession.revealed = true;
+    $('#tjCardAnswer').hidden = false;
+    $('#tjRevealAnswer').hidden = true;
+    if (isRecognition && tajweedSession.quizCorrect === false) {
+      $('#tjLearningCard').querySelectorAll('[data-tj-rating]').forEach((button) => {
+        button.disabled = button.dataset.tjRating !== 'again';
+      });
+    }
   }
 
   function startTajweedSession() {
     const curriculum = currentTajweedCurriculum();
     if (!curriculum || !tajweedLearningEngine) return;
-    const queue = tajweedLearningEngine.queue(cardsForCurriculum(curriculum), curriculum.scope);
-    if (!queue.length) { toast('لا توجد مراجعات أو بطاقات جديدة الآن'); return; }
-    tajweedSession = { queue, index: 0, revealed: false, answered: 0 };
+    const queue = tajweedLearningEngine.plan(cardsForCurriculum(curriculum), curriculum.scope);
+    if (!queue.length) { toast('لا توجد مراجعات أو أنشطة جديدة الآن'); return; }
+    tajweedSession = { ...emptyTajweedSession(), queue };
+    $('#tjSessionSummary').hidden = true;
     renderTajweedLearningCard();
     $('#tjLearningCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function finishTajweedSession(completed) {
-    const answered = tajweedSession.answered;
+    const session = tajweedSession;
+    const answered = session.answered;
+    const curriculum = currentTajweedCurriculum();
     $('#tjLearningCard').hidden = true;
-    tajweedSession = { queue: [], index: 0, revealed: false, answered: 0 };
+    tajweedSession = emptyTajweedSession();
+    if (answered) {
+      const successful = session.ratings.good + session.ratings.easy;
+      const quizText = session.quizTotal
+        ? ` · تمييز صحيح ${toArabicDigits(session.quizCorrectCount)} من ${toArabicDigits(session.quizTotal)}` : '';
+      $('#tjSessionSummaryTitle').textContent = completed ? 'اكتملت جلسة التجويد' : 'ملخص الجلسة حتى الآن';
+      $('#tjSessionSummaryText').textContent = `${toArabicDigits(answered)} نشاط · متقن ${toArabicDigits(successful)} · يحتاج إعادة ${toArabicDigits(session.ratings.again)}${quizText}`;
+      $('#tjSessionSummary').dataset.scope = curriculum && TajweedLearningAPI
+        ? TajweedLearningAPI.scopeKey(curriculum.scope) : '';
+      $('#tjSessionSummary').hidden = false;
+    }
     if (completed && answered) {
       smartRecord({
         type: 'COMPLETE_TAJWEED_LESSON', service: 'tajweed',
-        context: { count: answered, source: 'spaced_review' },
+        context: { count: answered, source: 'adaptive_spaced_review' },
       });
-      toast(`اكتملت جلسة من ${toArabicDigits(answered)} بطاقات`);
+      toast(`اكتملت جلسة من ${toArabicDigits(answered)} أنشطة`);
     }
     renderTajweedView();
   }
 
   $('#tjStartLearning').addEventListener('click', startTajweedSession);
   $('#tjEndLearning').addEventListener('click', () => finishTajweedSession(false));
-  $('#tjRevealAnswer').addEventListener('click', () => {
-    tajweedSession.revealed = true;
-    $('#tjCardAnswer').hidden = false;
-    $('#tjRevealAnswer').hidden = true;
+  $('#tjRevealAnswer').addEventListener('click', () => revealTajweedAnswer(false));
+  $('#tjSessionSummaryClose').addEventListener('click', () => { $('#tjSessionSummary').hidden = true; });
+  $('#tjIntensity').addEventListener('change', (event) => {
+    if (!tajweedLearningEngine || !TAJWEED_INTENSITY[event.target.value]) return;
+    tajweedLearningEngine.configure(TAJWEED_INTENSITY[event.target.value]);
+    persistTajweedLearning();
+    renderTajweedView();
   });
   $('#tjLearningCard').addEventListener('click', (event) => {
-    const button = event.target.closest('[data-tj-rating]');
-    if (!button || !tajweedSession.revealed || !tajweedLearningEngine) return;
+    const option = event.target.closest('[data-tj-option]');
     const item = tajweedSession.queue[tajweedSession.index];
-    if (!item) return;
-    const rating = button.dataset.tjRating;
+    if (option && item && !tajweedSession.revealed) {
+      const correct = option.dataset.tjOption === item.card.baseId;
+      tajweedSession.quizCorrect = correct;
+      tajweedSession.quizTotal += 1;
+      if (correct) tajweedSession.quizCorrectCount += 1;
+      $('#tjQuizChoices').querySelectorAll('[data-tj-option]').forEach((button) => {
+        button.disabled = true;
+        if (button.dataset.tjOption === item.card.baseId) button.classList.add('correct');
+        else if (button === option) button.classList.add('wrong');
+      });
+      $('#tjQuizFeedback').textContent = correct
+        ? 'إجابة صحيحة. راجع طريقة الأداء ثم قيّم ثباتك.'
+        : 'ليست هذه الإجابة. ظهر الحكم الصحيح وستعود البطاقة قريبًا.';
+      revealTajweedAnswer(true);
+      return;
+    }
+    const button = event.target.closest('[data-tj-rating]');
+    if (!button || button.disabled || !tajweedSession.revealed || !tajweedLearningEngine || !item) return;
+    let rating = button.dataset.tjRating;
+    if (item.card.activityType === 'recognize' && tajweedSession.quizCorrect === false) rating = 'again';
     const reviewed = tajweedLearningEngine.review(item.card, rating);
     if (!reviewed) return;
     persistTajweedLearning();
@@ -2573,6 +2775,7 @@
       type: 'TAJWEED_ANSWER', service: 'tajweed',
       context: { rule: item.card.id, correct: rating !== 'again', source: rating },
     });
+    tajweedSession.ratings[rating] += 1;
     tajweedSession.answered += 1;
     tajweedSession.index += 1;
     if (tajweedSession.index >= tajweedSession.queue.length) finishTajweedSession(true);
@@ -2584,6 +2787,7 @@
     if (!confirm('مسح تقدم تعلم التجويد لهذه الطبعة فقط؟')) return;
     tajweedLearningEngine.resetScope(curriculum.scope);
     persistTajweedLearning();
+    $('#tjSessionSummary').hidden = true;
     renderTajweedView();
     toast('مُسح تقدم هذه الطبعة');
   });

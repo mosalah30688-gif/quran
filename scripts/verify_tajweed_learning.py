@@ -34,9 +34,24 @@ def main() -> None:
         if curriculum["status"] != "APPROVED":
             assert curriculum["publishableAsApproved"] is False
             assert "لا يُعد اعتمادًا علميًا" in curriculum["scopeWarning"]
+        pedagogy = curriculum["pedagogy"]
+        assert pedagogy == {
+            "version": 2,
+            "activityStages": ["learn", "recognize", "apply"],
+            "prerequisitePolicy": "SEQUENTIAL_WITHIN_RULE",
+            "planningPolicy": "WEAK_FIRST_THEN_DUE_THEN_NEW",
+            "assessmentPolicy": "OBJECTIVE_RECOGNITION_AND_SELF_RATED_APPLICATION",
+            "privacy": "LOCAL_ONLY",
+        }
         rule_ids = [rule["id"] for rule in curriculum["rules"]]
         assert len(rule_ids) == len(set(rule_ids))
         assert all(TOKEN.fullmatch(rule_id) for rule_id in rule_ids)
+        for rule in curriculum["rules"]:
+            learning = rule["learning"]
+            assert TOKEN.fullmatch(learning["categoryId"])
+            assert re.search(r"[\u0600-\u06ff]", learning["categoryNameAr"])
+            assert learning["level"] in {1, 2, 3}
+            assert learning["activities"] == ["learn", "recognize", "apply"]
 
     hafs = next(item for item in curricula if item["scope"]["riwayah"] == "hafs-an-asim")
     assert hafs["scope"]["tariq"] == "source-unspecified"

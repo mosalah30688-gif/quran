@@ -284,9 +284,22 @@
     .tj-learning-card h3 { color: var(--brand); margin-bottom: 8px; }
     .tj-example { font-family: var(--quran-font), "Amiri Quran", Amiri, serif; font-size: 24px; line-height: 2; background: var(--bg); border-radius: 10px; padding: 10px; margin: 10px 0; }
     .tj-rating { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+    .tj-path-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+    .tj-path-head b { color: var(--brand); }
+    .tj-plan { margin-top: 10px; padding: 9px 10px; border-radius: 10px; background: var(--bg); line-height: 1.7; }
+    .tj-quiz { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 10px 0; }
+    .tj-quiz[hidden] { display: none; }
+    .tj-choice { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 10px; padding: 9px; cursor: pointer; font: inherit; }
+    .tj-choice:hover:not(:disabled) { border-color: var(--brand); }
+    .tj-choice.correct { border-color: #23844e; background: color-mix(in srgb, #39a968 18%, var(--card)); }
+    .tj-choice.wrong { border-color: #b52b32; background: color-mix(in srgb, #d94a52 16%, var(--card)); }
+    .tj-choice:disabled { color: var(--ink); opacity: .85; cursor: default; }
+    .tj-rule-group { border: 1px solid var(--line); border-radius: 12px; padding: 0 10px; margin: 10px 0; }
+    .tj-rule-group h4 { color: var(--brand); margin: 10px 0 4px; }
+    #tjSessionSummary { border-color: color-mix(in srgb, var(--brand) 55%, var(--line)); }
     @media (max-width: 560px) {
       .smart-settings-grid { grid-template-columns: 1fr; }
-      .tj-rating { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .tj-rating, .tj-quiz { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
     /* أيقونات Fluent 3D متجهية: واضحة على الشاشات الصغيرة ولا تعتمد على رموز emoji. */
@@ -981,7 +994,7 @@
           <div class="card" id="tjLearningHome">
             <div class="row" style="justify-content:space-between;align-items:flex-start">
               <div>
-                <h3 style="margin:0">تعلم التجويد بالمراجعة المتباعدة</h3>
+                <h3 style="margin:0">مسار تعلم التجويد المكثف</h3>
                 <div class="muted" id="tjLearningScope" style="margin-top:4px"></div>
               </div>
               <span class="smart-badge" id="tjReviewBadge">قيد المراجعة العلمية</span>
@@ -992,12 +1005,36 @@
               <div class="stat-box">قيد التعلم<b id="tjLearningCount">0</b></div>
               <div class="stat-box">راسخة<b id="tjMatureCount">0</b></div>
               <div class="stat-box">الدقة<b id="tjAccuracy">0%</b></div>
+              <div class="stat-box">إتقان المسار<b id="tjMastery">0%</b></div>
+              <div class="stat-box">تحتاج تثبيتًا<b id="tjWeakCount">0</b></div>
+              <div class="stat-box">مفتوحة للتعلم<b id="tjUnlockedCount">0</b></div>
+            </div>
+            <div style="margin-top:12px">
+              <div class="tj-path-head"><span>تقدم المسار</span><b id="tjPathProgress">0 من 0 نشاط</b></div>
+              <div class="wbar"><div class="wfill" id="tjPathFill"></div></div>
+            </div>
+            <div class="tj-plan" id="tjPlanExplanation"></div>
+            <div class="muted" id="tjWeakAreas" style="margin-top:7px"></div>
+            <div class="row" style="margin-top:12px">
+              <label class="lbl" for="tjIntensity" style="margin:0">كثافة المسار</label>
+              <select id="tjIntensity" style="width:auto;min-width:170px">
+                <option value="gentle">هادئ — ٣ جديدة / ١٠ مراجعات</option>
+                <option value="balanced">متوازن — ٥ جديدة / ٢٠ مراجعة</option>
+                <option value="intensive">مكثف — ١٠ جديدة / ٤٠ مراجعة</option>
+              </select>
             </div>
             <div class="row" style="margin-top:12px">
-              <button class="btn" id="tjStartLearning">بدء جلسة قصيرة</button>
+              <button class="btn" id="tjStartLearning">بدء جلسة تكيفية</button>
               <button class="btn small ghost" id="tjResetLearning">مسح تقدم هذه الطبعة</button>
             </div>
             <div class="muted" id="tjLearningEmpty" style="margin-top:8px"></div>
+          </div>
+
+          <div class="card" id="tjSessionSummary" hidden>
+            <div class="row" style="justify-content:space-between">
+              <div><strong id="tjSessionSummaryTitle">ملخص الجلسة</strong><div class="muted" id="tjSessionSummaryText"></div></div>
+              <button class="btn small ghost" id="tjSessionSummaryClose">إغلاق</button>
+            </div>
           </div>
 
           <div class="card tj-learning-card" id="tjLearningCard" hidden>
@@ -1005,13 +1042,16 @@
               <strong id="tjCardProgress"></strong>
               <button class="btn small ghost" id="tjEndLearning">إنهاء الجلسة</button>
             </div>
+            <span class="smart-badge" id="tjCardStage">تعلّم الحكم</span>
             <h3 id="tjCardTitle"></h3>
             <p id="tjCardPrompt"></p>
             <div class="tj-example" id="tjCardExample"></div>
+            <div class="tj-quiz" id="tjQuizChoices" aria-label="اختيارات تمييز الحكم" hidden></div>
+            <div class="muted" id="tjQuizFeedback" aria-live="polite"></div>
             <button class="btn" id="tjRevealAnswer">إظهار الشرح</button>
             <div id="tjCardAnswer" hidden>
               <div class="tf" id="tjCardAnswerText"></div>
-              <p class="muted">قيّم استدعاءك بصدق ليحدد سراج موعد المراجعة التالية.</p>
+              <p class="muted">قيّم استدعاءك أو تطبيقك بصدق ليحدد سراج موعد المراجعة التالية.</p>
               <div class="tj-rating" aria-label="تقييم المراجعة">
                 <button class="btn small ghost" data-tj-rating="again">أعدها</button>
                 <button class="btn small ghost" data-tj-rating="hard">صعب</button>
@@ -1022,7 +1062,8 @@
           </div>
 
           <div class="card">
-            <h3 style="margin-top:0">مرجع الأحكام في الطبعة الحالية</h3>
+            <h3 style="margin-top:0">مرجع الأحكام ومساراتها التعليمية</h3>
+            <p class="muted">لكل حكم ثلاث مراحل: فهم القاعدة، تمييزها من المثال، ثم تطبيقها. هذا القسم لا يغيّر خيارات المصحف أو ألوانه الحالية.</p>
             <div id="tjList"></div>
           </div>
         </section>
