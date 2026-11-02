@@ -110,6 +110,7 @@ def main() -> None:
     assert "buildCandidates" in smart_services and "open_adhkar:morning" in smart_services
     assert "TajweedLearningEngine" in tajweed_learning and "reviewedEntry" in tajweed_learning
     assert "loadRegistryCurricula" in tajweed_loader and "PACKAGE_HASH_MISMATCH" in tajweed_loader
+    assert "annotatedSegments" in tajweed_loader and "annotationIndex" in tajweed_loader
     assert "PENDING_SCHOLARLY_REVIEW" in tajweed_catalog and "source-unspecified" in tajweed_catalog
     assert tajweed_registry["scopeKey"] == "riwayah/tariq/wajh/edition"
     assert tajweed_registry["fallbackPolicy"] == "FORBIDDEN_BETWEEN_SCOPES"
@@ -124,6 +125,7 @@ def main() -> None:
     assert "new SmartContextAPI.SmartContextEngine" in app
     assert "new TajweedLearningAPI.TajweedLearningEngine" in app
     assert "TajweedCurriculumLoaderAPI.loadRegistryCurricula" in app
+    assert "currentApprovedTajweedCurriculum" in app and "renderIndependentTajweed" in app
     assert "replaceUpdateDataAssets" in app and "SIRAJ_UPDATE_DATA_FILES" in app
     assert "FORBIDDEN_BETWEEN_SCOPES" in app
     assert "لا تُعرض أحكام حفص أو أي طبقة عامة" in app

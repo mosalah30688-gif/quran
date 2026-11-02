@@ -12,6 +12,7 @@ import hashlib
 import json
 import re
 import sys
+import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -120,7 +121,7 @@ def record_count(asset: Path, dataset: str) -> int:
     fail(f"unsupported registry text asset: {asset.name}")
 
 
-def verse_index(asset: Path, dataset: str) -> dict[tuple[int, int], str]:
+def verse_index(asset: Path, dataset: str, normalization: str = "NONE") -> dict[tuple[int, int], str]:
     data = load_json(asset)
     if asset.name == "quran-tajweed.json" and dataset == "quran-tajweed":
         rows = data
@@ -137,7 +138,8 @@ def verse_index(asset: Path, dataset: str) -> dict[tuple[int, int], str]:
                 f"invalid text row {position} in {asset.name}/{dataset}")
         key = (int(row[0]), int(row[1]))
         require(key not in index, f"duplicate verse {key} in {asset.name}/{dataset}")
-        index[key] = str(row[3])
+        text = str(row[3])
+        index[key] = unicodedata.normalize("NFC", text) if normalization == "NFC" else text
     return index
 
 
@@ -324,7 +326,7 @@ def validate_package(path: Path, package: Any, registry_by_setting: dict[str, di
     require(digest(asset) == require_sha(binding.get("sha256"), f"{label}.textBinding.sha256"),
             f"{label} bound text hash drift")
     dataset = require_token(binding.get("dataset"), f"{label}.textBinding.dataset")
-    verses = verse_index(asset, dataset)
+    verses = verse_index(asset, dataset, binding["normalization"])
 
     sources = package.get("sources")
     require(isinstance(sources, list) and sources, f"{label} must cite at least one source")

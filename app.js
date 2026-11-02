@@ -428,6 +428,31 @@
     return s.replace(/\[|\]/g, '');
   }
 
+  function renderIndependentTajweed(curriculum, surah, ayah, text) {
+    if (!TajweedCurriculumLoaderAPI || !curriculum) return esc(text);
+    const segments = TajweedCurriculumLoaderAPI.annotatedSegments(
+      curriculum, surah, ayah, clean(text)
+    );
+    return segments.map((segment) => {
+      if (!segment.rules.length) return esc(segment.text);
+      const ids = segment.rules.map((rule) => rule.id).join(',');
+      const names = segment.rules.map((rule) => rule.name).join('، ');
+      const colors = [...new Set(segment.rules.map((rule) => rule.color)
+        .filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color)))];
+      if (!colors.length) return esc(segment.text);
+      let style = `color:${colors[0]};text-decoration:underline dotted ${colors[0]};text-underline-offset:.16em`;
+      if (colors.length > 1) {
+        const step = 100 / colors.length;
+        const stops = colors.flatMap((color, index) => [
+          `${color} ${(index * step).toFixed(2)}%`,
+          `${color} ${((index + 1) * step).toFixed(2)}%`,
+        ]).join(',');
+        style += `;background-image:linear-gradient(90deg,${stops});background-repeat:no-repeat;background-size:100% 2px;background-position:0 100%`;
+      }
+      return `<span class="tj-independent-mark" data-tj-rules="${esc(ids)}" title="${esc(names)}" style="${style}">${esc(segment.text)}</span>`;
+    }).join('');
+  }
+
   const HAFS_BASMALAS = [
     'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ',
     'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
@@ -624,7 +649,17 @@
         if (re[2].type === 'surah') return re[2].base + String(x.s).padStart(3, '0') + '.mp3';
         return re[2].base + String(x.s).padStart(3, '0') + String(x.n).padStart(3, '0') + '.mp3';
       };
-      const obj = { p, ayahs: (byPage[p] || []).map((x) => ({ ...x, juz: juzOf(x.s, x.n), html: esc(x.text), audio: urlOf(x), tafsir: '', tr: '' })) };
+      const approvedCurriculum = settings.tajweed ? currentApprovedTajweedCurriculum() : null;
+      const obj = { p, ayahs: (byPage[p] || []).map((x) => ({
+        ...x,
+        juz: juzOf(x.s, x.n),
+        html: approvedCurriculum
+          ? renderIndependentTajweed(approvedCurriculum, x.s, x.n, x.text)
+          : esc(x.text),
+        audio: urlOf(x),
+        tafsir: '',
+        tr: '',
+      })) };
       pageCache.set(key, obj);
       return obj;
     }
@@ -902,6 +937,11 @@
     if (!a) return;
     selectAyah(a);
     // التفسير والترجمة يظهران من زر "التفسير" فقط. الكلمة الملونة تعرض قاعدة التجويد
+    const independent = !end && e.target.closest('[data-tj-rules]');
+    if (independent) {
+      showIndependentTajweedPanel(independent.dataset.tjRules.split(',').filter(Boolean));
+      return;
+    }
     const tj = !end && e.target.closest('[class^="tj-"]');
     if (tj) showTajweedPanel((tj.className.match(/tj-([a-z])/) || [])[1]);
   });
@@ -993,6 +1033,19 @@
     if (!rule) return;
     $('#tjTitle').textContent = rule[0];
     $('#tjBody').textContent = rule[1];
+    $('#tafsirPanel').classList.remove('show');
+    $('#tjPanel').classList.add('show');
+    $('#meanPanel').classList.remove('show');
+  }
+
+  function showIndependentTajweedPanel(ruleIds) {
+    const curriculum = currentApprovedTajweedCurriculum();
+    if (!curriculum || !Array.isArray(ruleIds)) return;
+    const wanted = new Set(ruleIds);
+    const rules = curriculum.rules.filter((rule) => wanted.has(rule.id));
+    if (!rules.length) return;
+    $('#tjTitle').textContent = rules.map((rule) => rule.name).join('، ');
+    $('#tjBody').textContent = rules.map((rule) => `${rule.name}: ${rule.answer}`).join('\n\n');
     $('#tafsirPanel').classList.remove('show');
     $('#tjPanel').classList.add('show');
     $('#meanPanel').classList.remove('show');
@@ -1574,6 +1627,9 @@
     if (key === 'tafsir') { $('#setTafsir').value = value; $('#tfBook').value = value; }
     if (key === 'translation') { $('#setTranslation').value = value; $('#tfTrans').value = value; }
     if (key === 'riwaya' && curView === 'tajweed') renderTajweedView();
+    if (key === 'tajweed' && value && isRiw() && !currentApprovedTajweedCurriculum()) {
+      toast('لا توجد طبقة ألوان معتمدة لهذا النطاق؛ سيبقى نص المصحف بلا تلوين.');
+    }
     pageCache.clear();
     if (state.sel) {
       showPage(state.page, { selG: state.sel.g, save: false }).then(() => {
@@ -2212,6 +2268,14 @@
       && item.publishableAsApproved === candidate.publishableAsApproved
       && sameTajweedScope(item.scope, candidate.scope));
     return pointer ? candidate : null;
+  }
+
+  function currentApprovedTajweedCurriculum() {
+    const curriculum = currentTajweedCurriculum();
+    return curriculum?.status === 'APPROVED'
+      && curriculum.publishableAsApproved === true
+      && curriculum.annotationIndex instanceof Map
+      ? curriculum : null;
   }
 
   function firstTajweedExample(code) {

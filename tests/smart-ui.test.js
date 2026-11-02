@@ -104,6 +104,17 @@ test('JSON update overlay is hashed, stored outside localStorage, and fail-close
   assert.match(publish, /tajweed-curricula/);
 });
 
+test('independent reader colors require an approved exact-scope curriculum', () => {
+  assert.match(app, /function currentApprovedTajweedCurriculum\(\)/);
+  assert.match(app, /curriculum\?\.status === 'APPROVED'/);
+  assert.match(app, /curriculum\.publishableAsApproved === true/);
+  assert.match(app, /renderIndependentTajweed\(approvedCurriculum, x\.s, x\.n, x\.text\)/);
+  assert.match(app, /showIndependentTajweedPanel/);
+  assert.match(app, /data-tj-rules/);
+  assert.match(app, /لا توجد طبقة ألوان معتمدة لهذا النطاق/);
+  assert.match(html, /\.tj-independent-mark/);
+});
+
 test('tajweed spaced review is local, scoped, and wired to feedback events', () => {
   for (const id of [
     'tjStartLearning', 'tjLearningCard', 'tjRevealAnswer', 'tjCardAnswer',

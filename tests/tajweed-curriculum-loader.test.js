@@ -140,7 +140,40 @@ test('independent package loads only after artifact, scope, text, and span check
   assert.equal(curriculum.rules[0].name, 'النقل');
   assert.equal(curriculum.rules[0].color, '#123ABC');
   assert.equal(curriculum.rules[0].example.text, 'ءَ');
+  assert.equal(curriculum.annotationCount, 1);
+  assert.equal(curriculum.annotationIndex.get('1:1').length, 1);
   assert.equal(curriculum.publishableAsApproved, false);
+});
+
+test('annotation segmenter preserves Unicode text and overlapping rule identities', async () => {
+  const data = await fixture();
+  data.packageData.rules.push({
+    id: 'taqlil',
+    nameAr: 'التقليل',
+    summaryAr: 'ملخص ثان.',
+    detailAr: 'تفصيل ثان.',
+    color: '#AA5500',
+    sourceRefs: ['licensed-source-v1'],
+  });
+  data.packageData.annotations = [
+    { surah: 1, ayah: 1, start: 0, end: 3, ruleId: 'naql', sourceRefs: ['licensed-source-v1'] },
+    { surah: 1, ayah: 1, start: 1, end: 4, ruleId: 'taqlil', sourceRefs: ['licensed-source-v1'] },
+  ];
+  const raw = JSON.stringify(data.packageData);
+  data.files.set(data.artifact, raw);
+  data.registry.settings[0].curricula[0].sha256 = await digest(raw);
+  const result = await Loader.loadRegistryCurricula({
+    registry: data.registry,
+    getText: data.getText,
+    digestText: digest,
+  });
+  assert.deepEqual(result.errors, []);
+  const segments = Loader.annotatedSegments(result.curricula[0], 1, 1, 'ءَاب');
+  assert.equal(segments.map((segment) => segment.text).join(''), 'ءَاب');
+  assert.deepEqual(segments.map((segment) => segment.rules.map((rule) => rule.id)), [
+    ['naql'], ['naql', 'taqlil'], ['taqlil'],
+  ]);
+  assert.deepEqual(segments.map((segment) => segment.text), ['ء', 'َا', 'ب']);
 });
 
 test('approved package requires a canonical reviewed hash and a second approver', async () => {

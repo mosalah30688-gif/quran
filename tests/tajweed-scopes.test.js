@@ -108,6 +108,24 @@ raise SystemExit('weakened fallback policy was accepted')
   assert.equal(bad.status, 0, bad.stderr || bad.stdout);
 });
 
+test('Python scope verifier measures offsets after the declared NFC normalization', () => {
+  const program = String.raw`
+import importlib.util, json, tempfile
+from pathlib import Path
+root = Path.cwd()
+spec = importlib.util.spec_from_file_location('gate', root / 'scripts/verify_tajweed_scopes.py')
+gate = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(gate)
+with tempfile.TemporaryDirectory() as directory:
+    asset = Path(directory) / 'quran-riwayat.json'
+    asset.write_text(json.dumps({'riwayat': {'warsh': [[1, 1, 1, 'e' + chr(0x301)]]}}), encoding='utf-8')
+    assert len(gate.verse_index(asset, 'warsh', 'NONE')[(1, 1)]) == 2
+    assert len(gate.verse_index(asset, 'warsh', 'NFC')[(1, 1)]) == 1
+`;
+  const checked = spawnSync('python3', ['-c', program], { cwd: ROOT, encoding: 'utf8' });
+  assert.equal(checked.status, 0, checked.stderr || checked.stdout);
+});
+
 test('runtime requires an exact registry pointer before exposing a curriculum', () => {
   const app = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
   assert.match(app, /FORBIDDEN_BETWEEN_SCOPES/);

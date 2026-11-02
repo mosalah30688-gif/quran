@@ -194,6 +194,57 @@
     });
   }
 
+  function annotatedSegments(curriculum, surah, ayah, text) {
+    const normalization = curriculum && curriculum.normalization;
+    const source = typeof text === 'string'
+      ? (normalization === 'NFC' ? text.normalize('NFC') : text) : '';
+    const points = Array.from(source);
+    if (!curriculum || !(curriculum.annotationIndex instanceof Map)
+        || !Number.isInteger(surah) || !Number.isInteger(ayah)) {
+      return source ? [{ text: source, rules: [] }] : [];
+    }
+    const annotations = curriculum.annotationIndex.get(surah + ':' + ayah) || [];
+    const rules = new Map((Array.isArray(curriculum.rules) ? curriculum.rules : [])
+      .filter((rule) => rule && validToken(rule.id) && COLOR_RE.test(rule.color || ''))
+      .map((rule) => [rule.id, rule]));
+    const safeAnnotations = annotations.filter((annotation) => annotation
+      && Number.isInteger(annotation.start) && Number.isInteger(annotation.end)
+      && annotation.start >= 0 && annotation.start < annotation.end
+      && annotation.end <= points.length && rules.has(annotation.ruleId));
+    if (!safeAnnotations.length) return source ? [{ text: source, rules: [] }] : [];
+
+    const boundaries = new Set([0, points.length]);
+    safeAnnotations.forEach((annotation) => {
+      boundaries.add(annotation.start);
+      boundaries.add(annotation.end);
+    });
+    const sorted = [...boundaries].sort((left, right) => left - right);
+    const segments = [];
+    for (let index = 0; index < sorted.length - 1; index += 1) {
+      const start = sorted[index], end = sorted[index + 1];
+      if (start === end) continue;
+      const activeIds = [];
+      safeAnnotations.forEach((annotation) => {
+        if (annotation.start <= start && annotation.end >= end
+            && !activeIds.includes(annotation.ruleId)) activeIds.push(annotation.ruleId);
+      });
+      activeIds.sort((left, right) => (
+        Number(rules.get(left).order || 0) - Number(rules.get(right).order || 0)
+        || left.localeCompare(right)
+      ));
+      const signature = activeIds.join(',');
+      const value = points.slice(start, end).join('');
+      const previous = segments[segments.length - 1];
+      if (previous && previous.signature === signature) previous.text += value;
+      else segments.push({
+        text: value,
+        rules: activeIds.map((id) => rules.get(id)),
+        signature,
+      });
+    }
+    return segments.map(({ text: value, rules: active }) => ({ text: value, rules: active }));
+  }
+
   function validateReview(packageData, digestText) {
     const status = packageData.status;
     const publishable = packageData.publishableAsApproved;
@@ -272,6 +323,7 @@
     const rows = resolveRows(binding.asset, binding.dataset, textPayload);
     const verses = verseIndex(rows, registryBinding.verseRecords, binding.normalization);
     const codePoints = new Map();
+    const annotationIndex = new Map();
 
     if (!Array.isArray(packageData.annotations) || !packageData.annotations.length) {
       fail('ANNOTATIONS_MISSING');
@@ -298,6 +350,12 @@
         codePoints.set(ref, points);
       }
       if (annotation.end > points.length) fail('ANNOTATION_SPAN_INVALID');
+      if (!annotationIndex.has(ref)) annotationIndex.set(ref, []);
+      annotationIndex.get(ref).push({
+        start: annotation.start,
+        end: annotation.end,
+        ruleId: annotation.ruleId,
+      });
       const rule = rulesById.get(annotation.ruleId);
       if (!rule.example) {
         rule.example = {
@@ -322,6 +380,9 @@
       scopeWarning: packageData.status === 'APPROVED'
         ? 'حزمة مستقلة مرتبطة بهذه الطبعة ومثبتة المراجعة في سجلها.'
         : 'هذه الحزمة قيد المراجعة العلمية ولا تُعرض بوصفها اعتمادًا نهائيًا.',
+      normalization: binding.normalization,
+      annotationIndex,
+      annotationCount: packageData.annotations.length,
       rules: learningRules,
     };
   }
@@ -376,6 +437,7 @@
     sameScope,
     stableStringify,
     sha256Text,
+    annotatedSegments,
     loadRegistryCurricula,
   });
 }));
