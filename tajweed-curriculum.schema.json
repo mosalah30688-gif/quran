@@ -11,6 +11,7 @@
     "status",
     "publishableAsApproved",
     "scope",
+    "display",
     "textBinding",
     "sources",
     "rules",
@@ -36,6 +37,34 @@
     },
     "scope": {
       "$ref": "#/$defs/scope"
+    },
+    "display": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nameAr",
+        "riwayahAr",
+        "tariqAr",
+        "wajhAr",
+        "editionAr"
+      ],
+      "properties": {
+        "nameAr": {
+          "$ref": "#/$defs/arabicLabel"
+        },
+        "riwayahAr": {
+          "$ref": "#/$defs/arabicLabel"
+        },
+        "tariqAr": {
+          "$ref": "#/$defs/arabicLabel"
+        },
+        "wajhAr": {
+          "$ref": "#/$defs/arabicLabel"
+        },
+        "editionAr": {
+          "$ref": "#/$defs/arabicLabel"
+        }
+      }
     },
     "textBinding": {
       "type": "object",
@@ -296,6 +325,11 @@
     "sha256": {
       "type": "string",
       "pattern": "^[0-9a-f]{64}$"
+    },
+    "arabicLabel": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "[\u0600-\u06FF]"
     },
     "scope": {
       "type": "object",

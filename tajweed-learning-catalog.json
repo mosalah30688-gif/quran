@@ -5,6 +5,13 @@
     {
       "id": "hafs-alquran-cloud-draft-v1",
       "displayName": "حفص عن عاصم — علامات مصدر quran-tajweed",
+      "display": {
+        "nameAr": "حفص عن عاصم — طريق ووجه غير موثقين — طبعة quran-tajweed التجريبية",
+        "riwayahAr": "حفص عن عاصم",
+        "tariqAr": "الطريق غير موثق في المصدر",
+        "wajhAr": "الوجه غير موثق في المصدر",
+        "editionAr": "طبعة quran-tajweed التجريبية الأولى"
+      },
       "scope": {
         "riwayah": "hafs-an-asim",
         "tariq": "source-unspecified",

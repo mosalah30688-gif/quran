@@ -12,8 +12,9 @@
   const ROOT_ASSET_RE = /^[a-z0-9][a-z0-9._-]*\.json$/;
   const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
   const COLOR_RE = /^#[0-9a-fA-F]{6}$/;
+  const ARABIC_RE = /[\u0600-\u06FF]/u;
   const PACKAGE_FIELDS = [
-    'schemaVersion', 'packageId', 'status', 'publishableAsApproved', 'scope',
+    'schemaVersion', 'packageId', 'status', 'publishableAsApproved', 'scope', 'display',
     'textBinding', 'sources', 'rules', 'annotations', 'review',
   ];
   const SCOPE_FIELDS = ['riwayah', 'tariq', 'wajh', 'edition'];
@@ -79,6 +80,15 @@
     return !!leftKey && leftKey === scopeKey(right);
   }
 
+  function selectCurriculum(curricula, settingId, selectedScopeKey) {
+    if (!Array.isArray(curricula) || !validToken(settingId)) return null;
+    const candidates = curricula.filter((item) => item && Array.isArray(item.appliesToSettings)
+      && item.appliesToSettings.includes(settingId) && normalizeScope(item.scope));
+    if (candidates.length === 1) return candidates[0];
+    if (candidates.length < 1 || typeof selectedScopeKey !== 'string' || !selectedScopeKey) return null;
+    return candidates.find((item) => scopeKey(item.scope) === selectedScopeKey) || null;
+  }
+
   function stableStringify(value) {
     if (value === null || typeof value !== 'object') return JSON.stringify(value);
     if (Array.isArray(value)) return '[' + value.map(stableStringify).join(',') + ']';
@@ -113,6 +123,28 @@
       if (!validToken(ref) || !known.has(ref) || seen.has(ref)) fail(code);
       seen.add(ref);
     }
+  }
+
+  function normalizeDisplay(display) {
+    const fields = ['nameAr', 'riwayahAr', 'tariqAr', 'wajhAr', 'editionAr'];
+    if (!exactKeys(display, fields)) return null;
+    const normalized = {};
+    for (const field of fields) {
+      if (typeof display[field] !== 'string' || !display[field].trim()
+          || !ARABIC_RE.test(display[field])) return null;
+      normalized[field] = display[field].trim();
+    }
+    return normalized;
+  }
+
+  function validateDisplay(display) {
+    const fields = ['nameAr', 'riwayahAr', 'tariqAr', 'wajhAr', 'editionAr'];
+    if (!exactKeys(display, fields)) fail('DISPLAY_FIELDS_INVALID');
+    for (const field of fields) {
+      if (typeof display[field] !== 'string' || !display[field].trim()) fail('DISPLAY_VALUE_MISSING');
+      if (!ARABIC_RE.test(display[field])) fail('DISPLAY_NOT_ARABIC');
+    }
+    return normalizeDisplay(display);
   }
 
   function resolveRows(asset, dataset, payload) {
@@ -265,7 +297,7 @@
       }
       if (review.reviewerName === review.releaseApprover) fail('SECOND_APPROVER_REQUIRED');
       const reviewPayload = {};
-      for (const field of ['scope', 'textBinding', 'sources', 'rules', 'annotations']) {
+      for (const field of ['scope', 'display', 'textBinding', 'sources', 'rules', 'annotations']) {
         reviewPayload[field] = packageData[field];
       }
       return Promise.resolve(digestText(stableStringify(reviewPayload))).then((actual) => {
@@ -299,6 +331,7 @@
         || packageData.publishableAsApproved !== pointer.publishableAsApproved) {
       fail('PACKAGE_POINTER_MISMATCH');
     }
+    const display = validateDisplay(packageData.display);
 
     const binding = packageData.textBinding;
     if (!exactKeys(binding, ['asset', 'dataset', 'sha256', 'offsetUnit', 'normalization'])
@@ -368,11 +401,13 @@
     }
 
     const label = requireNonemptyText(entry.riwayah.labelAr, 'RIWAYAH_LABEL_MISSING');
+    if (display.riwayahAr !== label) fail('DISPLAY_RIWAYAH_MISMATCH');
     return {
       id: packageData.packageId,
       artifact: pointer.artifact,
       artifactSha256: pointer.sha256,
-      displayName: `${label} — ${pointerScope.tariq}`,
+      displayName: display.nameAr,
+      display,
       scope: pointerScope,
       appliesToSettings: [...entry.settingIds],
       status: packageData.status,
@@ -432,9 +467,11 @@
 
   return Object.freeze({
     CurriculumError,
+    normalizeDisplay,
     normalizeScope,
     scopeKey,
     sameScope,
+    selectCurriculum,
     stableStringify,
     sha256Text,
     annotatedSegments,

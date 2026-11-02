@@ -29,6 +29,13 @@ async function fixture(options = {}) {
       wajh: 'test-face',
       edition: 'test-edition-v1',
     },
+    display: {
+      nameAr: 'ورش عن نافع — طريق الأزرق — وجه اختباري',
+      riwayahAr: 'ورش عن نافع',
+      tariqAr: options.nonArabicDisplay ? 'al-Azraq' : 'طريق الأزرق',
+      wajhAr: 'وجه اختباري',
+      editionAr: 'طبعة اختبارية أولى',
+    },
     textBinding: {
       asset: 'quran-riwayat.json',
       dataset: 'warsh',
@@ -72,7 +79,7 @@ async function fixture(options = {}) {
   };
   if (options.approved) {
     const reviewed = {};
-    for (const key of ['scope', 'textBinding', 'sources', 'rules', 'annotations']) {
+    for (const key of ['scope', 'display', 'textBinding', 'sources', 'rules', 'annotations']) {
       reviewed[key] = packageData[key];
     }
     packageData.review.reviewedSha256 = await digest(Loader.stableStringify(reviewed));
@@ -137,12 +144,25 @@ test('independent package loads only after artifact, scope, text, and span check
   assert.equal(curriculum.artifactSha256, data.registry.settings[0].curricula[0].sha256);
   assert.deepEqual(curriculum.appliesToSettings, ['warsh']);
   assert.equal(curriculum.scope.tariq, 'al-azraq');
+  assert.equal(curriculum.display.tariqAr, 'طريق الأزرق');
+  assert.equal(curriculum.displayName, 'ورش عن نافع — طريق الأزرق — وجه اختباري');
   assert.equal(curriculum.rules[0].name, 'النقل');
   assert.equal(curriculum.rules[0].color, '#123ABC');
   assert.equal(curriculum.rules[0].example.text, 'ءَ');
   assert.equal(curriculum.annotationCount, 1);
   assert.equal(curriculum.annotationIndex.get('1:1').length, 1);
   assert.equal(curriculum.publishableAsApproved, false);
+});
+
+test('scope display identity must contain Arabic labels', async () => {
+  const data = await fixture({ nonArabicDisplay: true });
+  const result = await Loader.loadRegistryCurricula({
+    registry: data.registry,
+    getText: data.getText,
+    digestText: digest,
+  });
+  assert.equal(result.curricula.length, 0);
+  assert.equal(result.errors[0].code, 'DISPLAY_NOT_ARABIC');
 });
 
 test('annotation segmenter preserves Unicode text and overlapping rule identities', async () => {
@@ -242,4 +262,23 @@ test('current repository registry has no independent runtime package yet', async
     digestText: digest,
   });
   assert.deepEqual(result, { curricula: [], errors: [] });
+});
+
+test('explicit scope selector never guesses between multiple paths or faces', () => {
+  const first = {
+    appliesToSettings: ['warsh'],
+    scope: { riwayah: 'warsh-an-nafi', tariq: 'al-azraq', wajh: 'qasr', edition: 'v1' },
+  };
+  const second = {
+    appliesToSettings: ['warsh'],
+    scope: { riwayah: 'warsh-an-nafi', tariq: 'al-azraq', wajh: 'tawassut', edition: 'v1' },
+  };
+  assert.equal(Loader.selectCurriculum([first, second], 'warsh', ''), null);
+  assert.equal(Loader.selectCurriculum([first, second], 'warsh', 'unknown/scope'), null);
+  assert.equal(
+    Loader.selectCurriculum([first, second], 'warsh', Loader.scopeKey(second.scope)),
+    second,
+  );
+  assert.equal(Loader.selectCurriculum([first], 'warsh', ''), first);
+  assert.equal(Loader.selectCurriculum([first], 'qalun', Loader.scopeKey(first.scope)), null);
 });

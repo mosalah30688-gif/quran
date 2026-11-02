@@ -57,11 +57,19 @@ test('registry fingerprints bind text assets and the isolated Hafs draft', () =>
   assert.equal(pointer.status, 'PENDING_SCHOLARLY_REVIEW');
   assert.equal(pointer.publishableAsApproved, false);
   assert.deepEqual(pointer.scope, catalog.curricula[0].scope);
+  assert.deepEqual(Object.keys(catalog.curricula[0].display).sort(),
+    ['editionAr', 'nameAr', 'riwayahAr', 'tariqAr', 'wajhAr'].sort());
+  assert.equal(catalog.curricula[0].display.riwayahAr, hafs.riwayah.labelAr);
 });
 
 test('curriculum schema keeps source, annotation and two-person review gates', () => {
   assert.equal(schema.additionalProperties, false);
   assert.ok(schema.required.includes('scope'));
+  assert.ok(schema.required.includes('display'));
+  assert.deepEqual(schema.properties.display.required,
+    ['nameAr', 'riwayahAr', 'tariqAr', 'wajhAr', 'editionAr']);
+  assert.match('العربية', new RegExp(schema.$defs.arabicLabel.pattern));
+  assert.doesNotMatch('Latin', new RegExp(schema.$defs.arabicLabel.pattern));
   assert.ok(schema.required.includes('sources'));
   assert.ok(schema.required.includes('annotations'));
   assert.ok(schema.required.includes('review'));
@@ -133,6 +141,8 @@ test('runtime requires an exact registry pointer before exposing a curriculum', 
   assert.match(app, /item\.sha256 === candidate\.artifactSha256/);
   assert.match(app, /item\.status === candidate\.status/);
   assert.match(app, /item\.publishableAsApproved === candidate\.publishableAsApproved/);
-  assert.match(app, /candidates\.length !== 1/);
+  assert.match(app, /candidates\.length > 1/);
+  assert.match(app, /settings\.tajweedScopes\[settings\.riwaya\]/);
+  assert.match(app, /لا نختار طريقًا أو وجهًا ضمنيًا/);
   assert.match(app, /لا تُعرض أحكام حفص أو أي طبقة عامة/);
 });

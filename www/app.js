@@ -66,6 +66,7 @@
   const DEFAULTS = {
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
     translation: '', font: 'Amiri Quran', size: 26, tajweed: false, dark: false,
+    tajweedScopes: {},
   };
   const VIEW_TITLES = { reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', wird: 'الورد', stats: 'الإحصائيات', adhkar: 'الأذكار', search: 'البحث', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق', tajweed: 'أحكام التجويد', meanings: 'المعاني' };
   const Cap = window.Capacitor || null;
@@ -133,6 +134,17 @@
     set(key, value) { try { localStorage.setItem('quran:' + key, JSON.stringify(value)); } catch {} },
   };
   const settings = Object.assign({}, DEFAULTS, store.get('settings', {}));
+  const savedTajweedScopes = settings.tajweedScopes && typeof settings.tajweedScopes === 'object'
+    && !Array.isArray(settings.tajweedScopes) ? settings.tajweedScopes : {};
+  settings.tajweedScopes = {};
+  ['quran-uthmani', 'quran-simple', 'quran-uthmani-min', 'quran-tajweed', 'warsh', 'qalun', 'duri']
+    .forEach((settingId) => {
+      const value = savedTajweedScopes[settingId];
+      if (typeof value === 'string'
+          && /^[a-z0-9][a-z0-9._-]*(\/[a-z0-9][a-z0-9._-]*){3}$/.test(value)) {
+        settings.tajweedScopes[settingId] = value;
+      }
+    });
   const saveSettings = () => store.set('settings', settings);
   const allowedFonts = new Set(['Amiri Quran', 'Amiri', 'Noto Naskh Arabic', 'Scheherazade New']);
   if (!allowedFonts.has(settings.font)) settings.font = DEFAULTS.font;
@@ -387,16 +399,27 @@
         const catalogSha256 = await TajweedCurriculumLoaderAPI.sha256Text(
           await getTextAsset('tajweed-learning-catalog.json')
         );
+        const baseErrors = [];
         const baseCurricula = Array.isArray(learningCatalog.curricula)
-          ? learningCatalog.curricula.map((item) => Object.assign({}, item, {
-            artifact: 'tajweed-learning-catalog.json', artifactSha256: catalogSha256,
-          })) : [];
+          ? learningCatalog.curricula.map((item) => {
+            const display = TajweedCurriculumLoaderAPI.normalizeDisplay(item.display);
+            const matchingLabels = new Set((scopeRegistry.settings || [])
+              .filter((entry) => entry?.riwayah?.id === item?.scope?.riwayah)
+              .map((entry) => entry.riwayah.labelAr));
+            if (!display || matchingLabels.size !== 1 || !matchingLabels.has(display.riwayahAr)) {
+              baseErrors.push({ artifact: 'tajweed-learning-catalog.json', code: 'DISPLAY_INVALID' });
+              return null;
+            }
+            return Object.assign({}, item, { display,
+              artifact: 'tajweed-learning-catalog.json', artifactSha256: catalogSha256,
+            });
+          }).filter(Boolean) : [];
         const independent = await TajweedCurriculumLoaderAPI.loadRegistryCurricula({
           registry: scopeRegistry,
           getText: getTextAsset,
         });
         tajweedRuntimeCurricula = [...baseCurricula, ...independent.curricula];
-        tajweedCurriculumLoadErrors = independent.errors;
+        tajweedCurriculumLoadErrors = [...baseErrors, ...independent.errors];
       } catch {
         tajweedRuntimeCurricula = [];
         tajweedCurriculumLoadErrors = [{ artifact: '', code: 'RUNTIME_GATE_FAILED' }];
@@ -1589,6 +1612,37 @@
     $('#playReciter').value = settings.reciter;
   }
 
+  function syncTajweedScopeSelector() {
+    const row = $('#setTajweedScopeRow');
+    const select = $('#setTajweedScope');
+    const note = $('#setTajweedScopeNote');
+    const candidates = TajweedCurriculumLoaderAPI ? tajweedCurriculaForSetting() : [];
+    const shouldShow = candidates.length > 1 || candidates.some((item) => item.display);
+    row.hidden = !shouldShow;
+    if (!shouldShow) {
+      select.innerHTML = '';
+      note.textContent = '';
+      return;
+    }
+    const selectedKey = candidates.length === 1
+      ? TajweedCurriculumLoaderAPI.scopeKey(candidates[0].scope)
+      : (settings.tajweedScopes[settings.riwaya] || '');
+    const placeholder = candidates.length > 1
+      ? '<option value="">اختر الطريق والوجه والطبعة…</option>' : '';
+    select.innerHTML = placeholder + candidates.map((curriculum) => {
+      const key = TajweedCurriculumLoaderAPI.scopeKey(curriculum.scope);
+      const stateLabel = curriculum.status === 'APPROVED' ? 'مراجع علميًا' : 'قيد المراجعة';
+      return `<option value="${esc(key)}">${esc(curriculumScopeLabel(curriculum))} — ${stateLabel}</option>`;
+    }).join('');
+    select.disabled = candidates.length === 1;
+    select.value = selectedKey;
+    const selected = candidates.find((curriculum) =>
+      TajweedCurriculumLoaderAPI.scopeKey(curriculum.scope) === selectedKey);
+    note.textContent = selected
+      ? `${selected.displayName}؛ لا يختلط تقدمها أو علاماتها بأي طريق أو وجه آخر.`
+      : 'يلزم اختيار نطاق كامل قبل عرض التعلم أو ألوان التجويد.';
+  }
+
   function tafsirOptionsHtml() {
     return TAFSIRS.map(([id, name]) => {
       const needsPack = /^qp:\d+$/.test(id) && !tafsirPack.ready;
@@ -1598,6 +1652,7 @@
   function fillSettings() {
     $('#setRiwaya').value = settings.riwaya;
     syncReciters();
+    syncTajweedScopeSelector();
     $('#setTafsir').innerHTML = tafsirOptionsHtml();
     $('#setTafsir').value = settings.tafsir;
     $('#setTranslation').value = settings.translation;
@@ -1619,7 +1674,10 @@
 
   function onSettingChange(key, value) {
     settings[key] = value;
-    if (key === 'riwaya') syncReciters();
+    if (key === 'riwaya') {
+      syncReciters();
+      syncTajweedScopeSelector();
+    }
     saveSettings();
     document.body.classList.toggle('riw', isRiw());
     syncReaderLayout();
@@ -1638,6 +1696,21 @@
     }
   }
   $('#setRiwaya').addEventListener('change', (e) => onSettingChange('riwaya', e.target.value));
+  $('#setTajweedScope').addEventListener('change', (e) => {
+    const selectedKey = e.target.value;
+    const valid = tajweedCurriculaForSetting().some((curriculum) => TajweedCurriculumLoaderAPI
+      && TajweedCurriculumLoaderAPI.scopeKey(curriculum.scope) === selectedKey);
+    if (valid) settings.tajweedScopes[settings.riwaya] = selectedKey;
+    else delete settings.tajweedScopes[settings.riwaya];
+    saveSettings();
+    syncTajweedScopeSelector();
+    pageCache.clear();
+    if (curView === 'tajweed') renderTajweedView();
+    if (settings.tajweed && isRiw() && !currentApprovedTajweedCurriculum()) {
+      toast('هذا النطاق غير معتمد للألوان بعد؛ سيبقى نص المصحف بلا تلوين.');
+    }
+    if (state.sel) showPage(state.page, { selG: state.sel.g, save: false });
+  });
   $('#setReciter').addEventListener('change', (e) => onSettingChange('reciter', e.target.value));
   $('#setTafsir').addEventListener('change', (e) => onSettingChange('tafsir', e.target.value));
   $('#setTranslation').addEventListener('change', (e) => onSettingChange('translation', e.target.value));
@@ -2254,14 +2327,30 @@
       && TajweedLearningAPI.scopeKey(leftScope) === TajweedLearningAPI.scopeKey(rightScope);
   }
 
+  function tajweedCurriculaForSetting(settingId = settings.riwaya) {
+    return Array.isArray(tajweedRuntimeCurricula)
+      ? tajweedRuntimeCurricula.filter((item) => Array.isArray(item.appliesToSettings)
+        && item.appliesToSettings.includes(settingId))
+      : [];
+  }
+
+  function curriculumScopeLabel(curriculum) {
+    if (curriculum?.display) {
+      return `${curriculum.display.tariqAr} · ${curriculum.display.wajhAr} · ${curriculum.display.editionAr}`;
+    }
+    return curriculum?.displayName || '';
+  }
+
   function currentTajweedCurriculum() {
     const entry = currentTajweedRegistryEntry();
     if (!entry || !Array.isArray(entry.curricula) || !Array.isArray(tajweedRuntimeCurricula)) return null;
-    const candidates = tajweedRuntimeCurricula.filter((item) => Array.isArray(item.appliesToSettings)
-      && item.appliesToSettings.includes(settings.riwaya));
-    // لا نختار طريقًا أو وجهًا ضمنيًا إذا وصلت أكثر من حزمة للنطاق نفسه.
-    if (candidates.length !== 1) return null;
-    const candidate = candidates[0];
+    // لا نختار طريقًا أو وجهًا ضمنيًا عند تعدد الحزم.
+    const candidate = TajweedCurriculumLoaderAPI?.selectCurriculum(
+      tajweedRuntimeCurricula,
+      settings.riwaya,
+      settings.tajweedScopes[settings.riwaya] || '',
+    );
+    if (!candidate) return null;
     const pointer = entry.curricula.find((item) => item?.artifact === candidate.artifact
       && item.sha256 === candidate.artifactSha256
       && item.status === candidate.status
@@ -2352,14 +2441,20 @@
       return;
     }
     if (!curriculum) {
+      const available = tajweedCurriculaForSetting();
+      const needsScopeChoice = available.length > 1
+        && !available.some((item) => TajweedLearningAPI
+          && TajweedLearningAPI.scopeKey(item.scope) === settings.tajweedScopes[settings.riwaya]);
       const entryArtifacts = new Set((Array.isArray(registryEntry?.curricula)
         ? registryEntry.curricula : []).map((pointer) => pointer?.artifact).filter(Boolean));
       const hasUnloadedPointer = tajweedCurriculumLoadErrors.some((failure) =>
         entryArtifacts.has(failure.artifact));
-      const blockedReason = hasUnloadedPointer
-        ? 'تعذّر التحقق من بصمة حزمة التجويد أو ربطها النصي؛ حُجبت الطبقة احترازيًا.'
-        : (registryEntry?.blockedReasonAr
-          || 'فشل التحقق من سجل نطاق التجويد؛ حُجبت الطبقة احترازيًا.');
+      const blockedReason = needsScopeChoice
+        ? 'توجد عدة طرق أو أوجه مستقلة؛ اختر النطاق الكامل من الإعدادات قبل بدء التعلم.'
+        : (hasUnloadedPointer
+          ? 'تعذّر التحقق من بصمة حزمة التجويد أو ربطها النصي؛ حُجبت الطبقة احترازيًا.'
+          : (registryEntry?.blockedReasonAr
+            || 'فشل التحقق من سجل نطاق التجويد؛ حُجبت الطبقة احترازيًا.'));
       $('#tjLearningScope').textContent = `${selectedLabel} · الطريق والوجه والطبعة: غير مثبتة`;
       $('#tjReviewBadge').textContent = registryEntry?.status === 'BLOCKED_NO_APPROVED_CORPUS'
         ? 'محجوب لغياب المصدر المعتمد' : 'محجوب احترازيًا';
@@ -2378,7 +2473,9 @@
     const cards = cardsForCurriculum(curriculum);
     const stats = tajweedLearningEngine.stats(curriculum.scope);
     const queue = tajweedLearningEngine.queue(cards, curriculum.scope);
-    $('#tjLearningScope').textContent = `${curriculum.displayName} · الطريق: ${curriculum.scope.tariq} · الوجه: ${curriculum.scope.wajh}`;
+    $('#tjLearningScope').textContent = curriculum.display
+      ? `${curriculum.display.riwayahAr} · ${curriculum.display.tariqAr} · ${curriculum.display.wajhAr} · ${curriculum.display.editionAr}`
+      : `${curriculum.displayName} · الطريق: ${curriculum.scope.tariq} · الوجه: ${curriculum.scope.wajh}`;
     $('#tjReviewBadge').textContent = curriculum.status === 'APPROVED'
       ? 'مراجع علميًا' : 'قيد المراجعة العلمية';
     $('#tjLearningWarning').textContent = curriculum.scopeWarning;

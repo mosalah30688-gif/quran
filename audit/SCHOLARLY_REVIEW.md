@@ -20,9 +20,9 @@
 | `quran-meanings.json` | `d9cf1c2e5c27d25c213c84b046df1b2af07cdbefa72eb0be1d2e9014166c03c3` | صحة معاني الكلمات وربطها بالآيات |
 | `adhkar.json` | `52e0c5fb07d6e1b2cbb06f1e54f5945ae6345202fedad4fc4c4a0e0349c46df9` | النص والمصدر/التخريج وعدد التكرار لكل عنصر |
 | `tajweed.json` | `812002f31940efaa4e4aa7035f5f379598eb5e57b468ba7757d73e669f106b44` | صحة أسماء الأحكام وشروحها المختصرة |
-| `tajweed-learning-catalog.json` | `c7d9e6a9d9bb82ce9b8a1fbd4eb7b7af03d87e1731e369c106667036e62983b0` | مسودة تعلم حفص: صحة الأحكام والأمثلة وربط كل مثال بعلامته؛ الحالة `PENDING_SCHOLARLY_REVIEW` ولا تثبت الطريق أو الوجه |
-| `tajweed-scope-registry.json` | `9978b5849b57d5ba504a16a1d2e6dd836e4e1200dd46452476f0b907a1520740` | صحة فصل حفص وورش وقالون والدوري، وربط كل نطاق بنصه ومصادره، ومنع الرجوع بين النطاقات |
-| `tajweed-curriculum.schema.json` | `f89ea2caccf5a65eaffa0955346814bf13ab3bad534f315e43f2456d43482fdd` | عقد حزم التجويد: الرواية والطريق والوجه والطبعة، بصمات النص والمصادر، العلامات، والمراجعة البشرية واعتماد النشر الثاني |
+| `tajweed-learning-catalog.json` | `6b6564cb7e1150fa6c9edaf4c804b85f5a949e0a038f451a2b7f9e6b25bcb175` | مسودة تعلم حفص وهويتها العربية الصريحة: صحة الأحكام والأمثلة وربط كل مثال بعلامته؛ الحالة `PENDING_SCHOLARLY_REVIEW` والطريق والوجه موسومان بأنهما غير موثقين |
+| `tajweed-scope-registry.json` | `ffbee3681f786a67f12642e2e73ec646164e567744bb231e2f2ebd63aedbd77e` | صحة فصل حفص وورش وقالون والدوري، وربط كل نطاق بنصه ومصادره، ومنع الرجوع بين النطاقات |
+| `tajweed-curriculum.schema.json` | `4490ce244e559e6ac8edd19b7d26319b39f6a8434e49c94e0ec1906c29e4d775` | عقد حزم التجويد: الرواية والطريق والوجه والطبعة وتسمياتها العربية المراجعة، بصمات النص والمصادر، العلامات، والمراجعة البشرية واعتماد النشر الثاني |
 | `audit/tajweed-source-candidates.json` | `74c129df87f0e711a1021eedbe6be53a2b1d8df9607c9303f62164df182fbe17` | سجل مرشحات ورش وقالون والدوري المحجورة وموانع الحقوق والربط والمراجعة؛ ليس محتوى runtime |
 | `audit/tajweed-candidates/warsh-al-azraq-qud-v1.analysis.json` | `0434d843d286e081253e00b516e2926bbf8fcda175bc04eba49ecb495c7136cd` | تقرير metadata-only لحزمة ورش/الأزرق: سلامة تقنية وتغطية 6,214 آية و46 معرف حكم، مع إثبات فشل بوابات النشر |
 

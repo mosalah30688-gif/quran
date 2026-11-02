@@ -214,6 +214,7 @@ jobs:
           assert "run(null, 'tajweed-curriculum-loader.js')" in html
           assert 'id="setSmartEnabled"' in html and 'id="smartSuggestion"' in html
           assert 'id="tjStartLearning"' in html and 'id="tjLearningCard"' in html
+          assert 'id="setTajweedScope"' in html and 'syncTajweedScopeSelector' in app
           assert 'لا يرسل ملف عادات إلى خادم' in html
           assert 'new SmartContextAPI.SmartContextEngine' in app
           assert 'new TajweedLearningAPI.TajweedLearningEngine' in app

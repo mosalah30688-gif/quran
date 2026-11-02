@@ -34,7 +34,7 @@
       "curricula": [
         {
           "artifact": "tajweed-learning-catalog.json",
-          "sha256": "c7d9e6a9d9bb82ce9b8a1fbd4eb7b7af03d87e1731e369c106667036e62983b0",
+          "sha256": "6b6564cb7e1150fa6c9edaf4c804b85f5a949e0a038f451a2b7f9e6b25bcb175",
           "status": "PENDING_SCHOLARLY_REVIEW",
           "publishableAsApproved": false,
           "scope": {

@@ -25,6 +25,7 @@ PACKAGES_DIR = ROOT / "tajweed-curricula"
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 TOKEN_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+ARABIC_RE = re.compile(r"[\u0600-\u06FF]")
 EXPECTED_SETTINGS = {
     "quran-uthmani",
     "quran-simple",
@@ -147,8 +148,17 @@ def verify_schema_gate(schema: Any) -> None:
     require(schema.get("$schema") == "https://json-schema.org/draft/2020-12/schema",
             "tajweed curriculum schema must remain draft 2020-12")
     required = set(schema.get("required", []))
-    require({"scope", "textBinding", "sources", "rules", "annotations", "review"} <= required,
+    require({"scope", "display", "textBinding", "sources", "rules", "annotations", "review"} <= required,
             "curriculum schema release fields were weakened")
+    display_required = set(schema.get("properties", {}).get("display", {}).get("required", []))
+    require({"nameAr", "riwayahAr", "tariqAr", "wajhAr", "editionAr"} == display_required,
+            "curriculum display must name riwayah/tariq/wajh/edition in Arabic")
+    arabic_label = schema.get("$defs", {}).get("arabicLabel", {})
+    require(arabic_label.get("type") == "string" and arabic_label.get("minLength") == 1
+            and isinstance(arabic_label.get("pattern"), str)
+            and re.search(arabic_label["pattern"], "العربية")
+            and not re.search(arabic_label["pattern"], "Latin"),
+            "curriculum Arabic display-label pattern was weakened")
     text_required = set(schema.get("properties", {}).get("textBinding", {}).get("required", []))
     require({"asset", "dataset", "sha256", "offsetUnit", "normalization"} <= text_required,
             "text binding must remain asset/dataset/hash/offset locked")
@@ -272,6 +282,16 @@ def verify_registry(registry: Any, catalog: Any) -> tuple[dict[str, dict[str, An
     require(hafs.get("status") == "PENDING_SCHOLARLY_REVIEW"
             and hafs.get("publishableAsApproved") is False,
             "unreviewed Hafs catalog must remain visibly unapproved")
+    display = hafs.get("display")
+    display_fields = {"nameAr", "riwayahAr", "tariqAr", "wajhAr", "editionAr"}
+    require(isinstance(display, dict) and set(display) == display_fields,
+            "Hafs draft must expose the complete Arabic scope identity")
+    for key in display_fields:
+        require(isinstance(display[key], str) and display[key].strip()
+                and ARABIC_RE.search(display[key]),
+                f"catalog.curricula[0].display.{key} must be Arabic")
+    require(display["riwayahAr"] == by_setting["quran-tajweed"]["riwayah"]["labelAr"],
+            "Hafs Arabic riwayah label differs from registry")
 
     unavailable = catalog.get("unavailable")
     require(isinstance(unavailable, list) and len(unavailable) == 3,
@@ -289,7 +309,7 @@ def verify_registry(registry: Any, catalog: Any) -> tuple[dict[str, dict[str, An
 
 def canonical_review_payload(package: dict[str, Any]) -> str:
     payload = {key: package[key] for key in
-               ("scope", "textBinding", "sources", "rules", "annotations")}
+               ("scope", "display", "textBinding", "sources", "rules", "annotations")}
     encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True,
                          separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
@@ -298,7 +318,7 @@ def canonical_review_payload(package: dict[str, Any]) -> str:
 def validate_package(path: Path, package: Any, registry_by_setting: dict[str, dict[str, Any]]) -> str:
     label = str(path.relative_to(ROOT))
     require(isinstance(package, dict), f"{label} must be an object")
-    required = {"schemaVersion", "packageId", "status", "publishableAsApproved", "scope",
+    required = {"schemaVersion", "packageId", "status", "publishableAsApproved", "scope", "display",
                 "textBinding", "sources", "rules", "annotations", "review"}
     require(set(package) == required,
             f"{label} package fields differ: missing={sorted(required - set(package))}, "
@@ -309,6 +329,14 @@ def validate_package(path: Path, package: Any, registry_by_setting: dict[str, di
             f"{label}.publishableAsApproved must be boolean")
     scope = validate_scope(package.get("scope"), f"{label}.scope")
     require(scope[0] in EXPECTED_RIWAYAT, f"{label} has an unknown riwayah")
+    display = package.get("display")
+    display_fields = {"nameAr", "riwayahAr", "tariqAr", "wajhAr", "editionAr"}
+    require(isinstance(display, dict) and set(display) == display_fields,
+            f"{label}.display must name the complete scope in Arabic")
+    for key in display_fields:
+        require(isinstance(display[key], str) and display[key].strip()
+                and ARABIC_RE.search(display[key]),
+                f"{label}.display.{key} must be Arabic")
 
     binding = package.get("textBinding")
     require(isinstance(binding, dict), f"{label}.textBinding must be an object")
@@ -436,6 +464,8 @@ def validate_package(path: Path, package: Any, registry_by_setting: dict[str, di
     unique_entries = {id(entry): entry for entry in registry_by_setting.values()}.values()
     matching_entries = [entry for entry in unique_entries if entry["riwayah"]["id"] == scope[0]]
     require(len(matching_entries) == 1, f"{label} must map to exactly one registry riwayah group")
+    require(display["riwayahAr"] == matching_entries[0]["riwayah"]["labelAr"],
+            f"{label} Arabic riwayah label differs from the registry")
     pointers = matching_entries[0].get("curricula", [])
     relative_artifact = str(path.relative_to(ROOT))
     matching_pointers = [pointer for pointer in pointers

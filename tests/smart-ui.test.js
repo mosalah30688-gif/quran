@@ -105,6 +105,12 @@ test('JSON update overlay is hashed, stored outside localStorage, and fail-close
 });
 
 test('independent reader colors require an approved exact-scope curriculum', () => {
+  assert.match(html, /id="setTajweedScopeRow"/);
+  assert.match(html, /id="setTajweedScope"/);
+  assert.match(app, /function syncTajweedScopeSelector\(\)/);
+  assert.match(app, /normalizeDisplay\(item\.display\)/);
+  assert.match(app, /اختر الطريق والوجه والطبعة/);
+  assert.match(app, /settings\.tajweedScopes/);
   assert.match(app, /function currentApprovedTajweedCurriculum\(\)/);
   assert.match(app, /curriculum\?\.status === 'APPROVED'/);
   assert.match(app, /curriculum\.publishableAsApproved === true/);
