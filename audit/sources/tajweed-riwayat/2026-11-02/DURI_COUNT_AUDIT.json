@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "auditedAt": "2026-11-02",
+  "scope": {
+    "riwayah": "al-duri-an-abi-amr",
+    "tariq": "abu-al-zaraa-via-al-shatibiyyah",
+    "edition": "count-scope-unresolved"
+  },
+  "status": "QUARANTINED_PUBLISHER_OR_QUALIFIED_SCHOLAR_CLARIFICATION_REQUIRED",
+  "runtimeAction": "NONE",
+  "observations": [
+    {
+      "observationId": "official-introduction-count",
+      "sourceId": "quranpedia-duri-intro",
+      "locator": "PDF page 3",
+      "totalAyahs": 6214,
+      "confidence": "VISUALLY_CONFIRMED"
+    },
+    {
+      "observationId": "official-data-package-count",
+      "sourceId": "kfgqpc-duri-v2",
+      "locator": "6217 unique rows and IDs in the official developer package",
+      "totalAyahs": 6217,
+      "confidence": "MACHINE_COUNTED_AND_KEY_UNIQUENESS_CHECKED"
+    },
+    {
+      "observationId": "rendered-archive-embedded-count",
+      "sourceId": "quranpedia-duri-svg-2026-07-13",
+      "locator": "mushaf-content.json embedded in the rendered archive",
+      "totalAyahs": 6217,
+      "confidence": "MACHINE_COUNTED"
+    },
+    {
+      "observationId": "quranpedia-current-dump-count",
+      "sourceId": "quranpedia-dumps-2026-11-02",
+      "locator": "mushafs-6.json.gz",
+      "totalAyahs": 6218,
+      "confidence": "MACHINE_COUNTED_KNOWN_REGRESSION_PRESENT"
+    }
+  ],
+  "quranpedia67Regression": {
+    "status": "CONFIRMED",
+    "surah": 67,
+    "affectedHafsReference": 9,
+    "currentDumpRowsForThatReference": 2,
+    "officialSpreadsheetAndRenderedArchiveRowsForThatReference": 1,
+    "officialSurahCount": 30,
+    "currentDumpSurahCount": 31,
+    "officialRenderedPageFinding": "One verse marker for verse 9 on official page 562",
+    "effectOnCurrentDumpTotal": 1,
+    "safeAutomaticRepair": false,
+    "reasonAutomaticRepairIsUnsafe": "The separate 6214-versus-6217 conflict remains and cannot be solved by deleting an arbitrary set of rows."
+  },
+  "comparisonAgainstOfficialWarshAndQalun6214Datasets": {
+    "baselineSourceIds": [
+      "kfgqpc-warsh-v3",
+      "kfgqpc-qalun-v3"
+    ],
+    "baselineTotal": 6214,
+    "duriOfficialPackageTotal": 6217,
+    "netDelta": 3,
+    "rows": [
+      {
+        "surah": 11,
+        "baselineCount": 121,
+        "duriCount": 122,
+        "delta": 1
+      },
+      {
+        "surah": 19,
+        "baselineCount": 99,
+        "duriCount": 98,
+        "delta": -1
+      },
+      {
+        "surah": 26,
+        "baselineCount": 226,
+        "duriCount": 227,
+        "delta": 1
+      },
+      {
+        "surah": 30,
+        "baselineCount": 59,
+        "duriCount": 60,
+        "delta": 1
+      },
+      {
+        "surah": 35,
+        "baselineCount": 46,
+        "duriCount": 45,
+        "delta": -1
+      },
+      {
+        "surah": 58,
+        "baselineCount": 21,
+        "duriCount": 22,
+        "delta": 1
+      },
+      {
+        "surah": 67,
+        "baselineCount": 31,
+        "duriCount": 30,
+        "delta": -1
+      },
+      {
+        "surah": 73,
+        "baselineCount": 18,
+        "duriCount": 20,
+        "delta": 2
+      },
+      {
+        "surah": 74,
+        "baselineCount": 55,
+        "duriCount": 56,
+        "delta": 1
+      },
+      {
+        "surah": 86,
+        "baselineCount": 17,
+        "duriCount": 16,
+        "delta": -1
+      },
+      {
+        "surah": 91,
+        "baselineCount": 15,
+        "duriCount": 16,
+        "delta": 1
+      },
+      {
+        "surah": 99,
+        "baselineCount": 9,
+        "duriCount": 8,
+        "delta": -1
+      }
+    ],
+    "deltaSumCheck": 3,
+    "conclusion": "The 6217 count is distributed across twelve surahs; it is not a three-row tail or basmala artifact."
+  },
+  "countingTraditionContext": {
+    "sourceId": "faraid-al-hisan-counting",
+    "reportedTradition": "The Madani-first count is transmitted as both 6217 and 6214 in the cited counting literature.",
+    "officialIntroductionMethod": "The Duri introduction reports the first Madani count through the Basrans from Warsh and states 6214.",
+    "resolutionStatus": "NOT_RESOLVED",
+    "requiredResolution": "Obtain publisher clarification or a signed qualified scholarly determination fixing the intended count tradition and per-surah table for this exact edition."
+  },
+  "conclusions": [
+    "The 6218 Quranpedia dump cannot be used as an annotation-offset authority because of the confirmed 67:9 split.",
+    "The 6214 and 6217 official signals must remain separate from the one-row regression.",
+    "No verse may be deleted, merged, or renumbered automatically.",
+    "No Duri curriculum or public release is approved by this audit."
+  ]
+}

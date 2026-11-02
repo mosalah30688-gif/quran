@@ -2,6 +2,11 @@
   "schemaVersion": 1,
   "updatedAt": "2026-11-02",
   "purpose": "QUARANTINE_ONLY_NOT_RUNTIME_DATA",
+  "referenceAudit": {
+    "sourceRegistry": "audit/sources/tajweed-riwayat/2026-11-02/SOURCE.json",
+    "ruleInventory": "audit/sources/tajweed-riwayat/2026-11-02/RULE_INVENTORY.json",
+    "duriCountAudit": "audit/sources/tajweed-riwayat/2026-11-02/DURI_COUNT_AUDIT.json"
+  },
   "policy": {
     "candidateMayBeShownAsApproved": false,
     "machineGeneratedAnnotationsRequireQualifiedHumanReview": true,
@@ -18,12 +23,40 @@
       "publishableAsApproved": false,
       "targetScope": {
         "riwayah": "warsh-an-nafi",
-        "tariq": "al-azraq",
-        "wajh": "generator-default-unreviewed",
-        "edition": "king-fahd-warsh-v2-candidate"
+        "tariq": "al-azraq-via-al-shatibiyyah",
+        "wajh": "pending-compatible-face-selection",
+        "edition": "quranpedia-mushaf-4-2026-11-02-crosschecked-kfgqpc-warsh-v3"
       },
       "technicalAnalysis": "audit/tajweed-candidates/warsh-al-azraq-qud-v1.analysis.json",
       "sources": [
+        {
+          "id": "quranpedia-warsh-text-2026-11-02",
+          "kind": "LICENSED_VERSE_TEXT_ONLY",
+          "url": "https://quranpedia.net/dumps/mushafs-4.json.gz",
+          "auditSnapshot": "audit/sources/quranpedia/2026-11-02/mushafs-4.json.gz",
+          "assetSha256": "fb79026f75ad8fef6ab9752ee7fda4b8ff312ae45937016a1f8ecac70ebfd1b6",
+          "records": 6214,
+          "licenseStatus": "DATASET_REPUBLISH_ALLOWED_WITH_ATTRIBUTION_LINK_AND_VERSION",
+          "notesAr": "نص مرشح مقفل البصمة، ولا يتضمن طبقة أحكام أو ألوان مستقلة."
+        },
+        {
+          "id": "quranpedia-warsh-intro",
+          "kind": "OFFICIAL_MUSHAF_INTRODUCTION_REFERENCE",
+          "url": "https://quranpedia.net/mushafs-contents/info/4-about.pdf",
+          "assetSha256": "8f50c6b6b5e33403d32458043da5e0dd4e6e77fe2d3852f64460d223e5d17c06",
+          "licenseStatus": "REFERENCE_ONLY_NO_PDF_REUSE_LICENSE_RECORDED",
+          "notesAr": "تثبت الرواية وطريق الأزرق؛ لا تُعامل بوصفها corpus علامات."
+        },
+        {
+          "id": "libya-warsh-method-2022",
+          "kind": "OFFICIAL_EDUCATIONAL_REFERENCE",
+          "url": "https://quranly.com.ly/en/resource/",
+          "publisher": "الهيئة العامة للأوقاف والشؤون الإسلامية — ليبيا",
+          "edition": "الطبعة الأولى، 1443هـ/2022م",
+          "assetSha256": "be4719e5df54e8a1b105e572d0b6f280326ca82a088e3ea9443467d8d7a960de",
+          "licenseStatus": "REFERENCE_ONLY_NO_MACHINE_REDISTRIBUTION_GRANT_RECORDED",
+          "notesAr": "يفهرس أصول ورش من طريق الشاطبية وملحق تركيب الأوجه، لكنه ليس corpus علامات ولا يثبت اختيار سراج لوجه واحد."
+        },
         {
           "id": "qud-quranic-phonemizer-3.0.5",
           "kind": "DETERMINISTIC_GENERATOR",
@@ -42,15 +75,6 @@
           "licenseStatus": "GENERATOR_LICENSED_CORPUS_RIGHTS_UNRESOLVED",
           "scholarlyStatus": "TECHNICAL_CANDIDATE_NOT_RELIGIOUS_CERTIFICATION",
           "notesAr": "الحزمة كاملة تقنيًا، لكنها تصف نفسها مرشحًا تقنيًا وتطلب مراجعة مصحف ورش معتمد وشيخ مؤهل."
-        },
-        {
-          "id": "libya-awqaf-warsh-manual-2025",
-          "kind": "OFFICIAL_EDUCATIONAL_REFERENCE",
-          "url": "https://awqaf.gov.ly/jicusoq/2025/01/%D9%88%D8%B1%D8%B4.pdf",
-          "publisher": "الهيئة العامة للأوقاف والشؤون الإسلامية — ليبيا",
-          "licenseStatus": "NO_MACHINE_REDISTRIBUTION_GRANT_RECORDED",
-          "snapshotStatus": "REMOTE_READABLE_SEARCH_INDEX_DIRECT_DOWNLOAD_BLOCKED_403",
-          "notesAr": "مرجع مناسب للمراجعة النظرية وأصول الرواية، وليس corpus علامات حرفية أو ترخيصًا لإعادة نشر نصه."
         }
       ],
       "gates": {
@@ -65,6 +89,7 @@
         "secondPersonReleaseApproval": "FAIL"
       },
       "blockedReasonsAr": [
+        "لم يُثبَّت وجه تطبيقي واحد متوافق داخل طريق الأزرق، ولم تُراجع جميع تركيبات الأوجه.",
         "مصدر corpus الذي بُني عليه المولد لا يسجل رابط الأصل أو ترخيص إعادة التوزيع.",
         "بعد إزالة علامات التخطيط والتطويل تبقى 250 آية مختلفة نصيًا عن طبعة سراج، فلا يجوز نقل الإزاحات تلقائيًا.",
         "لم تُسجل مراجعة بشرية مؤهلة في ورش من طريق الأزرق ولا اعتماد نشر ثانٍ."
@@ -77,23 +102,14 @@
       "publishableAsApproved": false,
       "targetScope": {
         "riwayah": "qalun-an-nafi",
-        "tariq": "unresolved",
-        "wajh": "unresolved",
-        "edition": "unresolved"
+        "tariq": "abu-nashit-via-al-shatibiyyah",
+        "wajh": "pending-compatible-face-selection",
+        "edition": "quranpedia-mushaf-7-2026-11-02-crosschecked-kfgqpc-qalun-v3"
       },
       "technicalAnalysis": null,
       "sources": [
         {
-          "id": "libya-awqaf-qalun-manual-2025",
-          "kind": "OFFICIAL_EDUCATIONAL_REFERENCE",
-          "url": "https://awqaf.gov.ly/jicusoq/2025/01/%D9%82%D8%A7%D9%84%D9%88%D9%86.pdf",
-          "publisher": "الهيئة العامة للأوقاف والشؤون الإسلامية — ليبيا",
-          "licenseStatus": "NO_MACHINE_REDISTRIBUTION_GRANT_RECORDED",
-          "snapshotStatus": "REMOTE_READABLE_SEARCH_INDEX_DIRECT_DOWNLOAD_BLOCKED_403",
-          "notesAr": "مرجع علمي محتمل للأحكام والأصول، لكنه لا يوفر corpus علامات حرفية مرتبطًا بطبعة سراج."
-        },
-        {
-          "id": "quranpedia-qalun-text",
+          "id": "quranpedia-qalun-text-installed",
           "kind": "VERSE_TEXT_ONLY",
           "localAsset": "quran-riwayat.json",
           "dataset": "qalun",
@@ -101,13 +117,41 @@
           "records": 6214,
           "licenseStatus": "RECORDED_IN_DATA_PROVENANCE",
           "notesAr": "النص والرسم والترقيم لا يتضمنان طبقة أحكام وألوان مستقلة."
+        },
+        {
+          "id": "quranpedia-qalun-text-2026-11-02",
+          "kind": "LICENSED_VERSE_TEXT_AUDIT_SNAPSHOT",
+          "url": "https://quranpedia.net/dumps/mushafs-7.json.gz",
+          "auditSnapshot": "audit/sources/quranpedia/2026-11-02/mushafs-7.json.gz",
+          "assetSha256": "f51234f98a96e3521b2a7c02d2c457158151867dbc720f1a2fadeaa3436d3809",
+          "records": 6214,
+          "licenseStatus": "DATASET_REPUBLISH_ALLOWED_WITH_ATTRIBUTION_LINK_AND_VERSION",
+          "notesAr": "المحتوى القرآني مطابق للنسخة المثبتة بعد استبعاد metadata الترخيص؛ لا تغيير runtime."
+        },
+        {
+          "id": "quranpedia-qalun-intro",
+          "kind": "OFFICIAL_MUSHAF_INTRODUCTION_REFERENCE",
+          "url": "https://quranpedia.net/mushafs-contents/info/7-about.pdf",
+          "assetSha256": "54a908d16a8b2a10800ed6ea3b14c38c381817100cdc5e612fcdd72728e503b7",
+          "licenseStatus": "REFERENCE_ONLY_NO_PDF_REUSE_LICENSE_RECORDED",
+          "notesAr": "تثبت طريق أبي نشيط؛ لا تُعامل بوصفها corpus علامات."
+        },
+        {
+          "id": "libya-qalun-method-2022",
+          "kind": "OFFICIAL_EDUCATIONAL_REFERENCE",
+          "url": "https://quranly.com.ly/en/resource/",
+          "publisher": "الهيئة العامة للأوقاف والشؤون الإسلامية — ليبيا",
+          "edition": "الطبعة الثانية، 1443هـ/2022م",
+          "assetSha256": "58be3ac729608dcafc6cd076e1402ab9faef8ce1ff4e8383bc5ba60127e78b4a",
+          "licenseStatus": "REFERENCE_ONLY_NO_MACHINE_REDISTRIBUTION_GRANT_RECORDED",
+          "notesAr": "مرجع للأصول والتطبيقات من طريق الشاطبية، وليس corpus علامات حرفية أو اختيارًا مكتملاً لوجه واحد."
         }
       ],
       "gates": {
         "documentedRiwayah": "PASS",
-        "documentedTariq": "FAIL",
+        "documentedTariq": "PASS",
         "documentedWajh": "FAIL",
-        "completeRuleInventory": "FAIL",
+        "completeRuleInventory": "PARTIAL",
         "completeAnnotationCorpus": "FAIL",
         "exactSirajTextBinding": "NOT_APPLICABLE",
         "redistributionRights": "FAIL",
@@ -116,8 +160,9 @@
       },
       "blockedReasonsAr": [
         "لا توجد حزمة علامات حرفية كاملة ومقفلة البصمة لقالون.",
-        "الطريق والوجه والطبعة التعليمية غير مثبتة.",
-        "لا يوجد ترخيص corpus ومراجعة بشرية واعتماد نشر."
+        "طريق أبي نشيط ثابت، لكن الوجه التطبيقي الكامل وتوافق الاختيارات بين الأبواب لم يُحسما.",
+        "ترخيص النص القرآني مثبت، أما حقوق العلامات المشتقة ومتن الأحكام والأمثلة فلم تُثبت.",
+        "لا توجد مراجعة بشرية مؤهلة ولا اعتماد نشر ثانٍ."
       ]
     },
     {
@@ -127,35 +172,72 @@
       "publishableAsApproved": false,
       "targetScope": {
         "riwayah": "al-duri-an-abi-amr",
-        "tariq": "unresolved",
-        "wajh": "unresolved",
-        "edition": "unresolved"
+        "tariq": "abu-al-zaraa-via-al-shatibiyyah",
+        "wajh": "pending-complete-face-and-count-scope-review",
+        "edition": "kfgqpc-duri-v2-quranpedia-mushaf-6-count-scope-unresolved"
       },
       "technicalAnalysis": null,
       "sources": [
         {
-          "id": "quranpedia-duri-text",
-          "kind": "VERSE_TEXT_ONLY",
+          "id": "quranpedia-duri-text-installed",
+          "kind": "VERSE_TEXT_ONLY_QUARANTINED",
           "localAsset": "quran-riwayat.json",
           "dataset": "duri",
           "assetSha256": "a3a7ef91c036f2ff4f62df3dba12c0c2f9d50211792a5b6cf574f4cf85b9938c",
           "records": 6218,
           "licenseStatus": "RECORDED_IN_DATA_PROVENANCE",
-          "notesAr": "النص والرسم والترقيم لا يتضمنان طبقة أحكام وألوان مستقلة."
+          "integrityStatus": "FAIL_KNOWN_67_9_SPLIT_ERROR",
+          "notesAr": "البيانات محجورة؛ شطر 67:9 رفع سورة الملك إلى 31 والمجموع إلى 6218 خلاف الصفحة الرسمية."
         },
         {
-          "id": "duri-usul-reference-gap",
-          "kind": "BIBLIOGRAPHIC_LEADS_ONLY",
-          "url": "https://quranpedia.net/book/18796",
-          "licenseStatus": "NO_ANNOTATION_OR_REDISTRIBUTION_GRANT",
-          "notesAr": "المراجع المتاحة تشرح أصول الرواية، ولا تقدم corpus تجويد حرفيًا مرخصًا أو مراجعة مرتبطة بطبعة سراج."
+          "id": "quranpedia-duri-text-2026-11-02",
+          "kind": "LICENSED_VERSE_TEXT_AUDIT_SNAPSHOT_QUARANTINED",
+          "url": "https://quranpedia.net/dumps/mushafs-6.json.gz",
+          "auditSnapshot": "audit/sources/quranpedia/2026-11-02/mushafs-6.json.gz",
+          "assetSha256": "a147439fe592e038b910e1d36ed536c5b65778313b35bee55320f4c5f9a89703",
+          "records": 6218,
+          "licenseStatus": "DATASET_REPUBLISH_ALLOWED_WITH_ATTRIBUTION_LINK_AND_VERSION",
+          "integrityStatus": "FAIL_KNOWN_67_9_SPLIT_ERROR"
+        },
+        {
+          "id": "quranpedia-duri-intro",
+          "kind": "OFFICIAL_MUSHAF_INTRODUCTION_REFERENCE",
+          "url": "https://quranpedia.net/mushafs-contents/info/6-about.pdf",
+          "assetSha256": "97e6d01c758b1e7e34f94b2a86d6eea97bedbaaa31ed81b392532c676de7dd61",
+          "licenseStatus": "REFERENCE_ONLY_NO_PDF_REUSE_LICENSE_RECORDED",
+          "notesAr": "تثبت أبا الزعراء وتذكر مجموع 6214، وهو متعارض مع 6217 في حزمة البيانات الرسمية."
+        },
+        {
+          "id": "kfgqpc-duri-v2",
+          "kind": "OFFICIAL_EDITION_DATA_REFERENCE",
+          "url": "https://download.qurancomplex.gov.sa/resources_dev/UthmanicDouri_v2-0.zip",
+          "artifactSha256": "84e5569790f96b05896b8f44ebe8d82d98377a929ac0e87dd8af4dbec52cb0c1",
+          "records": 6217,
+          "licenseStatus": "APPLICATION_USE_STATED_STANDALONE_REDISTRIBUTION_UNRESOLVED",
+          "notesAr": "الحزمة الرسمية تحوي 6217 مفتاحاً فريداً، بينما المقدمة الرسمية تذكر 6214."
+        },
+        {
+          "id": "duri-fawh-al-itr-2006",
+          "kind": "SCHOLARLY_METHOD_REFERENCE",
+          "url": "https://quranpedia.net/book/20812",
+          "assetSha256": "6f9f787f650c0b458acd0e687ebba79a4a374f9acb151d865074e5781ca7bac2",
+          "licenseStatus": "ALL_RIGHTS_RESERVED_REFERENCE_ONLY",
+          "notesAr": "يثبت الشاطبية وسند أبي الزعراء ويفهرس الأصول والفرش، ولا يمنح حق إنشاء corpus مشتق قابل لإعادة التوزيع."
+        },
+        {
+          "id": "duri-oiu-study-2016",
+          "kind": "PEER_REVIEWED_SCHOLARLY_REFERENCE",
+          "url": "https://journal.oiu.edu.sd/index.php/fro/article/view/2990",
+          "assetSha256": "e7eacc9e87ffe5797f78812d9c418af1339a3451945891ed5afd52f9d0105b5f",
+          "licenseStatus": "REFERENCE_ONLY_NO_REUSE_LICENSE_FOUND",
+          "notesAr": "بحث مخصص لأصول وخصائص الدوري عن أبي عمرو من طريق الشاطبية؛ مرجع مراجعة لا corpus علامات."
         }
       ],
       "gates": {
         "documentedRiwayah": "PASS",
-        "documentedTariq": "FAIL",
+        "documentedTariq": "PASS",
         "documentedWajh": "FAIL",
-        "completeRuleInventory": "FAIL",
+        "completeRuleInventory": "PARTIAL",
         "completeAnnotationCorpus": "FAIL",
         "exactSirajTextBinding": "NOT_APPLICABLE",
         "redistributionRights": "FAIL",
@@ -164,8 +246,10 @@
       },
       "blockedReasonsAr": [
         "لا توجد حزمة علامات حرفية كاملة ومقفلة البصمة للدوري عن أبي عمرو.",
-        "الطريق والوجه والطبعة التعليمية غير مثبتة.",
-        "لا يوجد ترخيص corpus ومراجعة بشرية واعتماد نشر."
+        "طريق أبي الزعراء من الشاطبية ثابت، لكن الوجه التطبيقي الكامل لم يُحسم.",
+        "نسخة Quranpedia الحالية تشطر 67:9 خطأً وتزيد المجموع من 6217 إلى 6218، فلا تصلح أساساً للإزاحات.",
+        "المقدمة الرسمية تذكر 6214 بينما حزمة المجمع الرسمية تحوي 6217؛ يلزم حسم منهج العد وتثبيت جدول السور قبل أي ربط.",
+        "ترخيص النص القرآني مثبت، أما حقوق العلامات المشتقة ومتن الأحكام والأمثلة فلم تُثبت، ولا توجد مراجعة مؤهلة أو اعتماد نشر ثانٍ."
       ]
     }
   ]

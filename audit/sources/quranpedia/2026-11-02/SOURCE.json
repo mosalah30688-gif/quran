@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "purpose": "AUDIT_REFERENCE_CORPORA_NOT_RUNTIME_INPUT",
+  "dump_version": "2026-11-02",
+  "generated_at": "2026-11-02T03:32:24+00:00",
+  "retrieved_at": "2026-11-02",
+  "provider": "Quranpedia.net — الموسوعة القرآنية",
+  "manifest_url": "https://quranpedia.net/dumps/manifest.json",
+  "license_url": "https://quranpedia.net/dumps/LICENSE.md",
+  "attribution_url": "https://quranpedia.net",
+  "redistribution_terms": "Dataset republication is allowed with Quranpedia.net attribution, a source link, and the stated dump version. This grant does not supply rights in independent reference books or an annotation corpus.",
+  "runtime_use": false,
+  "files": {
+    "LICENSE.md": {
+      "url": "https://quranpedia.net/dumps/LICENSE.md",
+      "bytes": 4227,
+      "sha256": "1e015f6bb6e4247cfcc68f2a3974f5a506536ab4bd5697161fc395dbcc438baf",
+      "version": "2026-11-02"
+    },
+    "manifest.json": {
+      "url": "https://quranpedia.net/dumps/manifest.json",
+      "bytes": 104416,
+      "sha256": "ade928bc6385ed5f1f94771e3e8557cecf28797e7a77488cbedc879c6dd1058f",
+      "version": "2026-11-02"
+    },
+    "mushafs-4.json.gz": {
+      "url": "https://quranpedia.net/dumps/mushafs-4.json.gz",
+      "dataset": "warsh",
+      "bytes": 422507,
+      "sha256": "fb79026f75ad8fef6ab9752ee7fda4b8ff312ae45937016a1f8ecac70ebfd1b6",
+      "built_at": "2026-11-02T03:31:40+00:00",
+      "records": 6214,
+      "canonical_payload_sha256_without_top_level_license": "abd940919c897fa930f0a449e113f4fb8219709a48857d45783c39320f3fdc0d"
+    },
+    "mushafs-6.json.gz": {
+      "url": "https://quranpedia.net/dumps/mushafs-6.json.gz",
+      "dataset": "duri",
+      "bytes": 421957,
+      "sha256": "a147439fe592e038b910e1d36ed536c5b65778313b35bee55320f4c5f9a89703",
+      "built_at": "2026-11-02T03:31:40+00:00",
+      "records": 6218,
+      "canonical_payload_sha256_without_top_level_license": "5db0d43d0a369aaa4366b4a1fb9b6b3a7d6c680eb2f3a195557a094cf594a164",
+      "integrity_status": "QUARANTINED_KNOWN_67_9_SPLIT_REGRESSION"
+    },
+    "mushafs-7.json.gz": {
+      "url": "https://quranpedia.net/dumps/mushafs-7.json.gz",
+      "dataset": "qalun",
+      "bytes": 418528,
+      "sha256": "f51234f98a96e3521b2a7c02d2c457158151867dbc720f1a2fadeaa3436d3809",
+      "built_at": "2026-11-02T03:31:40+00:00",
+      "records": 6214,
+      "canonical_payload_sha256_without_top_level_license": "363e16e8067622cb94ecfc86e922319f7aa238fb19e689b329ea1cffcd547d9c"
+    }
+  },
+  "content_equivalence": {
+    "baseline": "audit/sources/quranpedia/2026-10-27/",
+    "comparison": "Canonical JSON equality after removing only the top-level license metadata object",
+    "result": "IDENTICAL_FOR_MUSHAFS_4_6_7",
+    "runtime_regeneration_required": false
+  },
+  "scientific_boundary": {
+    "licensed_verse_data_is_not_a_tajweed_annotation_corpus": true,
+    "no_reference_book_rights_are_inferred_from_the_dataset_license": true,
+    "duri_numbering_conflict_is_not_resolved_by_this_snapshot": true
+  }
+}

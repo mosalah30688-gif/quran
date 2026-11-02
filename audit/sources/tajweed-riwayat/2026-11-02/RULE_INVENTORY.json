@@ -1,0 +1,320 @@
+{
+  "schemaVersion": 1,
+  "snapshotDate": "2026-11-02",
+  "purpose": "REFERENCE_TOPIC_MAP_ONLY_NOT_A_RULESET_OR_CURRICULUM",
+  "metadataOnly": true,
+  "containsQuranText": false,
+  "containsCopiedRuleProse": false,
+  "containsAnnotationSpans": false,
+  "containsTrainingExamples": false,
+  "policy": {
+    "topicTitlesAndPageLocatorsDoNotConstituteRuleExtraction": true,
+    "eachTopicStillRequiresRightsReviewAndQualifiedScholarlyReview": true,
+    "oneCompatibleWajhMustBeFixedBeforeExamplesOrAnnotations": true,
+    "crossRiwayahFallbackForbidden": true
+  },
+  "scopes": [
+    {
+      "settingId": "warsh",
+      "scope": {
+        "riwayah": "warsh-an-nafi",
+        "tariq": "al-azraq-via-al-shatibiyyah",
+        "wajh": "not-yet-fixed",
+        "edition": "quranpedia-mushaf-4-2026-11-02-crosschecked-kfgqpc-warsh-v3"
+      },
+      "primarySourceId": "libya-warsh-method-2022",
+      "primaryLocator": "chapter 3; contents on printed pages 141-143",
+      "topicMapStatus": "COMPLETE_AGAINST_PRIMARY_REFERENCE_TABLE_OF_CONTENTS",
+      "ruleExtractionStatus": "NOT_STARTED",
+      "completeRuleInventoryGate": "FAIL",
+      "compositionRisk": "The printed appendix on composition of faces is part of the map; its combinations must not be flattened into an assumed default face.",
+      "topics": [
+        {
+          "topicId": "istiadha",
+          "titleAr": "الاستعاذة",
+          "printedPage": 79
+        },
+        {
+          "topicId": "basmala",
+          "titleAr": "البسملة",
+          "printedPage": 82
+        },
+        {
+          "topicId": "mim-al-jam",
+          "titleAr": "ميم الجمع",
+          "printedPage": 84
+        },
+        {
+          "topicId": "ha-al-kinaya",
+          "titleAr": "هاء الكناية",
+          "printedPage": 86
+        },
+        {
+          "topicId": "madd-wa-qasr",
+          "titleAr": "المد والقصر",
+          "printedPage": 89
+        },
+        {
+          "topicId": "hamzatayn-min-kalima",
+          "titleAr": "الهمزتان من كلمة",
+          "printedPage": 95
+        },
+        {
+          "topicId": "hamzatayn-min-kalimatayn",
+          "titleAr": "الهمزتان من كلمتين",
+          "printedPage": 100
+        },
+        {
+          "topicId": "hamz-mufrad",
+          "titleAr": "الهمز المفرد",
+          "printedPage": 104
+        },
+        {
+          "topicId": "izhar-wa-idgham",
+          "titleAr": "الإظهار والإدغام",
+          "printedPage": 108
+        },
+        {
+          "topicId": "fath-wa-imala",
+          "titleAr": "الفتح والإمالة",
+          "printedPage": 112
+        },
+        {
+          "topicId": "raat",
+          "titleAr": "الراءات",
+          "printedPage": 116
+        },
+        {
+          "topicId": "lamat",
+          "titleAr": "اللامات",
+          "printedPage": 119
+        },
+        {
+          "topicId": "waqf-awakhir-al-kalim",
+          "titleAr": "الوقف على أواخر الكلم",
+          "printedPage": 121
+        },
+        {
+          "topicId": "waqf-marsum-al-khatt",
+          "titleAr": "الوقف على مرسوم الخط",
+          "printedPage": 125
+        },
+        {
+          "topicId": "yaat-al-idafa",
+          "titleAr": "ياءات الإضافة",
+          "printedPage": 128
+        },
+        {
+          "topicId": "yaat-al-zawaid",
+          "titleAr": "الياءات الزوائد",
+          "printedPage": 131
+        },
+        {
+          "topicId": "tarkib-al-wujuh-appendix",
+          "titleAr": "ملحق تركيب الأوجه في رواية ورش",
+          "printedPage": 134
+        }
+      ],
+      "secondaryCrossChecks": [
+        {
+          "sourceId": "quranpedia-warsh-intro",
+          "locator": "mushaf introduction"
+        },
+        {
+          "sourceId": "kfgqpc-warsh-v3",
+          "locator": "edition identity and verse-row count only"
+        }
+      ]
+    },
+    {
+      "settingId": "qalun",
+      "scope": {
+        "riwayah": "qalun-an-nafi",
+        "tariq": "abu-nashit-via-al-shatibiyyah",
+        "wajh": "not-yet-fixed",
+        "edition": "quranpedia-mushaf-7-2026-11-02-crosschecked-kfgqpc-qalun-v3"
+      },
+      "primarySourceId": "libya-qalun-method-2022",
+      "primaryLocator": "chapter 3; contents on printed pages 125-127",
+      "topicMapStatus": "COMPLETE_AGAINST_PRIMARY_REFERENCE_TABLE_OF_CONTENTS",
+      "ruleExtractionStatus": "NOT_STARTED",
+      "completeRuleInventoryGate": "FAIL",
+      "compositionRisk": "A chapter map does not select compatible choices across all principles; no default face is inferred.",
+      "topics": [
+        {
+          "topicId": "istiadha",
+          "titleAr": "الاستعاذة",
+          "printedPage": 79
+        },
+        {
+          "topicId": "basmala",
+          "titleAr": "البسملة",
+          "printedPage": 82
+        },
+        {
+          "topicId": "mim-al-jam",
+          "titleAr": "ميم الجمع",
+          "printedPage": 85
+        },
+        {
+          "topicId": "ha-al-kinaya",
+          "titleAr": "هاء الكناية",
+          "printedPage": 87
+        },
+        {
+          "topicId": "madd-wa-qasr",
+          "titleAr": "المد والقصر",
+          "printedPage": 90
+        },
+        {
+          "topicId": "hamzatayn-min-kalima",
+          "titleAr": "الهمزتان من كلمة",
+          "printedPage": 93
+        },
+        {
+          "topicId": "hamzatayn-min-kalimatayn",
+          "titleAr": "الهمزتان من كلمتين",
+          "printedPage": 98
+        },
+        {
+          "topicId": "hamz-mufrad",
+          "titleAr": "الهمز المفرد",
+          "printedPage": 101
+        },
+        {
+          "topicId": "izhar-wa-idgham",
+          "titleAr": "الإظهار والإدغام",
+          "printedPage": 104
+        },
+        {
+          "topicId": "fath-wa-imala",
+          "titleAr": "الفتح والإمالة",
+          "printedPage": 109
+        },
+        {
+          "topicId": "waqf-awakhir-al-kalim",
+          "titleAr": "الوقف على أواخر الكلم",
+          "printedPage": 112
+        },
+        {
+          "topicId": "waqf-marsum-al-khatt",
+          "titleAr": "الوقف على مرسوم الخط",
+          "printedPage": 116
+        },
+        {
+          "topicId": "yaat-al-idafa",
+          "titleAr": "ياءات الإضافة",
+          "printedPage": 119
+        },
+        {
+          "topicId": "yaat-al-zawaid",
+          "titleAr": "الياءات الزوائد",
+          "printedPage": 122
+        }
+      ],
+      "secondaryCrossChecks": [
+        {
+          "sourceId": "quranpedia-qalun-intro",
+          "locator": "mushaf introduction"
+        },
+        {
+          "sourceId": "kfgqpc-qalun-v3",
+          "locator": "edition identity and verse-row count only"
+        }
+      ]
+    },
+    {
+      "settingId": "duri",
+      "scope": {
+        "riwayah": "al-duri-an-abi-amr",
+        "tariq": "abu-al-zaraa-via-al-shatibiyyah",
+        "wajh": "not-yet-fixed",
+        "edition": "kfgqpc-duri-v2-quranpedia-mushaf-6-count-scope-unresolved"
+      },
+      "primarySourceId": "duri-oiu-study-2016",
+      "primaryLocator": "principles study, printed pages 53-77",
+      "introductoryMushafLocator": "quranpedia-duri-intro, PDF pages 2-4",
+      "topicMapStatus": "COMPLETE_AGAINST_PRIMARY_REFERENCE_TABLE_OF_CONTENTS",
+      "ruleExtractionStatus": "NOT_STARTED",
+      "completeRuleInventoryGate": "FAIL",
+      "compositionRisk": "The article groups several principles and does not fix a complete release face; the count scope is independently blocked.",
+      "topics": [
+        {
+          "topicId": "basmala",
+          "titleAr": "البسملة",
+          "printedPage": 53
+        },
+        {
+          "topicId": "mim-al-jam",
+          "titleAr": "ميم الجمع",
+          "printedPage": 53
+        },
+        {
+          "topicId": "ha-al-kinaya",
+          "titleAr": "هاء الكناية",
+          "printedPage": 54
+        },
+        {
+          "topicId": "idgham-saghir",
+          "titleAr": "الإدغام الصغير",
+          "printedPage": 55
+        },
+        {
+          "topicId": "waqf-marsum-al-khatt",
+          "titleAr": "الوقف على مرسوم الخط",
+          "printedPage": 59
+        },
+        {
+          "topicId": "madd-wa-qasr",
+          "titleAr": "المد والقصر",
+          "printedPage": 60
+        },
+        {
+          "topicId": "fath-imala-taqlil",
+          "titleAr": "الفتح والإمالة والتقليل",
+          "printedPage": 61
+        },
+        {
+          "topicId": "hamz-mufrad",
+          "titleAr": "الهمز المفرد",
+          "printedPage": 64
+        },
+        {
+          "topicId": "hamzatayn-min-kalima",
+          "titleAr": "الهمزتان من كلمة",
+          "printedPage": 65
+        },
+        {
+          "topicId": "hamzatayn-min-kalimatayn",
+          "titleAr": "الهمزتان من كلمتين",
+          "printedPage": 67
+        },
+        {
+          "topicId": "yaat-al-idafa",
+          "titleAr": "ياءات الإضافة",
+          "printedPage": 69
+        },
+        {
+          "topicId": "yaat-al-zawaid",
+          "titleAr": "الياءات الزوائد",
+          "printedPage": 76
+        }
+      ],
+      "secondaryCrossChecks": [
+        {
+          "sourceId": "quranpedia-duri-intro",
+          "locator": "PDF pages 2-4; route, counting statement, and orthographic method"
+        },
+        {
+          "sourceId": "duri-fawh-al-itr-2006",
+          "locator": "principles section, printed pages 9-43"
+        },
+        {
+          "sourceId": "duri-fayyad-shatibiyyah",
+          "locator": "Duri and Susi sections; cross-check against incorrectly assigning large idgham to Duri"
+        }
+      ]
+    }
+  ],
+  "releaseStatus": "QUARANTINED_NOT_PUBLISHABLE"
+}

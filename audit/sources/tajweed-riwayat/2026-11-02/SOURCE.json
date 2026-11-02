@@ -1,0 +1,323 @@
+{
+  "schemaVersion": 1,
+  "snapshotDate": "2026-11-02",
+  "purpose": "SCHOLARLY_REFERENCE_METADATA_ONLY_NOT_RUNTIME_DATA",
+  "policy": {
+    "referenceBooksAreNotAnnotationCorpora": true,
+    "noRuleTextOrExamplesMayBeCopiedWithoutRightsReview": true,
+    "quranTextLicenseIsSeparateFromReferenceBookRights": true,
+    "machineExtractionRequiresQualifiedHumanReview": true,
+    "aCompleteWajhMustBeFixedBeforeCurriculumGeneration": true,
+    "secondPersonReleaseApprovalRequired": true,
+    "runtimeActivationAllowed": false
+  },
+  "rightsConclusion": {
+    "quranpediaVerseDataset": "REPUBLICATION_ALLOWED_WITH_ATTRIBUTION_LINK_AND_VERSION",
+    "quranComplexPackages": "APPLICATION_USE_STATED_BUT_STANDALONE_CORPUS_AND_DERIVATIVE_REDISTRIBUTION_NOT_RESOLVED",
+    "referencePdfs": "REFERENCE_ONLY_UNLESS_A_SEPARATE_REUSE_GRANT_IS_RECORDED",
+    "derivedRuleAndAnnotationData": "NO_REDISTRIBUTION_RIGHT_ESTABLISHED",
+    "separationRequired": true
+  },
+  "sources": [
+    {
+      "id": "quranpedia-dumps-2026-11-02",
+      "kind": "LICENSED_QURAN_DATASET_AUDIT_SNAPSHOT",
+      "url": "https://quranpedia.net/dumps/manifest.json",
+      "localSnapshot": "audit/sources/quranpedia/2026-11-02/",
+      "locallyCommitted": true,
+      "version": "2026-11-02",
+      "licenseStatus": "REPUBLICATION_ALLOWED_WITH_ATTRIBUTION_LINK_AND_VERSION",
+      "scope": "Verse data only; not a rule book and not an annotation corpus"
+    },
+    {
+      "id": "kfgqpc-dev-page-2026-10-28",
+      "kind": "OFFICIAL_DEVELOPER_RESOURCE_PAGE",
+      "url": "https://qurancomplex.gov.sa/quran-dev/",
+      "localSnapshot": "audit/sources/alquran-editions/2026-10-28/quran-complex-developers.html.gz",
+      "locallyCommitted": true,
+      "snapshotBytes": 97806,
+      "snapshotSha256": "9b36e02f6d9e46f161e95ed0637d7bb563a02860b7e236c0d9acc7268bf09e4f",
+      "publisher": "مجمع الملك فهد لطباعة المصحف الشريف",
+      "rightsStatus": "USE_IN_APPLICATIONS_AND_RESEARCH_STATED; STANDALONE_CORPUS_AND_DERIVATIVE_REDISTRIBUTION_NOT_EXPLICIT"
+    },
+    {
+      "id": "kfgqpc-warsh-v3",
+      "kind": "OFFICIAL_EDITION_DATA_PACKAGE",
+      "url": "https://download.qurancomplex.gov.sa/resources_dev/kfgqpc_warsh_v30.zip",
+      "landingUrl": "https://qurancomplex.gov.sa/quran-dev/",
+      "locallyCommitted": false,
+      "retrievedBytes": 8919521,
+      "artifactSha256": "d79b0e9d71696e6967a8f9051e62da87e3ad797e76c6b9d931d66fcf7739bbda",
+      "edition": "kfgqpc_warsh_v3",
+      "records": 6214,
+      "rightsStatus": "REFERENCE_AND_APPLICATION_USE_ONLY_PENDING_STANDALONE_REDISTRIBUTION_REVIEW"
+    },
+    {
+      "id": "kfgqpc-qalun-v3",
+      "kind": "OFFICIAL_EDITION_DATA_PACKAGE",
+      "url": "https://download.qurancomplex.gov.sa/resources_dev/kfgqpc_qalun_v30.zip",
+      "landingUrl": "https://qurancomplex.gov.sa/quran-dev/",
+      "locallyCommitted": false,
+      "retrievedBytes": 8616339,
+      "artifactSha256": "32552185fda5520eb4cae741cc01162dc866fe3a224d921f4c182de4a7b965d9",
+      "edition": "kfgqpc_qalun_v3",
+      "records": 6214,
+      "rightsStatus": "REFERENCE_AND_APPLICATION_USE_ONLY_PENDING_STANDALONE_REDISTRIBUTION_REVIEW"
+    },
+    {
+      "id": "kfgqpc-duri-v2",
+      "kind": "OFFICIAL_EDITION_DATA_PACKAGE",
+      "url": "https://download.qurancomplex.gov.sa/resources_dev/UthmanicDouri_v2-0.zip",
+      "landingUrl": "https://qurancomplex.gov.sa/quran-dev/",
+      "locallyCommitted": false,
+      "retrievedBytes": 8788270,
+      "artifactSha256": "84e5569790f96b05896b8f44ebe8d82d98377a929ac0e87dd8af4dbec52cb0c1",
+      "edition": "UthmanicDouri_v2-0",
+      "records": 6217,
+      "rightsStatus": "REFERENCE_AND_APPLICATION_USE_ONLY_PENDING_STANDALONE_REDISTRIBUTION_REVIEW"
+    },
+    {
+      "id": "quranpedia-warsh-intro",
+      "kind": "OFFICIAL_MUSHAF_INTRODUCTION_REFERENCE",
+      "url": "https://quranpedia.net/mushafs-contents/info/4-about.pdf",
+      "landingUrl": "https://quranpedia.net/mushaf/4",
+      "locallyCommitted": false,
+      "retrievedBytes": 7282673,
+      "assetSha256": "8f50c6b6b5e33403d32458043da5e0dd4e6e77fe2d3852f64460d223e5d17c06",
+      "rightsStatus": "REFERENCE_ONLY_NO_PDF_REUSE_GRANT_RECORDED"
+    },
+    {
+      "id": "quranpedia-qalun-intro",
+      "kind": "OFFICIAL_MUSHAF_INTRODUCTION_REFERENCE",
+      "url": "https://quranpedia.net/mushafs-contents/info/7-about.pdf",
+      "landingUrl": "https://quranpedia.net/mushaf/7",
+      "locallyCommitted": false,
+      "retrievedBytes": 7526400,
+      "assetSha256": "54a908d16a8b2a10800ed6ea3b14c38c381817100cdc5e612fcdd72728e503b7",
+      "rightsStatus": "REFERENCE_ONLY_NO_PDF_REUSE_GRANT_RECORDED"
+    },
+    {
+      "id": "quranpedia-duri-intro",
+      "kind": "OFFICIAL_MUSHAF_INTRODUCTION_REFERENCE",
+      "url": "https://quranpedia.net/mushafs-contents/info/6-about.pdf",
+      "landingUrl": "https://quranpedia.net/mushaf/6",
+      "locallyCommitted": false,
+      "retrievedBytes": 8286902,
+      "assetSha256": "97e6d01c758b1e7e34f94b2a86d6eea97bedbaaa31ed81b392532c676de7dd61",
+      "rightsStatus": "REFERENCE_ONLY_NO_PDF_REUSE_GRANT_RECORDED",
+      "countStatement": 6214
+    },
+    {
+      "id": "libya-warsh-method-2022",
+      "kind": "OFFICIAL_EDUCATIONAL_REFERENCE",
+      "url": "https://quranly.com.ly/en/wp-content/uploads/sites/2/2024/08/%D8%A7%D9%84%D9%85%D9%86%D9%87%D8%AC-%D8%A7%D9%84%D8%B9%D9%84%D9%85%D9%8A-%D9%81%D9%8A-%D8%A3%D8%AD%D9%83%D8%A7%D9%85-%D8%A7%D9%84%D8%AA%D8%AC%D9%88%D9%8A%D8%AF-%D9%88%D8%A3%D8%B5%D9%88%D9%84-%D8%B1%D9%88%D8%A7%D9%8A%D8%A9-%D9%88%D8%B1%D8%B4-.pdf",
+      "landingUrl": "https://quranly.com.ly/en/resource/",
+      "locallyCommitted": false,
+      "retrievedBytes": 10668453,
+      "assetSha256": "be4719e5df54e8a1b105e572d0b6f280326ca82a088e3ea9443467d8d7a960de",
+      "publisher": "الهيئة العامة للأوقاف والشؤون الإسلامية — ليبيا",
+      "edition": "الطبعة الأولى، 1443هـ/2022م",
+      "rightsStatus": "REFERENCE_ONLY_NO_MACHINE_REDISTRIBUTION_GRANT_RECORDED"
+    },
+    {
+      "id": "libya-qalun-method-2022",
+      "kind": "OFFICIAL_EDUCATIONAL_REFERENCE",
+      "url": "https://quranly.com.ly/en/wp-content/uploads/sites/2/2024/08/%D8%A7%D9%84%D9%85%D9%86%D9%87%D8%AC-%D8%A7%D9%84%D8%B9%D9%84%D9%85%D9%8A-%D9%81%D9%8A-%D8%A3%D8%AD%D9%83%D8%A7%D9%85-%D8%A7%D9%84%D8%AA%D8%AC%D9%88%D9%8A%D8%AF-%D9%88%D8%A3%D8%B5%D9%88%D9%84-%D8%B1%D9%88%D8%A7%D9%8A%D8%A9-%D9%82%D8%A7%D9%84%D9%88%D9%86.pdf",
+      "landingUrl": "https://quranly.com.ly/en/resource/",
+      "locallyCommitted": false,
+      "retrievedBytes": 9518057,
+      "assetSha256": "58be3ac729608dcafc6cd076e1402ab9faef8ce1ff4e8383bc5ba60127e78b4a",
+      "publisher": "الهيئة العامة للأوقاف والشؤون الإسلامية — ليبيا",
+      "edition": "الطبعة الثانية، 1443هـ/2022م",
+      "rightsStatus": "REFERENCE_ONLY_NO_MACHINE_REDISTRIBUTION_GRANT_RECORDED"
+    },
+    {
+      "id": "duri-fawh-al-itr-2006",
+      "kind": "SCHOLARLY_METHOD_REFERENCE",
+      "url": "https://files.quranpedia.net/attachments/documents/BOOK_20812_1.pdf",
+      "landingUrl": "https://quranpedia.net/book/20812",
+      "locallyCommitted": false,
+      "retrievedBytes": 9400852,
+      "assetSha256": "6f9f787f650c0b458acd0e687ebba79a4a374f9acb151d865074e5781ca7bac2",
+      "title": "فوح العطر في رواية الإمام الدوري عن أبي عمرو",
+      "author": "محمد نبهان بن حسين مصري",
+      "edition": "الطبعة الثانية، 1427هـ/2006م",
+      "rightsStatus": "ALL_RIGHTS_RESERVED_REFERENCE_ONLY"
+    },
+    {
+      "id": "duri-oiu-study-2016",
+      "kind": "PEER_REVIEWED_SCHOLARLY_REFERENCE",
+      "url": "https://journal.oiu.edu.sd/fro/article/download/2990/2306",
+      "landingUrl": "https://journal.oiu.edu.sd/index.php/fro/article/view/2990",
+      "locallyCommitted": false,
+      "retrievedBytes": 951616,
+      "assetSha256": "e7eacc9e87ffe5797f78812d9c418af1339a3451945891ed5afd52f9d0105b5f",
+      "publication": "مجلة كلية أصول الدين، العدد 16، ديسمبر 2016م",
+      "rightsStatus": "REFERENCE_ONLY_NO_REUSE_LICENSE_FOUND"
+    },
+    {
+      "id": "duri-fayyad-shatibiyyah",
+      "kind": "SPECIALIST_CROSS_CHECK_REFERENCE",
+      "url": "https://files.quranpedia.net/attachments/documents/BOOK_16017_1.pdf",
+      "landingUrl": "https://quranpedia.net/book/16017",
+      "locallyCommitted": false,
+      "retrievedBytes": 8866332,
+      "assetSha256": "e1308ffd927a63016dd26f87cdc037472485b209fb4d2da3971cb3ae1b45ce76",
+      "title": "قراءة أبي عمرو البصري براوييه الدوري والسوسي من طريق الشاطبية",
+      "author": "جمال فياض",
+      "rightsStatus": "REFERENCE_ONLY_NO_REUSE_LICENSE_FOUND"
+    },
+    {
+      "id": "quranpedia-duri-svg-2026-07-13",
+      "kind": "RENDERED_MUSHAF_ARCHIVE_AUDIT_REFERENCE",
+      "url": "https://quranpedia.net/api-quran-svg/douri.zip",
+      "locallyCommitted": false,
+      "retrievedBytes": 92289623,
+      "artifactSha256": "21987ddea08dc97021ec57eb0790c549e8f8ca25c827c377eca787bfbacf6a22",
+      "embeddedManifestSha256": "45ef946158e827f25838b90f9302ab0408aab8b44f261b93cfd7705ced3d983f",
+      "embeddedRecords": 6217,
+      "archiveDate": "2026-07-13",
+      "rightsStatus": "AUDIT_REFERENCE_ONLY; ARCHIVE_NOT_COMMITTED"
+    },
+    {
+      "id": "faraid-al-hisan-counting",
+      "kind": "QURAN_COUNTING_REFERENCE",
+      "url": "https://www.arabic-keyboard.info/books/ar/read-book/%D8%A7%D9%84%D9%81%D8%B1%D8%A7%D8%A6%D8%AF-%D8%A7%D9%84%D8%AD%D8%B3%D8%A7%D9%86-%D9%81%D9%8A-%D8%B9%D8%AF-%D8%A2%D9%89-%D8%A7%D9%84%D9%82%D8%B1%D8%A2%D9%86",
+      "locallyCommitted": false,
+      "retrievedBytes": 165513,
+      "responseSha256": "9028dbf7acf7a3ccd7e184da413e5c8fe074623db46a33f78bc32bc87f6d1dd6",
+      "title": "الفرائد الحسان في عد آي القرآن",
+      "rightsStatus": "REFERENCE_ONLY"
+    }
+  ],
+  "scopes": [
+    {
+      "settingId": "warsh",
+      "riwayah": "warsh-an-nafi",
+      "reader": "nafi-al-madani",
+      "tariq": "al-azraq-via-al-shatibiyyah",
+      "edition": "quranpedia-mushaf-4-2026-11-02-crosschecked-kfgqpc-warsh-v3",
+      "identityEvidenceStatus": "PASS",
+      "tariqEvidenceStatus": "PASS",
+      "wajhStatus": "BLOCKED_COMPATIBLE_FACE_NOT_SELECTED_OR_REVIEWED",
+      "annotationCorpusStatus": "MISSING",
+      "evidence": [
+        {
+          "sourceId": "quranpedia-warsh-intro",
+          "locator": "mushaf introduction",
+          "finding": "Warsh from Nafi through al-Azraq is identified"
+        },
+        {
+          "sourceId": "libya-warsh-method-2022",
+          "locator": "chapter 3, printed pages 75-139",
+          "finding": "The listed principles are explicitly from al-Shatibiyyah; the appendix shows face-composition dependencies"
+        },
+        {
+          "sourceId": "kfgqpc-warsh-v3",
+          "locator": "developer data package",
+          "finding": "Official edition cross-check contains 6214 unique verse rows"
+        }
+      ],
+      "blockedReasons": [
+        "No one complete compatible wajh has been selected across all composition dependencies",
+        "No complete licensed annotation corpus is bound to the exact edition",
+        "No qualified human review and second release approval are recorded"
+      ]
+    },
+    {
+      "settingId": "qalun",
+      "riwayah": "qalun-an-nafi",
+      "reader": "nafi-al-madani",
+      "tariq": "abu-nashit-via-al-shatibiyyah",
+      "edition": "quranpedia-mushaf-7-2026-11-02-crosschecked-kfgqpc-qalun-v3",
+      "identityEvidenceStatus": "PASS",
+      "tariqEvidenceStatus": "PASS",
+      "wajhStatus": "BLOCKED_COMPATIBLE_FACE_NOT_SELECTED_OR_REVIEWED",
+      "annotationCorpusStatus": "MISSING",
+      "evidence": [
+        {
+          "sourceId": "quranpedia-qalun-intro",
+          "locator": "mushaf introduction",
+          "finding": "Qalun from Nafi through Abu Nashit is identified"
+        },
+        {
+          "sourceId": "libya-qalun-method-2022",
+          "locator": "chapter 3, printed pages 75-124",
+          "finding": "A scholarly map of the principles is present, but it is not a verse annotation corpus or a complete selected wajh"
+        },
+        {
+          "sourceId": "kfgqpc-qalun-v3",
+          "locator": "developer data package",
+          "finding": "Official edition cross-check contains 6214 unique verse rows"
+        }
+      ],
+      "blockedReasons": [
+        "No complete compatible wajh has been selected",
+        "No complete licensed annotation corpus is bound to the exact edition",
+        "No qualified human review and second release approval are recorded"
+      ]
+    },
+    {
+      "settingId": "duri",
+      "riwayah": "al-duri-an-abi-amr",
+      "reader": "abu-amr-al-basri",
+      "tariq": "abu-al-zaraa-via-al-shatibiyyah",
+      "edition": "kfgqpc-duri-v2-quranpedia-mushaf-6-count-scope-unresolved",
+      "identityEvidenceStatus": "PASS",
+      "tariqEvidenceStatus": "PASS",
+      "wajhStatus": "BLOCKED_COMPLETE_FACE_AND_COUNT_SCOPE_UNRESOLVED",
+      "annotationCorpusStatus": "MISSING",
+      "countScopeStatus": "BLOCKED_OFFICIAL_6214_VS_6217_CONFLICT_PLUS_6218_DATA_REGRESSION",
+      "evidence": [
+        {
+          "sourceId": "quranpedia-duri-intro",
+          "locator": "PDF page 2",
+          "finding": "Duri from Abu Amr through Abu al-Zaraa and al-Shatibiyyah is identified; the introduction states 6214"
+        },
+        {
+          "sourceId": "duri-fawh-al-itr-2006",
+          "locator": "PDF pages 3-4 and principles section",
+          "finding": "A specialist treatment of Duri from Abu Amr through al-Shatibiyyah"
+        },
+        {
+          "sourceId": "duri-oiu-study-2016",
+          "locator": "second study section",
+          "finding": "Peer-reviewed cross-check of Duri principles from al-Shatibiyyah"
+        },
+        {
+          "sourceId": "duri-fayyad-shatibiyyah",
+          "locator": "Duri and Susi sections",
+          "finding": "Specialist cross-check keeps Duri distinct from Susi, including the large-idgham question"
+        },
+        {
+          "sourceId": "kfgqpc-duri-v2",
+          "locator": "developer package rows",
+          "finding": "The official package contains 6217 unique verse rows"
+        },
+        {
+          "sourceId": "quranpedia-duri-svg-2026-07-13",
+          "locator": "embedded mushaf-content.json",
+          "finding": "The rendered archive metadata contains 6217 rows and 30 rows for surah 67"
+        }
+      ],
+      "blockedReasons": [
+        "The official introduction states 6214 while the official data package contains 6217",
+        "The current Quranpedia dump contains 6218 after an erroneous split of 67:9",
+        "No complete compatible wajh or licensed annotation corpus is fixed",
+        "No qualified human review and second release approval are recorded"
+      ]
+    }
+  ],
+  "releaseConclusion": {
+    "status": "QUARANTINED_NOT_PUBLISHABLE",
+    "runtimeChanges": 0,
+    "approvedCurricula": 0,
+    "nextRequiredActions": [
+      "Fix one complete compatible wajh for each route with a qualified reviewer",
+      "Resolve the Duri counting scope with the publisher or a qualified specialist",
+      "Acquire explicit rights for the rule, example, and derived annotation corpus",
+      "Bind every annotation span to the exact edition hash",
+      "Complete qualified review and independent release approval"
+    ]
+  }
+}

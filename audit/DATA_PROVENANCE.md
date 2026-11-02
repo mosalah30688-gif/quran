@@ -16,6 +16,7 @@ python scripts/generate_adhkar_data.py --verify
 python scripts/verify_tajweed_learning.py
 python scripts/verify_tajweed_scopes.py
 python scripts/verify_tajweed_source_candidates.py
+python scripts/verify_tajweed_reference_sources.py
 ```
 
 ## خريطة الملفات
@@ -33,11 +34,12 @@ python scripts/verify_tajweed_source_candidates.py
 | `tajweed-scope-registry.json`, `tajweed-curriculum.schema.json` | سجل وعقد أنشأهما المشروع لتنظيم المصادر؛ لا يضيفان حكمًا شرعيًا أو علامة تجويد | `scripts/verify_tajweed_scopes.py` يطابق كل اختيار مصحف مع روايته ونصه وبصمته، يمنع fallback بين النطاقات، ويفرض على أي حزمة مستقبلية مصدرًا مرخصًا مقفولًا ومراجعة مؤهلة واعتماد نشر ثانٍ |
 | `tajweed-curricula/*.json` | حزمة مستقلة لكل `riwayah/tariq/wajh/edition` بعد تثبيت المصدر والترخيص | المجلد فارغ حاليًا عمدًا؛ `tajweed-curriculum-loader.js` يطابق بصمة artifact وبصمة طبعة النص والنطاق والمراجعة ويفحص حدود Unicode، وقنوات Android/PWA/update تنقل الملفات ديناميكيًا عند اعتمادها فقط. لا تُنشأ حزمة لورش أو قالون أو الدوري من تخمين أو من قواعد حفص |
 | `audit/tajweed-source-candidates.json` و`audit/tajweed-candidates/*.analysis.json` | بيانات وصفية لمرشحات بحثية فقط؛ لا تحتوي متن القرآن أو corpus العلامات | `scripts/verify_tajweed_source_candidates.py` يثبت بقاء المرشحات في الحجر وعدم تسربها إلى runtime. حلل `scripts/analyze_warsh_tajweed_candidate.py` حزمة ورش/الأزرق ذات البصمة المقفلة: 6,214 آية و46 معرف حكم؛ فشلت بوابات الحقوق والربط النصي والمراجعة، ولذلك لا تنشر |
+| `audit/sources/tajweed-riwayat/2026-11-02/` و`audit/sources/quranpedia/2026-11-02/` | سجل مراجع مؤرخ، وخريطة موضوعات بلا متن قواعد، ولقطة مرخصة لنصوص ورش وقالون والدوري لأغراض التدقيق فقط | `scripts/verify_tajweed_reference_sources.py` يثبت ورش/الأزرق، وقالون/أبي نشيط، والدوري عن أبي عمرو/أبي الزعراء من طريق الشاطبية، مع إبقاء الوجه وcorpus العلامات والمراجعة محجورة. يثبت أيضًا تعارض الدوري الرسمي 6214/6217 وخطأ شطر `67:9` الذي رفع dump الحالي إلى 6218، ويؤكد صفر مناهج runtime مفعلة |
 
 ## شروط المصادر
 
 - شروط AlQuran Cloud المقفلة وروابطها مسجلة في `SOURCE.json` وسجل الطبعات؛ النص لا يُنسب إلى المشروع ولا يُخلط بغير القرآن.
-- رخصة Quranpedia الأصلية محفوظة في `audit/sources/quranpedia/2026-10-27/LICENSE.md` وفي `audit/sources/quranpedia-tafsir/2026-10-28/LICENSE.md`. تظهر عبارة «الموسوعة القرآنية Quranpedia.net» ورقم نسخة ملفات الكتب في قاعدة البيانات والإشعارات والواجهة. تسمح الرخصة بالاستعمال داخل التطبيقات، وعند نشر أصل البيانات القابل للتنزيل يُذكر رابط المصدر وإصدار `2026-08-10` صراحةً.
+- رخصة Quranpedia الأصلية محفوظة في `audit/sources/quranpedia/2026-10-27/LICENSE.md` و`audit/sources/quranpedia/2026-11-02/LICENSE.md` وفي `audit/sources/quranpedia-tafsir/2026-10-28/LICENSE.md`. تظهر عبارة «الموسوعة القرآنية Quranpedia.net» ورقم النسخة مع رابط المصدر؛ لقطة الروايات التدقيقية القابلة للتنزيل تنسب الإصدار `2026-11-02` صراحةً، وملفات كتب التفسير تنسب إصدارها `2026-08-10`. تسمح الرخصة بالاستعمال داخل التطبيقات، وتوجب النسبة والرابط ورقم الإصدار عند نشر أصل البيانات القابل للتنزيل.
 - ترخيص MIT لمجموعة الأذكار محفوظ بجوار المصدر المقفول؛ لا يعني ذلك أن المشروع يدّعي ملكية نصوص القرآن أو الحديث التراثية.
 
 ## الحد العلمي
