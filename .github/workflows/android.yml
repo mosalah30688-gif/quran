@@ -8,6 +8,8 @@ on:
       - 'app.js'
       - 'smart-context.js'
       - 'smart-services.js'
+      - 'tajweed-learning.js'
+      - 'tajweed-learning-catalog.json'
       - 'tests/*.test.js'
       - 'index.html'
       - 'manifest.json'
@@ -20,6 +22,7 @@ on:
       - 'scripts/verify_audio_sources.py'
       - 'scripts/verify_asset_provenance.py'
       - 'scripts/verify_data_provenance.py'
+      - 'scripts/verify_tajweed_learning.py'
       - 'quran-*.json'
       - 'surahs.json'
       - 'tafsir-catalog.json'
@@ -78,7 +81,9 @@ jobs:
           node --check app.js
           node --check smart-context.js
           node --check smart-services.js
+          node --check tajweed-learning.js
           npm run test:smart
+          python3 scripts/verify_tajweed_learning.py
           python3 scripts/verify_android_bundle.py
           python3 scripts/verify_audio_sources.py
           python3 scripts/verify_asset_provenance.py
@@ -150,8 +155,10 @@ jobs:
           apk = 'android/app/build/outputs/apk/release/app-release.apk'
           required = {
               'assets/public/app.js', 'assets/public/smart-context.js',
-              'assets/public/smart-services.js', 'assets/public/index.html', 'assets/public/sw.js',
+              'assets/public/smart-services.js', 'assets/public/tajweed-learning.js',
+              'assets/public/index.html', 'assets/public/sw.js',
               'assets/public/quran-hafs.json', 'assets/public/quran-tajweed.json',
+              'assets/public/tajweed-learning-catalog.json',
               'assets/public/surahs.json', 'assets/public/tafsir-catalog.json',
               'assets/public/fonts/Amiri-Regular.ttf',
               'assets/public/fonts/AmiriQuran-Regular.ttf',
@@ -168,16 +175,24 @@ jobs:
               app = archive.read('assets/public/app.js').decode()
               smart_context = archive.read('assets/public/smart-context.js').decode()
               smart_services = archive.read('assets/public/smart-services.js').decode()
+              tajweed_learning = archive.read('assets/public/tajweed-learning.js').decode()
+              tajweed_catalog = archive.read('assets/public/tajweed-learning-catalog.json').decode()
               html = archive.read('assets/public/index.html').decode()
               service_worker = archive.read('assets/public/sw.js').decode()
           assert 'everyayah.com' not in app.lower()
           assert 'SmartContextEngine' in smart_context and 'LIKELY_SLEEPING' in smart_context
           assert 'buildCandidates' in smart_services and 'open_adhkar:morning' in smart_services
+          assert 'TajweedLearningEngine' in tajweed_learning and 'reviewedEntry' in tajweed_learning
+          assert 'PENDING_SCHOLARLY_REVIEW' in tajweed_catalog and 'source-unspecified' in tajweed_catalog
           assert "run(null, 'smart-context.js')" in html
           assert "run(null, 'smart-services.js')" in html
+          assert "run(null, 'tajweed-learning.js')" in html
           assert 'id="setSmartEnabled"' in html and 'id="smartSuggestion"' in html
+          assert 'id="tjStartLearning"' in html and 'id="tjLearningCard"' in html
           assert 'لا يرسل ملف عادات إلى خادم' in html
           assert 'new SmartContextAPI.SmartContextEngine' in app
+          assert 'new TajweedLearningAPI.TajweedLearningEngine' in app
+          assert 'لن يطبق سراج قواعد حفص عليها' in app
           assert "markShown(candidate, suggestionId, 'suggestion')" in app
           assert 'TafsirStore' in app and 'Reminder' in app and 'ar.parhizgar' in app
           assert 'loadBundledData()' in app and 'recordWirdPage' in app
@@ -212,8 +227,9 @@ jobs:
           assert 'group-menu-open' in html and 'reader-view-active' in html and 'body.group-menu-open .hdr' in html
           assert 'syncReaderDockHeight' in app and 'syncAudioTimeline' in app
           assert 'syncGroupMenuLayer' in app and 'focusFirst' in app and 'restoreFocus' in app
-          assert 'siraj-shell-v12' in service_worker
+          assert 'siraj-shell-v13' in service_worker
           assert "'./smart-context.js'" in service_worker and "'./smart-services.js'" in service_worker
+          assert "'./tajweed-learning.js'" in service_worker and "'./tajweed-learning-catalog.json'" in service_worker
           assert 'data-icon="tajweed"' in html and '🎵' not in html
           PY
 
@@ -350,6 +366,8 @@ jobs:
           cp index.html update/index.html
           cp smart-context.js update/smart-context.js
           cp smart-services.js update/smart-services.js
+          cp tajweed-learning.js update/tajweed-learning.js
+          cp tajweed-learning-catalog.json update/tajweed-learning-catalog.json
           cp app.js update/app.js
           python3 - <<'PY'
           import json, os
@@ -358,7 +376,7 @@ jobs:
           data = json.loads(path.read_text(encoding='utf-8'))
           version = os.environ['VERSION']
           data['version'] = version
-          data['files'] = ['index.html', 'smart-context.js', 'smart-services.js', 'app.js']
+          data['files'] = ['index.html', 'smart-context.js', 'smart-services.js', 'tajweed-learning.js', 'tajweed-learning-catalog.json', 'app.js']
           data['features'] = ['هوية أوضح لسراج ووصول منظم إلى «عن التطبيق».']
           data['apk'] = {
               'version': version,
@@ -369,7 +387,7 @@ jobs:
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add update/manifest.json update/index.html update/smart-context.js update/smart-services.js update/app.js
+          git add update/manifest.json update/index.html update/smart-context.js update/smart-services.js update/tajweed-learning.js update/tajweed-learning-catalog.json update/app.js
           if ! git diff --cached --quiet; then
             git commit -m "Android $VERSION: advance stable immutable release channel [skip ci]"
             git push origin HEAD:main

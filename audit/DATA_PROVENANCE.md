@@ -13,6 +13,7 @@ python scripts/generate_quranpedia_tafsir_catalog.py --verify
 python scripts/fetch_offline_tafsir_data.py --verify
 python scripts/build_offline_tafsir.py --verify
 python scripts/generate_adhkar_data.py --verify
+python scripts/verify_tajweed_learning.py
 ```
 
 ## خريطة الملفات
@@ -26,6 +27,7 @@ python scripts/generate_adhkar_data.py --verify
 | `tafsir-offline.sqlite3` | 73 ملف كتاب رسميًا من Quranpedia (إصدار `2026-08-10`، مجموع مضغوط 663,702,274 بايت) و5 لقطات تفسير من AlQuran Cloud بتاريخ `2026-10-28` | قائمة ملفات الكتب وبصماتها في `audit/sources/quranpedia-tafsir/2026-10-28/OFFLINE_SOURCE.json`، ولقطات AlQuran في `audit/sources/alquran-tafsir/2026-10-28/SOURCE.json`؛ ينظف `scripts/build_offline_tafsir.py` HTML إلى Unicode ويضغط مجموعات 16 آية داخل SQLite بذاكرة محدودة. قفل الناتج في `audit/offline-tafsir-data.json`: 78 طبعة، 344,410 نصًا غير فارغ، SHA-256 `66ce7736d44679a2b6fc536635a556881d8c7f98bad47fa5622a155700c1900c` |
 | `adhkar.json` | مجموعة `asellam/HisnElMuslim` عند commit `872764ca013116c905f7fc9c3dc972c27cd37d4a` تحت MIT، مع آيتين من مصدر القرآن المقفول | `audit/sources/hisn-el-muslim/.../SOURCE.json`, `audit/sources/adhkar-curation-1.1.0.json`, و`scripts/generate_adhkar_data.py`؛ لكل عنصر مرجع ظاهر في التطبيق |
 | `tajweed.json` | شروح واجهة أصلية كتبها المشروع لرموز مصدر التجويد | `audit/sources/project-authored-data.json`؛ حقوقها واضحة، لكن اعتماد دقتها العلمية ما زال ضمن المراجعة البشرية |
+| `tajweed-learning-catalog.json` | تحويل منظم لشروح `tajweed.json` وأكواد علامات لقطة `quran-tajweed.json` المقفلة، دون إدخال متن خارجي جديد | `scripts/verify_tajweed_learning.py` يثبت التطابق ووجود الأمثلة ويقفل النطاق على حفص بقيمتي طريق/وجه صريحتين بأن المصدر غير محدد، مع `PENDING_SCHOLARLY_REVIEW`; الروايات الأخرى تفشل مغلقًا |
 
 ## شروط المصادر
 

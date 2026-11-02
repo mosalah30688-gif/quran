@@ -79,11 +79,13 @@ def main() -> None:
     assert historical_license.startswith("MIT License\n")
     assert "cp LICENSE LICENSE.ar.md NOTICE.md www/legal/" in build_script
     assert "cp LICENSES/MIT-HISTORICAL.txt www/legal/" in build_script
-    assert "index.html smart-context.js smart-services.js app.js" in build_script
+    assert "index.html smart-context.js smart-services.js tajweed-learning.js app.js" in build_script
 
     app = (ROOT / "app.js").read_text(encoding="utf-8")
     smart_context = (ROOT / "smart-context.js").read_text(encoding="utf-8")
     smart_services = (ROOT / "smart-services.js").read_text(encoding="utf-8")
+    tajweed_learning = (ROOT / "tajweed-learning.js").read_text(encoding="utf-8")
+    tajweed_catalog = (ROOT / "tajweed-learning-catalog.json").read_text(encoding="utf-8")
     html = (ROOT / "index.html").read_text(encoding="utf-8")
     service_worker = (ROOT / "sw.js").read_text(encoding="utf-8")
     capacitor = load("capacitor.config.json")
@@ -104,11 +106,17 @@ def main() -> None:
     assert "loadBundledData()" in app
     assert "SmartContextEngine" in smart_context and "LIKELY_SLEEPING" in smart_context
     assert "buildCandidates" in smart_services and "open_adhkar:morning" in smart_services
+    assert "TajweedLearningEngine" in tajweed_learning and "reviewedEntry" in tajweed_learning
+    assert "PENDING_SCHOLARLY_REVIEW" in tajweed_catalog and "source-unspecified" in tajweed_catalog
     assert "run(null, 'smart-context.js')" in html
     assert "run(null, 'smart-services.js')" in html
+    assert "run(null, 'tajweed-learning.js')" in html
     assert 'id="setSmartEnabled"' in html and 'id="smartSuggestion"' in html
+    assert 'id="tjStartLearning"' in html and 'id="tjLearningCard"' in html
     assert "لا يرسل ملف عادات إلى خادم" in html
     assert "new SmartContextAPI.SmartContextEngine" in app
+    assert "new TajweedLearningAPI.TajweedLearningEngine" in app
+    assert "لن يطبق سراج قواعد حفص عليها" in app
     assert "markShown(candidate, suggestionId, 'suggestion')" in app
     assert "lookupBatch" in app and "TafsirStore" in app
     assert "recordWirdPage" in app and "Reminder" in app
@@ -154,8 +162,10 @@ def main() -> None:
     assert "يتوفر تحديث جديد لسراج — الإصدار" in app and "فيه تحديث جديد" not in app
     assert "Array.isArray(m.features)" in app and "technicalTerms" in app
     assert ".upd-banner span { flex: 1; white-space: pre-line; }" in html
-    assert "siraj-shell-v12" in service_worker
+    assert "siraj-shell-v13" in service_worker
     assert "'./smart-context.js'" in service_worker and "'./smart-services.js'" in service_worker
+    assert "'./tajweed-learning.js'" in service_worker
+    assert "'./tajweed-learning-catalog.json'" in service_worker
     assert "--quran-font" in html and "setFont" in html
     assert "data-icon=\"tajweed\"" in html and "🎵" not in html
 

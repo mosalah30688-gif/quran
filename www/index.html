@@ -279,7 +279,14 @@
     .smart-settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
     .smart-settings-grid label { display: grid; gap: 4px; }
     .smart-local-note { border-right: 3px solid var(--brand-2); padding: 7px 10px; background: var(--bg); border-radius: 8px; line-height: 1.7; }
-    @media (max-width: 560px) { .smart-settings-grid { grid-template-columns: 1fr; } }
+    .tj-learning-card { border-color: color-mix(in srgb, var(--brand-2) 45%, var(--line)); }
+    .tj-learning-card h3 { color: var(--brand); margin-bottom: 8px; }
+    .tj-example { font-family: var(--quran-font), "Amiri Quran", Amiri, serif; font-size: 24px; line-height: 2; background: var(--bg); border-radius: 10px; padding: 10px; margin: 10px 0; }
+    .tj-rating { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+    @media (max-width: 560px) {
+      .smart-settings-grid { grid-template-columns: 1fr; }
+      .tj-rating { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
 
     /* أيقونات Fluent 3D متجهية: واضحة على الشاشات الصغيرة ولا تعتمد على رموز emoji. */
     .ic { display: inline-grid; place-items: center; flex: 0 0 auto; }
@@ -970,7 +977,53 @@
           </div>
         </section>
         <section class="view" id="view-tajweed">
-          <div id="tjList"></div>
+          <div class="card" id="tjLearningHome">
+            <div class="row" style="justify-content:space-between;align-items:flex-start">
+              <div>
+                <h3 style="margin:0">تعلم التجويد بالمراجعة المتباعدة</h3>
+                <div class="muted" id="tjLearningScope" style="margin-top:4px"></div>
+              </div>
+              <span class="smart-badge" id="tjReviewBadge">قيد المراجعة العلمية</span>
+            </div>
+            <p class="smart-local-note" id="tjLearningWarning"></p>
+            <div class="stat-grid" id="tjLearningStats">
+              <div class="stat-box">مستحقة<b id="tjDueCount">0</b></div>
+              <div class="stat-box">قيد التعلم<b id="tjLearningCount">0</b></div>
+              <div class="stat-box">راسخة<b id="tjMatureCount">0</b></div>
+              <div class="stat-box">الدقة<b id="tjAccuracy">0%</b></div>
+            </div>
+            <div class="row" style="margin-top:12px">
+              <button class="btn" id="tjStartLearning">بدء جلسة قصيرة</button>
+              <button class="btn small ghost" id="tjResetLearning">مسح تقدم هذه الطبعة</button>
+            </div>
+            <div class="muted" id="tjLearningEmpty" style="margin-top:8px"></div>
+          </div>
+
+          <div class="card tj-learning-card" id="tjLearningCard" hidden>
+            <div class="row" style="justify-content:space-between">
+              <strong id="tjCardProgress"></strong>
+              <button class="btn small ghost" id="tjEndLearning">إنهاء الجلسة</button>
+            </div>
+            <h3 id="tjCardTitle"></h3>
+            <p id="tjCardPrompt"></p>
+            <div class="tj-example" id="tjCardExample"></div>
+            <button class="btn" id="tjRevealAnswer">إظهار الشرح</button>
+            <div id="tjCardAnswer" hidden>
+              <div class="tf" id="tjCardAnswerText"></div>
+              <p class="muted">قيّم استدعاءك بصدق ليحدد سراج موعد المراجعة التالية.</p>
+              <div class="tj-rating" aria-label="تقييم المراجعة">
+                <button class="btn small ghost" data-tj-rating="again">أعدها</button>
+                <button class="btn small ghost" data-tj-rating="hard">صعب</button>
+                <button class="btn small" data-tj-rating="good">جيد</button>
+                <button class="btn small" data-tj-rating="easy">سهل</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-top:0">مرجع الأحكام في الطبعة الحالية</h3>
+            <div id="tjList"></div>
+          </div>
         </section>
         <section class="view" id="view-meanings">
           <div class="card">
@@ -1300,6 +1353,7 @@
     if (!applied) {
       run(null, 'smart-context.js');
       run(null, 'smart-services.js');
+      run(null, 'tajweed-learning.js');
       run(null, 'app.js');
     }
   })();

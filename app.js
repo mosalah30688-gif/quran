@@ -146,10 +146,14 @@
   // ---------- السياق والعادات المحلية (اختياري وبلا شبكة) ----------
   const SmartContextAPI = window.SirajSmartContext || null;
   const SmartServicesAPI = window.SirajSmartServices || null;
+  const TajweedLearningAPI = window.SirajTajweedLearning || null;
   const SMART_STATE_KEY = 'smart-context';
+  const TAJWEED_LEARNING_KEY = 'tajweed-learning';
   const SMART_NATIVE_KEY = 'smart-native';
   let smartEngine = SmartContextAPI
     ? new SmartContextAPI.SmartContextEngine(store.get(SMART_STATE_KEY, null)) : null;
+  let tajweedLearningEngine = TajweedLearningAPI
+    ? new TajweedLearningAPI.TajweedLearningEngine(store.get(TAJWEED_LEARNING_KEY, null)) : null;
   const smartNativeSaved = store.get(SMART_NATIVE_KEY, null) || {};
   let smartNative = { enabled: !!smartNativeSaved.enabled, nextAt: Number(smartNativeSaved.nextAt) || 0 };
   let smartDeviceSignals = {};
@@ -186,6 +190,9 @@
   let surahs = [];
   let localHafs = null;
   let localTajweed = [];
+  let tajweedLearningCatalog = null;
+  let tajweedLearningCards = [];
+  let tajweedSession = { queue: [], index: 0, revealed: false, answered: 0 };
   const hafsPages = { uthmani: new Map(), simple: new Map() };
   const hafsByRef = { uthmani: new Map(), simple: new Map() };
   const tajweedByRef = new Map();
@@ -254,16 +261,19 @@
   }
 
   async function loadBundledData() {
-    const [surahData, hafsData, tajweedData, catalog] = await Promise.all([
+    const [surahData, hafsData, tajweedData, catalog, learningCatalog] = await Promise.all([
       getJSON('surahs.json'), getJSON('quran-hafs.json'),
       getJSON('quran-tajweed.json'), getJSON('tafsir-catalog.json'),
+      getJSON('tajweed-learning-catalog.json').catch(() => null),
     ]);
     surahs = Array.isArray(surahData) ? surahData : [];
     localHafs = hafsData;
     localTajweed = Array.isArray(tajweedData) ? tajweedData : [];
+    tajweedLearningCatalog = learningCatalog;
     indexHafsRows('uthmani', localHafs.uthmani || []);
     indexHafsRows('simple', localHafs.simple || []);
     localTajweed.forEach((row) => tajweedByRef.set(refKey(row[0], row[1]), clean(row[3])));
+    buildTajweedLearningCards();
     tafsirCatalog = catalog;
     const classical = (catalog.books || []).map((book) => [
       book.edition,
@@ -1433,6 +1443,7 @@
     if (key === 'reciter') { $('#setReciter').value = value; $('#playReciter').value = value; }
     if (key === 'tafsir') { $('#setTafsir').value = value; $('#tfBook').value = value; }
     if (key === 'translation') { $('#setTranslation').value = value; $('#tfTrans').value = value; }
+    if (key === 'riwaya' && curView === 'tajweed') renderTajweedView();
     pageCache.clear();
     if (state.sel) {
       showPage(state.page, { selG: state.sel.g, save: false }).then(() => {
@@ -2010,11 +2021,196 @@
     showView('reader');
   });
 
-  // ---------- تدبر: أحكام التجويد ----------
-  function renderTajweedView() {
-    $('#tjList').innerHTML = Object.values(TJ_RULES).map(([name, desc]) =>
-      `<div class="card"><strong>${esc(name)}</strong><div class="muted" style="margin-top:4px">${esc(desc)}</div></div>`).join('');
+  // ---------- تعلم التجويد المحلي بالمراجعة المتباعدة ----------
+  function currentTajweedCurriculum() {
+    const curricula = tajweedLearningCatalog?.curricula;
+    if (!Array.isArray(curricula)) return null;
+    return curricula.find((item) => Array.isArray(item.appliesToSettings)
+      && item.appliesToSettings.includes(settings.riwaya)) || null;
   }
+
+  function firstTajweedExample(code) {
+    const escaped = String(code).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(`\\[${escaped}(?::\\d+)?\\[([^\\[\\]]*)\\]`);
+    for (const row of localTajweed) {
+      const raw = clean(row[3]);
+      const match = pattern.exec(raw);
+      if (!match) continue;
+      return {
+        text: plainTajweed(match[1]).trim(),
+        ayahText: plainTajweed(raw).trim(),
+        surah: Number(row[0]),
+        ayah: Number(row[1]),
+      };
+    }
+    return null;
+  }
+
+  function buildTajweedLearningCards() {
+    tajweedLearningCards = [];
+    const curricula = tajweedLearningCatalog?.curricula;
+    if (!Array.isArray(curricula) || !TajweedLearningAPI) return;
+    curricula.forEach((curriculum) => {
+      const scope = TajweedLearningAPI.normalizeScope(curriculum.scope);
+      if (!scope || !Array.isArray(curriculum.rules)) return;
+      curriculum.rules.forEach((rule) => {
+        const example = firstTajweedExample(rule.tagCode);
+        tajweedLearningCards.push({
+          id: rule.id,
+          scope,
+          order: Number(rule.order) || 0,
+          name: rule.name,
+          prompt: rule.prompt,
+          answer: rule.answer,
+          tagCode: rule.tagCode,
+          example,
+          curriculumId: curriculum.id,
+          reviewStatus: curriculum.status,
+        });
+      });
+    });
+  }
+
+  function cardsForCurriculum(curriculum) {
+    if (!curriculum || !TajweedLearningAPI) return [];
+    const key = TajweedLearningAPI.scopeKey(curriculum.scope);
+    return tajweedLearningCards.filter((card) => TajweedLearningAPI.scopeKey(card.scope) === key);
+  }
+
+  function persistTajweedLearning() {
+    if (tajweedLearningEngine) store.set(TAJWEED_LEARNING_KEY, tajweedLearningEngine.snapshot());
+  }
+
+  function renderTajweedView() {
+    const curriculum = currentTajweedCurriculum();
+    const selectedLabel = $('#setRiwaya').selectedOptions[0]?.textContent || settings.riwaya;
+    $('#tjLearningCard').hidden = true;
+    if (!TajweedLearningAPI || !tajweedLearningEngine || !tajweedLearningCatalog) {
+      $('#tjLearningScope').textContent = selectedLabel;
+      $('#tjLearningWarning').textContent = 'جارٍ تحميل طبقة التعلم المحلية…';
+      $('#tjStartLearning').disabled = true;
+      $('#tjList').innerHTML = '';
+      return;
+    }
+    if (!curriculum) {
+      $('#tjLearningScope').textContent = selectedLabel;
+      $('#tjReviewBadge').textContent = 'غير متاح لهذه الرواية';
+      $('#tjLearningWarning').textContent = 'لا توجد حاليًا طبقة أحكام وأمثلة مراجعة علميًا لهذه الرواية وطريقها. لن يطبق سراج قواعد حفص عليها، ولن يعرض محتوى عامًا بوصفه معتمدًا.';
+      $('#tjDueCount').textContent = '٠';
+      $('#tjLearningCount').textContent = '٠';
+      $('#tjMatureCount').textContent = '٠';
+      $('#tjAccuracy').textContent = '٠٪';
+      $('#tjStartLearning').disabled = true;
+      $('#tjResetLearning').disabled = true;
+      $('#tjLearningEmpty').textContent = 'يلزم مصدر مستقل يحدد الرواية والطريق والوجه والطبعة، ثم مراجعة بشرية مؤهلة.';
+      $('#tjList').innerHTML = '<div class="muted">لا تُعرض أحكام حفص في هذا المصحف.</div>';
+      return;
+    }
+
+    const cards = cardsForCurriculum(curriculum);
+    const stats = tajweedLearningEngine.stats(curriculum.scope);
+    const queue = tajweedLearningEngine.queue(cards, curriculum.scope);
+    $('#tjLearningScope').textContent = `${curriculum.displayName} · الطريق: ${curriculum.scope.tariq} · الوجه: ${curriculum.scope.wajh}`;
+    $('#tjReviewBadge').textContent = curriculum.status === 'APPROVED'
+      ? 'مراجع علميًا' : 'قيد المراجعة العلمية';
+    $('#tjLearningWarning').textContent = curriculum.scopeWarning;
+    $('#tjDueCount').textContent = toArabicDigits(stats.due);
+    $('#tjLearningCount').textContent = toArabicDigits(stats.learning);
+    $('#tjMatureCount').textContent = toArabicDigits(stats.mature);
+    $('#tjAccuracy').textContent = toArabicDigits(Math.round(stats.accuracy * 100)) + '٪';
+    $('#tjStartLearning').disabled = !queue.length;
+    $('#tjResetLearning').disabled = !stats.total;
+    $('#tjLearningEmpty').textContent = queue.length
+      ? `جلسة اليوم: ${toArabicDigits(queue.length)} بطاقة؛ المراجعات المستحقة تسبق الأحكام الجديدة.`
+      : (stats.nextDueAt > Date.now()
+        ? `لا توجد مراجعة الآن. الموعد التالي: ${new Date(stats.nextDueAt).toLocaleString('ar-EG')}.`
+        : 'اكتملت بطاقات اليوم وفق الحد المحلي.');
+    $('#tjList').innerHTML = cards.map((card) => {
+      const example = card.example
+        ? `<div class="muted" style="margin-top:4px">مثال: <span class="tj-${esc(card.tagCode)}">${esc(card.example.text)}</span> — ${esc(surahName(card.example.surah))} ${toArabicDigits(card.example.ayah)}</div>`
+        : '';
+      return `<div class="wird-line"><span><strong>${esc(card.name)}</strong><div class="muted">${esc(card.answer)}</div>${example}</span></div>`;
+    }).join('');
+  }
+
+  function renderTajweedLearningCard() {
+    const item = tajweedSession.queue[tajweedSession.index];
+    if (!item) {
+      finishTajweedSession(true);
+      return;
+    }
+    const card = item.card;
+    tajweedSession.revealed = false;
+    $('#tjLearningCard').hidden = false;
+    $('#tjCardProgress').textContent = `البطاقة ${toArabicDigits(tajweedSession.index + 1)} من ${toArabicDigits(tajweedSession.queue.length)} · ${item.kind === 'review' ? 'مراجعة' : 'جديدة'}`;
+    $('#tjCardTitle').textContent = card.name;
+    $('#tjCardPrompt').textContent = card.prompt;
+    $('#tjCardExample').innerHTML = card.example
+      ? `<span class="tj-${esc(card.tagCode)}">${esc(card.example.text)}</span><div class="muted">${esc(surahName(card.example.surah))} — الآية ${toArabicDigits(card.example.ayah)}</div>`
+      : '<span class="muted">لا يوجد مثال موسوم في المصدر الحالي.</span>';
+    $('#tjCardAnswerText').textContent = card.answer;
+    $('#tjCardAnswer').hidden = true;
+    $('#tjRevealAnswer').hidden = false;
+  }
+
+  function startTajweedSession() {
+    const curriculum = currentTajweedCurriculum();
+    if (!curriculum || !tajweedLearningEngine) return;
+    const queue = tajweedLearningEngine.queue(cardsForCurriculum(curriculum), curriculum.scope);
+    if (!queue.length) { toast('لا توجد مراجعات أو بطاقات جديدة الآن'); return; }
+    tajweedSession = { queue, index: 0, revealed: false, answered: 0 };
+    renderTajweedLearningCard();
+    $('#tjLearningCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function finishTajweedSession(completed) {
+    const answered = tajweedSession.answered;
+    $('#tjLearningCard').hidden = true;
+    tajweedSession = { queue: [], index: 0, revealed: false, answered: 0 };
+    if (completed && answered) {
+      smartRecord({
+        type: 'COMPLETE_TAJWEED_LESSON', service: 'tajweed',
+        context: { count: answered, source: 'spaced_review' },
+      });
+      toast(`اكتملت جلسة من ${toArabicDigits(answered)} بطاقات`);
+    }
+    renderTajweedView();
+  }
+
+  $('#tjStartLearning').addEventListener('click', startTajweedSession);
+  $('#tjEndLearning').addEventListener('click', () => finishTajweedSession(false));
+  $('#tjRevealAnswer').addEventListener('click', () => {
+    tajweedSession.revealed = true;
+    $('#tjCardAnswer').hidden = false;
+    $('#tjRevealAnswer').hidden = true;
+  });
+  $('#tjLearningCard').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-tj-rating]');
+    if (!button || !tajweedSession.revealed || !tajweedLearningEngine) return;
+    const item = tajweedSession.queue[tajweedSession.index];
+    if (!item) return;
+    const rating = button.dataset.tjRating;
+    const reviewed = tajweedLearningEngine.review(item.card, rating);
+    if (!reviewed) return;
+    persistTajweedLearning();
+    smartRecord({
+      type: 'TAJWEED_ANSWER', service: 'tajweed',
+      context: { rule: item.card.id, correct: rating !== 'again', source: rating },
+    });
+    tajweedSession.answered += 1;
+    tajweedSession.index += 1;
+    if (tajweedSession.index >= tajweedSession.queue.length) finishTajweedSession(true);
+    else renderTajweedLearningCard();
+  });
+  $('#tjResetLearning').addEventListener('click', () => {
+    const curriculum = currentTajweedCurriculum();
+    if (!curriculum || !tajweedLearningEngine) return;
+    if (!confirm('مسح تقدم تعلم التجويد لهذه الطبعة فقط؟')) return;
+    tajweedLearningEngine.resetScope(curriculum.scope);
+    persistTajweedLearning();
+    renderTajweedView();
+    toast('مُسح تقدم هذه الطبعة');
+  });
 
   // ---------- معاني الكلمات (من الموسوعة القرآنية) ----------
   let meanData = null;
