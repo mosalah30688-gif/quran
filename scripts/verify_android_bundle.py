@@ -88,10 +88,19 @@ def main() -> None:
     service_worker = (ROOT / "sw.js").read_text(encoding="utf-8")
     capacitor = load("capacitor.config.json")
     android_strings = (ROOT / "android/app/src/main/res/values/strings.xml").read_text(encoding="utf-8")
+    android_manifest = (ROOT / "android/app/src/main/AndroidManifest.xml").read_text(encoding="utf-8")
+    smart_plugin = (ROOT / "android/app/src/main/java/com/quran/mushaf/SmartDevicePlugin.java").read_text(encoding="utf-8")
+    smart_receiver = (ROOT / "android/app/src/main/java/com/quran/mushaf/SmartNotificationReceiver.java").read_text(encoding="utf-8")
+    reminder_receiver = (ROOT / "android/app/src/main/java/com/quran/mushaf/ReminderReceiver.java").read_text(encoding="utf-8")
     assert capacitor["appName"] == "سراج — قرآن كريم"
     assert load("manifest.json")["description"] == "مصحف قرآن كريم"
     assert '<string name="app_name">سراج — قرآن كريم</string>' in android_strings
     assert '<string name="title_activity_main">سراج — قرآن كريم</string>' in android_strings
+    assert '.SmartNotificationReceiver' in android_manifest and '.SmartNotificationActionReceiver' in android_manifest
+    assert 'name = "SmartDevice"' in smart_plugin and 'consumeFeedback' in smart_plugin
+    assert 'SmartTimeWindow.nextAllowedAt' in smart_receiver
+    assert 'SmartTimeWindow.nextAllowedAt' in reminder_receiver
+    assert "ACCESS_FINE_LOCATION" not in android_manifest and "READ_CONTACTS" not in android_manifest
     assert "loadBundledData()" in app
     assert "SmartContextEngine" in smart_context and "LIKELY_SLEEPING" in smart_context
     assert "buildCandidates" in smart_services and "open_adhkar:morning" in smart_services

@@ -12,6 +12,8 @@ import android.os.Build;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import java.util.TimeZone;
+
 public class ReminderReceiver extends BroadcastReceiver {
     private static final String CHANNEL_ID = "siraj_wird";
     private static final int NOTIFICATION_ID = 14001;
@@ -20,6 +22,20 @@ public class ReminderReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         SharedPreferences prefs = ReminderScheduler.preferences(context);
         if (!prefs.getBoolean(ReminderScheduler.ENABLED, false)) return;
+        if (prefs.getBoolean(ReminderScheduler.RESPECT_SAFETY, false)) {
+            long now = System.currentTimeMillis();
+            long allowedAt = SmartTimeWindow.nextAllowedAt(
+                    now,
+                    prefs.getString(ReminderScheduler.QUIET_START, "22:30"),
+                    prefs.getString(ReminderScheduler.QUIET_END, "06:30"),
+                    prefs.getString(ReminderScheduler.SLEEP_START, "23:00"),
+                    prefs.getString(ReminderScheduler.SLEEP_END, "07:00"),
+                    TimeZone.getDefault());
+            if (allowedAt > now + 30_000L) {
+                ReminderScheduler.scheduleAt(context, allowedAt);
+                return;
+            }
+        }
         createChannel(context);
         Intent open = new Intent(context, MainActivity.class);
         open.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);

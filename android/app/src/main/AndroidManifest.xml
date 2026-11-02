@@ -43,6 +43,12 @@
             android:name=".ReminderReceiver"
             android:exported="false" />
         <receiver
+            android:name=".SmartNotificationReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".SmartNotificationActionReceiver"
+            android:exported="false" />
+        <receiver
             android:name=".ReminderBootReceiver"
             android:enabled="true"
             android:exported="false">

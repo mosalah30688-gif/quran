@@ -57,12 +57,23 @@ public class ReminderPlugin extends Plugin {
         int minute = minuteValue == null ? 0 : minuteValue;
         String title = call.getString("title", "سراج — ورد القرآن");
         String body = call.getString("body", "موعد وردك اليوم. اقرأ ما تيسر دون إلزام.");
+        Boolean respectValue = call.getBoolean("respectSafety");
+        boolean respectSafety = respectValue != null && respectValue;
+        String quietStart = safeClock(call.getString("quietStart", "22:30"), "22:30");
+        String quietEnd = safeClock(call.getString("quietEnd", "06:30"), "06:30");
+        String sleepStart = safeClock(call.getString("sleepStart", "23:00"), "23:00");
+        String sleepEnd = safeClock(call.getString("sleepEnd", "07:00"), "07:00");
         ReminderScheduler.preferences(getContext()).edit()
                 .putBoolean(ReminderScheduler.ENABLED, true)
                 .putInt(ReminderScheduler.HOUR, hour)
                 .putInt(ReminderScheduler.MINUTE, minute)
                 .putString(ReminderScheduler.TITLE, title)
                 .putString(ReminderScheduler.BODY, body)
+                .putBoolean(ReminderScheduler.RESPECT_SAFETY, respectSafety)
+                .putString(ReminderScheduler.QUIET_START, quietStart)
+                .putString(ReminderScheduler.QUIET_END, quietEnd)
+                .putString(ReminderScheduler.SLEEP_START, sleepStart)
+                .putString(ReminderScheduler.SLEEP_END, sleepEnd)
                 .apply();
         ReminderScheduler.schedule(getContext());
         JSObject result = new JSObject();
@@ -87,5 +98,9 @@ public class ReminderPlugin extends Plugin {
         result.put("permission", Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
                 || getPermissionState("notifications") == PermissionState.GRANTED);
         call.resolve(result);
+    }
+
+    private static String safeClock(String value, String fallback) {
+        return SmartTimeWindow.parseMinute(value, -1) >= 0 ? value : fallback;
     }
 }

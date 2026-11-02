@@ -15,6 +15,11 @@ const services = read('smart-services.js');
 const build = read('scripts/build-www.sh');
 const publish = read('scripts/publish-update.sh');
 const sw = read('sw.js');
+const androidManifest = read('android/app/src/main/AndroidManifest.xml');
+const smartPlugin = read('android/app/src/main/java/com/quran/mushaf/SmartDevicePlugin.java');
+const smartReceiver = read('android/app/src/main/java/com/quran/mushaf/SmartNotificationReceiver.java');
+const reminderReceiver = read('android/app/src/main/java/com/quran/mushaf/ReminderReceiver.java');
+const smartTimeWindow = read('android/app/src/main/java/com/quran/mushaf/SmartTimeWindow.java');
 
 test('smart scripts load in dependency order before the application', () => {
   const fallback = html.slice(html.indexOf('if (!applied)'));
@@ -26,8 +31,8 @@ test('smart scripts load in dependency order before the application', () => {
 
 test('opt-in and local privacy controls are visible and explicit', () => {
   for (const id of [
-    'setSmartEnabled', 'smartQuietStart', 'smartQuietEnd', 'smartDailyMax',
-    'smartCooldown', 'smartRetention', 'smartDeleteData',
+    'setSmartEnabled', 'setSmartNotifications', 'smartQuietStart', 'smartQuietEnd',
+    'smartDailyMax', 'smartCooldown', 'smartRetention', 'smartDeleteData',
   ]) assert.match(html, new RegExp(`id="${id}"`));
   assert.match(html, /اختيارك صريح ويمكن إيقافه/);
   assert.match(html, /لا يقرأ الرسائل أو المواقع التي تزورها أو الحافظة/);
@@ -75,6 +80,29 @@ test('both smart files are included in offline and update channels', () => {
     assert.match(source, /smart-services\.js/);
   }
   assert.match(sw, /siraj-shell-v12/);
+});
+
+test('Android smart notifications are separate opt-in and feed outcomes back locally', () => {
+  assert.match(app, /requestNotifications\(\)/);
+  assert.match(app, /planNextDecision/);
+  assert.match(app, /consumeSmartNativeFeedback/);
+  assert.match(app, /SmartContextAPI\.chooseIntervention/);
+  assert.match(smartPlugin, /name = "SmartDevice"/);
+  assert.match(smartPlugin, /consumeFeedback/);
+  assert.match(smartReceiver, /SmartFeedbackStore\.record\(context, "shown"/);
+  assert.match(androidManifest, /\.SmartNotificationReceiver/);
+  assert.match(androidManifest, /\.SmartNotificationActionReceiver/);
+});
+
+test('native delivery repeats the sleep and quiet hard gates without sensitive permissions', () => {
+  assert.match(smartReceiver, /SmartTimeWindow\.nextAllowedAt/);
+  assert.match(reminderReceiver, /SmartTimeWindow\.nextAllowedAt/);
+  assert.match(app, /respectSafety: !!smartEngine\?\.config\.enabled/);
+  assert.match(smartTimeWindow, /contains\(minute, quietStart, quietEnd\)/);
+  assert.match(smartTimeWindow, /contains\(minute, sleepStart, sleepEnd\)/);
+  assert.doesNotMatch(androidManifest, /ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION|READ_CONTACTS|RECORD_AUDIO/);
+  assert.match(smartPlugin, /isInteractive\(\)/);
+  assert.match(smartPlugin, /isKeyguardLocked\(\)/);
 });
 
 test('About remains the last settings control after adding smart settings', () => {

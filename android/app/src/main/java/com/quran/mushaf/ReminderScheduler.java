@@ -16,6 +16,11 @@ final class ReminderScheduler {
     static final String MINUTE = "minute";
     static final String TITLE = "title";
     static final String BODY = "body";
+    static final String RESPECT_SAFETY = "respect_safety";
+    static final String QUIET_START = "quiet_start";
+    static final String QUIET_END = "quiet_end";
+    static final String SLEEP_START = "sleep_start";
+    static final String SLEEP_END = "sleep_end";
     private static final int REQUEST_CODE = 14001;
 
     private ReminderScheduler() {}
@@ -40,15 +45,19 @@ final class ReminderScheduler {
         if (!prefs.getBoolean(ENABLED, false)) return;
         int hour = prefs.getInt(HOUR, 20);
         int minute = prefs.getInt(MINUTE, 0);
+        scheduleAt(context, nextTrigger(hour, minute));
+    }
+
+    static void scheduleAt(Context context, long at) {
         AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (alarms == null) return;
         PendingIntent pending = reminderIntent(context);
-        long at = nextTrigger(hour, minute);
+        long safeAt = Math.max(System.currentTimeMillis() + 5_000L, at);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // Inexact while-idle avoids the restricted exact-alarm permission and is sufficient for a daily reminder.
-            alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
+            alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, safeAt, pending);
         } else {
-            alarms.set(AlarmManager.RTC_WAKEUP, at, pending);
+            alarms.set(AlarmManager.RTC_WAKEUP, safeAt, pending);
         }
     }
 

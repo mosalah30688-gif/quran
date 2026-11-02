@@ -91,6 +91,32 @@ test('block descriptions and adhkar service names fail safely', () => {
   assert.equal(Services.serviceForAdhkar('../private'), 'adhkar');
 });
 
+test('native planner finds the first safe selected half-hour', () => {
+  const now = new Date(2026, 9, 20, 12, 7).getTime();
+  const target = new Date(2026, 9, 20, 13, 0).getTime();
+  const visited = [];
+  const plan = Services.planNextDecision(
+    (at) => [{ id: 'wird', service: 'wird', at }],
+    (candidates, at) => {
+      visited.push(at);
+      return { selected: at >= target ? { candidate: candidates[0], score: 0.8 } : null,
+        context: { quietHours: false, likelySleeping: false } };
+    },
+    { now, minDelayMinutes: 20, stepMinutes: 30, horizonHours: 4 },
+  );
+  assert.equal(plan.at, target);
+  assert.equal(plan.selection.candidate.service, 'wird');
+  assert.ok(visited.every((at) => at >= now + 20 * 60000));
+});
+
+test('native planner fails closed on bad evaluators or an empty horizon', () => {
+  assert.equal(Services.planNextDecision(null, () => ({})), null);
+  assert.equal(Services.planNextDecision(() => [], () => ({ selected: {} }), {
+    now: 1000, horizonHours: 1,
+  }), null);
+  assert.equal(Services.planNextDecision(() => [{}], () => { throw new Error('bad'); }), null);
+});
+
 test('same input always produces the same candidate order and fields', () => {
   const input = {
     readToday: 0,

@@ -223,6 +223,33 @@
     return /^[a-z][a-z0-9_-]{0,31}$/.test(token) ? `adhkar_${token}` : 'adhkar';
   }
 
+  function planNextDecision(candidatesAt, evaluateAt, options) {
+    if (typeof candidatesAt !== 'function' || typeof evaluateAt !== 'function') return null;
+    const input = options && typeof options === 'object' ? options : {};
+    const now = number(input.now, Date.now());
+    const stepMinutes = integer(input.stepMinutes, 30, 15, 120);
+    const minDelayMinutes = integer(input.minDelayMinutes, 30, 15, 720);
+    const horizonHours = integer(input.horizonHours, 30, 1, 48);
+    const stepMs = stepMinutes * 60 * 1000;
+    const endAt = now + horizonHours * 60 * 60 * 1000;
+    let at = Math.ceil((now + minDelayMinutes * 60 * 1000) / stepMs) * stepMs;
+    for (; at <= endAt; at += stepMs) {
+      try {
+        const candidates = candidatesAt(at);
+        if (!Array.isArray(candidates) || !candidates.length) continue;
+        const decision = evaluateAt(candidates, at);
+        if (decision && decision.selected) {
+          return { at, selection: decision.selected, context: decision.context || null };
+        }
+      } catch (error) {
+        // Planning must fail closed; a bad optional candidate cannot schedule a notification.
+        void error;
+        return null;
+      }
+    }
+    return null;
+  }
+
   return Object.freeze({
     VERSION,
     REASON_TEXT,
@@ -231,5 +258,6 @@
     explainSelection,
     describeBlock,
     serviceForAdhkar,
+    planNextDecision,
   });
 });
