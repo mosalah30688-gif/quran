@@ -20,8 +20,6 @@ const publish = read('scripts/publish-update.sh');
 const androidWorkflow = read('.github/workflows/android.yml');
 const windowsWorkflow = read('.github/workflows/windows-v1.yml');
 const linuxWorkflow = read('.github/workflows/linux-appimage.yml');
-const windowsMain = read('windows_app/main.py');
-const linuxMain = read('mushaf_app/main.py');
 const updateFeatureReader = read('scripts/read_update_features.py');
 const sw = read('sw.js');
 const androidManifest = read('android/app/src/main/AndroidManifest.xml');
@@ -128,40 +126,21 @@ test('every published update carries a concise what-is-new notification', () => 
   }
 });
 
-test('tajweed explanation is independent and never colors the mushaf reader', () => {
-  assert.match(html, /id="tjIndependentNote"/);
-  assert.match(html, /شرح تعليمي مستقل داخل تبويب «أحكام التجويد»/);
+test('independent reader colors require an approved exact-scope curriculum', () => {
   assert.match(html, /id="setTajweedScopeRow"/);
   assert.match(html, /id="setTajweedScope"/);
   assert.match(app, /function syncTajweedScopeSelector\(\)/);
   assert.match(app, /normalizeDisplay\(item\.display\)/);
+  assert.match(app, /اختر الطريق والوجه والطبعة/);
   assert.match(app, /settings\.tajweedScopes/);
-  assert.match(app, /settings\.riwaya === 'quran-tajweed'/);
-  assert.match(app, /delete settings\.tajweed/);
-  assert.match(app, /html: esc\(displayText\)/);
-  assert.doesNotMatch(html, /value="quran-tajweed"/);
-  assert.doesNotMatch(html, /id="setTajweed"/);
-  assert.doesNotMatch(html, /id="tjPanel"/);
-  assert.doesNotMatch(app, /function renderTajweed\(/);
-  assert.doesNotMatch(app, /function renderIndependentTajweed\(/);
-  assert.doesNotMatch(app, /data-tj-rules/);
-  assert.doesNotMatch(app.replace(/delete settings\.tajweed;/g, ''), /settings\.tajweed\b/);
-  assert.doesNotMatch(html, /\.tj-independent-mark|\.tj-h\b/);
-  const scopeHandler = app.match(/\$\('#setTajweedScope'\)\.addEventListener[\s\S]*?\n  \$\('#setReciter'\)/);
-  assert.ok(scopeHandler);
-  assert.doesNotMatch(scopeHandler[0], /pageCache\.clear|showPage\(/);
-});
-
-test('desktop readers also keep tajweed explanations outside the mushaf text', () => {
-  for (const source of [windowsMain, linuxMain]) {
-    assert.doesNotMatch(source, /\('quran-tajweed',\s*'حفص/);
-    assert.match(source, /riwaya == 'quran-tajweed'.*riwaya not in RIWAYA_NAMES/);
-    assert.match(source, /شرح تعليمي مستقل عن صفحة المصحف؛ لا يغيّر نص الآيات ولا يلوّنه/);
-    assert.match(source, /if self\.riwaya_id in RIW_RECITERS/);
-    assert.match(source, /لا تُعرض أحكام حفص أو مادة عامة بدلًا منها/);
-  }
-  assert.doesNotMatch(windowsMain, /TAJWEED_COLORS|def tajweed_html|TAJWEED_QURAN/);
-  assert.doesNotMatch(windowsMain, /self\.riwaya_id == 'quran-tajweed'/);
+  assert.match(app, /function currentApprovedTajweedCurriculum\(\)/);
+  assert.match(app, /curriculum\?\.status === 'APPROVED'/);
+  assert.match(app, /curriculum\.publishableAsApproved === true/);
+  assert.match(app, /renderIndependentTajweed\(approvedCurriculum, x\.s, x\.n, x\.text\)/);
+  assert.match(app, /showIndependentTajweedPanel/);
+  assert.match(app, /data-tj-rules/);
+  assert.match(app, /لا توجد طبقة ألوان معتمدة لهذا النطاق/);
+  assert.match(html, /\.tj-independent-mark/);
 });
 
 test('tajweed spaced review is local, scoped, and wired to feedback events', () => {
@@ -172,7 +151,7 @@ test('tajweed spaced review is local, scoped, and wired to feedback events', () 
   assert.match(app, /new TajweedLearningAPI\.TajweedLearningEngine/);
   assert.match(app, /type: 'TAJWEED_ANSWER'/);
   assert.match(app, /type: 'COMPLETE_TAJWEED_LESSON'/);
-  assert.match(app, /لا تُعرض أحكام حفص أو أي مادة عامة/);
+  assert.match(app, /لا تُعرض أحكام حفص أو أي طبقة عامة/);
   assert.match(app, /tajweedLearningEngine\.resetScope/);
 });
 

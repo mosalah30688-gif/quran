@@ -104,6 +104,7 @@ HAFS_EDITIONS = [
     ('quran-uthmani', 'حفص عن عاصم - الرسم العثماني'),
     ('quran-simple', 'حفص - رسم إملائي مبسط'),
     ('quran-uthmani-min', 'حفص - عثماني مختصر'),
+    ('quran-tajweed', 'حفص - بألوان أحكام التجويد'),
 ]
 OTHER_RIWAYAT = [
     ('warsh', 'ورش عن نافع'),
@@ -286,7 +287,7 @@ SEARCH_INDEX = [(s, a, norm(t), t) for s, a, t in SEARCH_AYAHS]
 def riwaya_rows(rid):
     if rid == 'quran-simple':
         return HAFS['simple']
-    if rid in ('quran-uthmani', 'quran-uthmani-min'):
+    if rid in ('quran-uthmani', 'quran-uthmani-min', 'quran-tajweed'):
         return HAFS['uthmani']
     return RIW_DATA[rid]
 
@@ -909,9 +910,8 @@ class Main(QMainWindow):
         if self.mushaf_font not in {family for family, _label in MUSHAF_FONTS}:
             self.mushaf_font = 'Amiri Quran'
         riwaya = self.settings.value('riwaya', 'quran-uthmani', type=str)
-        if riwaya == 'quran-tajweed' or riwaya not in RIWAYA_NAMES:
+        if riwaya not in RIWAYA_NAMES:
             riwaya = 'quran-uthmani'
-            self.settings.setValue('riwaya', riwaya)
         self.riwaya_id = riwaya
         self.book = Book(riwaya)
         self.page = min(max(self.settings.value('page', 1, type=int), 1), TOTAL_PAGES)
@@ -2063,35 +2063,18 @@ class Main(QMainWindow):
         lay = QVBoxLayout(w)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(12)
-        lay.addWidget(heading('أحكام التجويد'))
-        note = QLabel('شرح تعليمي مستقل عن صفحة المصحف؛ لا يغيّر نص الآيات ولا يلوّنه')
-        note.setObjectName('pageSub')
-        note.setWordWrap(True)
-        lay.addWidget(note)
+        lay.addWidget(heading('أحكام التجويد', 'القواعد السبعة عشر مع شرح مختصر لكل حكم'))
         self.tj_browser = QTextBrowser()
         lay.addWidget(self.tj_browser, 1)
         return w
 
     def render_tajweed(self):
         t = THEMES[self.theme_name]
-        selected = html.escape(RIWAYA_NAMES.get(self.riwaya_id, self.riwaya_id))
-        if self.riwaya_id in RIW_RECITERS:
-            body = (
-                f'<h3 style="color:{t["brand"]}">{selected}</h3>'
-                '<p>لا توجد لهذه الرواية مادة شرح مستقلة موثقة الطريق والوجه والطبعة '
-                'ومجازة للمشروع؛ لذلك لا تُعرض أحكام حفص أو مادة عامة بدلًا منها.</p>'
-            )
-        else:
-            rows = ''.join(
-                f'<p style="margin-bottom:14px"><b style="font-size:16pt; color:{t["brand"]}">{html.escape(name)}</b>'
-                f'<br><span>{html.escape(desc)}</span></p>'
-                for name, desc in TAJWEED.values())
-            body = (
-                f'<h3 style="color:{t["brand"]}">{selected}</h3>'
-                '<p>مسودة شرح لحفص قيد المراجعة العلمية؛ الطريق والوجه غير موثقين في المصدر الحالي.</p>'
-                + rows
-            )
-        self.tj_browser.setHtml(f'<html><body dir="rtl">{body}</body></html>')
+        rows = ''.join(
+            f'<p style="margin-bottom:14px"><b style="font-size:16pt; color:{t["brand"]}">{html.escape(name)}</b>'
+            f'<br><span>{html.escape(desc)}</span></p>'
+            for name, desc in TAJWEED.values())
+        self.tj_browser.setHtml(f'<html><body dir="rtl">{rows}</body></html>')
 
     # ---------- الأذكار ----------
     def build_adhkar(self):

@@ -118,6 +118,7 @@ ADHKAR = load('adhkar.json')['categories']
 SEARCH_AYAHS = load('quran-search.json')['ayahs']
 RIW_DATA = load('quran-riwayat.json')['riwayat']
 HAFS = load('hafs.json')
+TAJWEED_QURAN = load('quran-tajweed.json')
 TAFSIR_CATALOG = load('tafsir-catalog.json')
 AYAH_TEXT = {(s, a): t for s, a, _p, t in HAFS['uthmani']}
 
@@ -125,6 +126,7 @@ HAFS_EDITIONS = [
     ('quran-uthmani', 'حفص عن عاصم - الرسم العثماني'),
     ('quran-simple', 'حفص - رسم إملائي مبسط'),
     ('quran-uthmani-min', 'حفص - عثماني مختصر'),
+    ('quran-tajweed', 'حفص - بألوان أحكام التجويد'),
 ]
 OTHER_RIWAYAT = [
     ('warsh', 'ورش عن نافع'),
@@ -309,6 +311,8 @@ SEARCH_INDEX = [(s, a, norm(t), t) for s, a, t in SEARCH_AYAHS]
 def riwaya_rows(rid):
     if rid == 'quran-simple':
         return HAFS['simple']
+    if rid == 'quran-tajweed':
+        return TAJWEED_QURAN
     if rid in ('quran-uthmani', 'quran-uthmani-min'):
         return HAFS['uthmani']
     return RIW_DATA[rid]
@@ -368,25 +372,60 @@ HIGHLIGHT_COLORS = [
     ('أزرق هادئ', '#cfe3f7'),
     ('وردي هادئ', '#f3ced8'),
 ]
+TAJWEED_COLORS = {
+    'h': '#8a8a8a', 's': '#8a8a8a', 'l': '#8a8a8a',
+    'n': '#537fff', 'p': '#4050ff', 'm': '#2536d6', 'o': '#2144c1',
+    'q': '#dd0008', 'c': '#d500b7', 'f': '#9400a8', 'w': '#4d9f00',
+    'i': '#168fbf', 'a': '#169777', 'u': '#147d00', 'd': '#8a8a8a',
+    'b': '#8a8a8a', 'g': '#e26600',
+}
+_TAJWEED_TOKEN = re.compile(r'\[([a-z]+)(?::\d+)?\[([^\[\]]*)\]')
+
+
+def plain_tajweed_text(text):
+    """يزيل رموز مصدر التجويد مع إبقاء الحروف كما هي للنسخ والبحث."""
+    return _TAJWEED_TOKEN.sub(lambda match: match.group(2), text)
+
+
+def tajweed_html(text):
+    """يحوّل ترميز quran-tajweed المحلي إلى spans آمنة وملوّنة."""
+    out = []
+    cursor = 0
+    for match in _TAJWEED_TOKEN.finditer(text):
+        out.append(html.escape(text[cursor:match.start()]))
+        code, value = match.group(1), match.group(2)
+        color = TAJWEED_COLORS.get(code, '#8a8a8a')
+        title = TAJWEED.get(code, [code])[0]
+        out.append(
+            f'<span style="color:{color}; font-weight:600;" title="{html.escape(title, quote=True)}">'
+            f'{html.escape(value)}</span>'
+        )
+        cursor = match.end()
+    out.append(html.escape(text[cursor:]))
+    return ''.join(out)
+
+
 def display_ayah_source(surah, ayah, text, is_hafs):
-    """يرجع نص الآية العادي ويفصل بسملة حفص المدمجة دون لمس البيانات الأصلية.
+    """يرجع مصدر الآية المعروض، ويفصل بسملة حفص المدمجة دون لمس البيانات الأصلية.
 
     الفصل خاص بطبعات حفص فقط. الفاتحة استثناء علمي: تبقى البسملة آية 1 كما
-    يرقّمها المصدر، ولا تتغير أرقام الآيات أو روابط التلاوة والتفسير.
+    يرقّمها المصدر، ولا تتغير أرقام الآيات أو روابط التلاوة والتفسير. تقسيم الكلمات
+    يحافظ كذلك على ترميز التجويد إن أضاف المصدر البسملة إليه مستقبلًا.
     """
     source = str(text).lstrip('\ufeff').strip()
     if not is_hafs or ayah != 1 or surah in (1, 9):
         return source
+    clean = plain_tajweed_text(source)
     for prefix in (BASMALA_HAFS, BASMALA_SIMPLE):
-        if source.startswith(prefix):
+        if clean.startswith(prefix):
             words = source.split(maxsplit=4)
             return words[4].strip() if len(words) == 5 else ''
     return source
 
 
 def display_ayah_text(surah, ayah, text, is_hafs):
-    """النص المرئي العادي؛ يجب تحديد حفص صراحةً حتى لا تتأثر الروايات الأخرى."""
-    return display_ayah_source(surah, ayah, text, is_hafs)
+    """النص المرئي النظيف؛ يجب تحديد حفص صراحةً حتى لا تتأثر الروايات الأخرى."""
+    return plain_tajweed_text(display_ayah_source(surah, ayah, text, is_hafs))
 
 
 THEMES = {
@@ -905,9 +944,8 @@ class Main(QMainWindow):
         except (TypeError, ValueError):
             self.user_highlights = {}
         riwaya = self.settings.value('riwaya', 'quran-uthmani', type=str)
-        if riwaya == 'quran-tajweed' or riwaya not in RIWAYA_NAMES:
+        if riwaya not in RIWAYA_NAMES:
             riwaya = 'quran-uthmani'
-            self.settings.setValue('riwaya', riwaya)
         self.riwaya_id = riwaya
         self.book = Book(riwaya)
         self.page = min(max(self.settings.value('page', 1, type=int), 1), TOTAL_PAGES)
@@ -1691,10 +1729,15 @@ class Main(QMainWindow):
                     )
                 last = surah
 
-            text = display_ayah_text(surah, ayah, raw_text, is_hafs)
+            display_source = display_ayah_source(surah, ayah, raw_text, is_hafs)
+            text = plain_tajweed_text(display_source)
             if not text:
                 continue
-            rendered_text = html.escape(text)
+            rendered_text = (
+                tajweed_html(display_source)
+                if self.riwaya_id == 'quran-tajweed'
+                else html.escape(text)
+            )
             ref_key = f'{surah}:{ayah}'
             if self.highlight == (surah, ayah):
                 style = f'background-color:{t["brand"]}; color:#ffffff; border-radius:4px; padding:0 2px;'
@@ -2272,35 +2315,18 @@ class Main(QMainWindow):
         lay = QVBoxLayout(w)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(12)
-        lay.addWidget(heading('أحكام التجويد'))
-        note = QLabel('شرح تعليمي مستقل عن صفحة المصحف؛ لا يغيّر نص الآيات ولا يلوّنه')
-        note.setObjectName('pageSub')
-        note.setWordWrap(True)
-        lay.addWidget(note)
+        lay.addWidget(heading('أحكام التجويد', 'القواعد السبعة عشر مع شرح مختصر لكل حكم'))
         self.tj_browser = QTextBrowser()
         lay.addWidget(self.tj_browser, 1)
         return w
 
     def render_tajweed(self):
         t = THEMES[self.theme_name]
-        selected = html.escape(RIWAYA_NAMES.get(self.riwaya_id, self.riwaya_id))
-        if self.riwaya_id in RIW_RECITERS:
-            body = (
-                f'<h3 style="color:{t["brand"]}">{selected}</h3>'
-                '<p>لا توجد لهذه الرواية مادة شرح مستقلة موثقة الطريق والوجه والطبعة '
-                'ومجازة للمشروع؛ لذلك لا تُعرض أحكام حفص أو مادة عامة بدلًا منها.</p>'
-            )
-        else:
-            rows = ''.join(
-                f'<p style="margin-bottom:14px"><b style="font-size:16pt; color:{t["brand"]}">{html.escape(name)}</b>'
-                f'<br><span>{html.escape(desc)}</span></p>'
-                for name, desc in TAJWEED.values())
-            body = (
-                f'<h3 style="color:{t["brand"]}">{selected}</h3>'
-                '<p>مسودة شرح لحفص قيد المراجعة العلمية؛ الطريق والوجه غير موثقين في المصدر الحالي.</p>'
-                + rows
-            )
-        self.tj_browser.setHtml(f'<html><body dir="rtl">{body}</body></html>')
+        rows = ''.join(
+            f'<p style="margin-bottom:14px"><b style="font-size:16pt; color:{t["brand"]}">{html.escape(name)}</b>'
+            f'<br><span>{html.escape(desc)}</span></p>'
+            for name, desc in TAJWEED.values())
+        self.tj_browser.setHtml(f'<html><body dir="rtl">{rows}</body></html>')
 
     # ---------- الأذكار ----------
     def build_adhkar(self):

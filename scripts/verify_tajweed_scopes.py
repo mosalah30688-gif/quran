@@ -30,6 +30,7 @@ EXPECTED_SETTINGS = {
     "quran-uthmani",
     "quran-simple",
     "quran-uthmani-min",
+    "quran-tajweed",
     "warsh",
     "qalun",
     "duri",
@@ -183,17 +184,6 @@ def verify_registry(registry: Any, catalog: Any) -> tuple[dict[str, dict[str, An
     require(len(selectable) == len(set(selectable)), "mushaf selector has duplicate setting values")
     require(set(selectable) == EXPECTED_SETTINGS,
             f"selector/registry expected settings drift: {sorted(set(selectable) ^ EXPECTED_SETTINGS)}")
-    app = (ROOT / "app.js").read_text(encoding="utf-8")
-    require('value="quran-tajweed"' not in html and 'id="setTajweed"' not in html,
-            "the tagged tajweed source must not be exposed as a colored mushaf setting")
-    require('id="tjIndependentNote"' in html and 'id="tjPanel"' not in html,
-            "tajweed explanations must stay in the independent tajweed tab")
-    for forbidden in ("function renderTajweed(", "function renderIndependentTajweed(",
-                      "data-tj-rules"):
-        require(forbidden not in app, f"reader tajweed renderer returned: {forbidden}")
-    active_app = app.replace("delete settings.tajweed;", "")
-    require(re.search(r"settings\.tajweed\b", active_app) is None,
-            "the removed reader-color preference remains active")
 
     require(registry.get("schemaVersion") == 1, "unsupported tajweed registry schema")
     require(registry.get("scopeKey") == "riwayah/tariq/wajh/edition",
@@ -282,12 +272,12 @@ def verify_registry(registry: Any, catalog: Any) -> tuple[dict[str, dict[str, An
     require(isinstance(curricula, list) and len(curricula) == 1,
             "current learning catalog must contain only the isolated Hafs draft")
     hafs = curricula[0]
-    registry_hafs = by_setting["quran-uthmani"]["curricula"][0]
+    registry_hafs = by_setting["quran-tajweed"]["curricula"][0]
     require(validate_scope(hafs.get("scope"), "catalog.curricula[0].scope") ==
             validate_scope(registry_hafs.get("scope"), "registry Hafs scope"),
             "catalog and registry Hafs scopes differ")
     require(set(hafs.get("appliesToSettings", [])) ==
-            {"quran-uthmani", "quran-simple", "quran-uthmani-min"},
+            {"quran-uthmani", "quran-simple", "quran-uthmani-min", "quran-tajweed"},
             "Hafs curriculum setting scope changed")
     require(hafs.get("status") == "PENDING_SCHOLARLY_REVIEW"
             and hafs.get("publishableAsApproved") is False,
@@ -300,7 +290,7 @@ def verify_registry(registry: Any, catalog: Any) -> tuple[dict[str, dict[str, An
         require(isinstance(display[key], str) and display[key].strip()
                 and ARABIC_RE.search(display[key]),
                 f"catalog.curricula[0].display.{key} must be Arabic")
-    require(display["riwayahAr"] == by_setting["quran-uthmani"]["riwayah"]["labelAr"],
+    require(display["riwayahAr"] == by_setting["quran-tajweed"]["riwayah"]["labelAr"],
             "Hafs Arabic riwayah label differs from registry")
 
     unavailable = catalog.get("unavailable")

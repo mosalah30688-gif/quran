@@ -255,8 +255,13 @@ try:
     queue = win.audio_queue_for_page()
     check('qalun surah queue', len(queue) > 0 and queue[0][1][1] is None and queue[0][0].endswith('.mp3'))
     log('  qalun queue sample:', queue[:1])
-    # لا يوجد مصحف ملوّن؛ شرح التجويد مستقل في تبويبه.
-    check('colored tajweed mushaf option removed', win.riwaya_combo.findData('quran-tajweed') == -1)
+    # التجويد الملوّن محلي بالكامل، مع نص نظيف عند النسخ.
+    win.riwaya_combo.setCurrentIndex(win.riwaya_combo.findData('quran-tajweed'))
+    win.go_page(2)
+    app.processEvents()
+    check('local tajweed markup loaded', '[m[' in win.book.texts[(2, 1)])
+    check('tajweed colors rendered', '#2536d6' in win.browser.toHtml().lower())
+    check('tajweed markers hidden from reader', '[m[' not in win.browser.toPlainText())
     win.riwaya_combo.setCurrentIndex(win.riwaya_combo.findData('quran-uthmani'))
     app.processEvents()
     # البسملة قبل أول آية، والتفسير من لوحة جانبية، والسحب بالفأرة يقلب الصفحة
@@ -274,7 +279,7 @@ try:
     check('basmala detached in simple script too', not M.display_ayah_text(2, 1, simple_first, True).startswith('بِسْمِ'))
     all_hafs_firsts = [
         (s, a, text)
-        for rows in (M.HAFS['uthmani'], M.HAFS['simple'])
+        for rows in (M.HAFS['uthmani'], M.HAFS['simple'], M.TAJWEED_QURAN)
         for s, a, _page, text in rows
         if a == 1 and s not in (1, 9)
     ]
@@ -392,18 +397,8 @@ try:
     # المعاني والتجويد
     win.show_view('meanings')
     check('meanings rendered', len(win.mn_browser.toPlainText()) > 50)
-    win.riwaya_combo.setCurrentIndex(win.riwaya_combo.findData('warsh'))
-    win.show_view('tajweed')
-    check('non-Hafs tajweed fails closed without Hafs fallback',
-          'لا تُعرض أحكام حفص أو مادة عامة' in win.tj_browser.toPlainText())
-    win.riwaya_combo.setCurrentIndex(win.riwaya_combo.findData('quran-uthmani'))
     win.show_view('tajweed')
     check('tajweed rendered', len(win.tj_browser.toPlainText()) > 100)
-    check('Hafs tajweed draft is visibly unreviewed', 'قيد المراجعة العلمية' in win.tj_browser.toPlainText())
-    check('tajweed tab states reader independence', any(
-        'لا يغيّر نص الآيات ولا يلوّنه' in label.text()
-        for label in win.views['tajweed'].findChildren(M.QLabel)
-    ))
     shot('tajweed')
     # الأذكار
     win.show_view('adhkar')

@@ -371,18 +371,8 @@ try:
     # المعاني والتجويد
     win.show_view('meanings')
     check('meanings rendered', len(win.mn_browser.toPlainText()) > 50)
-    win.riwaya_combo.setCurrentIndex(win.riwaya_combo.findData('warsh'))
-    win.show_view('tajweed')
-    check('non-Hafs tajweed fails closed without Hafs fallback',
-          'لا تُعرض أحكام حفص أو مادة عامة' in win.tj_browser.toPlainText())
-    win.riwaya_combo.setCurrentIndex(win.riwaya_combo.findData('quran-uthmani'))
     win.show_view('tajweed')
     check('tajweed rendered', len(win.tj_browser.toPlainText()) > 100)
-    check('Hafs tajweed draft is visibly unreviewed', 'قيد المراجعة العلمية' in win.tj_browser.toPlainText())
-    check('tajweed tab states reader independence', any(
-        'لا يغيّر نص الآيات ولا يلوّنه' in label.text()
-        for label in win.views['tajweed'].findChildren(M.QLabel)
-    ))
     shot('tajweed')
     # الأذكار
     win.show_view('adhkar')
