@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-11-02",
+  "purpose": "QUARANTINE_ONLY_NOT_RUNTIME_DATA",
+  "policy": {
+    "candidateMayBeShownAsApproved": false,
+    "machineGeneratedAnnotationsRequireQualifiedHumanReview": true,
+    "textOffsetsMustBindExactEditionHash": true,
+    "redistributionRightsMustCoverCorpusAndDerivedAnnotations": true,
+    "secondPersonReleaseApprovalRequired": true,
+    "crossRiwayahFallbackForbidden": true
+  },
+  "riwayat": [
+    {
+      "settingId": "warsh",
+      "riwayahId": "warsh-an-nafi",
+      "candidateStatus": "QUARANTINED_NOT_PUBLISHABLE",
+      "publishableAsApproved": false,
+      "targetScope": {
+        "riwayah": "warsh-an-nafi",
+        "tariq": "al-azraq",
+        "wajh": "generator-default-unreviewed",
+        "edition": "king-fahd-warsh-v2-candidate"
+      },
+      "technicalAnalysis": "audit/tajweed-candidates/warsh-al-azraq-qud-v1.analysis.json",
+      "sources": [
+        {
+          "id": "qud-quranic-phonemizer-3.0.5",
+          "kind": "DETERMINISTIC_GENERATOR",
+          "url": "https://github.com/QUD-Technologies/quranic-phonemizer/tree/375d304f09408cedfecd3e3bb083a6b0716a00c4",
+          "pinnedRevision": "375d304f09408cedfecd3e3bb083a6b0716a00c4",
+          "codeLicense": "MIT",
+          "corpusLicenseStatus": "MISSING_UPSTREAM_URL_AND_LICENSE",
+          "notesAr": "المولد يدعم ورشًا من طريق الأزرق، لكن README المصدر يصرح بأن رابط corpus الأصلي وترخيصه لم يسجلا."
+        },
+        {
+          "id": "farouk-warsh-tajweed-v1",
+          "kind": "GENERATED_ANNOTATION_PACK",
+          "url": "https://github.com/Farouk-Idhemmou/QuranVersion/releases/tag/warsh-tajweed-v1",
+          "artifactSha256": "0898c80ad1325a36031a24f45a2ca6c1649c051c94e88de89cc594c70273b4f8",
+          "artifactBytes": 2642177,
+          "licenseStatus": "GENERATOR_LICENSED_CORPUS_RIGHTS_UNRESOLVED",
+          "scholarlyStatus": "TECHNICAL_CANDIDATE_NOT_RELIGIOUS_CERTIFICATION",
+          "notesAr": "الحزمة كاملة تقنيًا، لكنها تصف نفسها مرشحًا تقنيًا وتطلب مراجعة مصحف ورش معتمد وشيخ مؤهل."
+        },
+        {
+          "id": "libya-awqaf-warsh-manual-2025",
+          "kind": "OFFICIAL_EDUCATIONAL_REFERENCE",
+          "url": "https://awqaf.gov.ly/jicusoq/2025/01/%D9%88%D8%B1%D8%B4.pdf",
+          "publisher": "الهيئة العامة للأوقاف والشؤون الإسلامية — ليبيا",
+          "licenseStatus": "NO_MACHINE_REDISTRIBUTION_GRANT_RECORDED",
+          "snapshotStatus": "REMOTE_READABLE_SEARCH_INDEX_DIRECT_DOWNLOAD_BLOCKED_403",
+          "notesAr": "مرجع مناسب للمراجعة النظرية وأصول الرواية، وليس corpus علامات حرفية أو ترخيصًا لإعادة نشر نصه."
+        }
+      ],
+      "gates": {
+        "documentedRiwayah": "PASS",
+        "documentedTariq": "PASS",
+        "documentedWajh": "FAIL",
+        "completeRuleInventory": "PARTIAL",
+        "completeAnnotationCorpus": "TECHNICAL_PASS_UNREVIEWED",
+        "exactSirajTextBinding": "FAIL",
+        "redistributionRights": "FAIL",
+        "qualifiedHumanReview": "FAIL",
+        "secondPersonReleaseApproval": "FAIL"
+      },
+      "blockedReasonsAr": [
+        "مصدر corpus الذي بُني عليه المولد لا يسجل رابط الأصل أو ترخيص إعادة التوزيع.",
+        "بعد إزالة علامات التخطيط والتطويل تبقى 250 آية مختلفة نصيًا عن طبعة سراج، فلا يجوز نقل الإزاحات تلقائيًا.",
+        "لم تُسجل مراجعة بشرية مؤهلة في ورش من طريق الأزرق ولا اعتماد نشر ثانٍ."
+      ]
+    },
+    {
+      "settingId": "qalun",
+      "riwayahId": "qalun-an-nafi",
+      "candidateStatus": "BLOCKED_NO_ANNOTATION_CORPUS",
+      "publishableAsApproved": false,
+      "targetScope": {
+        "riwayah": "qalun-an-nafi",
+        "tariq": "unresolved",
+        "wajh": "unresolved",
+        "edition": "unresolved"
+      },
+      "technicalAnalysis": null,
+      "sources": [
+        {
+          "id": "libya-awqaf-qalun-manual-2025",
+          "kind": "OFFICIAL_EDUCATIONAL_REFERENCE",
+          "url": "https://awqaf.gov.ly/jicusoq/2025/01/%D9%82%D8%A7%D9%84%D9%88%D9%86.pdf",
+          "publisher": "الهيئة العامة للأوقاف والشؤون الإسلامية — ليبيا",
+          "licenseStatus": "NO_MACHINE_REDISTRIBUTION_GRANT_RECORDED",
+          "snapshotStatus": "REMOTE_READABLE_SEARCH_INDEX_DIRECT_DOWNLOAD_BLOCKED_403",
+          "notesAr": "مرجع علمي محتمل للأحكام والأصول، لكنه لا يوفر corpus علامات حرفية مرتبطًا بطبعة سراج."
+        },
+        {
+          "id": "quranpedia-qalun-text",
+          "kind": "VERSE_TEXT_ONLY",
+          "localAsset": "quran-riwayat.json",
+          "dataset": "qalun",
+          "assetSha256": "a3a7ef91c036f2ff4f62df3dba12c0c2f9d50211792a5b6cf574f4cf85b9938c",
+          "records": 6214,
+          "licenseStatus": "RECORDED_IN_DATA_PROVENANCE",
+          "notesAr": "النص والرسم والترقيم لا يتضمنان طبقة أحكام وألوان مستقلة."
+        }
+      ],
+      "gates": {
+        "documentedRiwayah": "PASS",
+        "documentedTariq": "FAIL",
+        "documentedWajh": "FAIL",
+        "completeRuleInventory": "FAIL",
+        "completeAnnotationCorpus": "FAIL",
+        "exactSirajTextBinding": "NOT_APPLICABLE",
+        "redistributionRights": "FAIL",
+        "qualifiedHumanReview": "FAIL",
+        "secondPersonReleaseApproval": "FAIL"
+      },
+      "blockedReasonsAr": [
+        "لا توجد حزمة علامات حرفية كاملة ومقفلة البصمة لقالون.",
+        "الطريق والوجه والطبعة التعليمية غير مثبتة.",
+        "لا يوجد ترخيص corpus ومراجعة بشرية واعتماد نشر."
+      ]
+    },
+    {
+      "settingId": "duri",
+      "riwayahId": "al-duri-an-abi-amr",
+      "candidateStatus": "BLOCKED_NO_ANNOTATION_CORPUS",
+      "publishableAsApproved": false,
+      "targetScope": {
+        "riwayah": "al-duri-an-abi-amr",
+        "tariq": "unresolved",
+        "wajh": "unresolved",
+        "edition": "unresolved"
+      },
+      "technicalAnalysis": null,
+      "sources": [
+        {
+          "id": "quranpedia-duri-text",
+          "kind": "VERSE_TEXT_ONLY",
+          "localAsset": "quran-riwayat.json",
+          "dataset": "duri",
+          "assetSha256": "a3a7ef91c036f2ff4f62df3dba12c0c2f9d50211792a5b6cf574f4cf85b9938c",
+          "records": 6218,
+          "licenseStatus": "RECORDED_IN_DATA_PROVENANCE",
+          "notesAr": "النص والرسم والترقيم لا يتضمنان طبقة أحكام وألوان مستقلة."
+        },
+        {
+          "id": "duri-usul-reference-gap",
+          "kind": "BIBLIOGRAPHIC_LEADS_ONLY",
+          "url": "https://quranpedia.net/book/18796",
+          "licenseStatus": "NO_ANNOTATION_OR_REDISTRIBUTION_GRANT",
+          "notesAr": "المراجع المتاحة تشرح أصول الرواية، ولا تقدم corpus تجويد حرفيًا مرخصًا أو مراجعة مرتبطة بطبعة سراج."
+        }
+      ],
+      "gates": {
+        "documentedRiwayah": "PASS",
+        "documentedTariq": "FAIL",
+        "documentedWajh": "FAIL",
+        "completeRuleInventory": "FAIL",
+        "completeAnnotationCorpus": "FAIL",
+        "exactSirajTextBinding": "NOT_APPLICABLE",
+        "redistributionRights": "FAIL",
+        "qualifiedHumanReview": "FAIL",
+        "secondPersonReleaseApproval": "FAIL"
+      },
+      "blockedReasonsAr": [
+        "لا توجد حزمة علامات حرفية كاملة ومقفلة البصمة للدوري عن أبي عمرو.",
+        "الطريق والوجه والطبعة التعليمية غير مثبتة.",
+        "لا يوجد ترخيص corpus ومراجعة بشرية واعتماد نشر."
+      ]
+    }
+  ]
+}

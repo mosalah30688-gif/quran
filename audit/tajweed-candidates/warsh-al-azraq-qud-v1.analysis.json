@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "analysisDate": "2026-11-02",
+  "candidateId": "warsh-al-azraq-qud-generated-v1",
+  "scope": {
+    "riwayah": "warsh-an-nafi",
+    "tariq": "al-azraq",
+    "wajh": "generator-default-unreviewed",
+    "edition": "king-fahd-warsh-v2-candidate"
+  },
+  "artifact": {
+    "url": "https://github.com/Farouk-Idhemmou/QuranVersion/releases/download/warsh-tajweed-v1/warsh-tajweed-v1.zip",
+    "bytes": 2642177,
+    "sha256": "0898c80ad1325a36031a24f45a2ca6c1649c051c94e88de89cc594c70273b4f8",
+    "releaseManifest": "https://raw.githubusercontent.com/Farouk-Idhemmou/QuranVersion/aedcede27206fd4d6e3e4ee76dc3ed887e10bf18/manifests/warsh-tajweed-v1.json"
+  },
+  "generator": {
+    "name": "quranic-phonemizer",
+    "version": "3.0.5",
+    "commit": "375d304f09408cedfecd3e3bb083a6b0716a00c4",
+    "codeLicense": "MIT",
+    "corpusSourceSha256": "c6017e688cc599d88f6fdb1a19cafc9c51d024b3530955f1a878f17d26b9bcbc",
+    "corpusUpstreamUrlRecorded": false,
+    "corpusRedistributionLicenseRecorded": false
+  },
+  "technicalChecks": {
+    "manifestLockedFiles": 605,
+    "pages": 604,
+    "uniqueAyahs": 6214,
+    "identicalCrossPageDuplicates": [
+      {
+        "reference": "4:44",
+        "pages": [
+          85,
+          86
+        ]
+      },
+      {
+        "reference": "20:86",
+        "pages": [
+          317,
+          318
+        ]
+      },
+      {
+        "reference": "24:36",
+        "pages": [
+          354,
+          355
+        ]
+      },
+      {
+        "reference": "24:42",
+        "pages": [
+          355,
+          356
+        ]
+      }
+    ],
+    "textHashFailures": 0,
+    "invalidAnnotationSpans": 0,
+    "annotationSpans": 164141,
+    "ruleAssignments": 212214,
+    "ruleIdentifiers": 46,
+    "wordSpans": 77630
+  },
+  "ruleOccurrences": {
+    "ghunnah_mushaddadah": 4940,
+    "hamza_wasl_fatha": 9,
+    "hamza_wasl_kasra": 3,
+    "hamza_wasl_silent": 13532,
+    "ibdal_hamza": 1144,
+    "idgham_bi_ghunnah": 4873,
+    "idgham_bila_ghunnah": 1158,
+    "idgham_mutajanisayn_kamil": 56,
+    "idgham_mutajanisayn_naqis": 8,
+    "idgham_mutamathilayn": 1193,
+    "idgham_mutaqaribayn": 54,
+    "idgham_shafawi": 849,
+    "ikhfaa": 5797,
+    "ikhfaa_shafawi": 496,
+    "iltiqa_haraka": 106,
+    "iltiqa_shortening": 2667,
+    "imala": 1,
+    "iqlab": 575,
+    "ishmam": 4,
+    "izhar": 1987,
+    "izhar_shafawi": 5321,
+    "lam_qamariyyah": 4290,
+    "lam_shamsiyyah": 5293,
+    "madd_arid_lissukun": 72,
+    "madd_badal": 1900,
+    "madd_iwad": 14,
+    "madd_lazim": 268,
+    "madd_leen": 1,
+    "madd_leen_mahmuz": 302,
+    "madd_mim_al_jam": 887,
+    "madd_munfasil": 4038,
+    "madd_muttasil": 2035,
+    "madd_silah": 2172,
+    "madd_tabii": 44258,
+    "madd_yaa_zawaid": 45,
+    "naql": 4639,
+    "pausal_alif": 57,
+    "qalqala_kubra": 10,
+    "qalqala_sughra": 3312,
+    "tafkheem": 32948,
+    "taqlil": 1880,
+    "tarqeeq": 58951,
+    "tashil": 59,
+    "waqf_diacritic_drop": 1,
+    "waqf_silah_drop": 4,
+    "waqf_taa_marbuta": 5
+  },
+  "projectBinding": {
+    "asset": "quran-riwayat.json",
+    "dataset": "warsh",
+    "sha256": "a3a7ef91c036f2ff4f62df3dba12c0c2f9d50211792a5b6cf574f4cf85b9938c",
+    "records": 6214,
+    "exactTextMatches": 5250,
+    "nfcTextMatches": 5252,
+    "layoutMarkNormalizedMatches": 5964,
+    "unresolvedTextDifferences": 250,
+    "pageMatches": 6156,
+    "pageDifferences": 58,
+    "safeAutomaticOffsetTransfer": false
+  },
+  "releaseGate": {
+    "technicalIntegrity": "PASS",
+    "independentCorpusLicense": "FAIL",
+    "exactProjectTextBinding": "FAIL",
+    "qualifiedWarshReview": "FAIL",
+    "secondPersonReleaseApproval": "FAIL",
+    "status": "QUARANTINED_NOT_PUBLISHABLE",
+    "publishableAsApproved": false
+  },
+  "notesAr": [
+    "التحقق تقني فقط ولا يمثل اعتمادًا علميًا.",
+    "المولد يحدد ورش من طريق الأزرق، لكن مصدر corpus الأصلي لا يسجل رابطًا أو ترخيص إعادة توزيع.",
+    "تبقى فروق نصية تمنع نقل الإزاحات تلقائيًا إلى نص سراج.",
+    "يلزم فحص بصري كامل أو منهج عينة موثق من شيخ مؤهل في ورش، ثم اعتماد شخص ثانٍ."
+  ]
+}

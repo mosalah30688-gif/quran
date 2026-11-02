@@ -24,6 +24,10 @@ on:
       - 'scripts/verify_data_provenance.py'
       - 'scripts/verify_tajweed_learning.py'
       - 'scripts/verify_tajweed_scopes.py'
+      - 'scripts/verify_tajweed_source_candidates.py'
+      - 'scripts/analyze_warsh_tajweed_candidate.py'
+      - 'audit/tajweed-source-candidates.json'
+      - 'audit/tajweed-candidates/**'
       - 'tajweed-curriculum.schema.json'
       - 'tajweed-scope-registry.json'
       - 'tajweed-curricula/**'
@@ -89,6 +93,7 @@ jobs:
           npm run test:smart
           python3 scripts/verify_tajweed_learning.py
           python3 scripts/verify_tajweed_scopes.py
+          python3 scripts/verify_tajweed_source_candidates.py
           python3 scripts/verify_android_bundle.py
           python3 scripts/verify_audio_sources.py
           python3 scripts/verify_asset_provenance.py

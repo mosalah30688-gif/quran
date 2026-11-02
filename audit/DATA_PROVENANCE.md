@@ -15,6 +15,7 @@ python scripts/build_offline_tafsir.py --verify
 python scripts/generate_adhkar_data.py --verify
 python scripts/verify_tajweed_learning.py
 python scripts/verify_tajweed_scopes.py
+python scripts/verify_tajweed_source_candidates.py
 ```
 
 ## خريطة الملفات
@@ -31,6 +32,7 @@ python scripts/verify_tajweed_scopes.py
 | `tajweed-learning-catalog.json` | تحويل منظم لشروح `tajweed.json` وأكواد علامات لقطة `quran-tajweed.json` المقفلة، دون إدخال متن خارجي جديد | `scripts/verify_tajweed_learning.py` يثبت التطابق ووجود الأمثلة ويقفل النطاق على حفص بقيمتي طريق/وجه صريحتين بأن المصدر غير محدد، مع `PENDING_SCHOLARLY_REVIEW`; الروايات الأخرى تفشل مغلقًا |
 | `tajweed-scope-registry.json`, `tajweed-curriculum.schema.json` | سجل وعقد أنشأهما المشروع لتنظيم المصادر؛ لا يضيفان حكمًا شرعيًا أو علامة تجويد | `scripts/verify_tajweed_scopes.py` يطابق كل اختيار مصحف مع روايته ونصه وبصمته، يمنع fallback بين النطاقات، ويفرض على أي حزمة مستقبلية مصدرًا مرخصًا مقفولًا ومراجعة مؤهلة واعتماد نشر ثانٍ |
 | `tajweed-curricula/*.json` | حزمة مستقلة لكل `riwayah/tariq/wajh/edition` بعد تثبيت المصدر والترخيص | المجلد فارغ حاليًا عمدًا؛ لا تُنشأ حزمة لورش أو قالون أو الدوري من تخمين أو من قواعد حفص، وتبقى حالتها `BLOCKED_NO_APPROVED_CORPUS` |
+| `audit/tajweed-source-candidates.json` و`audit/tajweed-candidates/*.analysis.json` | بيانات وصفية لمرشحات بحثية فقط؛ لا تحتوي متن القرآن أو corpus العلامات | `scripts/verify_tajweed_source_candidates.py` يثبت بقاء المرشحات في الحجر وعدم تسربها إلى runtime. حلل `scripts/analyze_warsh_tajweed_candidate.py` حزمة ورش/الأزرق ذات البصمة المقفلة: 6,214 آية و46 معرف حكم؛ فشلت بوابات الحقوق والربط النصي والمراجعة، ولذلك لا تنشر |
 
 ## شروط المصادر
 
