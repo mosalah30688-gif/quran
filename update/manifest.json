@@ -11,9 +11,9 @@
     "app.js"
   ],
   "apk": {
-    "version": "1.4.4",
-    "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-android-v1.4.4/Siraj-Android-1.4.4.apk",
-    "sha256": "e155cf8a8ca2968f4e4a07167b8f54387eb1d38e5731c1325545da28d669e2f4"
+    "version": "1.4.7",
+    "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-android-v1.4.7/Siraj-Android-1.4.7.apk",
+    "sha256": "2fdab5b9af460869f3c9f434ee0d08358d6a16391d0acaee2804dc5a33b4e04d"
   },
   "desktop": {
     "version": "4.1.1",
@@ -21,8 +21,8 @@
     "linux": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-linux-test-v4.1.1/Siraj-Quran-4.1.1-linux-x86_64.AppImage"
   },
   "features": [
-    "خطوط المصحف على صفحات المدينة كما في المصحف المطبوع",
-    "تحديد حر داخل الصفحة مع قائمة نسخ ومشاركة",
+    "صفحات المصحف بخطوط المدينة كما في المطبوع",
+    "تحديد حر داخل الصفحة مع نسخ ومشاركة",
     "مشغّل صوتي بمعلومات على شاشة القفل"
   ],
   "sha256": {
