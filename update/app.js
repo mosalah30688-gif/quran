@@ -66,8 +66,9 @@
   const DEFAULTS = {
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
     translation: '', font: 'Amiri Quran', size: 26, tajweed: false, dark: false,
+    tajweedScopes: {},
   };
-  const VIEW_TITLES = { reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', wird: 'الورد', stats: 'الإحصائيات', adhkar: 'الأذكار', search: 'البحث', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق', tajweed: 'أحكام التجويد', meanings: 'المعاني' };
+  const VIEW_TITLES = { listen: 'استماع', reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', wird: 'الورد', stats: 'الإحصائيات', adhkar: 'الأذكار', search: 'البحث', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق', tajweed: 'أحكام التجويد', meanings: 'المعاني' };
   const Cap = window.Capacitor || null;
 
   // قواعد التجويد بحسب رموز مصدر quran-tajweed في alquran.cloud (الاسم، الشرح)
@@ -102,6 +103,7 @@
     memo: '<path d="M4 2h12l4 4v16H4z" fill="url(#paper)" stroke="#79623d"/><path d="M16 2v4h4" fill="#e7cb8d"/><path d="M7 8h9M7 11h7M7 14h5" stroke="#7893aa"/><path d="M8 20l1-3 8-8 2 2-8 8z" fill="url(#green)"/><path d="M17 9l1-1c.5-.5 1.2-.5 1.7 0l.3.3c.5.5.5 1.2 0 1.7l-1 1z" fill="url(#gold)"/>',
     wird: '<rect x="2.5" y="4" width="19" height="17" rx="2.2" fill="url(#paper)" stroke="#745e3d"/><path d="M2.5 6.2A2.2 2.2 0 0 1 4.7 4h14.6a2.2 2.2 0 0 1 2.2 2.2V9h-19z" fill="url(#blue)"/><path d="M7 2v4M17 2v4" stroke="#d8ad4b" stroke-width="2"/><path d="M6.5 14.5l3.1 3 7.8-7.1" fill="none" stroke="#13946d" stroke-width="2.3" stroke-linecap="round"/>',
     bookmarks: '<path d="M3 4h16a2 2 0 0 1 2 2v13H5a2 2 0 0 1-2-2z" fill="url(#blue)" stroke="#164675"/><path d="M5 6h12a2 2 0 0 1 2 2v9H6c-.4 0-.7.1-1 .3z" fill="url(#paper)"/><path d="M13 3h4.5v10L15.2 11 13 13z" fill="url(#red)"/><path d="M7 8h5M7 10.5h4" stroke="#7b91a2"/>',
+    listen: '<path d="M3.5 14.5V12a8.5 8.5 0 0 1 17 0v2.5" fill="none" stroke="#2f6f8f" stroke-width="2.2" stroke-linecap="round"/><rect x="2.5" y="13" width="5" height="8" rx="2" fill="url(#blue)" stroke="#164675"/><rect x="16.5" y="13" width="5" height="8" rx="2" fill="url(#blue)" stroke="#164675"/>',
     tajweed: '<path d="M12 2C6 2 2 6 2 11.2 2 17 7 21 13 21h1c1.8 0 3-1 3-2.5 0-1.6-1.2-2.5-2.8-2.5H13c-1 0-1.8-.8-1.8-1.7 0-1 .8-1.8 2-1.8H16c3.4 0 6-2.1 6-5C22 4.3 18 2 12 2z" fill="url(#violet)" stroke="#48236c"/><circle cx="6" cy="8" r="1.7" fill="#ff5863"/><circle cx="10" cy="5.5" r="1.7" fill="#ffbe3d"/><circle cx="14.5" cy="5.5" r="1.7" fill="#43ce7a"/><circle cx="18" cy="8.5" r="1.7" fill="#4ebeff"/>',
     words: '<path d="M2.5 3h11A2.5 2.5 0 0 1 16 5.5v5A2.5 2.5 0 0 1 13.5 13H8l-4 3 .8-3H2.5A2.5 2.5 0 0 1 0 10.5v-5A2.5 2.5 0 0 1 2.5 3z" fill="url(#blue)"/><path d="M11 12h8.5a2.5 2.5 0 0 1 2.5 2.5v3A2.5 2.5 0 0 1 19.5 20h-2l.6 2-3-2H11a2.5 2.5 0 0 1-2.5-2.5v-3A2.5 2.5 0 0 1 11 12z" fill="url(#green)"/><path d="M3 6h9M3 9h6M12 15h7M12 17.5h5" stroke="#fff" stroke-linecap="round"/>',
     adhkar: '<path d="M12 2c-5.5 0-9.5 4.3-9.5 9.5 0 4.7 3.3 8.4 7.6 9.3" fill="none" stroke="#d2a94b"/><g fill="url(#green)" stroke="#075044"><circle cx="12" cy="2" r="1.8"/><circle cx="6.8" cy="3.6" r="1.8"/><circle cx="3.3" cy="7.7" r="1.8"/><circle cx="3.2" cy="13" r="1.8"/><circle cx="6.3" cy="17.4" r="1.8"/><circle cx="11" cy="20" r="1.8"/></g><path d="M18.8 14.5l1.3 2.5-1.1 1.2 1.5 3.7-2.2.8-1.4-3.7-1.5-.2.4-2.7z" fill="url(#gold)"/>',
@@ -133,6 +135,20 @@
     set(key, value) { try { localStorage.setItem('quran:' + key, JSON.stringify(value)); } catch {} },
   };
   const settings = Object.assign({}, DEFAULTS, store.get('settings', {}));
+  // الإعدادات المحفوظة من إصدارات أقدم قد تشير إلى خيارات حفص المحذوفة؛ نرجع لحفص عن عاصم
+  const VALID_RIWAYAT = ['quran-uthmani', 'warsh', 'qalun', 'duri'];
+  if (!VALID_RIWAYAT.includes(settings.riwaya)) settings.riwaya = 'quran-uthmani';
+  const savedTajweedScopes = settings.tajweedScopes && typeof settings.tajweedScopes === 'object'
+    && !Array.isArray(settings.tajweedScopes) ? settings.tajweedScopes : {};
+  settings.tajweedScopes = {};
+  ['quran-uthmani', 'quran-simple', 'quran-uthmani-min', 'quran-tajweed', 'warsh', 'qalun', 'duri']
+    .forEach((settingId) => {
+      const value = savedTajweedScopes[settingId];
+      if (typeof value === 'string'
+          && /^[a-z0-9][a-z0-9._-]*(\/[a-z0-9][a-z0-9._-]*){3}$/.test(value)) {
+        settings.tajweedScopes[settingId] = value;
+      }
+    });
   const saveSettings = () => store.set('settings', settings);
   const allowedFonts = new Set(['Amiri Quran', 'Amiri', 'Noto Naskh Arabic', 'Scheherazade New']);
   if (!allowedFonts.has(settings.font)) settings.font = DEFAULTS.font;
@@ -143,18 +159,79 @@
   if (!allowedTranslations.has(settings.translation)) settings.translation = '';
   saveSettings();
 
+  // ---------- السياق والعادات المحلية (اختياري وبلا شبكة) ----------
+  const SmartContextAPI = window.SirajSmartContext || null;
+  const SmartServicesAPI = window.SirajSmartServices || null;
+  const TajweedLearningAPI = window.SirajTajweedLearning || null;
+  const TajweedCurriculumLoaderAPI = window.SirajTajweedCurriculumLoader || null;
+  const SMART_STATE_KEY = 'smart-context';
+  const TAJWEED_LEARNING_KEY = 'tajweed-learning';
+  const SMART_NATIVE_KEY = 'smart-native';
+  let smartEngine = SmartContextAPI
+    ? new SmartContextAPI.SmartContextEngine(store.get(SMART_STATE_KEY, null)) : null;
+  let tajweedLearningEngine = TajweedLearningAPI
+    ? new TajweedLearningAPI.TajweedLearningEngine(store.get(TAJWEED_LEARNING_KEY, null)) : null;
+  const smartNativeSaved = store.get(SMART_NATIVE_KEY, null) || {};
+  let smartNative = { enabled: !!smartNativeSaved.enabled, nextAt: Number(smartNativeSaved.nextAt) || 0 };
+  let smartDeviceSignals = {};
+  let smartNativeTimer = null;
+  let smartPendingNativeAction = '';
+  let smartAppReady = false;
+  let smartSaveTimer = null;
+  let smartSuggestionTimer = null;
+  let smartCurrent = null;
+  let smartSessionStartedAt = Date.now();
+  let smartLastInteractionAt = Date.now();
+
+  function persistSmartContext(immediate = false) {
+    if (!smartEngine) return;
+    clearTimeout(smartSaveTimer);
+    const save = () => store.set(SMART_STATE_KEY, smartEngine.snapshot());
+    if (immediate) save();
+    else smartSaveTimer = setTimeout(save, 250);
+  }
+
+  function smartRecord(event, options = {}) {
+    if (!smartEngine || !smartEngine.config.enabled) return null;
+    const saved = smartEngine.record(event);
+    if (!saved) return null;
+    persistSmartContext(!!options.immediate);
+    if (!options.silent) {
+      queueSmartSuggestion(1400);
+      queueSmartNativeSync(2200);
+    }
+    return saved;
+  }
+
   // ---------- الحالة ----------
   let surahs = [];
   let localHafs = null;
   let localTajweed = [];
+  let tajweedLearningCatalog = null;
+  let tajweedScopeRegistry = null;
+  let tajweedRuntimeCurricula = [];
+  let tajweedCurriculumLoadErrors = [];
+  let tajweedLearningCards = [];
+  const emptyTajweedSession = () => ({
+    queue: [], index: 0, revealed: false, answered: 0,
+    ratings: { again: 0, hard: 0, good: 0, easy: 0 },
+    quizCorrect: null, quizTotal: 0, quizCorrectCount: 0,
+  });
+  let tajweedSession = emptyTajweedSession();
   const hafsPages = { uthmani: new Map(), simple: new Map() };
   const hafsByRef = { uthmani: new Map(), simple: new Map() };
   const tajweedByRef = new Map();
   const pageByRef = new Map();
   const globalByRef = new Map();
-  const cache = new Map();          // طلبات الشبكة الاختيارية (ترجمة/مصادر احتياطية)
+  const cache = new Map();          // JSON محلل من الأصول المحلية أو طلبات الشبكة الاختيارية
+  const textCache = new Map();      // النص الخام مطلوب للتحقق من بصمات حزم التجويد
   const pageCache = new Map();      // صفحات جاهزة (مُعالجة)
   const audio = new Audio();
+  // سرعة التلاوة تُحفظ على الجهاز
+  const PLAY_RATES = [0.75, 1, 1.25, 1.5, 2];
+  let playRate = Number(store.get('playRate', 1));
+  if (!PLAY_RATES.includes(playRate)) playRate = 1;
+  audio.playbackRate = playRate;
   audio.preload = 'auto';
 
   const state = { page: 0, pg: null, sel: null, selSurah: 1, renderToken: 0 };
@@ -190,11 +267,114 @@
     toast._t = setTimeout(() => t.classList.remove('show'), 1800);
   }
 
-  async function getJSON(url) {
-    if (cache.has(url)) return cache.get(url);
+  const UPDATE_ASSET_DB = 'siraj-update-assets';
+  const UPDATE_ASSET_STORE = 'assets';
+  let updateAssetDbPromise = null;
+
+  function safeLocalAssetName(url) {
+    const value = String(url || '');
+    if (/^[a-z][a-z0-9+.-]*:/i.test(value) || value.includes('?') || value.includes('#')) return '';
+    const normalized = value.replace(/^\.\//, '');
+    return (/^[a-z0-9][a-z0-9._-]*\.(?:html|js|json)$/i.test(normalized)
+      || /^tajweed-curricula\/[a-z0-9][a-z0-9._-]*\.json$/.test(normalized))
+      ? normalized : '';
+  }
+
+  function openUpdateAssetDb() {
+    if (!window.indexedDB) return Promise.reject(new Error('IndexedDB unavailable'));
+    if (updateAssetDbPromise) return updateAssetDbPromise;
+    updateAssetDbPromise = new Promise((resolve, reject) => {
+      const request = window.indexedDB.open(UPDATE_ASSET_DB, 1);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(UPDATE_ASSET_STORE)) {
+          db.createObjectStore(UPDATE_ASSET_STORE, { keyPath: 'name' });
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error('update asset database'));
+      request.onblocked = () => reject(new Error('update asset database blocked'));
+    });
+    updateAssetDbPromise.catch(() => { updateAssetDbPromise = null; });
+    return updateAssetDbPromise;
+  }
+
+  function waitForUpdateTransaction(transaction) {
+    return new Promise((resolve, reject) => {
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error || new Error('update asset transaction'));
+      transaction.onabort = () => reject(transaction.error || new Error('update asset transaction aborted'));
+    });
+  }
+
+  async function readUpdateDataAsset(name, version) {
+    const db = await openUpdateAssetDb();
+    const transaction = db.transaction(UPDATE_ASSET_STORE, 'readonly');
+    const request = transaction.objectStore(UPDATE_ASSET_STORE).get(name);
+    const record = await new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error || new Error('update asset read'));
+    });
+    return record && record.version === version && typeof record.text === 'string'
+      ? record.text : null;
+  }
+
+  async function replaceUpdateDataAssets(version, files) {
+    const db = await openUpdateAssetDb();
+    const transaction = db.transaction(UPDATE_ASSET_STORE, 'readwrite');
+    const storeRef = transaction.objectStore(UPDATE_ASSET_STORE);
+    storeRef.clear();
+    Object.keys(files).forEach((name) => {
+      storeRef.put({ name, version, text: files[name] });
+    });
+    await waitForUpdateTransaction(transaction);
+  }
+
+  async function clearUpdateDataAssets() {
+    if (!window.indexedDB) return;
+    try {
+      const db = await openUpdateAssetDb();
+      const transaction = db.transaction(UPDATE_ASSET_STORE, 'readwrite');
+      transaction.objectStore(UPDATE_ASSET_STORE).clear();
+      await waitForUpdateTransaction(transaction);
+    } catch { /* الملفات القديمة غير فعالة بلا مؤشر التحديث المحلي */ }
+  }
+
+  function updateOverlayText(url) {
+    const normalized = safeLocalAssetName(url);
+    const files = window.SIRAJ_UPDATE_FILES;
+    if (!normalized || !files || !Object.prototype.hasOwnProperty.call(files, normalized)) return null;
+    return typeof files[normalized] === 'string' ? files[normalized] : null;
+  }
+
+  async function getTextAsset(url) {
+    if (textCache.has(url)) return textCache.get(url);
+    const normalized = safeLocalAssetName(url);
+    const overlaid = updateOverlayText(url);
+    if (overlaid !== null) {
+      textCache.set(url, overlaid);
+      return overlaid;
+    }
+    const dataFiles = Array.isArray(window.SIRAJ_UPDATE_DATA_FILES)
+      ? window.SIRAJ_UPDATE_DATA_FILES : [];
+    if (normalized && dataFiles.includes(normalized)) {
+      const text = await readUpdateDataAsset(normalized, String(window.SIRAJ_UPDATE_VERSION || ''));
+      if (!text || !text.trim()) throw new Error('missing update asset ' + normalized);
+      textCache.set(url, text);
+      return text;
+    }
     const res = await fetch(url);
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    const json = await res.json();
+    const text = await res.text();
+    if (!text.trim()) throw new Error('empty asset');
+    textCache.set(url, text);
+    return text;
+  }
+
+  async function getJSON(url) {
+    if (cache.has(url)) return cache.get(url);
+    const text = await getTextAsset(url);
+    const json = JSON.parse(text);
     cache.set(url, json);
     return json;
   }
@@ -215,18 +395,56 @@
   }
 
   async function loadBundledData() {
-    const [surahData, hafsData, tajweedData, catalog] = await Promise.all([
+    const [surahData, hafsData, tajweedData, catalog, learningCatalog, scopeRegistry] = await Promise.all([
       getJSON('surahs.json'), getJSON('quran-hafs.json'),
       getJSON('quran-tajweed.json'), getJSON('tafsir-catalog.json'),
+      getJSON('tajweed-learning-catalog.json'),
+      getJSON('tajweed-scope-registry.json'),
     ]);
     surahs = Array.isArray(surahData) ? surahData : [];
     localHafs = hafsData;
     localTajweed = Array.isArray(tajweedData) ? tajweedData : [];
+    tajweedLearningCatalog = learningCatalog;
+    tajweedScopeRegistry = scopeRegistry;
+    tajweedRuntimeCurricula = [];
+    tajweedCurriculumLoadErrors = [];
+    if (TajweedCurriculumLoaderAPI && learningCatalog && scopeRegistry) {
+      try {
+        const catalogSha256 = await TajweedCurriculumLoaderAPI.sha256Text(
+          await getTextAsset('tajweed-learning-catalog.json')
+        );
+        const baseErrors = [];
+        const baseCurricula = Array.isArray(learningCatalog.curricula)
+          ? learningCatalog.curricula.map((item) => {
+            const display = TajweedCurriculumLoaderAPI.normalizeDisplay(item.display);
+            const matchingLabels = new Set((scopeRegistry.settings || [])
+              .filter((entry) => entry?.riwayah?.id === item?.scope?.riwayah)
+              .map((entry) => entry.riwayah.labelAr));
+            if (!display || matchingLabels.size !== 1 || !matchingLabels.has(display.riwayahAr)) {
+              baseErrors.push({ artifact: 'tajweed-learning-catalog.json', code: 'DISPLAY_INVALID' });
+              return null;
+            }
+            return Object.assign({}, item, { display,
+              artifact: 'tajweed-learning-catalog.json', artifactSha256: catalogSha256,
+            });
+          }).filter(Boolean) : [];
+        const independent = await TajweedCurriculumLoaderAPI.loadRegistryCurricula({
+          registry: scopeRegistry,
+          getText: getTextAsset,
+        });
+        tajweedRuntimeCurricula = [...baseCurricula, ...independent.curricula];
+        tajweedCurriculumLoadErrors = [...baseErrors, ...independent.errors];
+      } catch {
+        tajweedRuntimeCurricula = [];
+        tajweedCurriculumLoadErrors = [{ artifact: '', code: 'RUNTIME_GATE_FAILED' }];
+      }
+    }
     indexHafsRows('uthmani', localHafs.uthmani || []);
     indexHafsRows('simple', localHafs.simple || []);
     localTajweed.forEach((row) => tajweedByRef.set(refKey(row[0], row[1]), clean(row[3])));
+    buildTajweedLearningCards();
     tafsirCatalog = catalog;
-    const classical = (catalog.books || []).map((book) => [
+    const classical = (catalog.books || []).filter((book) => !/^qp:\d+$/.test(book.edition)).map((book) => [
       book.edition,
       `${book.name} — ${book.author} (ت ${toArabicDigits(book.author_death_hijri)}هـ)`,
     ]);
@@ -245,6 +463,31 @@
     let s = esc(clean(raw));
     s = s.replace(/\[([a-z]+)(?::\d+)?\[([^\[\]]*)\]/g, '<span class="tj-$1">$2</span>');
     return s.replace(/\[|\]/g, '');
+  }
+
+  function renderIndependentTajweed(curriculum, surah, ayah, text) {
+    if (!TajweedCurriculumLoaderAPI || !curriculum) return esc(text);
+    const segments = TajweedCurriculumLoaderAPI.annotatedSegments(
+      curriculum, surah, ayah, clean(text)
+    );
+    return segments.map((segment) => {
+      if (!segment.rules.length) return esc(segment.text);
+      const ids = segment.rules.map((rule) => rule.id).join(',');
+      const names = segment.rules.map((rule) => rule.name).join('، ');
+      const colors = [...new Set(segment.rules.map((rule) => rule.color)
+        .filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color)))];
+      if (!colors.length) return esc(segment.text);
+      let style = `color:${colors[0]};text-decoration:underline dotted ${colors[0]};text-underline-offset:.16em`;
+      if (colors.length > 1) {
+        const step = 100 / colors.length;
+        const stops = colors.flatMap((color, index) => [
+          `${color} ${(index * step).toFixed(2)}%`,
+          `${color} ${((index + 1) * step).toFixed(2)}%`,
+        ]).join(',');
+        style += `;background-image:linear-gradient(90deg,${stops});background-repeat:no-repeat;background-size:100% 2px;background-position:0 100%`;
+      }
+      return `<span class="tj-independent-mark" data-tj-rules="${esc(ids)}" title="${esc(names)}" style="${style}">${esc(segment.text)}</span>`;
+    }).join('');
   }
 
   const HAFS_BASMALAS = [
@@ -274,6 +517,7 @@
   const navStack = [];
   let curView = 'reader';
   function showView(name, opts = {}) {
+    const previousView = curView;
     if (name !== curView && !opts.back) { navStack.push(curView); if (navStack.length > 30) navStack.shift(); }
     curView = name;
     $$('#tabs button').forEach((b) => b.classList.toggle('active', b.dataset.view === name));
@@ -284,6 +528,7 @@
     $$('.tab-group').forEach((g) => g.querySelector('.group-btn').classList.toggle('active', !!g.querySelector(`[data-view="${name}"]`)));
     $('#tabs button.active')?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
     $$('section.view').forEach((s) => s.classList.toggle('active', s.id === 'view-' + name));
+    placePlayer(name);
     if (name === 'reader') updateChrome(); else $('#topTitle').textContent = VIEW_TITLES[name] || '';
     // زر الرجوع يظهر في كل الأقسام ما عدا المصحف
     $('#backBtn').hidden = name === 'reader';
@@ -298,6 +543,13 @@
     if (name === 'memo') renderMemoReview();
     syncReaderLayout();
     if (name === 'reader') requestAnimationFrame(syncReaderDockHeight);
+    if (name !== previousView) {
+      if (name === 'memo') smartRecord({ type: 'SERVICE_OPEN', service: 'memorization' });
+      else if (name === 'tajweed') smartRecord({ type: 'OPEN_TAJWEED', service: 'tajweed' });
+      else if (name === 'tafsir') smartRecord({ type: 'OPEN_TAFSIR', service: 'tafsir' });
+    }
+    if (name === 'settings' || name === 'about') hideSmartSuggestion();
+    else queueSmartSuggestion(1800);
     $('#content').scrollTop = 0;
   }
   function popView() { showView(navStack.pop() || 'reader', { back: true }); }
@@ -409,9 +661,7 @@
   let riwPages = {};
   async function loadRiwaya(id) {
     if (!riwAll) {
-      const res = await fetch('quran-riwayat.json');
-      if (!res.ok) throw new Error('riwaya');
-      riwAll = (await res.json()).riwayat || {};
+      riwAll = (await getJSON('quran-riwayat.json')).riwayat || {};
     }
     if (!riwPages[id]) {
       const byPage = {};
@@ -437,7 +687,17 @@
         if (re[2].type === 'surah') return re[2].base + String(x.s).padStart(3, '0') + '.mp3';
         return re[2].base + String(x.s).padStart(3, '0') + String(x.n).padStart(3, '0') + '.mp3';
       };
-      const obj = { p, ayahs: (byPage[p] || []).map((x) => ({ ...x, juz: juzOf(x.s, x.n), html: esc(x.text), audio: urlOf(x), tafsir: '', tr: '' })) };
+      const approvedCurriculum = settings.tajweed ? currentApprovedTajweedCurriculum() : null;
+      const obj = { p, ayahs: (byPage[p] || []).map((x) => ({
+        ...x,
+        juz: juzOf(x.s, x.n),
+        html: approvedCurriculum
+          ? renderIndependentTajweed(approvedCurriculum, x.s, x.n, x.text)
+          : esc(x.text),
+        audio: urlOf(x),
+        tafsir: '',
+        tr: '',
+      })) };
       pageCache.set(key, obj);
       return obj;
     }
@@ -492,10 +752,100 @@
         tr: settings.translation ? (translated[i]?.text || '') : '',
       };
     });
-    const obj = { p, ayahs };
+    const obj = { p, ayahs, linesHtml: null };
+    if (kind === 'uthmani') {
+      const madani = await loadMadaniLines();
+      obj.linesHtml = madani ? madaniLinesHtml(p, madani, showTajweed) : null;
+    }
     pageCache.set(key, obj);
     return obj;
   }
+
+  // ---------- تخطيط المصحف بأسطر ثابتة (رواية حفص فقط) ----------
+  let madaniPromise = null;
+  function loadMadaniLines() {
+    if (!madaniPromise) madaniPromise = getJSON('quran-madani-lines.json').catch(() => { madaniPromise = null; return null; });
+    return madaniPromise;
+  }
+
+  function tajweedWordsOf(item) {
+    const src = tajweedByRef.get(refKey(item.s, item.n));
+    if (!src) return null;
+    const words = displayHafsSource(item.s, item.n, src).split(/\s+/).filter(Boolean);
+    const plainCount = item.text.split(/\s+/).filter(Boolean).length;
+    return words.length === plainCount ? words : null;
+  }
+
+  // كلمات السطر من بداية الآية (s:n:t) إلى نهايتها (s1:n1:t1)، والعلامة ۝ بعد آخر كلمة
+  function madaniLineParts(fromRef, toRef, showTajweed) {
+    let [s, n, t] = fromRef.split(':').map(Number);
+    const [s1, n1, t1] = toRef.split(':').map(Number);
+    const out = [];
+    for (let guard = 0; guard < 400; guard++) {
+      const item = hafsByRef.uthmani.get(refKey(s, n));
+      if (!item) break;
+      const words = item.text.split(/\s+/).filter(Boolean);
+      const N = words.length;
+      const tj = showTajweed ? tajweedWordsOf(item) : null;
+      const last = (s === s1 && n === n1) ? t1 : N + 1;
+      const pieces = [];
+      for (let k = t; k <= last; k++) {
+        if (k <= N) pieces.push(tj ? renderTajweed(tj[k - 1]) : esc(words[k - 1]));
+        else pieces.push(`<span class="end hafs-end" data-act="tafsir" data-g="${item.g}" title="الآية">۝${toArabicDigits(n)}</span>`);
+      }
+      if (pieces.length) out.push(`<span class="ay" data-g="${item.g}">${pieces.join(' ')}</span>`);
+      if (s === s1 && n === n1) break;
+      n += 1; t = 1;
+      if (!hafsByRef.uthmani.get(refKey(s, n))) { s += 1; n = 1; }
+    }
+    return out.join(' ');
+  }
+
+  function madaniLinesHtml(p, data, showTajweed) {
+    const lines = data.pages && data.pages[p - 1];
+    if (!lines) return null;
+    const surahOfNext = (i) => {
+      for (let j = i; j < lines.length; j++) if (lines[j].k === 'text') return Number(lines[j].a.split(':')[0]);
+      return 0;
+    };
+    const out = [];
+    lines.forEach((ln, i) => {
+      if (ln.k === 'sura') { out.push(`<div class="surah-banner">${esc(surahName(surahOfNext(i + 1)))}</div>`); return; }
+      if (ln.k === 'bism') { out.push('<div class="bism">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>'); return; }
+      const parts = madaniLineParts(ln.a, ln.b, showTajweed);
+      const style = ln.w ? ` style="width:${(ln.w * 100).toFixed(2)}%"` : '';
+      out.push(`<div class="mline${ln.w ? ' short' : ''}"${style}>${parts}</div>`);
+    });
+    return out.join('');
+  }
+
+  // تصغير الخط قليلًا لو السطر أطول من عرض الشاشة، بنفس النسبة لكل السطور
+  // ضبط كل سطر على حدة: الخط يملأ عرض السطر تقريبًا، وتفاوت الحجم بين السطور بسيط جدًا
+  function fitMadaniLines() {
+    const body = $('#pageBody');
+    requestAnimationFrame(() => {
+      if (!body.classList.contains('madani-lines')) return;
+      const lines = [...body.querySelectorAll('.mline:not(.short)')];
+      const base = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--quran-size')) || 26;
+      lines.forEach((el) => { el.style.fontSize = ''; });
+      const ratios = lines.map((el) => {
+        const avail = el.clientWidth;
+        el.style.width = 'max-content';
+        const natural = el.getBoundingClientRect().width;
+        el.style.width = '';
+        return avail && natural ? avail / natural : 1;
+      });
+      const sorted = [...ratios].sort((x, y) => x - y);
+      const med = Math.min(1.15, Math.max(0.5, sorted[Math.floor(sorted.length / 2)] || 1));
+      body.style.setProperty('--mline-h', `${(base * med * 1.5).toFixed(2)}px`);
+      lines.forEach((el, i) => {
+        const r = ratios[i] / med;
+        el.style.fontSize = `${(base * med * Math.min(r, 1.08) * 0.995).toFixed(2)}px`;
+      });
+    });
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitMadaniLines());
+  window.addEventListener('resize', () => fitMadaniLines());
 
   // رقم الصفحة لأي آية (من بيانات السورة)
   async function pageOfAyah(s, a) {
@@ -542,6 +892,7 @@
 
     renderPage(opts.dir);
     updateChrome();
+    prefetchAround(p);
     if (opts.scroll === true || opts.dir) {
       requestAnimationFrame(() => {
         const content = $('#content');
@@ -554,11 +905,30 @@
     }
     recordRead(p);
     recordWirdPage(p);
+    recordSmartReadPage(p, sel);
     if (opts.save !== false) saveLast();
   }
 
   function renderPage(dir) {
     const pg = state.pg;
+    if (pg.linesHtml) {
+      $('#pageBody').classList.add('madani-lines');
+      $('#pageBody').innerHTML = pg.linesHtml;
+      fitMadaniLines();
+    } else {
+      $('#pageBody').classList.remove('madani-lines');
+      renderFlowPage(pg);
+    }
+    const page = $('#page');
+    page.classList.remove('flip-next', 'flip-prev');
+    void page.offsetWidth;
+    if (dir === 'next') page.classList.add('flip-next');
+    if (dir === 'prev') page.classList.add('flip-prev');
+
+    markSelection();
+  }
+
+  function renderFlowPage(pg) {
     let html = '';
     let openP = false;
     let lastS = 0;
@@ -578,29 +948,17 @@
       html += `<span class="ay" data-g="${a.g}">${a.html} <span class="${markerClass}" data-act="tafsir" data-g="${a.g}" title="الآية">${marker}</span></span> `;
     });
     if (openP) html += '</p>';
-
-    const body = $('#pageBody');
-    body.innerHTML = html;
-
-    const page = $('#page');
-    page.classList.remove('flip-next', 'flip-prev');
-    void page.offsetWidth;
-    if (dir === 'next') page.classList.add('flip-next');
-    if (dir === 'prev') page.classList.add('flip-prev');
-
-    markSelection();
+    $('#pageBody').innerHTML = html;
   }
 
   function markSelection() {
     $$('#pageBody .ay.sel').forEach((el) => el.classList.remove('sel'));
     $$('#pageBody .ay.playing').forEach((el) => el.classList.remove('playing'));
     if (state.sel) {
-      const el = $(`#pageBody .ay[data-g="${state.sel.g}"]`);
-      if (el) el.classList.add('sel');
+      $$(`#pageBody .ay[data-g="${state.sel.g}"]`).forEach((el) => el.classList.add('sel'));
     }
     if (play.cur) {
-      const el = $(`#pageBody .ay[data-g="${play.cur.g}"]`);
-      if (el) el.classList.add('playing');
+      $$(`#pageBody .ay[data-g="${play.cur.g}"]`).forEach((el) => el.classList.add('playing'));
     }
   }
 
@@ -612,7 +970,8 @@
     $('#pgJuz').textContent = `الجزء ${toArabicDigits(juz)}`;
     $('#pgSurah').textContent = surahsOnPage.map((s) => surahNameShort(s)).join(' - ');
     $('#pgFoot').textContent = toArabicDigits(pg.p);
-    $('#pageNo').textContent = `صفحة ${toArabicDigits(pg.p)} من ${toArabicDigits(TOTAL_PAGES)}`;
+    $('#pageNo').textContent = toArabicDigits(pg.p);
+    $('#pageNo').title = `صفحة ${toArabicDigits(pg.p)} من ${toArabicDigits(TOTAL_PAGES)}`;
     $('#pagerContext').textContent = `${surahNameShort(state.sel.s)} · الجزء ${toArabicDigits(state.sel.juz || juz)}`;
     $('#pPrevS').disabled = pg.p <= 1;
     $('#pNextS').disabled = pg.p >= TOTAL_PAGES;
@@ -665,8 +1024,12 @@
   }
 
   // ---------- التقليب ----------
-  function nextPage() { if (state.page < TOTAL_PAGES) showPage(state.page + 1, { dir: 'next' }); }
-  function prevPage() { if (state.page > 1) showPage(state.page - 1, { dir: 'prev' }); }
+  function nextPage() { if (state.page < TOTAL_PAGES) return showPage(state.page + 1, { dir: 'next' }); return null; }
+  function prevPage() { if (state.page > 1) return showPage(state.page - 1, { dir: 'prev' }); return null; }
+  // تحميل الصفحتين المجاورتين مسبقًا ليصبح التقليب فوريًا
+  function prefetchAround(p) {
+    [p - 1, p + 1].forEach((q) => { if (q >= 1 && q <= TOTAL_PAGES) loadPage(q).catch(() => {}); });
+  }
 
   $('#pNextS').addEventListener('click', nextPage);
   $('#pPrevS').addEventListener('click', prevPage);
@@ -679,29 +1042,215 @@
     if (e.key === 'ArrowLeft') { e.preventDefault(); nextPage(); }
   });
 
-  // السحب باللمس أو الفأرة: يمين ← السابقة، يسار ← التالية
+  // السحب باللمس أو الفأرة: الصفحة تتبع الإصبع، ثم تنتقل بسرعة عند تجاوز المسافة أو عند الدفع السريع
+  // يمين ← الصفحة التالية، يسار ← السابقة (كما كان)
   let drag = null;
   const stage = $('#stage');
+  const pageEl = $('#page');
+  const hasSelection = () => !!(window.getSelection && window.getSelection().toString().trim());
+  const SWIPE_EASE = 'cubic-bezier(.2,.8,.2,1)';
+  function setPageTransform(x, opacity, animate) {
+    pageEl.style.transition = animate ? `transform .26s ${SWIPE_EASE}, opacity .26s ease` : 'none';
+    pageEl.style.transform = x ? `translate3d(${x}px,0,0)` : '';
+    pageEl.style.opacity = opacity === undefined ? '' : String(opacity);
+  }
   stage.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('button, select')) return;
-    drag = { x: e.clientX, y: e.clientY, t: Date.now(), hadSel: !!(window.getSelection && window.getSelection().toString().trim()) };
+    // الفأرة للتحديد الحر للنص؛ التقليب بالسحب خاص باللمس (والقلم)
+    if (e.pointerType === 'mouse' || e.button > 0 || e.target.closest('button, select, input')) return;
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), dragging: false,
+      hadSel: hasSelection(), lastX: e.clientX, lastT: performance.now(), v: 0 };
   });
-  stage.addEventListener('pointerup', (e) => {
-    if (!drag) return;
+  stage.addEventListener('pointermove', (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-    const held = Date.now() - drag.t;
-    const hadSel = drag.hadSel;
-    drag = null;
-    // لا تقلب الصفحة أثناء تحديد النص (ضغط مطوّل أو تحديد نشط)
-    // التحديد الجديد يبدأ بضغط مطوّل؛ التحديد القديم لا يمنع السحب السريع
-    const selectingNow = !!(window.getSelection && window.getSelection().toString().trim());
-    if (held > 350 || (!hadSel && selectingNow)) return;
-    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.6) {
+    if (!drag.dragging) {
+      if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+      // ضغط مطوّل لتحديد النص لا يُعد سحبًا
+      if (hasSelection() && !drag.hadSel) { drag = null; return; }
+      if (performance.now() - drag.t > 450 && !drag.hadSel) { drag = null; return; }
+      drag.dragging = true;
       window.getSelection()?.removeAllRanges();
-      if (dx > 0) nextPage(); else prevPage();
+      pageEl.classList.add('is-dragging');
     }
+    const now = performance.now();
+    drag.v = (e.clientX - drag.lastX) / Math.max(1, now - drag.lastT);
+    drag.lastX = e.clientX; drag.lastT = now;
+    // مقاومة خفيفة عند الأطراف (صفحة أولى أو أخيرة)
+    const atEdge = (dx > 0 && state.page <= 1) || (dx < 0 && state.page >= TOTAL_PAGES);
+    const x = atEdge ? dx * 0.25 : dx;
+    setPageTransform(x, Math.max(0.55, 1 - Math.abs(x) / 700), false);
   });
-  stage.addEventListener('pointercancel', () => { drag = null; });
+  function endDrag(e) {
+    if (!drag || (e && e.pointerId !== drag.id)) return;
+    const d = drag; drag = null;
+    pageEl.classList.remove('is-dragging');
+    if (!d.dragging) return;
+    const dx = e.clientX - d.x;
+    const fast = Math.abs(d.v) > 0.45 && Math.abs(dx) > 24;
+    const far = Math.abs(dx) > Math.min(110, stage.clientWidth * 0.22);
+    const goNext = dx > 0;
+    const canMove = goNext ? state.page < TOTAL_PAGES : state.page > 1;
+    if (!(fast || far) || !canMove) { setPageTransform(0, 1, true); return; }
+    // الصفحة الحالية تخرج في الاتجاه المعاكس، ثم تدخل الجديدة من الجانب الآخر
+    const outX = goNext ? -stage.clientWidth : stage.clientWidth;
+    setPageTransform(outX, 0, true);
+    setTimeout(async () => {
+      await (goNext ? nextPage() : prevPage());
+      setPageTransform(-outX * 0.18, 0, false);
+      pageEl.offsetWidth; // إعادة الرسم قبل الحركة
+      setPageTransform(0, 1, true);
+    }, 200);
+  }
+  stage.addEventListener('pointerup', endDrag);
+  stage.addEventListener('pointercancel', () => {
+    if (!drag) return;
+    drag = null;
+    pageEl.classList.remove('is-dragging');
+    setPageTransform(0, 1, true);
+  });
+
+  // ---------- قائمة التحديد: نسخ · مشاركة · حكم التجويد · تفسير · معاني ----------
+  const selMenu = $('#selMenu');
+  let selCtx = null;
+  let selTimer = 0;
+  const hideSelMenu = () => { selMenu.hidden = true; selCtx = null; };
+  // التحديد الحر بالكلمة: أي لمسة على حرف تحدد الكلمة كاملة، ويُرسم تظليل مدوّر بلون الجهاز
+  const hlLayer = document.createElement('div');
+  hlLayer.id = 'hlLayer';
+  hlLayer.setAttribute('aria-hidden', 'true');
+  pageEl.appendChild(hlLayer);
+  function textIndexOf(root) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    let text = '';
+    let n;
+    while ((n = walker.nextNode())) { nodes.push({ node: n, start: text.length }); text += n.nodeValue; }
+    return { nodes, text };
+  }
+  function locateOffset(nodes, g, isEnd) {
+    for (const { node, start } of nodes) {
+      const len = node.nodeValue.length;
+      if (isEnd ? (g > start && g <= start + len) : (g >= start && g < start + len)) return { node, offset: g - start };
+    }
+    const last = nodes[nodes.length - 1];
+    return last ? { node: last.node, offset: last.node.nodeValue.length } : null;
+  }
+  function expandToWords(range) {
+    const root = $('#pageBody');
+    const { nodes, text } = textIndexOf(root);
+    const pre = (container, offset) => { const r = document.createRange(); r.setStart(root, 0); r.setEnd(container, offset); return r.toString().length; };
+    let s0 = pre(range.startContainer, range.startOffset);
+    let e0 = pre(range.endContainer, range.endOffset);
+    while (s0 > 0 && !/\s/.test(text[s0 - 1])) s0--;
+    while (e0 < text.length && !/\s/.test(text[e0])) e0++;
+    if (e0 <= s0) return null;
+    const a0 = locateOffset(nodes, s0, false), b0 = locateOffset(nodes, e0, true);
+    if (!a0 || !b0) return null;
+    const r = document.createRange();
+    r.setStart(a0.node, a0.offset);
+    r.setEnd(b0.node, b0.offset);
+    return r;
+  }
+  // تظليل حر: شريط واحد لكل سطر يغطي من أول الكلام المحدد لآخره في نفس السطر
+  function drawHighlight(range) {
+    const pr = pageEl.getBoundingClientRect();
+    const rects = [...range.getClientRects()].filter((r) => r.width > 1 && r.height > 1)
+      .sort((x, y) => x.top - y.top || x.left - y.left);
+    const lines = [];
+    rects.forEach((r) => {
+      const mid = r.top + r.height / 2;
+      const line = lines.find((l) => mid > l.top && mid < l.bottom);
+      if (line) {
+        line.left = Math.min(line.left, r.left); line.right = Math.max(line.right, r.right);
+        line.top = Math.min(line.top, r.top); line.bottom = Math.max(line.bottom, r.bottom);
+      } else {
+        lines.push({ left: r.left, right: r.right, top: r.top, bottom: r.bottom });
+      }
+    });
+    hlLayer.innerHTML = lines.map((l) => {
+      const h = l.bottom - l.top;
+      return `<i style="left:${l.left - pr.left - 2}px;top:${l.top - pr.top + h * 0.1}px;width:${l.right - l.left + 4}px;height:${h * 0.8}px"></i>`;
+    }).join('');
+  }
+  function updateSelMenu() {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount || !state.pg || !$('#pageBody').contains(sel.getRangeAt(0).commonAncestorContainer)) {
+      hlLayer.innerHTML = ''; hideSelMenu(); return;
+    }
+    const range = sel.getRangeAt(0);
+    const text = range.toString().trim();
+    if (!text) { hlLayer.innerHTML = ''; hideSelMenu(); return; }
+    drawHighlight(range);
+    // أثناء السحب يتبع التظليل الإصبع فقط، والقائمة تظهر بعد رفع الإصبع
+    if (selDragging) { selMenu.hidden = true; return; }
+    selCtx = { text, range: range.cloneRange() };
+    selMenu.hidden = false;
+    const rect = range.getBoundingClientRect();
+    const mw = selMenu.offsetWidth, mh = selMenu.offsetHeight;
+    let left = rect.left + rect.width / 2 - mw / 2;
+    left = Math.max(8, Math.min(window.innerWidth - mw - 8, left));
+    let top = rect.top - mh - 10;
+    if (top < 8) top = rect.bottom + 10;
+    selMenu.style.left = `${left}px`;
+    selMenu.style.top = `${top}px`;
+  }
+  let selRaf = 0;
+  let selDragging = false;
+  document.addEventListener('selectionchange', () => {
+    if (selRaf) return;
+    selRaf = requestAnimationFrame(() => { selRaf = 0; updateSelMenu(); });
+  });
+  $('#pageBody').addEventListener('pointerdown', () => { selDragging = true; hideSelMenu(); });
+  document.addEventListener('pointerup', () => {
+    if (!selDragging) return;
+    selDragging = false;
+    requestAnimationFrame(updateSelMenu);
+  });
+  document.addEventListener('pointercancel', () => { selDragging = false; });
+  window.addEventListener('scroll', hideSelMenu, { capture: true, passive: true });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideSelMenu(); });
+
+  function ayahOfRange(range) {
+    const node = range.startContainer;
+    const el = node.nodeType === 1 ? node : node.parentElement;
+    const g = el?.closest('.ay')?.dataset.g;
+    return (g && state.pg && state.pg.ayahs.find((x) => String(x.g) === g)) || state.sel;
+  }
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); toast('تم النسخ'); }
+    catch { toast('تعذر النسخ'); }
+  }
+  selMenu.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn || !selCtx) return;
+    const { text, range } = selCtx;
+    const act = btn.dataset.act;
+    hideSelMenu();
+    if (act === 'copy') return copyText(text);
+    if (act === 'share') {
+      if (navigator.share) return navigator.share({ text }).catch(() => {});
+      return copyText(text);
+    }
+    const ayah = ayahOfRange(range);
+    if (act === 'tajweed' && false) {
+      const ids = new Set();
+      $('#pageBody').querySelectorAll('[data-tj-rules]').forEach((el) => {
+        if (range.intersectsNode(el)) el.dataset.tjRules.split(',').filter(Boolean).forEach((id) => ids.add(id));
+      });
+      if (ids.size) showIndependentTajweedPanel([...ids]);
+      else {
+        const codes = [...$('#pageBody').querySelectorAll('[class^="tj-"]')]
+          .filter((el) => !el.dataset.tjRules && range.intersectsNode(el))
+          .map((el) => (el.className.match(/tj-([a-z])/) || [])[1]).filter(Boolean);
+        if (codes.length) showTajweedPanel(codes[0]);
+        else toast('لا يوجد حكم تجويد في هذا التحديد');
+      }
+      return;
+    }
+    if (ayah) selectAyah(ayah);
+    if (act === 'tafsir' && ayah) showTafsirPanel(ayah);
+    if (act === 'meanings') showMeaningsPanel();
+  });
 
   // ---------- اختيار الآية ----------
   $('#pageBody').addEventListener('click', (e) => {
@@ -714,6 +1263,11 @@
     if (!a) return;
     selectAyah(a);
     // التفسير والترجمة يظهران من زر "التفسير" فقط. الكلمة الملونة تعرض قاعدة التجويد
+    const independent = !end && e.target.closest('[data-tj-rules]');
+    if (independent) {
+      showIndependentTajweedPanel(independent.dataset.tjRules.split(',').filter(Boolean));
+      return;
+    }
     const tj = !end && e.target.closest('[class^="tj-"]');
     if (tj) showTajweedPanel((tj.className.match(/tj-([a-z])/) || [])[1]);
   });
@@ -809,6 +1363,19 @@
     $('#tjPanel').classList.add('show');
     $('#meanPanel').classList.remove('show');
   }
+
+  function showIndependentTajweedPanel(ruleIds) {
+    const curriculum = currentApprovedTajweedCurriculum();
+    if (!curriculum || !Array.isArray(ruleIds)) return;
+    const wanted = new Set(ruleIds);
+    const rules = curriculum.rules.filter((rule) => wanted.has(rule.id));
+    if (!rules.length) return;
+    $('#tjTitle').textContent = rules.map((rule) => rule.name).join('، ');
+    $('#tjBody').textContent = rules.map((rule) => `${rule.name}: ${rule.answer}`).join('\n\n');
+    $('#tafsirPanel').classList.remove('show');
+    $('#tjPanel').classList.add('show');
+    $('#meanPanel').classList.remove('show');
+  }
   $('#tjClose').addEventListener('click', () => $('#tjPanel').classList.remove('show'));
 
   // ---------- قسم التفسير ----------
@@ -880,6 +1447,7 @@
   function nativeCall(plugin, method, opts) { return Cap.nativePromise(plugin, method, opts || {}); }
   let tafsirNative = null;
   let reminderNative = null;
+  let smartDeviceNative = null;
   function getTafsirNative() {
     if (!hasNativePlugin('TafsirStore')) return null;
     if (!tafsirNative && Cap.registerPlugin) tafsirNative = Cap.registerPlugin('TafsirStore');
@@ -889,6 +1457,11 @@
     if (!hasNativePlugin('Reminder')) return null;
     if (!reminderNative && Cap.registerPlugin) reminderNative = Cap.registerPlugin('Reminder');
     return reminderNative;
+  }
+  function getSmartDeviceNative() {
+    if (!hasNativePlugin('SmartDevice')) return null;
+    if (!smartDeviceNative && Cap.registerPlugin) smartDeviceNative = Cap.registerPlugin('SmartDevice');
+    return smartDeviceNative;
   }
   function bytesToBase64(bytes) {
     let bin = '';
@@ -914,14 +1487,38 @@
     const duration = Number.isFinite(audio.duration) ? audio.duration : 0;
     const current = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
     seek.max = String(duration || 0);
+    seek.style.setProperty('--p', duration ? `${Math.min(100, (current / duration) * 100).toFixed(2)}%` : '0%');
     seek.value = String(duration ? Math.min(current, duration) : 0);
     seek.disabled = !duration;
     $('#audioCurrent').textContent = formatAudioTime(current);
     $('#audioDuration').textContent = formatAudioTime(duration);
   }
 
+  // المشغل عنصر واحد يتنقل بين موضعين: داخل قسم الاستماع، وشريط المصحف السفلي
+  function placePlayer(name) {
+    const player = $('#player');
+    const slot = name === 'listen' ? $('#listenPlayerSlot') : $('#readerDock');
+    if (player && slot && player.parentNode !== slot) slot.prepend(player);
+  }
+
+  function syncMediaSession() {
+    if (!('mediaSession' in navigator) || !play.active || !play.cur) return;
+    try {
+      const name = surahName(play.cur.s) || `سورة ${play.cur.s}`;
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: `${name} · الآية ${play.cur.n}`,
+        artist: play.label || 'القرآن الكريم',
+        album: 'المصحف',
+      });
+      navigator.mediaSession.playbackState = audio.paused ? 'paused' : 'playing';
+    } catch { /* المتصفح لا يدعم بيانات الإشعار */ }
+  }
+
   function setPlayerUI() {
     $('#player').classList.toggle('show', play.active);
+    $('#player').classList.toggle('is-playing', play.active && !audio.paused);
+    $('#pSpeed').textContent = `${playRate}×`;
+    syncMediaSession();
     if (play.active && play.cur) {
       $('#playerInfo').textContent = `${play.label} · الآية ${toArabicDigits(play.cur.n)}` +
         (play.repeatCount > 1
@@ -935,6 +1532,22 @@
     $('.reader-play-label').textContent = play.active ? 'تشغيل من المحدد' : 'تشغيل السورة';
     syncAudioTimeline();
     requestAnimationFrame(syncReaderDockHeight);
+  }
+
+  let smartLastPlayedRef = '';
+  let smartLastPlayedAt = 0;
+  function recordSmartRecitation(a) {
+    if (!a) return;
+    const ref = `${a.s}:${a.n}`;
+    const now = Date.now();
+    if (ref === smartLastPlayedRef && now - smartLastPlayedAt < 10 * 60 * 1000) return;
+    smartLastPlayedRef = ref;
+    smartLastPlayedAt = now;
+    smartRecord({
+      type: 'PLAY_RECITATION',
+      service: 'recitation',
+      context: { page: Number(a.page || state.page), riwayah: settings.riwaya, source: 'player' },
+    });
   }
 
   async function playAyah(a) {
@@ -953,6 +1566,7 @@
     if (prevObj) URL.revokeObjectURL(prevObj);
     audio.play().catch(() => toast('تعذر تشغيل الصوت. اضغط تشغيل مرة أخرى.'));
     play.active = true;
+    recordSmartRecitation(a);
     // تقليب الصفحة تلقائياً مع التلاوة
     if (a.page && a.page !== state.page && play.follow) {
       state.sel = a; state.selSurah = a.s;
@@ -1080,6 +1694,42 @@
   window.addEventListener('resize', syncReaderDockHeight, { passive: true });
   requestAnimationFrame(syncReaderDockHeight);
 
+  $('#pSpeed').addEventListener('click', () => {
+    const i = PLAY_RATES.indexOf(playRate);
+    playRate = PLAY_RATES[(i + 1) % PLAY_RATES.length];
+    audio.playbackRate = playRate;
+    store.set('playRate', playRate);
+    $('#pSpeed').textContent = `${playRate}×`;
+  });
+
+  // اختصارات لوحة المفاتيح أثناء التلاوة (لا تتعارض مع الكتابة في الحقول)
+  document.addEventListener('keydown', (e) => {
+    if (!play.active || e.ctrlKey || e.metaKey || e.altKey) return;
+    const tag = (e.target && e.target.tagName) || '';
+    if (/INPUT|TEXTAREA|SELECT/.test(tag) || e.target?.isContentEditable) return;
+    if (e.code === 'Space') {
+      e.preventDefault();
+      $('#pToggle').click();
+    } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const delta = e.key === 'ArrowRight' ? 5 : -5;
+      if (Number.isFinite(audio.duration)) audio.currentTime = Math.max(0, Math.min(audio.duration, audio.currentTime + delta));
+    }
+  });
+
+  if ('mediaSession' in navigator) {
+    const handlers = {
+      play: () => audio.play().catch(() => {}),
+      pause: () => audio.pause(),
+      stop: stopPlayback,
+      previoustrack: async () => { if (play.active && play.cur) playAyah(await play.prevFn(play.cur).catch(() => null)); },
+      nexttrack: async () => { if (play.active && play.cur) playAyah(await play.nextFn(play.cur).catch(() => null)); },
+    };
+    Object.entries(handlers).forEach(([action, fn]) => {
+      try { navigator.mediaSession.setActionHandler(action, fn); } catch { /* غير مدعوم */ }
+    });
+  }
+
   $('#pToggle').addEventListener('click', () => {
     if (!play.active) return;
     if (audio.paused) audio.play().catch(() => toast('تعذر استئناف التلاوة'));
@@ -1198,6 +1848,10 @@
     const k = memoKey(memo.s, memo.start, memo.end);
     if (!prog[k]) prog[k] = { s: memo.s, from: memo.start, to: memo.end, step: 0, due: addDaysKey(todayKey(), 1) };
     saveMemoProgress(prog);
+    smartRecord({
+      type: 'START_MEMORIZATION', service: 'memorization',
+      context: { count: memo.ayahs.length, source: 'memo' },
+    });
     toast('سيعود المقطع للمراجعة غداً');
     renderMemoReview();
   });
@@ -1232,11 +1886,19 @@
       item.step = Math.min(MEMO_GAPS.length - 1, (item.step || 0) + 1);
       item.due = addDaysKey(todayKey(), MEMO_GAPS[item.step]);
       saveMemoProgress(prog);
+      smartRecord({
+        type: 'COMPLETE_MEMORIZATION', service: 'memorization',
+        context: { count: Math.max(1, Number(item.to) - Number(item.from) + 1), source: 'mastered' },
+      });
       renderMemoReview();
     } else if (btn.dataset.act === 'again') {
       item.step = 0;
       item.due = addDaysKey(todayKey(), 1);
       saveMemoProgress(prog);
+      smartRecord({
+        type: 'COMPLETE_MEMORIZATION', service: 'memorization',
+        context: { count: Math.max(1, Number(item.to) - Number(item.from) + 1), source: 'repeat' },
+      });
       renderMemoReview();
     } else if (btn.dataset.act === 'open') {
       $('#memoSurah').value = String(item.s);
@@ -1313,6 +1975,37 @@
     $('#playReciter').value = settings.reciter;
   }
 
+  function syncTajweedScopeSelector() {
+    const row = $('#setTajweedScopeRow');
+    const select = $('#setTajweedScope');
+    const note = $('#setTajweedScopeNote');
+    const candidates = TajweedCurriculumLoaderAPI ? tajweedCurriculaForSetting() : [];
+    const shouldShow = candidates.length > 1 || candidates.some((item) => item.display);
+    row.hidden = !shouldShow;
+    if (!shouldShow) {
+      select.innerHTML = '';
+      note.textContent = '';
+      return;
+    }
+    const selectedKey = candidates.length === 1
+      ? TajweedCurriculumLoaderAPI.scopeKey(candidates[0].scope)
+      : (settings.tajweedScopes[settings.riwaya] || '');
+    const placeholder = candidates.length > 1
+      ? '<option value="">اختر الطريق والوجه والطبعة…</option>' : '';
+    select.innerHTML = placeholder + candidates.map((curriculum) => {
+      const key = TajweedCurriculumLoaderAPI.scopeKey(curriculum.scope);
+      const stateLabel = curriculum.status === 'APPROVED' ? 'مراجع علميًا' : 'قيد المراجعة';
+      return `<option value="${esc(key)}">${esc(curriculumScopeLabel(curriculum))} — ${stateLabel}</option>`;
+    }).join('');
+    select.disabled = candidates.length === 1;
+    select.value = selectedKey;
+    const selected = candidates.find((curriculum) =>
+      TajweedCurriculumLoaderAPI.scopeKey(curriculum.scope) === selectedKey);
+    note.textContent = selected
+      ? `${selected.displayName}؛ لا يختلط تقدمها أو علاماتها بأي طريق أو وجه آخر.`
+      : 'يلزم اختيار نطاق كامل قبل عرض التعلم أو ألوان التجويد.';
+  }
+
   function tafsirOptionsHtml() {
     return TAFSIRS.map(([id, name]) => {
       const needsPack = /^qp:\d+$/.test(id) && !tafsirPack.ready;
@@ -1322,6 +2015,7 @@
   function fillSettings() {
     $('#setRiwaya').value = settings.riwaya;
     syncReciters();
+    syncTajweedScopeSelector();
     $('#setTafsir').innerHTML = tafsirOptionsHtml();
     $('#setTafsir').value = settings.tafsir;
     $('#setTranslation').value = settings.translation;
@@ -1333,6 +2027,7 @@
     $('#setSize').value = settings.size;
     $('#sizeVal').textContent = settings.size + 'px';
     $('#setTajweed').checked = !!settings.tajweed;
+    fillSmartSettings();
     applyTypography();
   }
   function applyTypography() {
@@ -1342,13 +2037,20 @@
 
   function onSettingChange(key, value) {
     settings[key] = value;
-    if (key === 'riwaya') syncReciters();
+    if (key === 'riwaya') {
+      syncReciters();
+      syncTajweedScopeSelector();
+    }
     saveSettings();
     document.body.classList.toggle('riw', isRiw());
     syncReaderLayout();
     if (key === 'reciter') { $('#setReciter').value = value; $('#playReciter').value = value; }
     if (key === 'tafsir') { $('#setTafsir').value = value; $('#tfBook').value = value; }
     if (key === 'translation') { $('#setTranslation').value = value; $('#tfTrans').value = value; }
+    if (key === 'riwaya' && curView === 'tajweed') renderTajweedView();
+    if (key === 'tajweed' && value && isRiw() && !currentApprovedTajweedCurriculum()) {
+      toast('لا توجد طبقة ألوان معتمدة لهذا النطاق؛ سيبقى نص المصحف بلا تلوين.');
+    }
     pageCache.clear();
     if (state.sel) {
       showPage(state.page, { selG: state.sel.g, save: false }).then(() => {
@@ -1357,6 +2059,21 @@
     }
   }
   $('#setRiwaya').addEventListener('change', (e) => onSettingChange('riwaya', e.target.value));
+  $('#setTajweedScope').addEventListener('change', (e) => {
+    const selectedKey = e.target.value;
+    const valid = tajweedCurriculaForSetting().some((curriculum) => TajweedCurriculumLoaderAPI
+      && TajweedCurriculumLoaderAPI.scopeKey(curriculum.scope) === selectedKey);
+    if (valid) settings.tajweedScopes[settings.riwaya] = selectedKey;
+    else delete settings.tajweedScopes[settings.riwaya];
+    saveSettings();
+    syncTajweedScopeSelector();
+    pageCache.clear();
+    if (curView === 'tajweed') renderTajweedView();
+    if (settings.tajweed && isRiw() && !currentApprovedTajweedCurriculum()) {
+      toast('هذا النطاق غير معتمد للألوان بعد؛ سيبقى نص المصحف بلا تلوين.');
+    }
+    if (state.sel) showPage(state.page, { selG: state.sel.g, save: false });
+  });
   $('#setReciter').addEventListener('change', (e) => onSettingChange('reciter', e.target.value));
   $('#setTafsir').addEventListener('change', (e) => onSettingChange('tafsir', e.target.value));
   $('#setTranslation').addEventListener('change', (e) => onSettingChange('translation', e.target.value));
@@ -1401,6 +2118,27 @@
     return false;
   }
 
+  function validUpdateManifestFiles(files) {
+    if (!Array.isArray(files) || !files.includes('index.html') || !files.includes('app.js')
+        || files.length > 128 || new Set(files).size !== files.length) return false;
+    return files.every((name) => safeLocalAssetName(name) === name);
+  }
+
+  async function verifyDownloadedUpdateFile(name, text, hashes) {
+    const hasHashManifest = hashes && typeof hashes === 'object' && !Array.isArray(hashes);
+    const expected = hasHashManifest && typeof hashes[name] === 'string' ? hashes[name] : '';
+    const isData = name.endsWith('.json');
+    if ((isData || hasHashManifest) && !/^[0-9a-f]{64}$/.test(expected)) {
+      throw new Error('missing update hash');
+    }
+    if (!expected) return;
+    if (!TajweedCurriculumLoaderAPI) {
+      throw new Error('bad update hash');
+    }
+    const actual = await TajweedCurriculumLoaderAPI.sha256Text(text);
+    if (actual !== expected) throw new Error('update hash mismatch');
+  }
+
   // نسخة كاملة (APK): تُنزَّل وتُفتح نافذة التثبيت عند المستخدم
   async function installNewApk(apk, st) {
     const perm = await nativeCall('ApkUpdater', 'canInstall');
@@ -1413,6 +2151,7 @@
     // النسخة الكاملة تحمل واجهتها، فنزيل التحديث الداخلي السابق حتى لا يغطي عليها
     localStorage.removeItem(UPDATE_KEY);
     localStorage.removeItem('quran-update-pending');
+    await clearUpdateDataAssets();
     await nativeCall('ApkUpdater', 'downloadAndInstall', { url: apk.url, sha256: apk.sha256 || '' });
     st.textContent = 'اضغط تثبيت في النافذة لإكمال التحديث.';
   }
@@ -1425,7 +2164,7 @@
       const mres = await fetch(UPDATE_BASE + 'manifest.json?t=' + Date.now(), { cache: 'no-store' });
       if (!mres.ok) throw new Error('manifest');
       const manifest = await mres.json();
-      if (!manifest.version || !Array.isArray(manifest.files) || !manifest.files.includes('index.html')) throw new Error('bad manifest');
+      if (!manifest.version || !validUpdateManifestFiles(manifest.files)) throw new Error('bad manifest');
       // نسخة كاملة أحدث على الهاتف؟ تُثبَّت بدل تحديث الواجهة وحدها
       if (manifest.apk && manifest.apk.url && manifest.apk.version && hasNativePlugin('ApkUpdater')) {
         const nv = await nativeCall('ApkUpdater', 'getVersion').then((r) => r.version).catch(() => null);
@@ -1442,16 +2181,24 @@
         return;
       }
       st.textContent = 'جاري تنزيل الإصدار ' + manifest.version + '...';
-      const files = {};
+      const shellFiles = Object.create(null);
+      const dataFiles = Object.create(null);
       for (const f of manifest.files) {
         const r = await fetch(UPDATE_BASE + f + '?t=' + Date.now(), { cache: 'no-store' });
         if (!r.ok) throw new Error('file ' + f);
         const txt = await r.text();
         if (!txt.trim()) throw new Error('empty ' + f);
-        files[f] = txt;
+        await verifyDownloadedUpdateFile(f, txt, manifest.sha256);
+        if (f.endsWith('.json')) dataFiles[f] = txt;
+        else shellFiles[f] = txt;
       }
-      localStorage.setItem(UPDATE_KEY, JSON.stringify({ version: manifest.version, files: files }));
-      st.textContent = 'تم التنزيل، جاري تطبيق التحديث...';
+      await replaceUpdateDataAssets(manifest.version, dataFiles);
+      localStorage.setItem(UPDATE_KEY, JSON.stringify({
+        version: manifest.version,
+        files: shellFiles,
+        dataFiles: Object.keys(dataFiles),
+      }));
+      st.textContent = 'تم التنزيل والتحقق، جاري تطبيق التحديث...';
       setTimeout(() => location.reload(), 400);
     } catch (e) {
       st.textContent = 'تعذّر التحديث. تأكد من الاتصال بالإنترنت وحاول مرة أخرى.';
@@ -1459,30 +2206,43 @@
     }
   }
   $('#btnUpdate').addEventListener('click', checkForUpdate);
-  $('#btnRestore').addEventListener('click', () => {
+  $('#btnRestore').addEventListener('click', async () => {
     localStorage.removeItem(UPDATE_KEY);
+    localStorage.removeItem('quran-update-pending');
+    await clearUpdateDataAssets();
     location.reload();
   });
   renderUpdateCard();
 
-  // فحص هادئ عند فتح التطبيق: يظهر إشعار مختصر عند توفر إصدار أحدث.
+  function publicUpdateFeatures(manifest) {
+    const technicalTerms = ['ed25519', 'sha-256', 'sha256', 'runtime', 'appimage', 'portable', 'ترقيع', 'توقيع', 'موقّع', 'حزمة', 'محرك'];
+    return (Array.isArray(manifest?.features) ? manifest.features : []).slice(0, 5).map((item) => (
+      typeof item === 'string' ? item.trim().replace(/\s+/g, ' ') : ''
+    )).filter((item, index, items) => (
+      item && item.length <= 120 && items.indexOf(item) === index
+      && !technicalTerms.some((term) => item.toLocaleLowerCase('ar').includes(term))
+    ));
+  }
+
+  // فحص هادئ عند فتح التطبيق: يظهر الإصدار ثم الميزات الجديدة فقط، بلا تفاصيل فنية.
   async function silentUpdateCheck() {
     try {
-      if (!hasNativePlugin('ApkUpdater')) return;
       const mres = await fetch(UPDATE_BASE + 'manifest.json?t=' + Date.now(), { cache: 'no-store' });
       if (!mres.ok) return;
       const m = await mres.json();
-      if (!m.apk || !m.apk.url || !m.apk.version) return;
-      const nv = await nativeCall('ApkUpdater', 'getVersion').then((r) => r.version).catch(() => null);
-      if (!nv || !newerVersion(m.apk.version, nv)) return;
-      const technicalTerms = ['ed25519', 'sha-256', 'sha256', 'runtime', 'appimage', 'portable', 'ترقيع', 'توقيع', 'موقّع', 'حزمة', 'محرك'];
-      const features = (Array.isArray(m.features) ? m.features : []).slice(0, 5).map((item) => (
-        typeof item === 'string' ? item.trim().replace(/\s+/g, ' ') : ''
-      )).filter((item) => (
-        item && item.length <= 120 && !technicalTerms.some((term) => item.toLocaleLowerCase('ar').includes(term))
-      ));
-      $('#updBannerText').textContent = 'يتوفر تحديث جديد لسراج — الإصدار ' + m.apk.version
-        + features.map((feature) => '\n• ' + feature).join('');
+      let availableVersion = '';
+      if (m.apk?.url && m.apk?.version && hasNativePlugin('ApkUpdater')) {
+        const nativeVersion = await nativeCall('ApkUpdater', 'getVersion')
+          .then((result) => result.version).catch(() => null);
+        if (nativeVersion && newerVersion(m.apk.version, nativeVersion)) availableVersion = m.apk.version;
+      }
+      if (!availableVersion && m.version && newerVersion(m.version, currentVersion())) {
+        availableVersion = m.version;
+      }
+      const features = publicUpdateFeatures(m);
+      if (!availableVersion || !features.length) return;
+      $('#updBannerText').textContent = 'يتوفر تحديث جديد لسراج — الإصدار ' + availableVersion
+        + '\nالجديد:' + features.map((feature) => '\n• ' + feature).join('');
       $('#updBannerBtn').onclick = () => { $('#updBanner').hidden = true; showView('settings'); checkForUpdate(); };
       $('#updBannerX').onclick = () => { $('#updBanner').hidden = true; };
       $('#updBanner').hidden = false;
@@ -1497,84 +2257,13 @@
     if (value >= 1024 ** 2) return (value / 1024 ** 2).toFixed(0) + ' م.ب';
     return (value / 1024).toFixed(0) + ' ك.ب';
   };
-  function renderTafsirPackStatus() {
-    const stateEl = $('#tfPackState');
-    const bar = $('#tfPackBar');
-    const download = $('#btnTafsirPack');
-    const cancel = $('#btnCancelTafsirPack');
-    const remove = $('#btnDeleteTafsirPack');
-    stateEl.textContent = tafsirPack.downloading ? 'جارٍ التنزيل' : (tafsirPack.ready ? 'مثبتة وجاهزة دون إنترنت' : 'غير مثبتة');
-    $('#tfPackFree').textContent = tafsirPack.freeBytes ? formatBytes(tafsirPack.freeBytes) : '—';
-    download.hidden = tafsirPack.ready || tafsirPack.downloading;
-    cancel.hidden = !tafsirPack.downloading;
-    remove.hidden = !tafsirPack.ready || tafsirPack.downloading;
-    bar.hidden = !tafsirPack.downloading;
-    if (!tafsirPack.downloading) $('#tfPackProgress').textContent = tafsirPack.ready ? 'كل الكتب الـ78 متاحة محليًا.' : 'الكتب الخمسة الأساسية تبقى متاحة عبر المصدر الحي.';
-  }
+  // التفاسير المحلية أُزيلت من الإعدادات: تبقى الطبعات الخمس الأساسية عبر الإنترنت فقط
+  function renderTafsirPackStatus() {}
   async function refreshTafsirPackStatus() {
-    const plugin = getTafsirNative();
-    if (!plugin) {
-      tafsirPack = { ready: false, downloading: false, bytes: 0, freeBytes: 0 };
-      $('#tfPackState').textContent = 'التنزيل المحلي متاح داخل تطبيق Android';
-      $('#btnTafsirPack').disabled = true;
-      return;
-    }
-    try {
-      const status = await plugin.status();
-      tafsirPack = {
-        ready: !!status.ready,
-        downloading: !!status.downloading,
-        bytes: Number(status.bytes) || 0,
-        freeBytes: Number(status.freeBytes) || 0,
-      };
-    } catch { tafsirPack = { ready: false, downloading: false, bytes: 0, freeBytes: 0 }; }
-    if (!tafsirPack.ready && /^qp:\d+$/.test(settings.tafsir)) {
-      settings.tafsir = DEFAULTS.tafsir;
-      saveSettings();
-    }
+    tafsirPack = { ready: false, downloading: false, bytes: 0, freeBytes: 0 };
+    if (/^qp:\d+$/.test(settings.tafsir)) { settings.tafsir = DEFAULTS.tafsir; saveSettings(); }
     pageCache.clear();
     fillSettings();
-    renderTafsirPackStatus();
-  }
-  async function startTafsirPackDownload() {
-    const plugin = getTafsirNative();
-    if (!plugin) return;
-    tafsirPack.downloading = true;
-    renderTafsirPackStatus();
-    try {
-      await plugin.download();
-      toast('اكتمل تنزيل 78 تفسيرًا');
-    } catch (error) {
-      if (!String(error?.message || error).includes('cancel')) toast('تعذر تنزيل حزمة التفاسير');
-    }
-    await refreshTafsirPackStatus();
-    if (state.page) showPage(state.page, { selG: state.sel?.g, save: false });
-  }
-  $('#btnTafsirPack').addEventListener('click', startTafsirPackDownload);
-  $('#btnCancelTafsirPack').addEventListener('click', async () => {
-    const plugin = getTafsirNative();
-    if (plugin) await plugin.cancel().catch(() => {});
-  });
-  $('#btnDeleteTafsirPack').addEventListener('click', async () => {
-    if (!confirm('حذف حزمة التفاسير المحلية؟ يمكنك تنزيلها مجددًا لاحقًا.')) return;
-    const plugin = getTafsirNative();
-    if (plugin) await plugin.delete().catch(() => {});
-    await refreshTafsirPackStatus();
-  });
-  function attachTafsirProgress() {
-    const plugin = getTafsirNative();
-    if (!plugin || !plugin.addListener) return;
-    plugin.addListener('downloadProgress', (info) => {
-      const done = Number(info.bytes) || 0;
-      const total = Number(info.total) || 728866816;
-      tafsirPack.downloading = true;
-      $('#tfPackBar').hidden = false;
-      $('#tfPackBar').value = total ? done / total : 0;
-      $('#tfPackProgress').textContent = info.phase === 'verify'
-        ? `جارٍ التحقق من البصمة: ${formatBytes(done)} من ${formatBytes(total)}`
-        : `${formatBytes(done)} من ${formatBytes(total)}`;
-      renderTafsirPackStatus();
-    }).catch(() => {});
   }
 
   // مصدر تنزيل حفص هو CDN المعلن لخدمة AlQuran Cloud / Islamic Network؛ القيمة معدل البت لكل طبعة.
@@ -1860,9 +2549,7 @@
   // فهرس الآيات يُحمَّل مرة واحدة عند أول بحث، ثم يعمل بدون اتصال
   async function loadSearchIndex() {
     if (srIndex) return srIndex;
-    const res = await fetch('quran-search.json');
-    if (!res.ok) throw new Error('index');
-    const j = await res.json();
+    const j = await getJSON('quran-search.json');
     srIndex = j.ayahs.map(([s, a, t]) => ({ s, a, t, n: srNorm(t) }));
     return srIndex;
   }
@@ -1926,20 +2613,478 @@
     showView('reader');
   });
 
-  // ---------- تدبر: أحكام التجويد ----------
-  function renderTajweedView() {
-    $('#tjList').innerHTML = Object.values(TJ_RULES).map(([name, desc]) =>
-      `<div class="card"><strong>${esc(name)}</strong><div class="muted" style="margin-top:4px">${esc(desc)}</div></div>`).join('');
+  // ---------- تعلم التجويد المحلي بالمراجعة المتباعدة ----------
+  function currentTajweedRegistryEntry() {
+    if (tajweedScopeRegistry?.fallbackPolicy !== 'FORBIDDEN_BETWEEN_SCOPES') return null;
+    const entries = tajweedScopeRegistry?.settings;
+    if (!Array.isArray(entries)) return null;
+    return entries.find((entry) => Array.isArray(entry.settingIds)
+      && entry.settingIds.includes(settings.riwaya)) || null;
   }
+
+  function sameTajweedScope(left, right) {
+    if (!TajweedLearningAPI) return false;
+    const leftScope = TajweedLearningAPI.normalizeScope(left);
+    const rightScope = TajweedLearningAPI.normalizeScope(right);
+    return !!leftScope && !!rightScope
+      && TajweedLearningAPI.scopeKey(leftScope) === TajweedLearningAPI.scopeKey(rightScope);
+  }
+
+  function tajweedCurriculaForSetting(settingId = settings.riwaya) {
+    return Array.isArray(tajweedRuntimeCurricula)
+      ? tajweedRuntimeCurricula.filter((item) => Array.isArray(item.appliesToSettings)
+        && item.appliesToSettings.includes(settingId))
+      : [];
+  }
+
+  function curriculumScopeLabel(curriculum) {
+    if (curriculum?.display) {
+      return `${curriculum.display.tariqAr} · ${curriculum.display.wajhAr} · ${curriculum.display.editionAr}`;
+    }
+    return curriculum?.displayName || '';
+  }
+
+  function currentTajweedCurriculum() {
+    const entry = currentTajweedRegistryEntry();
+    if (!entry || !Array.isArray(entry.curricula) || !Array.isArray(tajweedRuntimeCurricula)) return null;
+    // لا نختار طريقًا أو وجهًا ضمنيًا عند تعدد الحزم.
+    const candidate = TajweedCurriculumLoaderAPI?.selectCurriculum(
+      tajweedRuntimeCurricula,
+      settings.riwaya,
+      settings.tajweedScopes[settings.riwaya] || '',
+    );
+    if (!candidate) return null;
+    const pointer = entry.curricula.find((item) => item?.artifact === candidate.artifact
+      && item.sha256 === candidate.artifactSha256
+      && item.status === candidate.status
+      && item.publishableAsApproved === candidate.publishableAsApproved
+      && sameTajweedScope(item.scope, candidate.scope));
+    return pointer ? candidate : null;
+  }
+
+  function currentApprovedTajweedCurriculum() {
+    const curriculum = currentTajweedCurriculum();
+    return curriculum?.status === 'APPROVED'
+      && curriculum.publishableAsApproved === true
+      && curriculum.annotationIndex instanceof Map
+      ? curriculum : null;
+  }
+
+  function firstTajweedExample(code) {
+    const escaped = String(code).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(`\\[${escaped}(?::\\d+)?\\[([^\\[\\]]*)\\]`);
+    for (const row of localTajweed) {
+      const raw = clean(row[3]);
+      const match = pattern.exec(raw);
+      if (!match) continue;
+      return {
+        text: plainTajweed(match[1]).trim(),
+        ayahText: plainTajweed(raw).trim(),
+        surah: Number(row[0]),
+        ayah: Number(row[1]),
+      };
+    }
+    return null;
+  }
+
+  function buildTajweedLearningCards() {
+    tajweedLearningCards = [];
+    const curricula = tajweedRuntimeCurricula;
+    if (!Array.isArray(curricula) || !TajweedLearningAPI) return;
+    curricula.forEach((curriculum) => {
+      const scope = TajweedLearningAPI.normalizeScope(curriculum.scope);
+      if (!scope || !Array.isArray(curriculum.rules)) return;
+      curriculum.rules.forEach((rule) => {
+        const example = rule.example || (rule.tagCode ? firstTajweedExample(rule.tagCode) : null);
+        const learning = rule.learning && typeof rule.learning === 'object' ? rule.learning : {};
+        const category = /^[a-z0-9][a-z0-9_.-]*$/.test(learning.categoryId || '')
+          ? learning.categoryId : 'general';
+        const categoryName = typeof learning.categoryNameAr === 'string'
+          && learning.categoryNameAr.trim() ? learning.categoryNameAr.trim() : 'أساسيات التجويد';
+        const level = Math.min(3, Math.max(1, Number(learning.level) || 1));
+        const baseOrder = (Number(rule.order) || 0) * 10;
+        const shared = {
+          baseId: rule.id,
+          scope,
+          name: rule.name,
+          tagCode: typeof rule.tagCode === 'string' ? rule.tagCode : '',
+          color: /^#[0-9A-Fa-f]{6}$/.test(rule.color || '') ? rule.color : '',
+          example,
+          category,
+          categoryName,
+          level,
+          curriculumId: curriculum.id,
+          reviewStatus: curriculum.status,
+        };
+        // نحافظ على معرّف البطاقة الأصلية كي لا يضيع تقدم المستخدمين الحاليين.
+        tajweedLearningCards.push({
+          ...shared,
+          id: rule.id,
+          order: baseOrder + 1,
+          stage: 1,
+          activityType: 'learn',
+          prerequisites: [],
+          prompt: rule.prompt,
+          answer: rule.answer,
+        });
+        if (!example) return;
+        tajweedLearningCards.push({
+          ...shared,
+          id: `${rule.id}.recognize`,
+          order: baseOrder + 2,
+          stage: 2,
+          activityType: 'recognize',
+          prerequisites: [rule.id],
+          name: 'تمييز الحكم من المثال',
+          prompt: 'ما الحكم التجويدي الملوّن في هذا المثال؟ اختر الإجابة ثم راجع الشرح.',
+          answer: `الحكم هو «${rule.name}». ${rule.answer}`,
+        });
+        tajweedLearningCards.push({
+          ...shared,
+          id: `${rule.id}.apply`,
+          order: baseOrder + 3,
+          stage: 3,
+          activityType: 'apply',
+          prerequisites: [`${rule.id}.recognize`],
+          name: `تطبيق «${rule.name}»`,
+          prompt: `اقرأ المثال وطبّق حكم «${rule.name}»، ثم اشرح طريقة الأداء بصوتك قبل كشف الجواب.`,
+          answer: rule.answer,
+        });
+      });
+    });
+  }
+
+  function cardsForCurriculum(curriculum) {
+    if (!curriculum || !TajweedLearningAPI) return [];
+    const key = TajweedLearningAPI.scopeKey(curriculum.scope);
+    return tajweedLearningCards.filter((card) => TajweedLearningAPI.scopeKey(card.scope) === key);
+  }
+
+  function coloredTajweedExample(card) {
+    if (!card?.example) return '';
+    const marker = card.color
+      ? `style="color:${card.color}"`
+      : `class="tj-${esc(card.tagCode)}"`;
+    return `<span ${marker}>${esc(card.example.text)}</span>`;
+  }
+
+  function persistTajweedLearning() {
+    if (tajweedLearningEngine) store.set(TAJWEED_LEARNING_KEY, tajweedLearningEngine.snapshot());
+  }
+
+  const TAJWEED_INTENSITY = Object.freeze({
+    gentle: { newPerDay: 3, reviewsPerDay: 10 },
+    balanced: { newPerDay: 5, reviewsPerDay: 20 },
+    intensive: { newPerDay: 10, reviewsPerDay: 40 },
+  });
+  const TAJWEED_ACTIVITY_LABELS = Object.freeze({
+    learn: 'تعلّم الحكم', recognize: 'تمييز من المثال', apply: 'تطبيق عملي',
+  });
+
+  function tajweedIntensityName() {
+    if (!tajweedLearningEngine) return 'balanced';
+    const config = tajweedLearningEngine.config;
+    return Object.keys(TAJWEED_INTENSITY).find((name) => {
+      const profile = TAJWEED_INTENSITY[name];
+      return config.newPerDay === profile.newPerDay && config.reviewsPerDay === profile.reviewsPerDay;
+    }) || 'balanced';
+  }
+
+  function tajweedPlanText(plan) {
+    const counts = { weak: 0, due: 0, fresh: 0 };
+    plan.forEach((item) => {
+      if (item.reason === 'weak-review') counts.weak += 1;
+      else if (item.kind === 'review') counts.due += 1;
+      else counts.fresh += 1;
+    });
+    const parts = [];
+    if (counts.weak) parts.push(`${toArabicDigits(counts.weak)} موضع يحتاج تثبيتًا`);
+    if (counts.due) parts.push(`${toArabicDigits(counts.due)} مراجعة مستحقة`);
+    if (counts.fresh) parts.push(`${toArabicDigits(counts.fresh)} نشاط جديد`);
+    return parts.length
+      ? `الخطة التكيفية: ${parts.join('، ')}. يبدأ سراج بالأضعف ثم المستحق ثم الجديد.`
+      : 'لا توجد أنشطة مستحقة الآن؛ سيظهر النشاط التالي في موعده المحلي.';
+  }
+
+  function tajweedCategoryLabels(cards) {
+    const labels = new Map();
+    cards.forEach((card) => {
+      if (!labels.has(card.category)) labels.set(card.category, card.categoryName || 'أساسيات التجويد');
+    });
+    return labels;
+  }
+
+  function renderTajweedView() {
+    const registryEntry = currentTajweedRegistryEntry();
+    const curriculum = currentTajweedCurriculum();
+    const selectedLabel = $('#setRiwaya').selectedOptions[0]?.textContent || settings.riwaya;
+    $('#tjLearningCard').hidden = true;
+    if (!TajweedLearningAPI || !tajweedLearningEngine || !tajweedLearningCatalog || !tajweedScopeRegistry) {
+      $('#tjLearningScope').textContent = selectedLabel;
+      $('#tjLearningWarning').textContent = 'جارٍ تحميل طبقة التعلم المحلية…';
+      $('#tjStartLearning').disabled = true;
+      $('#tjList').innerHTML = '';
+      return;
+    }
+    if (!curriculum) {
+      const available = tajweedCurriculaForSetting();
+      const needsScopeChoice = available.length > 1
+        && !available.some((item) => TajweedLearningAPI
+          && TajweedLearningAPI.scopeKey(item.scope) === settings.tajweedScopes[settings.riwaya]);
+      const entryArtifacts = new Set((Array.isArray(registryEntry?.curricula)
+        ? registryEntry.curricula : []).map((pointer) => pointer?.artifact).filter(Boolean));
+      const hasUnloadedPointer = tajweedCurriculumLoadErrors.some((failure) =>
+        entryArtifacts.has(failure.artifact));
+      const blockedReason = needsScopeChoice
+        ? 'توجد عدة طرق أو أوجه مستقلة؛ اختر النطاق الكامل من الإعدادات قبل بدء التعلم.'
+        : (hasUnloadedPointer
+          ? 'تعذّر التحقق من بصمة حزمة التجويد أو ربطها النصي؛ حُجبت الطبقة احترازيًا.'
+          : (registryEntry?.blockedReasonAr
+            || 'فشل التحقق من سجل نطاق التجويد؛ حُجبت الطبقة احترازيًا.'));
+      $('#tjLearningScope').textContent = `${selectedLabel} · الطريق والوجه والطبعة: غير مثبتة`;
+      $('#tjReviewBadge').textContent = registryEntry?.status === 'BLOCKED_NO_APPROVED_CORPUS'
+        ? 'محجوب لغياب المصدر المعتمد' : 'محجوب احترازيًا';
+      $('#tjLearningWarning').textContent = blockedReason;
+      $('#tjDueCount').textContent = '٠';
+      $('#tjLearningCount').textContent = '٠';
+      $('#tjMatureCount').textContent = '٠';
+      $('#tjAccuracy').textContent = '٠٪';
+      $('#tjMastery').textContent = '٠٪';
+      $('#tjWeakCount').textContent = '٠';
+      $('#tjUnlockedCount').textContent = '٠';
+      $('#tjPathProgress').textContent = '٠ من ٠ نشاط';
+      $('#tjPathFill').style.width = '0%';
+      $('#tjPlanExplanation').textContent = blockedReason;
+      $('#tjWeakAreas').textContent = '';
+      $('#tjIntensity').disabled = true;
+      $('#tjStartLearning').disabled = true;
+      $('#tjResetLearning').disabled = true;
+      $('#tjSessionSummary').hidden = true;
+      $('#tjLearningEmpty').textContent = 'يلزم مصدر مستقل يحدد الرواية والطريق والوجه والطبعة، ثم مراجعة بشرية مؤهلة واعتماد نشر ثانٍ.';
+      $('#tjList').innerHTML = '<div class="muted">لا تُعرض أحكام حفص أو أي طبقة عامة بدلًا من نطاق هذا المصحف.</div>';
+      return;
+    }
+
+    const cards = cardsForCurriculum(curriculum);
+    const stats = tajweedLearningEngine.stats(curriculum.scope);
+    const pathStats = tajweedLearningEngine.pathStats(cards, curriculum.scope);
+    const plan = tajweedLearningEngine.plan(cards, curriculum.scope);
+    const scopeId = TajweedLearningAPI.scopeKey(curriculum.scope);
+    if ($('#tjSessionSummary').dataset.scope && $('#tjSessionSummary').dataset.scope !== scopeId) {
+      $('#tjSessionSummary').hidden = true;
+    }
+    $('#tjLearningScope').textContent = curriculum.display
+      ? `${curriculum.display.riwayahAr} · ${curriculum.display.tariqAr} · ${curriculum.display.wajhAr} · ${curriculum.display.editionAr}`
+      : `${curriculum.displayName} · الطريق: ${curriculum.scope.tariq} · الوجه: ${curriculum.scope.wajh}`;
+    $('#tjReviewBadge').textContent = curriculum.status === 'APPROVED'
+      ? 'مراجع علميًا' : 'قيد المراجعة العلمية';
+    $('#tjLearningWarning').textContent = curriculum.scopeWarning;
+    $('#tjDueCount').textContent = toArabicDigits(stats.due);
+    $('#tjLearningCount').textContent = toArabicDigits(pathStats.learning);
+    $('#tjMatureCount').textContent = toArabicDigits(pathStats.mastered);
+    $('#tjAccuracy').textContent = toArabicDigits(Math.round(stats.accuracy * 100)) + '٪';
+    $('#tjMastery').textContent = toArabicDigits(Math.round(pathStats.mastery * 100)) + '٪';
+    $('#tjWeakCount').textContent = toArabicDigits(pathStats.weak);
+    $('#tjUnlockedCount').textContent = toArabicDigits(pathStats.unlocked);
+    $('#tjPathProgress').textContent = `${toArabicDigits(pathStats.introduced)} من ${toArabicDigits(pathStats.total)} نشاط`;
+    $('#tjPathFill').style.width = `${Math.round(pathStats.mastery * 100)}%`;
+    $('#tjIntensity').disabled = false;
+    $('#tjIntensity').value = tajweedIntensityName();
+    $('#tjPlanExplanation').textContent = tajweedPlanText(plan);
+    const categoryLabels = tajweedCategoryLabels(cards);
+    const weakCategories = pathStats.categories.filter((category) => category.weak > 0);
+    $('#tjWeakAreas').textContent = weakCategories.length
+      ? `يحتاج تثبيتًا: ${weakCategories.map((category) => `${categoryLabels.get(category.id)} (${toArabicDigits(category.weak)})`).join('، ')}`
+      : (pathStats.introduced ? 'لا توجد مجموعة ضعيفة الآن؛ تستمر المراجعة حسب المواعيد.' : 'ابدأ بالمفاهيم الأساسية، ثم يفتح التمييز والتطبيق تدريجيًا.');
+    $('#tjStartLearning').disabled = !plan.length;
+    $('#tjResetLearning').disabled = !stats.total;
+    $('#tjLearningEmpty').textContent = plan.length
+      ? `جلسة اليوم: ${toArabicDigits(plan.length)} نشاط موزع بين الفهم والتمييز والتطبيق.`
+      : (stats.nextDueAt > Date.now()
+        ? `لا توجد مراجعة الآن. الموعد التالي: ${new Date(stats.nextDueAt).toLocaleString('ar-EG')}.`
+        : 'اكتملت أنشطة اليوم وفق مستوى الكثافة المختار.');
+
+    const referenceCards = cards.filter((card) => card.activityType === 'learn');
+    const learningProgress = tajweedLearningEngine.snapshot().progress;
+    const groups = new Map();
+    referenceCards.forEach((card) => {
+      if (!groups.has(card.category)) groups.set(card.category, []);
+      groups.get(card.category).push(card);
+    });
+    $('#tjList').innerHTML = [...groups.entries()].map(([category, items]) => `
+      <section class="tj-rule-group">
+        <h4>${esc(categoryLabels.get(category))}</h4>
+        ${items.map((card) => {
+          const example = card.example
+            ? `<div class="muted" style="margin-top:4px">مثال: ${coloredTajweedExample(card)} — ${esc(surahName(card.example.surah))} ${toArabicDigits(card.example.ayah)}</div>`
+            : '';
+          const introduced = cards.filter((activity) => activity.baseId === card.baseId)
+            .filter((activity) => {
+              const normalized = TajweedLearningAPI.normalizeCard(activity);
+              return normalized && learningProgress[normalized.key];
+            }).length;
+          const total = cards.filter((activity) => activity.baseId === card.baseId).length;
+          return `<div class="wird-line"><span><strong>${esc(card.name)}</strong><div class="muted">${esc(card.answer)}</div>${example}</span><small class="smart-badge">${toArabicDigits(introduced)}/${toArabicDigits(total)} مراحل</small></div>`;
+        }).join('')}
+      </section>`).join('');
+  }
+
+  function renderTajweedLearningCard() {
+    const item = tajweedSession.queue[tajweedSession.index];
+    if (!item) {
+      finishTajweedSession(true);
+      return;
+    }
+    const card = item.card;
+    tajweedSession.revealed = false;
+    tajweedSession.quizCorrect = null;
+    $('#tjLearningCard').hidden = false;
+    $('#tjCardProgress').textContent = `النشاط ${toArabicDigits(tajweedSession.index + 1)} من ${toArabicDigits(tajweedSession.queue.length)} · ${item.kind === 'review' ? 'مراجعة' : 'جديد'}`;
+    $('#tjCardStage').textContent = TAJWEED_ACTIVITY_LABELS[card.activityType] || 'تعلّم';
+    $('#tjCardTitle').textContent = card.name;
+    $('#tjCardPrompt').textContent = card.prompt;
+    $('#tjCardExample').innerHTML = card.example
+      ? `${coloredTajweedExample(card)}<div class="muted">${esc(surahName(card.example.surah))} — الآية ${toArabicDigits(card.example.ayah)}</div>`
+      : '<span class="muted">لا يوجد مثال موسوم في المصدر الحالي.</span>';
+    $('#tjCardAnswerText').textContent = card.answer;
+    $('#tjCardAnswer').hidden = true;
+    $('#tjQuizFeedback').textContent = '';
+    const curriculum = currentTajweedCurriculum();
+    const options = card.activityType === 'recognize' && curriculum
+      ? TajweedLearningAPI.recognitionOptions(card, cardsForCurriculum(curriculum)) : [];
+    $('#tjQuizChoices').hidden = !options.length;
+    $('#tjQuizChoices').innerHTML = options.map((option) => `
+      <button class="tj-choice" data-tj-option="${esc(option.id)}">${esc(option.label)}</button>`).join('');
+    $('#tjRevealAnswer').textContent = options.length ? 'لا أعرف — إظهار الإجابة' : 'إظهار الشرح';
+    $('#tjRevealAnswer').hidden = false;
+    $('#tjLearningCard').querySelectorAll('[data-tj-rating]').forEach((button) => {
+      button.disabled = false;
+    });
+  }
+
+  function revealTajweedAnswer(fromQuiz = false) {
+    const item = tajweedSession.queue[tajweedSession.index];
+    if (!item || tajweedSession.revealed) return;
+    const isRecognition = item.card.activityType === 'recognize' && !$('#tjQuizChoices').hidden;
+    if (isRecognition && !fromQuiz) {
+      tajweedSession.quizCorrect = false;
+      tajweedSession.quizTotal += 1;
+      $('#tjQuizFeedback').textContent = 'سُجلت «لا أعرف». راجع الإجابة وستعود قريبًا للتثبيت.';
+      $('#tjQuizChoices').querySelectorAll('[data-tj-option]').forEach((button) => {
+        button.disabled = true;
+        if (button.dataset.tjOption === item.card.baseId) button.classList.add('correct');
+      });
+    }
+    tajweedSession.revealed = true;
+    $('#tjCardAnswer').hidden = false;
+    $('#tjRevealAnswer').hidden = true;
+    if (isRecognition && tajweedSession.quizCorrect === false) {
+      $('#tjLearningCard').querySelectorAll('[data-tj-rating]').forEach((button) => {
+        button.disabled = button.dataset.tjRating !== 'again';
+      });
+    }
+  }
+
+  function startTajweedSession() {
+    const curriculum = currentTajweedCurriculum();
+    if (!curriculum || !tajweedLearningEngine) return;
+    const queue = tajweedLearningEngine.plan(cardsForCurriculum(curriculum), curriculum.scope);
+    if (!queue.length) { toast('لا توجد مراجعات أو أنشطة جديدة الآن'); return; }
+    tajweedSession = { ...emptyTajweedSession(), queue };
+    $('#tjSessionSummary').hidden = true;
+    renderTajweedLearningCard();
+    $('#tjLearningCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function finishTajweedSession(completed) {
+    const session = tajweedSession;
+    const answered = session.answered;
+    const curriculum = currentTajweedCurriculum();
+    $('#tjLearningCard').hidden = true;
+    tajweedSession = emptyTajweedSession();
+    if (answered) {
+      const successful = session.ratings.good + session.ratings.easy;
+      const quizText = session.quizTotal
+        ? ` · تمييز صحيح ${toArabicDigits(session.quizCorrectCount)} من ${toArabicDigits(session.quizTotal)}` : '';
+      $('#tjSessionSummaryTitle').textContent = completed ? 'اكتملت جلسة التجويد' : 'ملخص الجلسة حتى الآن';
+      $('#tjSessionSummaryText').textContent = `${toArabicDigits(answered)} نشاط · متقن ${toArabicDigits(successful)} · يحتاج إعادة ${toArabicDigits(session.ratings.again)}${quizText}`;
+      $('#tjSessionSummary').dataset.scope = curriculum && TajweedLearningAPI
+        ? TajweedLearningAPI.scopeKey(curriculum.scope) : '';
+      $('#tjSessionSummary').hidden = false;
+    }
+    if (completed && answered) {
+      smartRecord({
+        type: 'COMPLETE_TAJWEED_LESSON', service: 'tajweed',
+        context: { count: answered, source: 'adaptive_spaced_review' },
+      });
+      toast(`اكتملت جلسة من ${toArabicDigits(answered)} أنشطة`);
+    }
+    renderTajweedView();
+  }
+
+  $('#tjStartLearning').addEventListener('click', startTajweedSession);
+  $('#tjEndLearning').addEventListener('click', () => finishTajweedSession(false));
+  $('#tjRevealAnswer').addEventListener('click', () => revealTajweedAnswer(false));
+  $('#tjSessionSummaryClose').addEventListener('click', () => { $('#tjSessionSummary').hidden = true; });
+  $('#tjIntensity').addEventListener('change', (event) => {
+    if (!tajweedLearningEngine || !TAJWEED_INTENSITY[event.target.value]) return;
+    tajweedLearningEngine.configure(TAJWEED_INTENSITY[event.target.value]);
+    persistTajweedLearning();
+    renderTajweedView();
+  });
+  $('#tjLearningCard').addEventListener('click', (event) => {
+    const option = event.target.closest('[data-tj-option]');
+    const item = tajweedSession.queue[tajweedSession.index];
+    if (option && item && !tajweedSession.revealed) {
+      const correct = option.dataset.tjOption === item.card.baseId;
+      tajweedSession.quizCorrect = correct;
+      tajweedSession.quizTotal += 1;
+      if (correct) tajweedSession.quizCorrectCount += 1;
+      $('#tjQuizChoices').querySelectorAll('[data-tj-option]').forEach((button) => {
+        button.disabled = true;
+        if (button.dataset.tjOption === item.card.baseId) button.classList.add('correct');
+        else if (button === option) button.classList.add('wrong');
+      });
+      $('#tjQuizFeedback').textContent = correct
+        ? 'إجابة صحيحة. راجع طريقة الأداء ثم قيّم ثباتك.'
+        : 'ليست هذه الإجابة. ظهر الحكم الصحيح وستعود البطاقة قريبًا.';
+      revealTajweedAnswer(true);
+      return;
+    }
+    const button = event.target.closest('[data-tj-rating]');
+    if (!button || button.disabled || !tajweedSession.revealed || !tajweedLearningEngine || !item) return;
+    let rating = button.dataset.tjRating;
+    if (item.card.activityType === 'recognize' && tajweedSession.quizCorrect === false) rating = 'again';
+    const reviewed = tajweedLearningEngine.review(item.card, rating);
+    if (!reviewed) return;
+    persistTajweedLearning();
+    smartRecord({
+      type: 'TAJWEED_ANSWER', service: 'tajweed',
+      context: { rule: item.card.id, correct: rating !== 'again', source: rating },
+    });
+    tajweedSession.ratings[rating] += 1;
+    tajweedSession.answered += 1;
+    tajweedSession.index += 1;
+    if (tajweedSession.index >= tajweedSession.queue.length) finishTajweedSession(true);
+    else renderTajweedLearningCard();
+  });
+  $('#tjResetLearning').addEventListener('click', () => {
+    const curriculum = currentTajweedCurriculum();
+    if (!curriculum || !tajweedLearningEngine) return;
+    if (!confirm('مسح تقدم تعلم التجويد لهذه الطبعة فقط؟')) return;
+    tajweedLearningEngine.resetScope(curriculum.scope);
+    persistTajweedLearning();
+    $('#tjSessionSummary').hidden = true;
+    renderTajweedView();
+    toast('مُسح تقدم هذه الطبعة');
+  });
 
   // ---------- معاني الكلمات (من الموسوعة القرآنية) ----------
   let meanData = null;
   let meanToken = 0;
   async function loadMeanings() {
     if (meanData) return meanData;
-    const res = await fetch('quran-meanings.json');
-    if (!res.ok) throw new Error('meanings');
-    meanData = (await res.json()).ayahs || {};
+    meanData = (await getJSON('quran-meanings.json')).ayahs || {};
     return meanData;
   }
   function showMeaningsPanel() {
@@ -2098,9 +3243,7 @@
   const ADH_KEY = 'adhkar-counts';
   async function loadAdhkar() {
     if (adhkarCats) return adhkarCats;
-    const res = await fetch('adhkar.json');
-    if (!res.ok) throw new Error('adhkar');
-    adhkarCats = (await res.json()).categories || [];
+    adhkarCats = (await getJSON('adhkar.json')).categories || [];
     return adhkarCats;
   }
   // العدادات تبدأ من جديد كل يوم
@@ -2120,9 +3263,15 @@
     renderFluentIcons($('#adhkarMenu'));
   }
   loadAdhkar().then(renderAdhkarMenu).catch(() => { $('#adhkarMenu').innerHTML = '<div class="muted" style="padding:8px">تعذّر تحميل الأذكار.</div>'; });
-  function openAdhkarCat(id) {
+  function openAdhkarCat(id, options = {}) {
     const cat = (adhkarCats || []).find((c) => c.id === id);
     if (!cat) return;
+    if (options.track !== false && SmartServicesAPI) {
+      smartRecord({
+        type: 'SERVICE_OPEN', service: SmartServicesAPI.serviceForAdhkar(id),
+        context: { category: id, source: 'adhkar' },
+      });
+    }
     const counts = getAdhCounts();
     $('#adhkarHome').hidden = true;
     $('#adhkarCat').hidden = false;
@@ -2154,12 +3303,25 @@
     if (!b) return;
     const card = b.closest('[data-key]');
     const key = card.dataset.key, max = Number(card.dataset.count);
+    const categoryId = key.split(':')[0];
+    const category = (adhkarCats || []).find((item) => item.id === categoryId);
     const counts = getAdhCounts();
+    const complete = () => !!(category && category.items.length && category.items.every((item, index) => (
+      Number(counts.c[`${categoryId}:${index}`] || 0) >= Number(item.count)
+    )));
+    const wasComplete = complete();
     const cur = counts.c[key] || 0;
     // عند الإتمام: الضغطة التالية تعيد العداد للصفر
     counts.c[key] = cur >= max ? 0 : cur + 1;
     store.set(ADH_KEY, counts);
-    openAdhkarCat(key.split(':')[0]);
+    if (!wasComplete && complete()) {
+      const service = SmartServicesAPI ? SmartServicesAPI.serviceForAdhkar(categoryId) : 'adhkar';
+      smartRecord({
+        type: 'COMPLETE_ADHKAR', service,
+        context: { category: categoryId, count: category.items.length, source: 'counter' },
+      });
+    }
+    openAdhkarCat(categoryId, { track: false });
   });
 
   // ---------- إحصائيات القراءة ----------
@@ -2176,6 +3338,19 @@
     st.days[k] = arr;
     store.set(STATS_KEY, st);
     if (curView === 'stats') renderStats();
+  }
+  let smartLastReadPage = 0;
+  let smartLastReadAt = 0;
+  function recordSmartReadPage(p) {
+    const now = Date.now();
+    if (smartLastReadPage === Number(p) && now - smartLastReadAt < 15 * 60 * 1000) return;
+    smartLastReadPage = Number(p);
+    smartLastReadAt = now;
+    smartRecord({
+      type: 'READ_PAGE',
+      service: 'wird',
+      context: { page: Number(p), riwayah: settings.riwaya, source: 'reader' },
+    });
   }
   function renderStats() {
     const st = getStats();
@@ -2348,7 +3523,18 @@
         $('#wdReminderStatus').textContent = 'التذكير متوقف.';
       } else {
         const [hour, minute] = w.reminderTime.split(':').map(Number);
-        const result = await plugin.schedule({ hour, minute, title: 'سراج — ورد القرآن', body: 'موعد وردك اليوم. اقرأ ما تيسر دون إلزام.' });
+        const context = smartEngine?.config.enabled
+          ? smartEngine.evaluate([], smartSignals()).context : null;
+        const result = await plugin.schedule({
+          hour, minute,
+          title: 'سراج — ورد القرآن',
+          body: 'موعد وردك اليوم. اقرأ ما تيسر دون إلزام.',
+          respectSafety: !!smartEngine?.config.enabled,
+          quietStart: smartEngine?.config.quietStart || '22:30',
+          quietEnd: smartEngine?.config.quietEnd || '06:30',
+          sleepStart: minuteClock(context?.sleepMinute == null ? 23 * 60 : context.sleepMinute),
+          sleepEnd: minuteClock(context?.wakeMinute == null ? 7 * 60 : context.wakeMinute),
+        });
         $('#wdReminderStatus').textContent = result?.exact === false ? 'ضُبط تذكير يومي تقريبي من النظام.' : 'ضُبط تذكير يومي من النظام.';
       }
     } catch {
@@ -2364,6 +3550,10 @@
   function checkInAppWirdReminder() {
     const w = getWird();
     if (!w.reminderEnabled) return;
+    if (smartEngine?.config.enabled) {
+      const context = smartEngine.evaluate([], smartSignals()).context;
+      if (context.likelySleeping || context.quietHours) return;
+    }
     const now = new Date();
     const current = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     const key = `wird-notified-${todayKey()}`;
@@ -2393,6 +3583,449 @@
     toast('بدأت ختمة جديدة');
   });
 
+  // ---------- الاقتراحات الذكية المحلية ----------
+  let smartLastDecision = null;
+
+  function smartCompletedServices(at = Date.now()) {
+    const completed = new Set();
+    if (!smartEngine) return completed;
+    const targetDay = dateKey(new Date(at));
+    const completionTypes = new Set([
+      'SERVICE_COMPLETE', 'COMPLETE_MEMORIZATION', 'COMPLETE_ADHKAR',
+      'COMPLETE_TAJWEED_LESSON', 'NOTIFICATION_COMPLETE', 'SUGGESTION_COMPLETE',
+    ]);
+    smartEngine.events.forEach((event) => {
+      if (SmartContextAPI.dateKey(event.at) !== targetDay) return;
+      if (event.type === 'READ_PAGE' && event.service === 'wird') completed.add('wird');
+      if (completionTypes.has(event.type)) completed.add(event.service);
+    });
+    return completed;
+  }
+
+  function smartKnownServices() {
+    if (!smartEngine) return [];
+    return [...new Set(smartEngine.events
+      .filter((event) => event.service && event.service !== 'app')
+      .map((event) => event.service))];
+  }
+
+  function memoDueCount(at = Date.now()) {
+    const targetDay = dateKey(new Date(at));
+    return Object.values(getMemoProgress()).filter((item) => item && item.due <= targetDay).length;
+  }
+
+  function smartCandidateInput(at = Date.now()) {
+    const habit = readingHabit();
+    const wird = getWird();
+    const targetDay = dateKey(new Date(at));
+    const stats = getStats();
+    return {
+      readToday: (stats.days[targetDay] || []).length,
+      wirdPointer: wird.pointer,
+      readingAverage: habit.average,
+      memoDue: memoDueCount(at),
+      completedServices: [...smartCompletedServices(at)],
+      knownServices: smartKnownServices(),
+    };
+  }
+
+  function smartSignals() {
+    const now = Date.now();
+    const visible = document.visibilityState !== 'hidden';
+    return {
+      screenInteractive: visible ? true : !!smartDeviceSignals.screenInteractive,
+      lastDeviceActiveAt: smartLastInteractionAt,
+      busy: (play.active && !audio.paused) || !!document.querySelector('.panel-tafsir.show')
+        || !!smartDeviceSignals.deviceLocked,
+      powerSave: !!smartDeviceSignals.powerSave,
+      charging: !!smartDeviceSignals.charging,
+      batteryPercent: Number(smartDeviceSignals.batteryPercent),
+      sessionDurationMs: Math.max(0, now - smartSessionStartedAt),
+    };
+  }
+
+  function hideSmartSuggestion(clear = true) {
+    const card = $('#smartSuggestion');
+    if (card) card.hidden = true;
+    if (clear) smartCurrent = null;
+  }
+
+  function primarySmartBlock(decision) {
+    if (!decision) return null;
+    if (decision.context?.likelySleeping) return 'LIKELY_SLEEPING';
+    if (decision.context?.quietHours) return 'QUIET_HOURS';
+    const priority = ['ENGINE_DISABLED', 'DAILY_CAP', 'COOLDOWN', 'BELOW_THRESHOLD'];
+    for (const reason of priority) {
+      if (decision.blocked?.some((item) => item.reason === reason)) return reason;
+    }
+    return null;
+  }
+
+  function fillSmartSettings() {
+    const enabled = $('#setSmartEnabled');
+    if (!enabled) return;
+    if (!smartEngine || !SmartServicesAPI) {
+      enabled.checked = false;
+      enabled.disabled = true;
+      $('#smartLocalStatus').textContent = 'محرك الاقتراحات غير متاح في هذه الحزمة.';
+      return;
+    }
+    const cfg = smartEngine.config;
+    enabled.disabled = false;
+    enabled.checked = !!cfg.enabled;
+    $('#smartQuietStart').value = cfg.quietStart;
+    $('#smartQuietEnd').value = cfg.quietEnd;
+    $('#smartDailyMax').value = String(cfg.maxDailyInterventions);
+    $('#smartCooldown').value = String(cfg.cooldownMinutes);
+    $('#smartRetention').value = String(cfg.retentionDays);
+    const smartDevice = getSmartDeviceNative();
+    $('#smartNativeRow').hidden = !smartDevice;
+    $('#smartNativeRow').style.display = smartDevice ? 'flex' : 'none';
+    $('#smartNativeStatus').hidden = !smartDevice;
+    $('#setSmartNotifications').checked = !!smartNative.enabled;
+    $('#setSmartNotifications').disabled = !cfg.enabled;
+    if (smartDevice) {
+      $('#smartNativeStatus').textContent = smartNative.enabled
+        ? (smartNative.nextAt > Date.now()
+          ? `الإشعار المحلي التالي مخطط بعد بوابات النوم والهدوء: ${new Date(smartNative.nextAt).toLocaleString('ar-EG')}.`
+          : 'الإشعارات الذكية مفعّلة، ولا يوجد اقتراح خارجي مناسب الآن.')
+        : 'لا تُطلب صلاحية إشعارات Android إلا عند تفعيل هذا الخيار.';
+    }
+    $('#smartLocalStatus').textContent = cfg.enabled
+      ? `مفعّلة · ${toArabicDigits(smartEngine.events.length)} حدثًا تشغيليًا محدودًا محفوظًا محليًا لمدة ${toArabicDigits(cfg.retentionDays)} يومًا كحد أقصى.`
+      : `متوقفة؛ لا تُسجّل أحداثًا جديدة ولا تعرض اقتراحات. السجل المحلي الحالي: ${toArabicDigits(smartEngine.events.length)}.`;
+    if (!cfg.enabled) {
+      $('#smartDecisionStatus').textContent = 'التفعيل اختياري، وبياناتك لا تغادر الجهاز.';
+    } else if (smartLastDecision?.selected) {
+      $('#smartDecisionStatus').textContent = 'آخر قرار: عُرض اقتراح محلي مع سبب قابل للعرض.';
+    } else {
+      const reason = primarySmartBlock(smartLastDecision);
+      $('#smartDecisionStatus').textContent = reason
+        ? `آخر قرار: ${SmartServicesAPI.describeBlock(reason)}`
+        : 'لا يوجد اقتراح مناسب الآن.';
+    }
+  }
+
+  function queueSmartSuggestion(delay = 1200) {
+    clearTimeout(smartSuggestionTimer);
+    if (!smartEngine?.config.enabled || !SmartServicesAPI) return;
+    smartSuggestionTimer = setTimeout(renderSmartSuggestion, Math.max(0, Number(delay) || 0));
+  }
+
+  function minuteClock(value) {
+    const minute = ((Math.round(Number(value) || 0) % 1440) + 1440) % 1440;
+    return `${String(Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}`;
+  }
+
+  async function refreshSmartDeviceSignals() {
+    const plugin = getSmartDeviceNative();
+    if (!plugin) return null;
+    try {
+      smartDeviceSignals = await plugin.getSignals();
+      return smartDeviceSignals;
+    } catch {
+      smartDeviceSignals = {};
+      return null;
+    }
+  }
+
+  function queueSmartNativeSync(delay = 1800) {
+    clearTimeout(smartNativeTimer);
+    if (!smartNative.enabled || !smartEngine?.config.enabled || !getSmartDeviceNative()) return;
+    smartNativeTimer = setTimeout(syncSmartNativeSchedule, Math.max(0, Number(delay) || 0));
+  }
+
+  async function syncSmartNativeSchedule() {
+    const plugin = getSmartDeviceNative();
+    if (!plugin || !smartNative.enabled || !smartEngine?.config.enabled || !SmartServicesAPI) return;
+    const plan = SmartServicesAPI.planNextDecision(
+      (at) => SmartServicesAPI.buildCandidates(smartCandidateInput(at), at),
+      (candidates, at) => SmartContextAPI.chooseIntervention(
+        candidates,
+        smartEngine.events,
+        { screenInteractive: false, lastDeviceActiveAt: smartLastInteractionAt, busy: false },
+        at,
+        smartEngine.config,
+      ),
+      { now: Date.now(), minDelayMinutes: 30, stepMinutes: 30, horizonHours: 30 },
+    );
+    if (!plan) {
+      await plugin.cancel().catch(() => {});
+      smartNative.nextAt = 0;
+      store.set(SMART_NATIVE_KEY, smartNative);
+      fillSmartSettings();
+      return;
+    }
+    const candidate = plan.selection.candidate;
+    const suggestionId = `native_${candidate.id}_${plan.at}`.slice(0, 64);
+    const context = plan.context || {};
+    try {
+      const result = await plugin.schedule({
+        at: plan.at,
+        title: candidate.title || 'سراج',
+        body: candidate.body || 'لديك متابعة مناسبة الآن.',
+        service: candidate.service,
+        suggestionId,
+        target: candidate.action || '',
+        quietStart: smartEngine.config.quietStart,
+        quietEnd: smartEngine.config.quietEnd,
+        sleepStart: minuteClock(context.sleepMinute == null ? 23 * 60 : context.sleepMinute),
+        sleepEnd: minuteClock(context.wakeMinute == null ? 7 * 60 : context.wakeMinute),
+      });
+      smartNative.nextAt = Number(result?.nextAt) || plan.at;
+      store.set(SMART_NATIVE_KEY, smartNative);
+    } catch {
+      smartNative.enabled = false;
+      smartNative.nextAt = 0;
+      store.set(SMART_NATIVE_KEY, smartNative);
+      toast('تعذر جدولة الإشعار الذكي؛ راجع إذن الإشعارات.');
+    }
+    fillSmartSettings();
+  }
+
+  async function consumeSmartNativeFeedback() {
+    const plugin = getSmartDeviceNative();
+    if (!plugin || !smartEngine?.config.enabled) return;
+    try {
+      const result = await plugin.consumeFeedback();
+      const events = Array.isArray(result?.events) ? result.events : [];
+      const typeMap = {
+        shown: 'SUGGESTION_SHOWN', open: 'SUGGESTION_OPEN',
+        snooze: 'SUGGESTION_SNOOZE', dismiss: 'SUGGESTION_DISMISS',
+      };
+      events.forEach((item) => {
+        const type = typeMap[item?.type];
+        if (!type) return;
+        smartEngine.record({
+          type,
+          service: item.service,
+          at: Number(item.at),
+          context: { notificationId: String(item.id || '').slice(0, 64), source: 'android' },
+        });
+        if (item.type === 'open' && item.target) smartPendingNativeAction = String(item.target);
+      });
+      if (events.length) {
+        persistSmartContext(true);
+        queueSmartNativeSync(2200);
+      }
+      if (smartAppReady && smartPendingNativeAction) {
+        const action = smartPendingNativeAction;
+        smartPendingNativeAction = '';
+        await runSmartAction(action);
+      }
+    } catch { /* تبقى الواجهة المحلية عاملة إذا تعذر جسر Android */ }
+  }
+
+  function renderSmartSuggestion() {
+    if (!smartEngine?.config.enabled || !SmartServicesAPI || document.hidden
+        || curView === 'settings' || curView === 'about'
+        || (play.active && !audio.paused)
+        || !!document.querySelector('.panel-tafsir.show')
+        || !$('#imgModal').hidden
+        || document.body.classList.contains('group-menu-open')) {
+      hideSmartSuggestion();
+      fillSmartSettings();
+      return;
+    }
+    const elapsed = Date.now() - smartSessionStartedAt;
+    if (elapsed < 6000) {
+      queueSmartSuggestion(6000 - elapsed);
+      return;
+    }
+    const candidates = SmartServicesAPI.buildCandidates(smartCandidateInput(), Date.now());
+    const decision = smartEngine.evaluate(candidates, smartSignals());
+    smartLastDecision = decision;
+    if (!decision.selected) {
+      hideSmartSuggestion();
+      fillSmartSettings();
+      return;
+    }
+    const selected = decision.selected;
+    const candidate = selected.candidate;
+    const suggestionId = `${candidate.id}:${Date.now()}`.slice(0, 64);
+    smartCurrent = { selection: selected, id: suggestionId };
+    $('#smartSuggestionTitle').textContent = candidate.title || 'اقتراح من سراج';
+    $('#smartSuggestionBody').textContent = candidate.body || '';
+    $('#smartSuggestionOpen').textContent = candidate.cta || 'فتح';
+    $('#smartSuggestionWhy').textContent = SmartServicesAPI.explainSelection(selected);
+    $('#smartSuggestion').hidden = false;
+    smartEngine.markShown(candidate, suggestionId, 'suggestion');
+    persistSmartContext();
+    fillSmartSettings();
+  }
+
+  async function runSmartAction(action) {
+    if (action === 'open_wird') {
+      const wird = getWird();
+      showView('reader');
+      await showPage(wird.pointer, { scroll: true });
+      return;
+    }
+    if (String(action).startsWith('open_adhkar:')) {
+      const category = String(action).split(':')[1];
+      await loadAdhkar();
+      showView('adhkar');
+      openAdhkarCat(category);
+      return;
+    }
+    if (action === 'open_memorization') { showView('memo'); return; }
+    if (action === 'open_tajweed') { showView('tajweed'); return; }
+    if (action === 'open_recitation') { showView('reader'); return; }
+  }
+
+  function recordSmartFeedback(action) {
+    if (!smartEngine || !smartCurrent) return null;
+    const current = smartCurrent;
+    const recorded = smartEngine.feedback(
+      current.selection.candidate.service, action, current.id, 'suggestion',
+    );
+    persistSmartContext();
+    return { current, recorded };
+  }
+
+  $('#smartSuggestionOpen').addEventListener('click', async () => {
+    const result = recordSmartFeedback('open');
+    if (!result) return;
+    const action = result.current.selection.candidate.action;
+    hideSmartSuggestion();
+    await runSmartAction(action);
+  });
+  $('#smartSuggestionLater').addEventListener('click', () => {
+    recordSmartFeedback('snooze');
+    hideSmartSuggestion();
+    fillSmartSettings();
+  });
+  $('#smartSuggestionDismiss').addEventListener('click', () => {
+    recordSmartFeedback('dismiss');
+    hideSmartSuggestion();
+    fillSmartSettings();
+  });
+
+  function smartConfigFromControls() {
+    return {
+      quietStart: $('#smartQuietStart').value || '22:30',
+      quietEnd: $('#smartQuietEnd').value || '06:30',
+      maxDailyInterventions: Number($('#smartDailyMax').value) || 3,
+      cooldownMinutes: Number($('#smartCooldown').value) || 120,
+      retentionDays: Number($('#smartRetention').value) || 35,
+    };
+  }
+
+  $('#setSmartEnabled').addEventListener('change', (event) => {
+    if (!smartEngine) return;
+    smartEngine.configure({ ...smartConfigFromControls(), enabled: event.target.checked });
+    persistSmartContext(true);
+    if (smartEngine.config.enabled) {
+      smartSessionStartedAt = Date.now();
+      smartLastInteractionAt = Date.now();
+      smartRecord({
+        type: 'APP_OPEN', service: 'app',
+        context: { riwayah: settings.riwaya, source: 'opt_in' },
+      }, { silent: true });
+      queueSmartSuggestion(6500);
+      if (getWird().reminderEnabled && getReminderNative()) saveWirdReminder();
+      toast('فُعّلت الاقتراحات المحلية');
+    } else {
+      clearTimeout(smartSuggestionTimer);
+      clearTimeout(smartNativeTimer);
+      hideSmartSuggestion();
+      smartNative.enabled = false;
+      smartNative.nextAt = 0;
+      store.set(SMART_NATIVE_KEY, smartNative);
+      getSmartDeviceNative()?.cancel().catch(() => {});
+      if (getWird().reminderEnabled && getReminderNative()) saveWirdReminder();
+      toast('توقفت الاقتراحات الذكية');
+    }
+    fillSmartSettings();
+  });
+  $('#setSmartNotifications').addEventListener('change', async (event) => {
+    const plugin = getSmartDeviceNative();
+    if (!plugin || !smartEngine?.config.enabled) {
+      event.target.checked = false;
+      return;
+    }
+    if (!event.target.checked) {
+      smartNative.enabled = false;
+      smartNative.nextAt = 0;
+      store.set(SMART_NATIVE_KEY, smartNative);
+      await plugin.cancel().catch(() => {});
+      fillSmartSettings();
+      return;
+    }
+    const permission = await plugin.requestNotifications().catch(() => ({ granted: false }));
+    if (!permission?.granted) {
+      event.target.checked = false;
+      smartNative.enabled = false;
+      store.set(SMART_NATIVE_KEY, smartNative);
+      toast('لم يُمنح إذن الإشعارات');
+      fillSmartSettings();
+      return;
+    }
+    smartNative.enabled = true;
+    store.set(SMART_NATIVE_KEY, smartNative);
+    await refreshSmartDeviceSignals();
+    await syncSmartNativeSchedule();
+  });
+  ['smartQuietStart', 'smartQuietEnd', 'smartDailyMax', 'smartCooldown', 'smartRetention']
+    .forEach((id) => $(`#${id}`).addEventListener('change', () => {
+      if (!smartEngine) return;
+      smartEngine.configure(smartConfigFromControls());
+      persistSmartContext(true);
+      hideSmartSuggestion();
+      queueSmartSuggestion(1800);
+      queueSmartNativeSync(500);
+      if (getWird().reminderEnabled && getReminderNative()) saveWirdReminder();
+      fillSmartSettings();
+    }));
+  $('#smartDeleteData').addEventListener('click', () => {
+    if (!smartEngine) return;
+    if (!confirm('حذف سجل العادات والاقتراحات المحلي؟ لن تُحذف قراءتك أو علاماتك أو إعدادات المصحف.')) return;
+    smartEngine.reset();
+    smartLastDecision = null;
+    persistSmartContext(true);
+    smartNative.enabled = false;
+    smartNative.nextAt = 0;
+    store.set(SMART_NATIVE_KEY, smartNative);
+    getSmartDeviceNative()?.cancel().catch(() => {});
+    hideSmartSuggestion();
+    fillSmartSettings();
+    toast('حُذف سجل الاقتراحات المحلي');
+  });
+
+  function recordSmartSessionEnd() {
+    if (!smartEngine?.config.enabled) return;
+    const now = Date.now();
+    if (now - (recordSmartSessionEnd.lastAt || 0) < 2000) return;
+    recordSmartSessionEnd.lastAt = now;
+    smartRecord({
+      type: 'READING_SESSION_END', service: 'app',
+      durationMs: Math.max(0, now - smartSessionStartedAt),
+      context: { source: curView },
+    }, { immediate: true, silent: true });
+  }
+  document.addEventListener('pointerdown', () => { smartLastInteractionAt = Date.now(); }, { passive: true });
+  document.addEventListener('keydown', () => { smartLastInteractionAt = Date.now(); }, { passive: true });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      recordSmartSessionEnd();
+      clearTimeout(smartSuggestionTimer);
+      hideSmartSuggestion();
+      queueSmartNativeSync(500);
+    } else {
+      smartSessionStartedAt = Date.now();
+      smartLastInteractionAt = Date.now();
+      refreshSmartDeviceSignals();
+      consumeSmartNativeFeedback();
+      smartRecord({
+        type: 'APP_FOREGROUND', service: 'app',
+        context: { riwayah: settings.riwaya, source: curView },
+      }, { silent: true });
+      queueSmartSuggestion(5000);
+      queueSmartNativeSync(1800);
+    }
+  });
+  window.addEventListener('pagehide', recordSmartSessionEnd);
+
   // ---------- التشغيل الأولي ----------
   renderFluentIcons();
   applyTheme();
@@ -2402,27 +4035,56 @@
   renderBookmarks();
   renderLast();
   renderWird();
+  if (!smartEngine?.config.enabled && smartNative.enabled) {
+    smartNative.enabled = false;
+    smartNative.nextAt = 0;
+    store.set(SMART_NATIVE_KEY, smartNative);
+    getSmartDeviceNative()?.cancel().catch(() => {});
+  }
+  smartRecord({
+    type: 'APP_OPEN', service: 'app',
+    context: { riwayah: settings.riwaya, source: 'launch' },
+  }, { silent: true });
+  refreshSmartDeviceSignals();
+  consumeSmartNativeFeedback();
+  queueSmartSuggestion(6500);
+  queueSmartNativeSync(2500);
   if (getWird().reminderEnabled && getReminderNative()) saveWirdReminder();
-  attachTafsirProgress();
   checkInAppWirdReminder();
   setInterval(checkInAppWirdReminder, 60 * 1000);
 
   // القرآن والسور والتجويد وفهرس التفاسير أصول مضمّنة: يبدأ التطبيق دون شبكة.
-  loadBundledData().catch(() => {
-    toast('تعذر فتح بعض بيانات المصحف المحلية.');
-  }).finally(async () => {
+  (async function initializeBundledData() {
+    try {
+      await loadBundledData();
+      // لا يُعد التحديث ناجحًا قبل تحميل JSON والتحقق من حزم التجويد المقفلة.
+      localStorage.removeItem('quran-update-pending');
+    } catch {
+      toast('تعذر فتح بعض بيانات المصحف المحلية.');
+      if (localStorage.getItem('quran-update-pending')) {
+        localStorage.removeItem(UPDATE_KEY);
+        localStorage.removeItem('quran-update-pending');
+        await clearUpdateDataAssets();
+        location.reload();
+        return;
+      }
+    }
     fillSettings();
     await refreshTafsirPackStatus();
     await loadSurahs();
-    // التطبيق اشتغل بنجاح: نلغي علامة التحديث المعلّق
-    localStorage.removeItem('quran-update-pending');
     const last = getLast();
     if (last && last.p) {
-      showPage(last.p, { selG: last.g, save: false });
+      await showPage(last.p, { selG: last.g, save: false });
     } else {
-      showPage(1, { save: false });
+      await showPage(1, { save: false });
     }
-  });
+    smartAppReady = true;
+    if (smartPendingNativeAction) {
+      const action = smartPendingNativeAction;
+      smartPendingNativeAction = '';
+      await runSmartAction(action);
+    }
+  })();
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
