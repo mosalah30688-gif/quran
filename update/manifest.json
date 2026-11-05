@@ -1,5 +1,5 @@
 {
-  "version": "1.4.4",
+  "version": "1.4.5",
   "files": [
     "index.html",
     "app.js"
@@ -15,6 +15,7 @@
     "linux": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-linux-test-v4.1.1/Siraj-Quran-4.1.1-linux-x86_64.AppImage"
   },
   "features": [
-    "هوية أوضح لسراج ووصول منظم إلى «عن التطبيق»."
+    "هوية أوضح لسراج ووصول منظم إلى «عن التطبيق».",
+    "إشعار تحديث جديد يظهر تلقائيًا عند فتح التطبيق بآخر إصدار"
   ]
 }
