@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-11-02",
+  "scopeKey": "riwayah/tariq/wajh/edition",
+  "fallbackPolicy": "FORBIDDEN_BETWEEN_SCOPES",
+  "approvalPolicy": {
+    "machineInferenceMayBePublishedAsApproved": false,
+    "requiresDocumentedTextEdition": true,
+    "requiresIndependentRuleAndAnnotationCorpus": true,
+    "requiresLicenseEvidence": true,
+    "requiresSha256Snapshots": true,
+    "requiresQualifiedHumanReviewer": true,
+    "requiresSecondPersonReleaseApproval": true
+  },
+  "settings": [
+    {
+      "settingIds": [
+        "quran-uthmani",
+        "quran-simple",
+        "quran-uthmani-min",
+        "quran-tajweed"
+      ],
+      "riwayah": {
+        "id": "hafs-an-asim",
+        "labelAr": "حفص عن عاصم"
+      },
+      "textEdition": {
+        "asset": "quran-tajweed.json",
+        "sha256": "441c118e0000083ddafff9987874f7b9c8710a936721caf52d1b11d94fa1f0b3",
+        "verseRecords": 6236,
+        "sourceNoteAr": "أمثلة التعلم مستخرجة من لقطة quran-tajweed؛ أما طبعة العرض الفعلية فتتحدد بإعداد المصحف، ولا يثبت هذا السجل طريقًا أو وجهًا علميًا.",
+        "dataset": "quran-tajweed"
+      },
+      "curricula": [
+        {
+          "artifact": "tajweed-learning-catalog.json",
+          "sha256": "a88ca2f3febcb8b530adc24073a03f30fc4441c3102d9300454b24b8b3e52dee",
+          "status": "PENDING_SCHOLARLY_REVIEW",
+          "publishableAsApproved": false,
+          "scope": {
+            "riwayah": "hafs-an-asim",
+            "tariq": "source-unspecified",
+            "wajh": "source-default",
+            "edition": "alquran-cloud-tajweed-v1"
+          },
+          "unresolvedFields": [
+            "tariq",
+            "wajh",
+            "edition-source-mapping"
+          ]
+        }
+      ],
+      "status": "PENDING_SCHOLARLY_REVIEW"
+    },
+    {
+      "settingIds": [
+        "warsh"
+      ],
+      "riwayah": {
+        "id": "warsh-an-nafi",
+        "labelAr": "ورش عن نافع"
+      },
+      "textEdition": {
+        "asset": "quran-riwayat.json",
+        "sha256": "a3a7ef91c036f2ff4f62df3dba12c0c2f9d50211792a5b6cf574f4cf85b9938c",
+        "verseRecords": 6214,
+        "sourceNoteAr": "نص رواية من dump المصحف 4 في Quranpedia؛ بيانات المصدر الحالية لا تكفي وحدها لإثبات طريق ووجه طبقة تجويد تعليمية مستقلة.",
+        "dataset": "warsh"
+      },
+      "status": "BLOCKED_NO_APPROVED_CORPUS",
+      "unresolvedFields": [
+        "tariq",
+        "wajh",
+        "edition",
+        "rule-corpus",
+        "annotation-corpus",
+        "qualified-review"
+      ],
+      "blockedReasonAr": "لا توجد حزمة أحكام وأمثلة وعلامات مستقلة موثقة الطريق والوجه والطبعة ومجازة للمشروع. لا تُستخدم بيانات حفص بديلًا عنها.",
+      "curricula": []
+    },
+    {
+      "settingIds": [
+        "qalun"
+      ],
+      "riwayah": {
+        "id": "qalun-an-nafi",
+        "labelAr": "قالون عن نافع"
+      },
+      "textEdition": {
+        "asset": "quran-riwayat.json",
+        "sha256": "a3a7ef91c036f2ff4f62df3dba12c0c2f9d50211792a5b6cf574f4cf85b9938c",
+        "verseRecords": 6214,
+        "sourceNoteAr": "نص رواية من dump المصحف 7 في Quranpedia؛ بيانات المصدر الحالية لا تكفي وحدها لإثبات طريق ووجه طبقة تجويد تعليمية مستقلة.",
+        "dataset": "qalun"
+      },
+      "status": "BLOCKED_NO_APPROVED_CORPUS",
+      "unresolvedFields": [
+        "tariq",
+        "wajh",
+        "edition",
+        "rule-corpus",
+        "annotation-corpus",
+        "qualified-review"
+      ],
+      "blockedReasonAr": "لا توجد حزمة أحكام وأمثلة وعلامات مستقلة موثقة الطريق والوجه والطبعة ومجازة للمشروع. لا تُستخدم بيانات حفص بديلًا عنها.",
+      "curricula": []
+    },
+    {
+      "settingIds": [
+        "duri"
+      ],
+      "riwayah": {
+        "id": "al-duri-an-abi-amr",
+        "labelAr": "الدوري عن أبي عمرو"
+      },
+      "textEdition": {
+        "asset": "quran-riwayat.json",
+        "sha256": "a3a7ef91c036f2ff4f62df3dba12c0c2f9d50211792a5b6cf574f4cf85b9938c",
+        "verseRecords": 6218,
+        "sourceNoteAr": "نص رواية من dump المصحف 6 في Quranpedia؛ بيانات المصدر الحالية لا تكفي وحدها لإثبات طريق ووجه طبقة تجويد تعليمية مستقلة.",
+        "dataset": "duri"
+      },
+      "status": "BLOCKED_NO_APPROVED_CORPUS",
+      "unresolvedFields": [
+        "tariq",
+        "wajh",
+        "edition",
+        "rule-corpus",
+        "annotation-corpus",
+        "qualified-review"
+      ],
+      "blockedReasonAr": "لا توجد حزمة أحكام وأمثلة وعلامات مستقلة موثقة الطريق والوجه والطبعة ومجازة للمشروع. لا تُستخدم بيانات حفص بديلًا عنها.",
+      "curricula": []
+    }
+  ]
+}

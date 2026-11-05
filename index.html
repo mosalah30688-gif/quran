@@ -4,19 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f5b4c" />
-  <meta name="description" content="تطبيق القرآن الكريم: مصحف المدينة صفحة بصفحة، بالتلاوات والتفسير والتجويد والحفظ." />
+  <meta name="description" content="سراج — مصحف قرآن كريم" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Amiri+Quran&family=Noto+Naskh+Arabic:wght@400;700&display=swap" rel="stylesheet" />
-  <title>القرآن الكريم</title>
+  <title>سراج — قرآن كريم</title>
   <style>
+    @font-face { font-family: 'Amiri'; src: url('fonts/Amiri-Regular.ttf') format('truetype'); font-display: swap; }
+    @font-face { font-family: 'Amiri Quran'; src: url('fonts/AmiriQuran-Regular.ttf') format('truetype'); font-display: swap; }
+    @font-face { font-family: 'Noto Naskh Arabic'; src: url('fonts/NotoNaskhArabic-Variable.ttf') format('truetype'); font-display: swap; }
+    @font-face { font-family: 'Scheherazade New'; src: url('fonts/ScheherazadeNew-Regular.ttf') format('truetype'); font-display: swap; }
     :root {
       --bg: #f7f4ec; --card: #ffffff; --ink: #1d2b27; --muted: #6b7a75;
       --brand: #0f5b4c; --brand-2: #1a8a74; --gold: #b8860b; --line: #e3ddcf;
-      --hl: #fff4cc; --quran-size: 26px; --side: 300px; --player-h: 120px;
+      --hl: #fff4cc; --quran-size: 26px; --quran-font: "Amiri Quran"; --side: 300px; --player-h: 120px;
       --paper: #f3e8cc; --paper-edge: #e2cd9c; --paper-ink: #1d170c; --paper-gold: #a8843f; --paper-muted: #6e5629;
     }
     body.dark {
@@ -77,6 +78,12 @@
     main.content { overflow-y: auto; height: 100vh; height: 100dvh; min-width: 0; position: relative; }
     .topbar { position: sticky; top: 0; z-index: 15; background: var(--bg); border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
     .topbar .title { flex: 1; font-weight: 700; font-size: 16px; }
+    .header-brand {
+      flex: 0 0 auto; min-width: 58px; display: grid; justify-items: center; gap: 1px;
+      color: var(--brand); text-decoration: none;
+    }
+    .header-brand img { width: 38px; height: 38px; object-fit: contain; display: block; }
+    .header-brand span { font-family: Amiri, serif; font-size: 22px; font-weight: 700; line-height: 1; }
     .menu-toggle { display: none; background: var(--brand); color: #fff; }
     .wrap { padding: 14px; max-width: 900px; margin: 0 auto; padding-bottom: 120px; }
     section.view { display: none; }
@@ -142,30 +149,72 @@
     .page-foot { text-align: center; font-family: Amiri, serif; color: var(--paper-muted); font-size: 18px; margin-top: 10px; position: relative; z-index: 1; }
 
     .surah-banner {
-      margin: 14px auto 8px; text-align: center; font-family: "Amiri Quran", Amiri, serif; font-size: 25px;
+      margin: 14px auto 8px; text-align: center; font-family: var(--quran-font), "Amiri Quran", Amiri, serif; font-size: 25px;
       border-top: 2px solid var(--paper-gold); border-bottom: 2px solid var(--paper-gold); padding: 6px 0;
       background: linear-gradient(90deg, transparent, rgba(168,132,63,.16), transparent);
     }
-    .bism { text-align: center; font-family: "Amiri Quran", Amiri, serif; font-size: calc(var(--quran-size) * .95); margin: 2px 0 6px; }
+    .bism { text-align: center; font-family: var(--quran-font), "Amiri Quran", Amiri, serif; font-size: calc(var(--quran-size) * .95); margin: 2px 0 6px; }
     .flow {
-      font-family: "Amiri Quran", Amiri, serif; font-size: var(--quran-size); line-height: 2.15;
+      font-family: var(--quran-font), "Amiri Quran", Amiri, serif; font-size: var(--quran-size); line-height: 2.15;
       text-align: justify; margin: 0; word-spacing: .02em;
     }
     .ay { cursor: pointer; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
-    .ay.sel { background: rgba(168,132,63,.28); }
-    .ay.playing { background: rgba(40,140,90,.28); }
+    /* التظليل حر: يتبع إصبعك داخل النص، ويأخذ لون الجهاز (تحديد النظام) وفاتح/داكن تلقائيًا */
+    .ay { border-radius: .32em; transition: background-color .25s ease, box-shadow .25s ease; }
+    .ay.sel { background: none; box-shadow: none; }
+    .ay.playing { background: color-mix(in srgb, var(--ink) 7%, transparent); }
+    .page-body ::selection, .page ::selection, #pageBody ::selection {
+      background: rgba(40,120,255,.32); color: inherit;
+    }
+    @supports (background: color-mix(in srgb, Highlight 40%, transparent)) {
+      .page-body ::selection, .page ::selection, #pageBody ::selection {
+        background: color-mix(in srgb, Highlight 42%, transparent); color: inherit;
+      }
+    }
     .page-body, .flow, .ay { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
     .end {
       display: inline-grid; place-items: center; width: 1.9em; height: 1.9em; border: 1.5px solid var(--paper-gold);
       border-radius: 50%; font-family: Arial, sans-serif; font-size: 12px; color: #7a5c24; vertical-align: middle;
       margin: 0 3px; cursor: pointer; line-height: 1; background: rgba(255,255,255,.35);
     }
+
+    /* عرض حفص بأسلوب الشاملة: عرض كامل، عنوان وبسملة مرة واحدة، ونص متصل مضغوط. */
+    .wrap.reader-wide { max-width: none; padding-left: 12px; padding-right: 12px; }
+    body.hafs-reader .page {
+      max-width: none; min-height: 0; border: 1px solid #9a4438; border-radius: 0;
+      padding: 18px 22px 14px; box-shadow: none;
+      background: #f5f0dc; color: #19140e;
+    }
+    body.hafs-reader .page::before, body.hafs-reader .page::after,
+    body.hafs-reader .page .corner { display: none; }
+    body.hafs-reader .page-head { color: #6e5629; padding-bottom: 3px; }
+    body.hafs-reader .surah-banner {
+      margin: 4px auto 1px; padding: 0; border: 0; background: none;
+      color: #8b3028; font-size: calc(var(--quran-size) * .76); line-height: 1.2;
+    }
+    body.hafs-reader .surah-banner::before { content: "["; }
+    body.hafs-reader .surah-banner::after { content: "]"; }
+    body.hafs-reader .bism {
+      color: #8b3028; font-size: var(--quran-size); line-height: 1.25; margin: 2px 0 5px;
+    }
+    body.hafs-reader .flow {
+      line-height: 1.58; text-align: center; margin: 0; word-spacing: 0;
+    }
+    body.hafs-reader .end.hafs-end {
+      display: inline; width: auto; height: auto; border: 0; border-radius: 0;
+      padding: 0 1px; margin: 0 2px; background: none; color: #9a4438;
+      font-family: var(--quran-font), "Amiri Quran", Amiri, serif; font-size: .66em; vertical-align: baseline;
+    }
+    body.dark.hafs-reader .page { background: #211f17; color: #f2ecdd; border-color: #c78b81; }
+    body.dark.hafs-reader .surah-banner, body.dark.hafs-reader .bism,
+    body.dark.hafs-reader .end.hafs-end { color: #e2aaa1; }
     [class^="tj-"] { cursor: pointer; }
     .tj-h, .tj-s, .tj-l { color: #AAAAAA; }
     .tj-n { color: #537FFF; } .tj-p { color: #4050FF; } .tj-m { color: #000EBC; } .tj-o { color: #2144C1; }
     .tj-q { color: #DD0008; } .tj-c { color: #D500B7; } .tj-f { color: #9400A8; }
     .tj-w { color: #58B800; } .tj-i { color: #26BFFD; } .tj-a { color: #169777; } .tj-u { color: #169200; }
     .tj-d, .tj-b { color: #A1A1A1; } .tj-g { color: #FF7E1E; }
+    .tj-independent-mark { cursor: help; border-radius: 2px; }
 
     .page.flip-next { animation: flipN .35s ease; }
     .page.flip-prev { animation: flipP .35s ease; }
@@ -190,7 +239,7 @@
       border-top: 2px solid var(--brand); padding: 14px; border-radius: 16px 16px 0 0; display: none; box-shadow: 0 -8px 24px rgba(0,0,0,.2);
     }
     .panel-tafsir.show { display: block; }
-    .panel-tafsir .tf, .tf { font-size: 18px; line-height: 2; font-family: "Noto Naskh Arabic", serif; white-space: pre-line; }
+    .panel-tafsir .tf, .tf { font-size: 18px; line-height: 2; font-family: var(--quran-font), "Noto Naskh Arabic", serif; white-space: pre-line; }
     .tr { font-size: 16px; line-height: 1.8; }
     @font-face { font-family: 'AmiriQuranBundled'; src: url(fonts/AmiriQuran-arabic.woff2) format('woff2'); }
     body.riw #pageBody { font-family: 'AmiriQuranBundled', 'Amiri Quran', serif; }
@@ -199,12 +248,12 @@
     .mw { margin: 6px 0; line-height: 1.9; font-size: 16px; }
     .mw b { color: var(--brand); margin-left: 4px; }
     .tf-head { font-weight: 700; }
-    .tf-arabic { font-family: "Amiri Quran", Amiri, serif; font-size: 26px; line-height: 2.1; margin-top: 8px; }
-    .pop-ayah { font-family: "Amiri Quran", Amiri, serif; font-size: 22px; line-height: 2; margin-top: 8px; }
+    .tf-arabic { font-family: var(--quran-font), "Amiri Quran", Amiri, serif; font-size: 26px; line-height: 2.1; margin-top: 8px; }
+    .pop-ayah { font-family: var(--quran-font), "Amiri Quran", Amiri, serif; font-size: 22px; line-height: 2; margin-top: 8px; }
     .pop-label { font-size: 13px; color: var(--muted); margin-top: 12px; }
 
     /* ---------- الحفظ والمحفوظات ---------- */
-    .ayah { font-family: "Amiri Quran", Amiri, serif; font-size: var(--quran-size); line-height: 2.2; padding: 6px 10px; border-bottom: 1px dashed var(--line); }
+    .ayah { font-family: var(--quran-font), "Amiri Quran", Amiri, serif; font-size: var(--quran-size); line-height: 2.2; padding: 6px 10px; border-bottom: 1px dashed var(--line); }
     .ayah.hidden-text .txt { filter: blur(7px); user-select: none; cursor: pointer; }
     .ayah.playing { background: var(--hl); }
     .toast {
@@ -212,6 +261,64 @@
       padding: 8px 14px; border-radius: 10px; font-size: 14px; opacity: 0; transition: opacity .3s; z-index: 50; pointer-events: none;
     }
     .toast.show { opacity: 1; }
+    .upd-banner {
+      position: fixed; bottom: 12px; left: 12px; right: 12px; z-index: 60; background: #1f5e3b; color: #fff;
+      border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; gap: 8px; font-size: 14px;
+      box-shadow: 0 6px 20px rgba(0,0,0,.25);
+    }
+    .upd-banner[hidden] { display: none; }
+    .upd-banner span { flex: 1; white-space: pre-line; }
+    .upd-banner button { border: 0; border-radius: 8px; padding: 6px 10px; font-size: 13px; cursor: pointer; font-family: inherit; }
+    .upd-banner #updBannerBtn { background: #fff; color: #1f5e3b; font-weight: 700; }
+    .upd-banner #updBannerX { background: transparent; color: #fff; font-size: 18px; padding: 2px 6px; }
+
+    /* الاقتراح المحلي يظهر كبطاقة داخل المحتوى، لا كنافذة تغطي القراءة. */
+    .smart-suggestion {
+      margin: 0 0 12px; border: 1px solid color-mix(in srgb, var(--brand) 38%, var(--line));
+      background: linear-gradient(145deg, color-mix(in srgb, var(--card) 90%, var(--brand) 10%), var(--card));
+      box-shadow: 0 5px 18px rgba(15,91,76,.12);
+    }
+    .smart-suggestion[hidden] { display: none; }
+    .smart-suggestion-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .smart-suggestion-head strong { color: var(--brand); font-size: 17px; }
+    .smart-badge { border-radius: 999px; padding: 3px 8px; background: var(--hl); color: var(--brand); font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .smart-suggestion p { margin: 8px 0; line-height: 1.7; }
+    .smart-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+    .smart-why { margin-top: 8px; font-size: 13px; }
+    .smart-why summary { cursor: pointer; color: var(--brand); font-weight: 700; }
+    .smart-why p { color: var(--muted); margin: 5px 0 0; }
+    .smart-settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+    .smart-settings-grid label { display: grid; gap: 4px; }
+    .smart-local-note { border-right: 3px solid var(--brand-2); padding: 7px 10px; background: var(--bg); border-radius: 8px; line-height: 1.7; }
+    .tj-learning-card { border-color: color-mix(in srgb, var(--brand-2) 45%, var(--line)); }
+    .tj-learning-card h3 { color: var(--brand); margin-bottom: 8px; }
+    .tj-example { font-family: var(--quran-font), "Amiri Quran", Amiri, serif; font-size: 24px; line-height: 2; background: var(--bg); border-radius: 10px; padding: 10px; margin: 10px 0; }
+    .tj-rating { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+    .tj-path-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+    .tj-path-head b { color: var(--brand); }
+    .tj-plan { margin-top: 10px; padding: 9px 10px; border-radius: 10px; background: var(--bg); line-height: 1.7; }
+    .tj-quiz { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 10px 0; }
+    .tj-quiz[hidden] { display: none; }
+    .tj-choice { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 10px; padding: 9px; cursor: pointer; font: inherit; }
+    .tj-choice:hover:not(:disabled) { border-color: var(--brand); }
+    .tj-choice.correct { border-color: #23844e; background: color-mix(in srgb, #39a968 18%, var(--card)); }
+    .tj-choice.wrong { border-color: #b52b32; background: color-mix(in srgb, #d94a52 16%, var(--card)); }
+    .tj-choice:disabled { color: var(--ink); opacity: .85; cursor: default; }
+    .tj-rule-group { border: 1px solid var(--line); border-radius: 12px; padding: 0 10px; margin: 10px 0; }
+    .tj-rule-group h4 { color: var(--brand); margin: 10px 0 4px; }
+    #tjSessionSummary { border-color: color-mix(in srgb, var(--brand) 55%, var(--line)); }
+    @media (max-width: 560px) {
+      .smart-settings-grid { grid-template-columns: 1fr; }
+      .tj-rating, .tj-quiz { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    /* أيقونات Fluent 3D متجهية: واضحة على الشاشات الصغيرة ولا تعتمد على رموز emoji. */
+    .ic { display: inline-grid; place-items: center; flex: 0 0 auto; }
+    .ic svg { width: 23px; height: 23px; display: block; overflow: visible; filter: drop-shadow(0 1px 1px rgba(0,0,0,.22)); }
+    .nav-end .ic svg { width: 21px; height: 21px; }
+    .pack-progress { width: 100%; height: 10px; accent-color: var(--brand); }
+    .pack-status { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; align-items: center; }
+    .pack-status b { color: var(--brand); }
 
     /* ---------- الشاشات الصغيرة ---------- */
     @media (max-width: 860px) {
@@ -245,6 +352,18 @@
     ul.feat li { line-height: 1.8; padding: 8px 10px; background: var(--bg); border-radius: 10px; }
     .dev-line { font-size: 17px; margin: 4px 0; }
     .dev-bio { margin: 6px 0 0; }
+    .settings-about-link {
+      width: 100%; min-height: 72px; display: flex; align-items: center; gap: 12px;
+      text-align: right; color: var(--ink); font-family: inherit; cursor: pointer;
+      background: linear-gradient(145deg, color-mix(in srgb, var(--card) 92%, var(--brand) 8%), var(--card));
+      border-color: color-mix(in srgb, var(--brand) 24%, var(--line));
+    }
+    .settings-about-link:hover { border-color: var(--brand-2); }
+    .settings-about-link:focus-visible { outline: 3px solid var(--brand-2); outline-offset: 2px; }
+    .settings-about-copy { min-width: 0; flex: 1; display: grid; gap: 2px; }
+    .settings-about-copy strong { color: var(--brand); font-size: 16px; }
+    .settings-about-copy small { color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .settings-about-arrow { color: var(--brand); font: 700 24px/1 Arial, sans-serif; }
     a.ext { color: var(--brand); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
     a.btn { text-decoration: none; display: inline-block; }
     body:has(.player.show) .wrap { padding-bottom: calc(var(--player-h) + 28px); }
@@ -258,7 +377,7 @@
       .player #pToggle { min-width: 52px; }
     }
 
-    /* ===== تخطيط جديد: رأس ثابت بالتبويبات، والمشغل داخل المصحف، والإعدادات تحوي الفهرس وعن التطبيق ===== */
+    /* ===== رأس ثابت بالتبويبات، والمشغل داخل المصحف، وعن التطبيق آخر خيار داخل الإعدادات ===== */
     .app { display: block; }
     main.content { height: 100vh; height: 100dvh; }
     .hdr { position: sticky; top: 0; z-index: 15; background: var(--bg); border-bottom: 1px solid var(--line); }
@@ -269,8 +388,94 @@
     .navbar nav.menu { flex: 1 1 auto; min-width: 0; padding: 0; border: 0; }
     nav.menu button { width: auto; flex: 0 0 auto; white-space: nowrap; padding: 8px 12px; border-radius: 10px; }
     nav.menu button.active { background: var(--brand); color: #fff; }
-    .nav-end { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+    .nav-end { display: flex; align-items: center; flex: 0 0 auto; }
     .nav-end .btn { padding: 7px 10px; font-size: 13px; }
+    .nav-end .btn.active { background: var(--brand-2); }
+    /* ===== مجموعة "المزيد": قائمة منسدلة للتفسير والحفظ والورد والإحصائيات ===== */
+    .tab-group { position: relative; flex: 0 0 auto; display: flex; }
+    .group-menu { position: absolute; top: calc(100% + 6px); right: 0; min-width: 170px; z-index: 40; background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.18); padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+    .group-menu[hidden] { display: none; }
+    .group-menu { max-height: 60vh; overflow-y: auto; }
+    .tab-group[data-group="adhkarak"] .group-menu { left: 0; right: auto; }
+    .search-inner { padding: 4px 0 0; }
+    .idx-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    .idx-grid select { width: 100%; }
+    .idx-pair { display: grid; grid-template-columns: 1fr 96px; gap: 8px; }
+    @media (min-width: 720px) { .idx-grid { grid-template-columns: repeat(3, 1fr); } }
+    details.sub-dd { border-top: 1px solid var(--line); }
+    details.sub-dd > summary { list-style: none; cursor: pointer; padding: 12px 16px; font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; user-select: none; }
+    details.sub-dd > summary::-webkit-details-marker { display: none; }
+    details.sub-dd > summary::after { content: "▾"; margin-right: auto; color: var(--muted); }
+    details.sub-dd[open] > summary::after { content: "▴"; }
+    details.sub-dd > .index-search, details.sub-dd > .index-list { margin: 0 10px 10px; }
+    #ayahList select { width: calc(100% - 20px); margin: 0 10px 8px; }
+    .search-inner .card { margin-bottom: 10px; }
+    nav.menu .group-menu button { width: 100%; flex: none; min-height: 44px; padding: 10px 12px; display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 8px; font-size: 14px; white-space: nowrap; text-align: right; }
+    nav.menu .group-menu button .ic { width: 22px; text-align: center; }
+    nav.menu .group-menu button.active { background: var(--brand); color: #fff; }
+    nav.menu .group-menu button:focus-visible { outline: 3px solid var(--brand-2); outline-offset: -2px; }
+    .group-btn.active { background: var(--brand); color: #fff; }
+    /* النافذة التي ضغطها المستخدم لها الأولوية على رصيف الصفحات والمشغل. */
+    body.group-menu-open .hdr { z-index: 52; }
+    body.group-menu-open nav.menu { overflow: visible; }
+    body.group-menu-open::before {
+      content: ""; position: fixed; inset: 0; z-index: 43; pointer-events: auto;
+      background: rgba(8, 24, 20, .18); backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);
+    }
+    body.group-menu-open .group-menu:not([hidden]) { animation: groupMenuIn .18s ease-out both; }
+    @keyframes groupMenuIn {
+      from { opacity: 0; transform: translateY(7px) scale(.985); }
+      to { opacity: 1; transform: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      body.group-menu-open .group-menu:not([hidden]) { animation: none; }
+    }
+
+    /* ===== الهاتف: التبويبات شبكة ظاهرة كلها بدون سحب، وزرّا الإعدادات والوضع الليلي عموديين على اليسار ===== */
+    @media (max-width: 720px) {
+      .hdr { position: sticky; top: 0; }
+      .hdr .topbar { padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: 7px; }
+      .header-brand { min-width: 52px; }
+      .header-brand img { width: 32px; height: 32px; }
+      .header-brand span { font-size: 19px; }
+      .navbar {
+        position: fixed; z-index: 48; left: 0; right: 0; bottom: 0;
+        align-items: stretch; gap: 4px; padding: 5px 7px max(5px, env(safe-area-inset-bottom));
+        background: color-mix(in srgb, var(--card) 96%, transparent); box-shadow: 0 -5px 20px rgba(0,0,0,.16);
+      }
+      .navbar nav.menu { flex: 1 1 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; overflow: visible; padding: 0; min-width: 0; }
+      .tab-group { display: block; position: static; }
+      .tab-group .group-menu, .tab-group[data-group="adhkarak"] .group-menu {
+        position: fixed;
+        left: max(8px, env(safe-area-inset-left)); right: max(8px, env(safe-area-inset-right));
+        bottom: calc(var(--mobile-nav-h, 64px) + env(safe-area-inset-bottom) + 6px);
+        top: auto; min-width: 0;
+        max-height: min(58dvh, 420px, calc(100dvh - var(--mobile-nav-h, 64px) - env(safe-area-inset-bottom) - env(safe-area-inset-top) - 22px));
+        border-radius: 16px;
+      }
+      body.reader-view-active .tab-group .group-menu,
+      body.reader-view-active .tab-group[data-group="adhkarak"] .group-menu {
+        bottom: calc(var(--mobile-nav-h, 64px) + env(safe-area-inset-bottom) + var(--reader-dock-h, 82px) + 15px);
+        max-height: min(58dvh, 420px, calc(100dvh - var(--mobile-nav-h, 64px) - env(safe-area-inset-bottom) - env(safe-area-inset-top) - var(--reader-dock-h, 82px) - 31px));
+      }
+      .group-btn { font-size: 10.5px; }
+      nav.menu button { width: 100%; flex: none; white-space: normal; min-height: 54px; padding: 4px 1px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; line-height: 1.1; border-radius: 11px; text-align: center; }
+      nav.menu .ic { line-height: 1; }
+      nav.menu .ic svg { width: 22px; height: 22px; }
+      .nav-end { flex: 0 0 48px; justify-content: center; }
+      .nav-end .btn { width: 46px; min-height: 54px; padding: 3px; display: grid; place-items: center; }
+      .nav-end .lbl { display: none; }
+      .theme-btn { width: 40px; height: 40px; }
+      .wrap { padding: 10px 8px calc(var(--mobile-nav-h) + 18px + env(safe-area-inset-bottom)); }
+      .card { border-radius: 13px; padding: 11px; }
+      .toolbar { position: sticky; top: 50px; z-index: 9; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+      .toolbar::-webkit-scrollbar { display: none; }
+      .toolbar select { flex: 0 0 auto; max-width: 145px; }
+      .page { max-width: 100%; padding-left: 10px; padding-right: 10px; }
+      body.hafs-reader .page { padding: 12px 9px 10px; }
+      body.hafs-reader .flow { line-height: 1.5; }
+      .panel-tafsir { max-height: 76vh; padding-bottom: max(14px, env(safe-area-inset-bottom)); }
+    }
     .theme-btn { border: 1px solid var(--line); background: var(--bg); border-radius: 10px; width: 38px; height: 36px; cursor: pointer; font-size: 16px; }
     nav.menu .ic { width: auto; }
     .wrap { padding-bottom: 28px; }
@@ -291,7 +496,475 @@
     details.dd > .card { margin: 12px 14px; }
     .side, aside.side { display: none !important; }
     .menu-toggle, #menuBtn { display: none !important; }
-  </style>
+
+    /* ===== واجهة المصحف الاحترافية لـ Android ===== */
+    :root { --reader-dock-h: 82px; --mobile-nav-h: 64px; }
+    .topbar .title {
+      min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      font-size: 15px; letter-spacing: .01em;
+    }
+    .hdr .topbar {
+      padding-left: max(16px, env(safe-area-inset-left));
+      padding-right: max(16px, env(safe-area-inset-right));
+    }
+    .navbar {
+      padding-left: max(10px, env(safe-area-inset-left));
+      padding-right: max(10px, env(safe-area-inset-right));
+    }
+    .wrap.reader-wide {
+      padding-left: max(12px, env(safe-area-inset-left));
+      padding-right: max(12px, env(safe-area-inset-right));
+    }
+    .reader-command.toolbar {
+      display: block; position: static; overflow: visible; padding: 14px; margin-bottom: 12px;
+      border-color: color-mix(in srgb, var(--brand) 22%, var(--line));
+      background: linear-gradient(145deg, color-mix(in srgb, var(--card) 92%, var(--brand) 8%), var(--card));
+      box-shadow: 0 8px 24px rgba(24, 71, 59, .08);
+    }
+    .reader-command-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .reader-command-title { display: grid; gap: 1px; min-width: 0; }
+    .reader-command-title strong { font-size: 16px; line-height: 1.35; }
+    .reader-kicker, .player-state {
+      color: var(--brand); font-size: 11px; font-weight: 800; letter-spacing: .08em;
+    }
+    .reader-play {
+      min-height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      border-radius: 14px; padding-inline: 17px; box-shadow: 0 7px 16px rgba(15, 91, 76, .20);
+      white-space: nowrap; font-weight: 800;
+    }
+    .reader-play-icon { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.18); font-family: Arial, sans-serif; font-size: 11px; }
+    .reader-play.is-playing { background: var(--brand-2); }
+    .play-pickers { display: grid; grid-template-columns: 1.15fr .75fr 1.35fr; gap: 9px; margin-top: 13px; }
+    .play-field { display: grid; gap: 5px; min-width: 0; }
+    .play-field > span { color: var(--muted); font-size: 12px; font-weight: 700; }
+    .reader-command.toolbar .play-field select {
+      width: 100%; max-width: none; min-width: 0; min-height: 46px; padding: 8px 10px;
+      border-radius: 12px; border-color: color-mix(in srgb, var(--brand) 20%, var(--line));
+      background: var(--card); font-size: 14px;
+    }
+    .reader-quick-actions {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 7px;
+      padding-top: 11px; margin-top: 11px; border-top: 1px solid var(--line);
+    }
+    .reader-action {
+      min-width: 0; min-height: 42px; border: 1px solid var(--line); border-radius: 12px;
+      background: var(--bg); color: var(--ink); padding: 7px 9px; cursor: pointer;
+      font-family: inherit; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .reader-action:active { transform: scale(.98); }
+    .reader-command :is(button, select):focus-visible,
+    .reader-dock :is(button, input):focus-visible {
+      outline: 3px solid var(--brand-2); outline-offset: 2px;
+    }
+
+    .reader-dock { width: min(100%, 760px); margin: 14px auto 0; }
+    .pager {
+      display: grid; grid-template-columns: minmax(88px, 1fr) minmax(108px, 1.15fr) minmax(88px, 1fr);
+      align-items: stretch; gap: 7px; margin: 0; padding: 7px; border: 1px solid var(--line);
+      border-radius: 17px; background: var(--card); box-shadow: 0 9px 28px rgba(19, 54, 46, .13);
+    }
+    .pager-btn {
+      border: 0; border-radius: 12px; min-height: 54px; padding: 6px 10px;
+      background: color-mix(in srgb, var(--brand) 10%, var(--card)); color: var(--brand);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      font-family: inherit; cursor: pointer; font-size: 13px; font-weight: 800;
+    }
+    .pager-btn span:not(.pager-arrow) { display: grid; line-height: 1.15; }
+    .pager-btn small { font-size: 10px; color: var(--muted); font-weight: 600; }
+    .pager-btn b { font-size: 14px; }
+    .pager-arrow { font-family: Arial, sans-serif; font-size: 28px; line-height: 1; }
+    .pager-btn:disabled { opacity: .38; cursor: default; }
+    .pager-btn:not(:disabled):active { background: var(--brand); color: #fff; transform: scale(.98); }
+    .pager-btn:not(:disabled):active small { color: rgba(255,255,255,.75); }
+    .pager-location { display: grid; align-content: center; justify-items: center; min-width: 0; text-align: center; }
+    .pager-location .pno { color: var(--ink); font-size: 13px; line-height: 1.3; white-space: nowrap; }
+    .pager-location small { color: var(--muted); font-size: 10.5px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .player {
+      position: static; display: none; margin: 0 0 8px; padding: 11px 12px;
+      border: 1px solid color-mix(in srgb, var(--brand) 32%, var(--line)); border-radius: 17px;
+      background: linear-gradient(145deg, color-mix(in srgb, var(--card) 90%, var(--brand) 10%), var(--card));
+      box-shadow: 0 10px 30px rgba(18, 55, 47, .18); color: var(--ink);
+    }
+    .player.show { display: grid; gap: 8px; }
+    .player-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
+    .player-meta { min-width: 0; flex: 1; display: grid; gap: 1px; }
+    .player .info { min-width: 0; color: var(--ink); font-size: 13.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .player-stop {
+      min-height: 36px; border: 1px solid var(--line); border-radius: 10px; padding: 5px 10px;
+      background: var(--card); color: #a53b35; font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer; white-space: nowrap;
+    }
+    .player-timeline { direction: ltr; display: grid; grid-template-columns: 38px minmax(0, 1fr) 38px; gap: 7px; align-items: center; font: 11px/1 Arial, sans-serif; color: var(--muted); }
+    #audioSeek { width: 100%; min-width: 0; height: 22px; margin: 0; accent-color: var(--brand); }
+    .player-controls { display: flex; justify-content: center; align-items: center; gap: 8px; direction: rtl; }
+    .player-step, .player-toggle {
+      border: 0; font-family: inherit; cursor: pointer; min-height: 42px;
+    }
+    .player-step {
+      min-width: 112px; border-radius: 12px; padding: 7px 11px; background: var(--bg); color: var(--ink);
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px; font-size: 12px; font-weight: 800;
+    }
+    .player-toggle {
+      width: 52px; height: 52px; border-radius: 50%; padding: 0; background: var(--brand); color: #fff;
+      display: grid; place-items: center; font: 18px/1 Arial, sans-serif; box-shadow: 0 7px 18px rgba(15, 91, 76, .28);
+    }
+    .player-step:active, .player-toggle:active, .player-stop:active { transform: scale(.96); }
+    .panel-tafsir { z-index: 55; }
+
+    @media (max-width: 1366px) {
+      #view-reader { padding-bottom: calc(var(--reader-dock-h) + 18px); }
+      .reader-dock {
+        position: fixed; z-index: 34;
+        left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: 10px;
+        width: auto; max-width: 760px; margin-inline: auto; transform: none;
+      }
+      .reader-dock .pager, .reader-dock .player { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+    }
+
+    @media (max-width: 720px) {
+      .reader-command.toolbar { padding: 12px; border-radius: 16px; }
+      .reader-command-head { align-items: stretch; }
+      .reader-command-title { align-content: center; }
+      .reader-command-title strong { font-size: 14px; }
+      .reader-play { min-height: 48px; padding-inline: 13px; }
+      .play-pickers { grid-template-columns: minmax(0, 1fr) minmax(104px, .68fr); gap: 8px; }
+      .play-field-reciter { grid-column: 1 / -1; }
+      .reader-command.toolbar .play-field select { min-height: 45px; }
+      .reader-action { min-height: 44px; padding-inline: 5px; font-size: 12px; }
+      .stage { margin-inline: -2px; }
+      .reader-dock {
+        left: max(7px, env(safe-area-inset-left)); right: max(7px, env(safe-area-inset-right));
+        width: auto; bottom: calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 7px);
+      }
+      .pager { padding: 6px; border-radius: 16px; gap: 5px; background: var(--card); background: color-mix(in srgb, var(--card) 96%, transparent); }
+      .pager-btn { min-height: 52px; padding-inline: 6px; gap: 5px; }
+      .pager-btn b { font-size: 13px; }
+      .pager-arrow { font-size: 25px; }
+      .player { padding: 10px; border-radius: 16px; }
+      .player-step { min-width: 98px; padding-inline: 8px; }
+      .player-toggle { width: 50px; height: 50px; }
+      .wrap, body:has(.player.show) .wrap { padding-bottom: calc(var(--mobile-nav-h) + 18px + env(safe-area-inset-bottom)); }
+    }
+
+    @media (max-width: 390px) {
+      .reader-command-head { display: grid; grid-template-columns: 1fr auto; }
+      .reader-play-label { font-size: 12px; }
+      .reader-play { padding-inline: 10px; }
+      .reader-quick-actions { gap: 5px; }
+      .reader-action { font-size: 11.5px; }
+      .pager { grid-template-columns: minmax(76px, 1fr) minmax(92px, 1.08fr) minmax(76px, 1fr); }
+      .pager-btn { min-height: 50px; }
+      .pager-location .pno { font-size: 12px; }
+      .pager-location small { font-size: 9.5px; }
+      .player-step { min-width: 84px; font-size: 11px; }
+    }
+
+    @media (max-height: 500px) and (max-width: 720px) {
+      :root { --mobile-nav-h: 58px; }
+      .hdr .topbar { min-height: 38px; padding-block: 4px; }
+      .header-brand { min-width: 40px; }
+      .header-brand img { width: 22px; height: 22px; }
+      .header-brand span { font-size: 15px; }
+      .navbar { padding-top: 3px; padding-bottom: max(3px, env(safe-area-inset-bottom)); }
+      nav.menu button, .nav-end .btn { min-height: 48px; }
+      .reader-dock { bottom: calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 5px); }
+      .pager { padding: 4px; }
+      .pager-btn { min-height: 44px; }
+      .pager-btn small, .pager-location small { display: none; }
+      .player.show { grid-template-columns: minmax(0, 1fr) auto; gap: 5px 8px; padding: 7px 9px; }
+      .player-top { min-width: 0; }
+      .player-timeline { grid-column: 1; }
+      .player-controls { grid-column: 2; grid-row: 1 / span 2; gap: 5px; }
+      .player-step { min-width: 42px; width: 42px; padding: 4px; }
+      .player-step span:not([aria-hidden]) { display: none; }
+      .player-toggle { width: 43px; height: 43px; }
+      .player-state { display: none; }
+    }
+  
+    /* ---------- قسم الاستماع + مشغّل حديث ومتجاوب ---------- */
+    #view-listen .listen-hero {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      margin-bottom: 12px; padding: 18px 20px; border: 0; color: #fff;
+      background: linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 62%, #0b2f2a));
+      box-shadow: 0 12px 30px rgba(15, 60, 52, .25);
+    }
+    #view-listen .listen-hero h2 { margin: 2px 0 6px; font-size: 24px; color: #fff; }
+    #view-listen .listen-hero p { margin: 0; color: rgba(255,255,255,.86); font-size: 13.5px; line-height: 1.7; max-width: 56ch; }
+    #view-listen .listen-hero .reader-kicker { color: rgba(255,255,255,.72); }
+    #view-listen .reader-command.toolbar { margin-bottom: 0; }
+    .listen-player-slot { margin-top: 14px; }
+    .listen-player-slot:empty { display: none; }
+    #readerDock .player { margin-bottom: 8px; }
+
+    .player {
+      position: static; display: none; margin: 0; padding: 14px 16px; border-radius: 20px;
+      border: 1px solid color-mix(in srgb, var(--brand) 24%, var(--line));
+      background: linear-gradient(160deg, color-mix(in srgb, var(--card) 90%, var(--brand) 10%), var(--card));
+      box-shadow: 0 14px 40px rgba(12, 48, 40, .18);
+      backdrop-filter: none;
+    }
+    .player.show { display: grid; gap: 12px; animation: player-in .28s ease-out; }
+    @keyframes player-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    .player-top { gap: 12px; }
+    .player .info { font-size: 15px; font-weight: 800; }
+    .player-meta { gap: 2px; }
+    .player-stop {
+      min-height: 38px; border-radius: 12px; padding: 6px 12px; border: 1px solid color-mix(in srgb, #a53b35 25%, var(--line));
+      background: color-mix(in srgb, #a53b35 7%, var(--card));
+    }
+
+    /* مؤشّر الصوت المتحرك أثناء التشغيل */
+    .eq { display: inline-flex; align-items: flex-end; gap: 3px; height: 22px; flex: 0 0 auto; }
+    .eq i { display: block; width: 4px; height: 35%; border-radius: 3px; background: var(--brand); opacity: .45; }
+    .player.is-playing .eq i { opacity: 1; animation: eq-bar .9s ease-in-out infinite; }
+    .player.is-playing .eq i:nth-child(2) { animation-delay: .15s; }
+    .player.is-playing .eq i:nth-child(3) { animation-delay: .3s; }
+    .player.is-playing .eq i:nth-child(4) { animation-delay: .45s; }
+    @keyframes eq-bar { 0%, 100% { height: 25%; } 50% { height: 100%; } }
+    @media (prefers-reduced-motion: reduce) {
+      .player.is-playing .eq i { animation: none; height: 60%; }
+      .player.show { animation: none; }
+    }
+
+    /* شريط التقدم */
+    .player-timeline { gap: 10px; font-size: 12px; font-variant-numeric: tabular-nums; }
+    #audioSeek {
+      -webkit-appearance: none; appearance: none; height: 6px; border-radius: 99px; cursor: pointer;
+      background: linear-gradient(to right, var(--brand) var(--p, 0%),
+                  color-mix(in srgb, var(--brand) 16%, var(--line)) var(--p, 0%));
+    }
+    #audioSeek:disabled { opacity: .5; cursor: default; }
+    #audioSeek::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%;
+      background: #fff; border: 3px solid var(--brand); box-shadow: 0 2px 8px rgba(0,0,0,.25); transition: transform .15s;
+    }
+    #audioSeek:active::-webkit-slider-thumb { transform: scale(1.15); }
+    #audioSeek::-moz-range-thumb {
+      width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 3px solid var(--brand);
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+    #audioSeek::-moz-range-track { background: transparent; height: 6px; }
+    #audioSeek:focus-visible { outline: 3px solid var(--brand-2); outline-offset: 4px; border-radius: 99px; }
+
+    /* أزرار التحكم */
+    .player-controls { gap: 10px; flex-wrap: wrap; }
+    .player-step { min-width: 0; min-height: 44px; border-radius: 14px; padding: 8px 14px; font-size: 13px; background: color-mix(in srgb, var(--bg) 80%, var(--card)); border: 1px solid var(--line); }
+    .player-toggle {
+      width: 60px; height: 60px; font-size: 22px; background: linear-gradient(145deg, var(--brand), color-mix(in srgb, var(--brand) 70%, #0b2f2a));
+      box-shadow: 0 10px 24px rgba(15, 91, 76, .34); transition: transform .12s ease, box-shadow .2s ease;
+    }
+    .player-toggle:hover { box-shadow: 0 12px 28px rgba(15, 91, 76, .42); }
+    .player-speed { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: var(--muted); }
+    .player-speed select {
+      min-height: 44px; border-radius: 12px; padding: 6px 10px; border: 1px solid var(--line);
+      background: var(--card); color: var(--ink); font-family: inherit; font-weight: 800; cursor: pointer;
+    }
+    .player-hint { display: none; margin: 0; font-size: 11.5px; text-align: center; }
+    .player-step:focus-visible, .player-toggle:focus-visible, .player-stop:focus-visible, .player-speed select:focus-visible {
+      outline: 3px solid var(--brand-2); outline-offset: 2px;
+    }
+
+    @media (min-width: 900px) and (hover: hover) { .player-hint { display: block; } }
+    @media (max-width: 720px) {
+      .player { padding: 12px; border-radius: 18px; }
+      .player .info { font-size: 14px; }
+      .player-controls { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+      .player-step { width: 100%; }
+      .player-toggle { width: 66px; height: 66px; }
+      .player-speed { grid-column: 1 / -1; justify-content: center; }
+      .player-speed select { min-width: 120px; }
+      #view-listen .listen-hero { padding: 14px 16px; }
+      #view-listen .listen-hero h2 { font-size: 20px; }
+    }
+    @media (max-width: 390px) {
+      .player-step span:last-child { display: none; }
+      .player-step { min-width: 46px; }
+    }
+
+    /* ===== واجهة مضغوطة: المصحف أولاً، والتحكم بأزرار صغيرة ===== */
+    #view-listen .listen-hero { padding: 10px 14px; margin-bottom: 8px; border-radius: 14px; box-shadow: none; }
+    #view-listen .listen-hero h2 { margin: 0; font-size: 17px; }
+    #view-listen .listen-hero p, #view-listen .listen-hero .reader-kicker { display: none; }
+    #view-listen .reader-command.toolbar { padding: 10px; border-radius: 14px; }
+    #view-listen .reader-command-title, #view-listen .play-field > span, .reader-action > span { display: none; }
+    #view-listen .reader-play-label { display: none; }
+    #view-listen .reader-command-head { justify-content: flex-end; }
+    #view-listen .reader-play { min-height: 40px; min-width: 40px; padding: 0; width: 40px; border-radius: 50%; }
+    #view-listen .play-pickers { margin-top: 8px; gap: 6px; }
+    #view-listen .reader-command.toolbar .play-field select { min-height: 36px; font-size: 12.5px; padding: 4px 8px; border-radius: 10px; }
+    #view-listen .reader-quick-actions { display: none; }
+    .listen-player-slot { margin-top: 8px; }
+
+    /* المشغّل: شريط رفيع بأزرار أيقونات فقط */
+    .player, #readerDock .player {
+      padding: 6px 8px 7px; border-radius: 14px; gap: 4px; margin: 0 0 6px;
+      box-shadow: 0 6px 18px rgba(12, 48, 40, .16);
+    }
+    .player.show { gap: 4px; }
+    .player #audioSeek {
+      height: 4px; margin: 0; width: 100%;
+    }
+    #audioSeek::-webkit-slider-thumb { width: 12px; height: 12px; margin-top: -4px; border-width: 2px; }
+    #audioSeek::-moz-range-thumb { width: 10px; height: 10px; border-width: 2px; }
+    .player-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+    .player .eq { height: 12px; gap: 2px; }
+    .player .eq i { width: 3px; }
+    .player-meta { flex: 1; min-width: 0; }
+    .player .info { font-size: 12px; font-weight: 800; }
+    .player-controls { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; direction: rtl; }
+    .pbtn {
+      width: 30px; height: 30px; min-width: 30px; border-radius: 50%; border: 0; padding: 0;
+      background: transparent; color: var(--ink); font: 12px/1 Arial, sans-serif; cursor: pointer;
+      display: grid; place-items: center; transition: background .15s, transform .1s;
+    }
+    .pbtn:hover { background: color-mix(in srgb, var(--brand) 10%, transparent); }
+    .pbtn:active { transform: scale(.92); }
+    .pbtn-main { width: 36px; height: 36px; background: var(--brand); color: #fff; box-shadow: 0 4px 12px rgba(15,91,76,.3); }
+    .pbtn-main:hover { background: var(--brand); filter: brightness(1.08); }
+    .pbtn-speed { width: auto; min-width: 34px; padding: 0 6px; border-radius: 999px; background: var(--bg); font-weight: 800; font-size: 11px; font-family: inherit; }
+    .pbtn-stop { color: #a53b35; font-size: 10px; }
+    .pbtn:focus-visible { outline: 2px solid var(--brand-2); outline-offset: 2px; }
+    .player-timeline, .player-top, .player-speed, .player-hint, .player-state { display: none !important; }
+
+    /* مؤشر الصفحات: أسهم صغيرة فقط */
+    #readerDock .pager {
+      display: inline-grid; grid-template-columns: 30px auto 30px; width: auto; min-width: 0;
+      gap: 4px; padding: 3px; margin: 0 auto; border-radius: 999px; box-shadow: 0 4px 14px rgba(19,54,46,.14);
+      background: color-mix(in srgb, var(--card) 94%, transparent); border: 1px solid var(--line);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    }
+    #readerDock .pager-btn {
+      min-height: 30px; width: 30px; min-width: 30px; padding: 0; border-radius: 50%; gap: 0;
+      background: transparent; color: var(--brand);
+    }
+    #readerDock .pager-btn:not(:disabled):active { background: var(--brand); color: #fff; }
+    #readerDock .pager-arrow { font-size: 19px; }
+    #readerDock .pager-btn small, #readerDock .pager-btn b { display: none; }
+    #readerDock .pager-location { padding: 0 6px; }
+    #readerDock .pager-location .pno { font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    #pagerContext { display: none; }
+    .reader-dock { width: auto; margin: 0; display: flex; flex-direction: column; align-items: center; }
+    .reader-dock .player { width: min(100%, 720px); }
+
+    /* المصحف يأخذ المساحة: تختفي الاقتراحات الذكية أثناء القراءة */
+    .wrap:has(#view-reader.active) #smartSuggestion { display: none !important; }
+    #view-reader .reader-dock { position: static; }
+    @media (max-width: 1366px) {
+      #readerDock { position: fixed; left: 0; right: 0; bottom: 6px; z-index: 34; display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+      #readerDock > * { pointer-events: auto; }
+      #readerDock .player { width: min(calc(100% - 20px), 720px); }
+      #view-reader { padding-bottom: calc(var(--reader-dock-h, 56px) + 10px); }
+    }
+    @media (max-width: 720px) {
+      #readerDock { bottom: calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 6px); }
+      .player { padding: 5px 7px 6px; }
+      .pbtn { width: 32px; height: 32px; min-width: 32px; }
+      .pbtn-main { width: 38px; height: 38px; }
+      .pager-btn { min-height: 30px; }
+    }
+
+    /* الصفحة: سحب مرن وانتقال سريع */
+    #stage { touch-action: pan-y; overflow: hidden; }
+    #page { will-change: transform, opacity; }
+    #page.is-dragging { transition: none !important; }
+    .page.flip-next, .page.flip-prev { animation: none; }
+
+    /* ===== أزرار الصفحات منفصلة ورقم صغير، والتظليل الحر ===== */
+    #readerDock .dock-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0; }
+    #readerDock .pager {
+      display: flex; align-items: center; gap: 6px; width: auto; margin: 0; padding: 0;
+      background: none; border: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; border-radius: 0;
+    }
+    #readerDock .pager-btn {
+      width: 30px; height: 30px; min-width: 30px; min-height: 30px; padding: 0; gap: 0; border-radius: 50%;
+      background: var(--card); color: var(--brand); border: 1px solid var(--line); box-shadow: 0 2px 6px rgba(0,0,0,.08);
+    }
+    #readerDock .pager-btn:not(:disabled):active { background: var(--brand); color: #fff; }
+    #readerDock .pager-arrow { font-size: 17px; line-height: 1; }
+    #readerDock .pager-location {
+      min-width: 38px; height: 24px; padding: 0 6px; border-radius: 7px; border: 1px solid var(--line);
+      background: var(--card); display: grid; place-items: center;
+    }
+    #readerDock .pager-location .pno { font-size: 11px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+
+    /* ===== قائمة التحديد المنسدلة ===== */
+    .sel-menu {
+      position: fixed; z-index: 80; display: grid; min-width: 172px; padding: 4px; border-radius: 14px;
+      background: var(--card); border: 1px solid var(--line); box-shadow: 0 12px 32px rgba(0,0,0,.18);
+    }
+    .sel-menu[hidden] { display: none; }
+    .sel-menu button {
+      appearance: none; border: 0; background: transparent; color: var(--ink); cursor: pointer;
+      font: 600 14px/1.2 inherit; font-family: inherit; text-align: right; padding: 9px 12px; border-radius: 10px;
+    }
+    .sel-menu button:hover, .sel-menu button:focus-visible { background: color-mix(in srgb, var(--ink) 7%, transparent); outline: none; }
+    .sel-menu button:active { background: color-mix(in srgb, var(--ink) 12%, transparent); }
+
+    /* ===== التحديد: نفس تظليل النظام في ويندوز ولينكس ===== */
+    /* التظليل الحر: التحديد الأصلي شفاف والتظليل يُرسم بشرائح ناعمة لكل سطر */
+    #pageBody ::selection { background: transparent; }
+    #page { position: relative; }
+    #pageBody { position: relative; z-index: 1; }
+    #hlLayer { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+    #hlLayer i {
+      position: absolute; border-radius: 7px;
+      background: color-mix(in srgb, AccentColor 36%, transparent);
+    }
+
+    /* ===== التبويبات أسفل الشاشة، وشريط الصفحة أعلى المصحف ===== */
+    :root { --mobile-nav-h: 62px; }
+    .navbar {
+      position: fixed; z-index: 48; left: 0; right: 0; bottom: 0; display: flex; align-items: stretch; gap: 6px;
+      padding: 6px 8px max(6px, env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--card) 94%, transparent);
+      border-top: 1px solid var(--line); border-bottom: 0; box-shadow: 0 -6px 22px rgba(0,0,0,.10);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    }
+    .navbar nav.menu { flex: 1 1 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; overflow: visible; padding: 0; min-width: 0; border-bottom: 0; }
+    .tab-group { display: block; position: static; }
+    .tab-group .group-menu, .tab-group[data-group="adhkarak"] .group-menu {
+      position: fixed; left: max(8px, env(safe-area-inset-left)); right: max(8px, env(safe-area-inset-right));
+      bottom: calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 6px); top: auto; min-width: 0;
+      max-height: min(58dvh, 420px); border-radius: 16px;
+    }
+    nav.menu button { width: 100%; flex: none; white-space: normal; min-height: 54px; padding: 4px 1px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; }
+    nav.menu .ic svg { width: 22px; height: 22px; }
+    .nav-end { flex: 0 0 48px; display: flex; justify-content: center; }
+    .nav-end .lbl { display: none; }
+    .wrap { padding-bottom: calc(var(--mobile-nav-h) + 16px + env(safe-area-inset-bottom)) !important; }
+    #readerDock { bottom: calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 8px); }
+
+    /* شريط الصفحة: زرّان دائريان أكبر من خانة الرقم، والصفحة تبقى هي المسيطرة */
+    .hdr-pager { display: none; }
+    body.reader-view-active .hdr-pager {
+      display: flex; align-items: center; justify-content: center; padding: 6px 12px 8px; background: transparent;
+    }
+    .hdr-pager .pager { display: flex; align-items: center; gap: 8px; margin: 0; padding: 0; border: 0; background: none; box-shadow: none; }
+    .hdr-pager .pager-btn {
+      width: 28px; height: 28px; min-width: 28px; min-height: 28px; padding: 0; gap: 0; border: 0; border-radius: 50%;
+      display: grid; place-items: center; cursor: pointer; color: #fff;
+      background: linear-gradient(145deg, var(--brand), color-mix(in srgb, var(--brand) 70%, #0b2f2a));
+      box-shadow: 0 3px 8px rgba(15, 91, 76, .22); transition: transform .12s ease, box-shadow .2s ease, opacity .2s ease;
+    }
+    .hdr-pager .pager-btn:not(:disabled):hover { box-shadow: 0 8px 22px rgba(15, 91, 76, .34); }
+    .hdr-pager .pager-btn:not(:disabled):active { transform: scale(.92); }
+    .hdr-pager .pager-btn:disabled { opacity: .3; box-shadow: none; cursor: default; }
+    .hdr-pager .pager-arrow { font-family: Arial, sans-serif; font-size: 15px; line-height: 1; }
+    .hdr-pager .pager-location {
+      min-width: 40px; height: 22px; padding: 0 9px; border-radius: 999px; display: grid; place-items: center;
+      background: color-mix(in srgb, var(--card) 85%, transparent); border: 1px solid var(--line);
+    }
+    .hdr-pager .pno { font-size: 11px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; color: var(--ink); }
+    /* ===== المصحف بأسطر ثابتة لرواية حفص: تباعد 1.5 ومحاذاة كاملة للسطر ===== */
+    #pageBody.madani-lines { text-align: justify; }
+    #pageBody.madani-lines .mline {
+      display: block; white-space: nowrap; text-align: justify; text-align-last: justify;
+      font-family: var(--quran-font), "Amiri Quran", Amiri, serif;
+      font-size: var(--quran-size);
+      line-height: var(--mline-h, calc(var(--quran-size) * 1.5)); margin: 0; padding: 0;
+    }
+    #pageBody.madani-lines .mline.short { text-align: center; text-align-last: center; margin: 0 auto; }
+    #pageBody.madani-lines .surah-banner, #pageBody.madani-lines .bism { line-height: 1.5; }
+</style>
 </head>
 <body>
   <div class="app">
@@ -311,40 +984,78 @@
       <header class="hdr">
         <div class="topbar">
           <button class="icon-btn back-btn" id="backBtn" hidden>→ رجوع</button>
+          <div class="header-brand" aria-label="سراج">
+            <img src="icon.png" alt="" aria-hidden="true" />
+            <span>سراج</span>
+          </div>
           <div class="title" id="topTitle">المصحف</div>
+        </div>
+        <div class="hdr-pager" aria-label="التنقل بين صفحات المصحف">
+<div class="pager">
+              <button class="pager-btn" id="pPrevS" aria-label="الصفحة السابقة">
+                <span class="pager-arrow" aria-hidden="true">›</span>
+              </button>
+              <div class="pager-location">
+                <strong class="pno" id="pageNo"></strong>
+                <small id="pagerContext">المصحف الشريف</small>
+              </div>
+              <button class="pager-btn" id="pNextS" aria-label="الصفحة التالية">
+                <span class="pager-arrow" aria-hidden="true">‹</span>
+              </button>
+            </div>
         </div>
         <div class="navbar">
         <nav class="menu" id="tabs">
-          <button data-view="reader" class="active"><span class="ic">📖</span>المصحف</button>
-          <button data-view="tafsir"><span class="ic">📚</span>التفسير</button>
-          <button data-view="memo"><span class="ic">🧠</span>الحفظ</button>
-          <button data-view="wird"><span class="ic">🌿</span>الورد</button>
-          <button data-view="stats"><span class="ic">📊</span>الإحصائيات</button>
-          <button data-view="adhkar"><span class="ic">📿</span>الأذكار</button>
-          <button data-view="search"><span class="ic">🔍</span>البحث</button>
-          <button data-view="bookmarks"><span class="ic">⭐</span>المحفوظات</button>
-          <button data-view="settings"><span class="ic">⚙️</span>الإعدادات</button>
+          <button data-view="reader" class="active"><span class="ic" data-icon="book" aria-hidden="true"></span>المصحف</button>
+          <div class="tab-group" data-group="rasid">
+            <button type="button" class="group-btn" aria-haspopup="true" aria-expanded="false"><span class="ic" data-icon="stats" aria-hidden="true"></span>رصيدك ▾</button>
+            <div class="group-menu" hidden>
+              <button data-view="stats"><span class="ic" data-icon="stats" aria-hidden="true"></span>الإحصائيات</button>
+              <button data-view="memo"><span class="ic" data-icon="memo" aria-hidden="true"></span>الحفظ</button>
+              <button data-view="wird"><span class="ic" data-icon="wird" aria-hidden="true"></span>الورد</button>
+              <button data-view="bookmarks"><span class="ic" data-icon="bookmarks" aria-hidden="true"></span>المحفوظات</button>
+            </div>
+          </div>
+          <div class="tab-group" data-group="tadabbur">
+            <button type="button" class="group-btn" aria-haspopup="true" aria-expanded="false"><span class="ic" data-icon="tafsir" aria-hidden="true"></span>تدبر ▾</button>
+            <div class="group-menu" hidden>
+              <button data-view="listen"><span class="ic" data-icon="listen" aria-hidden="true"></span>استماع</button>
+              <button data-view="tafsir"><span class="ic" data-icon="tafsir" aria-hidden="true"></span>التفسير</button>
+              <button data-view="tajweed"><span class="ic" data-icon="tajweed" aria-hidden="true"></span>أحكام التجويد</button>
+              <button data-view="meanings"><span class="ic" data-icon="words" aria-hidden="true"></span>المعاني</button>
+            </div>
+          </div>
+          <div class="tab-group" data-group="adhkarak">
+            <button type="button" class="group-btn" aria-haspopup="true" aria-expanded="false"><span class="ic" data-icon="adhkar" aria-hidden="true"></span>أذكارك ▾</button>
+            <div class="group-menu" id="adhkarMenu" hidden></div>
+          </div>
         </nav>
           <div class="nav-end">
-            <button class="btn small" id="settingsBtn" title="الإعدادات" aria-label="الإعدادات">⚙️ الإعدادات</button>
-            <button class="theme-btn" id="themeBtn" title="الوضع الليلي" aria-label="الوضع الليلي">🌙</button>
+            <button class="btn small" id="settingsBtn" data-view="settings" title="الإعدادات" aria-label="الإعدادات"><span class="ic" data-icon="settings" aria-hidden="true"></span><span class="lbl">الإعدادات</span></button>
           </div>
         </div>
       </header>
 
       <div class="wrap">
+        <aside class="card smart-suggestion" id="smartSuggestion" hidden aria-live="polite" aria-label="اقتراح ذكي محلي">
+          <div class="smart-suggestion-head">
+            <strong id="smartSuggestionTitle"></strong>
+            <span class="smart-badge">محلي على جهازك</span>
+          </div>
+          <p id="smartSuggestionBody"></p>
+          <div class="smart-actions">
+            <button class="btn small" id="smartSuggestionOpen"></button>
+            <button class="btn small ghost" id="smartSuggestionLater">لاحقًا</button>
+            <button class="btn small ghost" id="smartSuggestionDismiss">إخفاء</button>
+          </div>
+          <details class="smart-why">
+            <summary>لماذا ظهر هذا الاقتراح؟</summary>
+            <p id="smartSuggestionWhy"></p>
+          </details>
+        </aside>
+
         <!-- المصحف: صفحة بصفحة -->
         <section class="view active" id="view-reader">
-          <div class="card toolbar">
-            <button class="btn" id="btnPlaySurah">▶ تشغيل</button>
-            <select id="playSurah" class="tsel" title="السورة"></select>
-            <select id="playFrom" class="tsel" title="الآية"></select>
-            <select id="playReciter" class="tsel" title="الشيخ"></select>
-            <button class="btn ghost small" id="btnBm">☆ علامة</button>
-            <button class="btn ghost small" id="btnTafsir">التفسير</button>
-            <button class="btn ghost small" id="btnResume">↩ آخر موضع</button>
-          </div>
-
           <div class="stage" id="stage">
             <div class="page" id="page">
               <span class="corner c1">❁</span><span class="corner c2">❁</span>
@@ -355,18 +1066,67 @@
             </div>
           </div>
 
-          <div class="pager">
-            <button class="btn small" id="pPrevS">‹ السابقة</button>
-            <span class="pno" id="pageNo"></span>
-            <button class="btn small" id="pNextS">التالية ›</button>
-          </div>
-            <div class="player" id="player">
-              <div class="info" id="playerInfo">لا يوجد تشغيل</div>
-              <button class="btn small" id="pPrev">⏮</button>
-              <button class="btn" id="pToggle">⏯</button>
-              <button class="btn small" id="pNext">⏭</button>
-              <button class="btn small ghost" id="pStop">إيقاف</button>
+          <div class="reader-dock" id="readerDock">
+            <div class="player" id="player" role="region" aria-label="مشغل التلاوة">
+              <input id="audioSeek" type="range" min="0" max="0" value="0" step="0.1" dir="ltr" aria-label="موضع التلاوة" />
+              <div class="player-row">
+                <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+                <div class="player-meta"><div class="info" id="playerInfo" aria-live="polite">—</div></div>
+                <div class="player-controls">
+                  <button class="pbtn" id="pPrev" aria-label="الآية السابقة">⏮</button>
+                  <button class="pbtn pbtn-main" id="pToggle" aria-label="تشغيل أو إيقاف مؤقت">▶</button>
+                  <button class="pbtn" id="pNext" aria-label="الآية التالية">⏭</button>
+                  <button class="pbtn pbtn-speed" id="pSpeed" aria-label="سرعة التلاوة">1×</button>
+                  <button class="pbtn pbtn-stop" id="pStop" aria-label="إيقاف التلاوة">■</button>
+                </div>
+              </div>
+              <span id="audioCurrent" hidden></span><span id="audioDuration" hidden></span>
             </div>
+
+            
+          </div>
+        </section>
+
+        <!-- الاستماع: اختيار السورة والقارئ والتشغيل -->
+        <section class="view" id="view-listen">
+          <div class="card listen-hero">
+            <div>
+              <span class="reader-kicker">تدبّر بالسمع</span>
+              <h2>استماع</h2>
+            </div>
+          </div>
+          <div class="card toolbar reader-command" aria-label="إعدادات التلاوة وأدوات المصحف">
+            <div class="reader-command-head">
+              <div class="reader-command-title">
+                <span class="reader-kicker">التلاوة</span>
+                <strong>استمع من الموضع الذي تختاره</strong>
+              </div>
+              <button class="btn reader-play" id="btnPlaySurah">
+                <span class="reader-play-icon" aria-hidden="true">▶</span>
+                <span class="reader-play-label">تشغيل السورة</span>
+              </button>
+            </div>
+            <div class="play-pickers">
+              <label class="play-field">
+                <span>السورة</span>
+                <select id="playSurah" class="tsel" title="السورة" aria-label="اختر السورة"></select>
+              </label>
+              <label class="play-field play-field-ayah">
+                <span>البدء من الآية</span>
+                <select id="playFrom" class="tsel" title="الآية" aria-label="اختر آية بدء التشغيل"></select>
+              </label>
+              <label class="play-field play-field-reciter">
+                <span>القارئ</span>
+                <select id="playReciter" class="tsel" title="القارئ" aria-label="اختر القارئ"></select>
+              </label>
+            </div>
+            <div class="reader-quick-actions" aria-label="أدوات الآية المحددة">
+              <button class="reader-action" id="btnBm">☆ <span>حفظ علامة</span></button>
+              <button class="reader-action" id="btnTafsir">▤ <span>التفسير</span></button>
+              <button class="reader-action" id="btnResume">↩ <span>آخر موضع</span></button>
+            </div>
+          </div>
+          <div class="listen-player-slot" id="listenPlayerSlot"></div>
         </section>
 
         <!-- الحفظ -->
@@ -432,20 +1192,7 @@
 
         <!-- الإعدادات -->
         <!-- البحث -->
-        <section class="view" id="view-search">
-          <div class="card">
-            <label class="lbl" for="srQuery">الكلمة أو العبارة</label>
-            <div class="row">
-              <input type="text" id="srQuery" style="flex:1;min-width:0" />
-              <button class="btn" id="srBtn">بحث</button>
-            </div>
-            <div id="srInfo" class="muted" style="margin-top:10px"></div>
-          </div>
-          <div id="srResults"></div>
-          <div class="row" id="srMoreRow" hidden style="justify-content:center">
-            <button class="btn ghost" id="srMore">عرض المزيد</button>
-          </div>
-        </section>
+        
 
         <!-- الأذكار -->
         <section class="view" id="view-adhkar">
@@ -476,15 +1223,10 @@
         <!-- الورد -->
         <section class="view" id="view-wird">
           <div class="card">
-            <h3 style="margin-top:0">ورد اليوم</h3>
-            <div class="wird-big"><span id="wdDone">0</span> من <span id="wdTarget">4</span> صفحة</div>
+            <h3 style="margin-top:0">قراءتك اليوم</h3>
+            <div class="wird-big"><span id="wdDone">0</span> صفحة</div>
             <div class="wbar"><div class="wfill" id="wdFill"></div></div>
-            <div class="row" style="margin-top:12px">
-              <button class="btn" id="wdAdd">قرأت صفحة</button>
-              <button class="btn ghost" id="wdFinish">أكملت الورد كله</button>
-              <button class="btn ghost small" id="wdSub">تراجع عن صفحة</button>
-            </div>
-            <div id="wdMsg" class="muted" style="margin-top:10px"></div>
+            <div id="wdMsg" class="muted" style="margin-top:10px">تُسجّل القراءة تلقائيًا عند فتح صفحة جديدة.</div>
           </div>
 
           <div class="card">
@@ -507,20 +1249,18 @@
           </div>
 
           <div class="card">
-            <h3 style="margin-top:0">إعدادات الورد</h3>
-            <label class="lbl" for="wdTargetSel">عدد الصفحات في اليوم</label>
-            <select id="wdTargetSel">
-              <option value="1">صفحة واحدة</option>
-              <option value="2">صفحتان</option>
-              <option value="3">3 صفحات</option>
-              <option value="4">4 صفحات</option>
-              <option value="5">5 صفحات</option>
-              <option value="10">10 صفحات</option>
-              <option value="20">جزء كامل (20 صفحة)</option>
-            </select>
-            <div class="wird-line" style="margin-top:12px"><span>السلسلة الحالية</span><b id="wdStreak">0 يوم</b></div>
-            <div class="wird-line"><span>أيام مكتملة</span><b id="wdDays">0</b></div>
+            <h3 style="margin-top:0">متابعة بلا إلزام</h3>
+            <p class="muted">يسجل سراج الصفحات التي تقرؤها تلقائيًا، ويحسب عادتك الفعلية دون فرض هدف يومي.</p>
+            <div class="wird-line"><span>متوسط عادتك</span><b id="wdHabit">—</b></div>
+            <div class="wird-line"><span>سلسلة أيام القراءة</span><b id="wdStreak">0 يوم</b></div>
+            <div class="wird-line"><span>أيام القراءة</span><b id="wdDays">0</b></div>
             <div class="wird-line"><span>الختمات المكتملة</span><b id="wdKhCount">0</b></div>
+            <label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="wdReminderEnabled" /> تذكير يومي اختياري</label>
+            <div class="row" style="margin-top:8px">
+              <input type="time" id="wdReminderTime" value="20:00" style="max-width:150px" />
+              <button class="btn small ghost" id="wdReminderSave">حفظ التذكير</button>
+            </div>
+            <div class="muted" id="wdReminderStatus" style="margin-top:6px"></div>
           </div>
 
           <div class="card">
@@ -552,35 +1292,142 @@
             <div class="tr" id="tfTransText" dir="auto" style="margin-top:10px"></div>
           </div>
         </section>
-        <section class="view" id="view-settings">
-          <details class="card dd">
-            <summary>الفهرس: السورة والجزء والآية</summary>
-        <div class="index-wrap">
-          <div class="index-head">
-            <div class="seg" id="indexSeg">
-              <button data-mode="surah" class="on">السورة</button>
-              <button data-mode="juz">الجزء</button>
-              <button data-mode="ayah">الآية</button>
+        <section class="view" id="view-tajweed">
+          <div class="card" id="tjLearningHome">
+            <div class="row" style="justify-content:space-between;align-items:flex-start">
+              <div>
+                <h3 style="margin:0">مسار تعلم التجويد المكثف</h3>
+                <div class="muted" id="tjLearningScope" style="margin-top:4px"></div>
+              </div>
+              <span class="smart-badge" id="tjReviewBadge">قيد المراجعة العلمية</span>
+            </div>
+            <p class="smart-local-note" id="tjLearningWarning"></p>
+            <div class="stat-grid" id="tjLearningStats">
+              <div class="stat-box">مستحقة<b id="tjDueCount">0</b></div>
+              <div class="stat-box">قيد التعلم<b id="tjLearningCount">0</b></div>
+              <div class="stat-box">راسخة<b id="tjMatureCount">0</b></div>
+              <div class="stat-box">الدقة<b id="tjAccuracy">0%</b></div>
+              <div class="stat-box">إتقان المسار<b id="tjMastery">0%</b></div>
+              <div class="stat-box">تحتاج تثبيتًا<b id="tjWeakCount">0</b></div>
+              <div class="stat-box">مفتوحة للتعلم<b id="tjUnlockedCount">0</b></div>
+            </div>
+            <div style="margin-top:12px">
+              <div class="tj-path-head"><span>تقدم المسار</span><b id="tjPathProgress">0 من 0 نشاط</b></div>
+              <div class="wbar"><div class="wfill" id="tjPathFill"></div></div>
+            </div>
+            <div class="tj-plan" id="tjPlanExplanation"></div>
+            <div class="muted" id="tjWeakAreas" style="margin-top:7px"></div>
+            <div class="row" style="margin-top:12px">
+              <label class="lbl" for="tjIntensity" style="margin:0">كثافة المسار</label>
+              <select id="tjIntensity" style="width:auto;min-width:170px">
+                <option value="gentle">هادئ — ٣ جديدة / ١٠ مراجعات</option>
+                <option value="balanced">متوازن — ٥ جديدة / ٢٠ مراجعة</option>
+                <option value="intensive">مكثف — ١٠ جديدة / ٤٠ مراجعة</option>
+              </select>
+            </div>
+            <div class="row" style="margin-top:12px">
+              <button class="btn" id="tjStartLearning">بدء جلسة تكيفية</button>
+              <button class="btn small ghost" id="tjResetLearning">مسح تقدم هذه الطبعة</button>
+            </div>
+            <div class="muted" id="tjLearningEmpty" style="margin-top:8px"></div>
+          </div>
+
+          <div class="card" id="tjSessionSummary" hidden>
+            <div class="row" style="justify-content:space-between">
+              <div><strong id="tjSessionSummaryTitle">ملخص الجلسة</strong><div class="muted" id="tjSessionSummaryText"></div></div>
+              <button class="btn small ghost" id="tjSessionSummaryClose">إغلاق</button>
             </div>
           </div>
-          <div class="index-search" id="indexSearchWrap">
-            <input type="text" id="indexSearch" placeholder="ابحث باسم السورة أو رقمها..." />
+
+          <div class="card tj-learning-card" id="tjLearningCard" hidden>
+            <div class="row" style="justify-content:space-between">
+              <strong id="tjCardProgress"></strong>
+              <button class="btn small ghost" id="tjEndLearning">إنهاء الجلسة</button>
+            </div>
+            <span class="smart-badge" id="tjCardStage">تعلّم الحكم</span>
+            <h3 id="tjCardTitle"></h3>
+            <p id="tjCardPrompt"></p>
+            <div class="tj-example" id="tjCardExample"></div>
+            <div class="tj-quiz" id="tjQuizChoices" aria-label="اختيارات تمييز الحكم" hidden></div>
+            <div class="muted" id="tjQuizFeedback" aria-live="polite"></div>
+            <button class="btn" id="tjRevealAnswer">إظهار الشرح</button>
+            <div id="tjCardAnswer" hidden>
+              <div class="tf" id="tjCardAnswerText"></div>
+              <p class="muted">قيّم استدعاءك أو تطبيقك بصدق ليحدد سراج موعد المراجعة التالية.</p>
+              <div class="tj-rating" aria-label="تقييم المراجعة">
+                <button class="btn small ghost" data-tj-rating="again">أعدها</button>
+                <button class="btn small ghost" data-tj-rating="hard">صعب</button>
+                <button class="btn small" data-tj-rating="good">جيد</button>
+                <button class="btn small" data-tj-rating="easy">سهل</button>
+              </div>
+            </div>
           </div>
-          <div class="index-list" id="indexList"></div>
+
+          <div class="card">
+            <h3 style="margin-top:0">مرجع الأحكام ومساراتها التعليمية</h3>
+            <p class="muted">لكل حكم ثلاث مراحل: فهم القاعدة، تمييزها من المثال، ثم تطبيقها. هذا القسم لا يغيّر خيارات المصحف أو ألوانه الحالية.</p>
+            <div id="tjList"></div>
+          </div>
+        </section>
+        <section class="view" id="view-meanings">
+          <div class="card">
+            <label class="lbl" for="mnSurah">السورة</label>
+            <select id="mnSurah"></select>
+          </div>
+          <div id="mnList"></div>
+        </section>
+        <section class="view" id="view-settings">
+          <div class="card">
+            <label><input type="checkbox" id="setDark" /> الوضع الليلي</label>
+          </div>
+          <div class="card">
+            <h3 style="margin-top:0">الفهرس</h3>
+            <div class="idx-grid">
+              <div>
+                <label class="lbl" for="idxSurah">السورة</label>
+                <select id="idxSurah"></select>
+              </div>
+              <div>
+                <label class="lbl" for="idxJuz">الجزء</label>
+                <select id="idxJuz"></select>
+              </div>
+              <div>
+                <label class="lbl" for="idxAyahNum">الآية</label>
+                <select id="idxAyahNum"></select>
+              </div>
+            </div>
+          </div>
+          <details class="card dd">
+            <summary>البحث في القرآن</summary>
+            <div class="search-inner">
+          <div class="card">
+            <label class="lbl" for="srQuery">الكلمة أو العبارة</label>
+            <div class="row">
+              <input type="text" id="srQuery" style="flex:1;min-width:0" />
+              <button class="btn" id="srBtn">بحث</button>
+            </div>
+            <div id="srInfo" class="muted" style="margin-top:10px"></div>
+          </div>
+          <div id="srResults"></div>
+          <div class="row" id="srMoreRow" hidden style="justify-content:center">
+            <button class="btn ghost" id="srMore">عرض المزيد</button>
+          </div>
         </div>
           </details>
           <div class="card">
             <h3 style="margin-top:0">اختيار المصحف</h3>
             <label class="lbl">الرواية والرسم</label>
             <select id="setRiwaya">
-              <option value="quran-uthmani">حفص عن عاصم - الرسم العثماني</option>
-              <option value="quran-simple">حفص - رسم إملائي مبسط</option>
-              <option value="quran-uthmani-min">حفص - عثماني مختصر</option>
-              <option value="quran-tajweed">حفص - بألوان أحكام التجويد</option>
+              <option value="quran-uthmani">حفص عن عاصم</option>
               <option value="warsh">ورش عن نافع</option>
               <option value="qalun">قالون عن نافع</option>
               <option value="duri">الدوري عن أبي عمرو</option>
             </select>
+
+            <div id="setTajweedScopeRow" hidden style="display:none !important">
+              <select id="setTajweedScope" hidden></select>
+              <div id="setTajweedScopeNote" hidden></div>
+            </div>
 
             <label class="lbl">القارئ</label>
             <select id="setReciter"></select>
@@ -594,12 +1441,19 @@
               <option value="en.sahih">English - Sahih International</option>
               <option value="fr.hamidullah">Français - Hamidullah</option>
               <option value="ur.jalandhry">اردو - جالندھری</option>
-              <option value="id.indonesian">Bahasa Indonesia</option>
               <option value="tr.diyanet">Türkçe - Diyanet</option>
             </select>
 
+            <label class="lbl" for="setFont">خط المصحف والتفسير</label>
+            <select id="setFont">
+              <option value="Amiri Quran">Amiri Quran</option>
+              <option value="Amiri">Amiri</option>
+              <option value="Noto Naskh Arabic">Noto Naskh Arabic</option>
+              <option value="Scheherazade New">Scheherazade New</option>
+            </select>
+
             <label class="lbl">حجم الخط: <span id="sizeVal"></span></label>
-            <input type="range" id="setSize" min="18" max="40" step="1" />
+            <input type="range" id="setSize" min="18" max="44" step="1" />
 
             <div class="row" style="margin-top:12px">
               <label><input type="checkbox" id="setTajweed" /> تفعيل ألوان التجويد</label>
@@ -630,7 +1484,36 @@
             <progress id="dlBar" value="0" max="1" style="width:100%;margin-top:10px;display:none"></progress>
             <div class="muted" id="dlProgress" style="margin-top:6px"></div>
             <div class="muted" id="dlStored" style="margin-top:6px"></div>
-            <p class="muted">القارئ الذي لا يظهر هنا يعمل للاستماع المباشر، لكن تحميله غير متاح حالياً.</p>
+            <p class="muted">تتوفر أصوات حفص السبعة عشر للاستماع المباشر والتحكم الكامل والتنزيل المحلي؛ يعتمد حجم التنزيل على معدل البت الخاص بكل قارئ.</p>
+          </details>
+          <details class="card dd" id="smartSettingsCard">
+            <summary>الاقتراحات الذكية المحلية</summary>
+            <label style="display:flex;align-items:center;gap:8px">
+              <input type="checkbox" id="setSmartEnabled" /> تفعيل الاقتراحات الذكية
+            </label>
+            <p class="smart-local-note">اختيارك صريح ويمكن إيقافه في أي وقت. يتعلم سراج من أوقات استخدام خدماته فقط، ويحفظ سجلًا محدودًا على هذا الجهاز. لا يقرأ الرسائل أو المواقع التي تزورها أو الحافظة، ولا يرسل ملف عادات إلى خادم.</p>
+            <label id="smartNativeRow" hidden style="align-items:center;gap:8px;margin-top:10px">
+              <input type="checkbox" id="setSmartNotifications" /> إشعارات ذكية اختيارية على Android
+            </label>
+            <div class="muted" id="smartNativeStatus" hidden style="margin-top:5px">لا تُطلب صلاحية الإشعارات إلا عند تفعيل هذا الخيار.</div>
+            <div class="smart-settings-grid">
+              <label><span class="lbl">بداية الهدوء</span><input type="time" id="smartQuietStart" /></label>
+              <label><span class="lbl">نهاية الهدوء</span><input type="time" id="smartQuietEnd" /></label>
+              <label><span class="lbl">أقصى اقتراحات في اليوم</span>
+                <select id="smartDailyMax"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+              </label>
+              <label><span class="lbl">فاصل بين الاقتراحات</span>
+                <select id="smartCooldown"><option value="60">ساعة</option><option value="120">ساعتان</option><option value="180">3 ساعات</option><option value="360">6 ساعات</option></select>
+              </label>
+              <label><span class="lbl">مدة الاحتفاظ المحلية</span>
+                <select id="smartRetention"><option value="14">14 يومًا</option><option value="35">35 يومًا</option><option value="60">60 يومًا</option><option value="90">90 يومًا</option></select>
+              </label>
+            </div>
+            <div class="muted" id="smartLocalStatus" style="margin-top:10px"></div>
+            <div class="muted" id="smartDecisionStatus" style="margin-top:5px"></div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn small ghost" id="smartDeleteData" type="button">حذف سجل العادات المحلي</button>
+            </div>
           </details>
           <div class="card">
             <h3 style="margin-top:0">تحديث التطبيق</h3>
@@ -641,41 +1524,47 @@
             </div>
             <p class="muted" id="updStatus" style="margin-bottom:0"></p>
           </div>
-        <details class="card dd">
-          <summary>عن التطبيق</summary>
+          <button class="card settings-about-link" id="settingsAboutBtn" type="button" aria-label="عن التطبيق">
+            <span class="ic" data-icon="about" aria-hidden="true"></span>
+            <span class="settings-about-copy">
+              <strong>عن التطبيق</strong>
+              <small>الإصدار والمميزات والمطور والتواصل</small>
+            </span>
+            <span class="settings-about-arrow" aria-hidden="true">←</span>
+          </button>
+        </section>
+        <section class="view" id="view-about">
           <div class="card about-head">
-            <img src="icon.png" alt="أيقونة التطبيق" class="about-icon" />
+            <img src="icon.png" alt="أيقونة تطبيق سراج" class="about-icon" />
             <div>
-              <h2 class="about-title">القرآن الكريم</h2>
-              <div class="muted">مصحف المدينة صفحة بصفحة، بالتلاوات والتفسير والتجويد والحفظ</div>
+              <h2 class="about-title">سراج</h2>
+              <div>مصحف قرآن كريم</div>
+              <div class="muted">الإصدار 1.4.8</div>
             </div>
           </div>
 
           <div class="card">
-            <h3 style="margin-top:0">مميزات التطبيق</h3>
-            <ul class="feat">
-              <li>📖 المصحف صفحة بصفحة بترقيم مصحف المدينة</li>
-              <li>🔤 روايات ورسوم متعددة، مع وضع ألوان أحكام التجويد</li>
-              <li>🔊 تلاوات بأصوات عدة قراء، مع تشغيل السورة أو من آية محددة</li>
-              <li>📚 تفسير وترجمة لمعاني القرآن بلغات متعددة</li>
-              <li>🧠 وضع الحفظ: إخفاء النص واختبار نفسك آية بآية</li>
-              <li>⭐ علامات على الآيات، والرجوع لآخر موضع تلقائياً</li>
-              <li>⬇ تحميل التلاوات للاستماع بدون إنترنت</li>
-              <li>🌙 وضع ليلي للقراءة المريحة</li>
+            <h3 style="margin-top:0">المميزات</h3>
+            <ul class="feat" id="aboutFeatures">
+              <li>مصحف ذكي للتلاوة والاستماع والتدبر</li>
+              <li>برواية حفص عن عاصم وروايات أخرى</li>
+              <li>تحديد الأوراد والختمات ومتابعتها</li>
+              <li>الأذكار بعداد خاص لكل ذكر</li>
+              <li>تفاسير القرآن</li>
             </ul>
           </div>
 
           <div class="card">
-            <h3 style="margin-top:0">نبذة عن المطور</h3>
+            <h3 style="margin-top:0">المطور والتواصل</h3>
             <p class="dev-line">
               <a class="ext" href="https://elkatebmohamadsalah.blogspot.com/p/c.html" target="_blank" rel="noopener noreferrer">محمد صلاح عبد الخالق</a>
             </p>
-            <p class="muted dev-bio">محمد صلاح عبد الخالق، مطوّر هذا التطبيق. لمعرفة المزيد عن أعماله، زُر صفحته.</p>
             <div class="row" style="margin-top:10px">
-              <a class="btn" href="https://elkatebmohamadsalah.blogspot.com/p/blog-page_827.html" target="_blank" rel="noopener noreferrer">📞 اتصل بنا</a>
+              <a class="btn ghost" href="https://elkatebmohamadsalah.blogspot.com/p/c.html" target="_blank" rel="noopener noreferrer">صفحة المطور</a>
+              <a class="btn" href="https://elkatebmohamadsalah.blogspot.com/p/blog-page_827.html" target="_blank" rel="noopener noreferrer">اتصل بنا</a>
+              <a class="btn ghost" href="https://github.com/mosalah30688-gif/quran" target="_blank" rel="noopener noreferrer">GitHub</a>
             </div>
           </div>
-        </details>
         </section>
       </div>
     </main>
@@ -717,10 +1606,15 @@
   </div>
 
   <div class="toast" id="toast"></div>
+  <div class="upd-banner" id="updBanner" hidden>
+    <span id="updBannerText"></span>
+    <button id="updBannerBtn">حدّث الآن</button>
+    <button id="updBannerX" aria-label="إغلاق">×</button>
+  </div>
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.0.3';
+    window.APP_BUNDLE_VERSION = '1.4.8';
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {
@@ -730,9 +1624,27 @@
       document.body.appendChild(el);
     }
 
+    function validUpdateFile(name) {
+      return /^[a-z0-9][a-z0-9._-]*\.(?:html|js|json)$/i.test(name)
+        || /^tajweed-curricula\/[a-z0-9][a-z0-9._-]*\.json$/.test(name);
+    }
+
     function applyUpdate(up) {
       var files = up.files || {};
-      if (!files['index.html']) return false;
+      var names = files && typeof files === 'object' ? Object.keys(files) : [];
+      if (!files['index.html'] || !names.length || names.some(function (name) {
+        return !validUpdateFile(name) || typeof files[name] !== 'string' || !files[name].trim();
+      })) return false;
+      var dataFiles = Array.isArray(up.dataFiles) ? up.dataFiles.slice() : [];
+      if (dataFiles.some(function (name, index) {
+        return !/^([a-z0-9][a-z0-9._-]*\.json|tajweed-curricula\/[a-z0-9][a-z0-9._-]*\.json)$/.test(name)
+          || dataFiles.indexOf(name) !== index;
+      })) return false;
+      var exposed = Object.create(null);
+      names.forEach(function (name) { exposed[name] = files[name]; });
+      window.SIRAJ_UPDATE_FILES = Object.freeze(exposed);
+      window.SIRAJ_UPDATE_DATA_FILES = Object.freeze(dataFiles);
+      window.SIRAJ_UPDATE_VERSION = String(up.version || '');
       var doc = new DOMParser().parseFromString(files['index.html'], 'text/html');
       var self = doc.getElementById('boot-loader');
       if (self) self.parentNode.removeChild(self);
@@ -747,8 +1659,21 @@
       });
       document.head.innerHTML = doc.head.innerHTML;
       document.body.innerHTML = doc.body.innerHTML;
-      Object.keys(files).forEach(function (f) { if (/\.js$/.test(f)) run(files[f], null); });
+      // محرك السياق يجب أن يُحمّل قبل app.js سواء من APK أو من ترقيع الواجهة.
+      if (files['smart-context.js']) run(files['smart-context.js'], null);
+      Object.keys(files).filter(function (f) {
+        return /\.js$/.test(f) && f !== 'smart-context.js' && f !== 'app.js';
+      }).sort().forEach(function (f) { run(files[f], null); });
+      if (files['app.js']) run(files['app.js'], null);
       return true;
+    }
+
+    function newer(a, b) {
+      var pa = String(a || '').split('.').map(Number), pb = String(b || '').split('.').map(Number);
+      for (var i = 0; i < Math.max(pa.length, pb.length); i++) {
+        if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) > (pb[i] || 0);
+      }
+      return false;
     }
 
     var applied = false;
@@ -760,11 +1685,35 @@
         localStorage.removeItem(PEND);
         raw = null;
       }
-      if (raw) applied = applyUpdate(JSON.parse(raw));
-    } catch (e) { applied = false; }
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        // APK جديد لا يجوز أن تغطيه ترقية واجهة قديمة باقية في WebView.
+        if (newer(parsed.version, window.APP_BUNDLE_VERSION)) applied = applyUpdate(parsed);
+        else { localStorage.removeItem(KEY); localStorage.removeItem(PEND); }
+      }
+    } catch (e) {
+      localStorage.removeItem(KEY);
+      localStorage.removeItem(PEND);
+      applied = false;
+    }
 
-    if (!applied) run(null, 'app.js');
+    if (!applied) {
+      window.SIRAJ_UPDATE_FILES = Object.freeze(Object.create(null));
+      window.SIRAJ_UPDATE_DATA_FILES = Object.freeze([]);
+      window.SIRAJ_UPDATE_VERSION = '';
+      run(null, 'smart-context.js');
+      run(null, 'smart-services.js');
+      run(null, 'tajweed-learning.js');
+      run(null, 'tajweed-curriculum-loader.js');
+      run(null, 'app.js');
+    }
   })();
   </script>
+
+  <div class="sel-menu" id="selMenu" role="menu" aria-label="خيارات التحديد" hidden>
+    <button type="button" role="menuitem" data-act="copy">نسخ</button>
+    <button type="button" role="menuitem" data-act="tafsir">التفسير</button>
+    <button type="button" role="menuitem" data-act="meanings">معاني الكلمات</button>
+  </div>
 </body>
 </html>
