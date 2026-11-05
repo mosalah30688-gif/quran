@@ -176,6 +176,7 @@ jobs:
           "$BUILD_TOOLS/aapt" dump badging "$APK" | grep -q "versionName='${{ steps.meta.outputs.version }}'"
           "$BUILD_TOOLS/aapt" dump badging "$APK" | grep -Fq "application-label:'سراج — قرآن كريم'"
           python3 - <<'PY'
+          import json
           import re
           import zipfile
           apk = 'android/app/build/outputs/apk/release/app-release.apk'
