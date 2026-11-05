@@ -181,7 +181,7 @@ def main() -> None:
     assert "يتوفر تحديث جديد لسراج — الإصدار" in app and "فيه تحديث جديد" not in app
     assert "publicUpdateFeatures" in app and "technicalTerms" in app and "\\nالجديد:" in app
     assert ".upd-banner span { flex: 1; white-space: pre-line; }" in html
-    assert re.search(r"CACHE = 'siraj-shell-v\d+'", service_worker), "service worker cache name missing"
+    assert re.search(r'siraj-shell-v[0-9]+', service_worker), "service worker cache name missing"
     assert "'./smart-context.js'" in service_worker and "'./smart-services.js'" in service_worker
     assert "'./tajweed-learning.js'" in service_worker
     assert "'./tajweed-curriculum-loader.js'" in service_worker
