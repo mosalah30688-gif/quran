@@ -20,6 +20,7 @@ on:
       - 'package-lock.json'
       - 'scripts/build-www.sh'
       - 'scripts/publish-update.sh'
+      - 'scripts/verify_release_channel.py'
       - 'scripts/product_copy.py'
       - 'scripts/verify_android_bundle.py'
       - 'scripts/verify_audio_sources.py'
@@ -51,7 +52,7 @@ on:
         type: boolean
         default: false
       confirmation:
-        description: 'For publication type: PUBLISH IMMUTABLE siraj-android-v1.4.4'
+        description: 'For publication type: PUBLISH IMMUTABLE siraj-android-v<the version in android/app/build.gradle>'
         required: false
         type: string
       features:
@@ -106,6 +107,7 @@ jobs:
           python3 scripts/verify_audio_sources.py
           python3 scripts/verify_asset_provenance.py
           python3 scripts/verify_data_provenance.py
+          python3 scripts/verify_release_channel.py
 
       - name: Copy local web assets and sync Capacitor
         run: npm run android:sync
@@ -230,7 +232,9 @@ jobs:
           assert "markShown(candidate, suggestionId, 'suggestion')" in app
           assert 'TafsirStore' in app and 'Reminder' in app and 'ar.parhizgar' in app
           assert 'loadBundledData()' in app and 'recordWirdPage' in app
-          assert "APP_BUNDLE_VERSION = '1.4.4'" in html and 'الإصدار 1.4.4' in html
+          package_version = json.load(open('package.json', encoding='utf-8'))['version']
+          assert f"APP_BUNDLE_VERSION = '{package_version}'" in html, 'APP_BUNDLE_VERSION drift'
+          assert f'الإصدار {package_version}' in html, 'about version drift'
           approved_features = (
               'مصحف ذكي للتلاوة والاستماع والتدبر',
               'برواية حفص عن عاصم وروايات أخرى',
@@ -261,7 +265,7 @@ jobs:
           assert 'group-menu-open' in html and 'reader-view-active' in html and 'body.group-menu-open .hdr' in html
           assert 'syncReaderDockHeight' in app and 'syncAudioTimeline' in app
           assert 'syncGroupMenuLayer' in app and 'focusFirst' in app and 'restoreFocus' in app
-          assert 'siraj-shell-v16' in service_worker
+          assert re.search(r"CACHE = 'siraj-shell-v\\d+'", service_worker), 'service worker cache name missing'
           assert "'./smart-context.js'" in service_worker and "'./smart-services.js'" in service_worker
           assert "'./tajweed-learning.js'" in service_worker and "'./tajweed-learning-catalog.json'" in service_worker
           assert "'./tajweed-curriculum-loader.js'" in service_worker and 'curriculumArtifacts' in service_worker

@@ -1,11 +1,14 @@
 {
-  "version": "1.4.5",
+  "version": "1.4.7",
   "files": [
     "index.html",
-    "app.js",
-    "sw.js",
-    "quran-hafs.json",
-    "quran-madani-lines.json"
+    "smart-context.js",
+    "smart-services.js",
+    "tajweed-learning.js",
+    "tajweed-curriculum-loader.js",
+    "tajweed-learning-catalog.json",
+    "tajweed-scope-registry.json",
+    "app.js"
   ],
   "apk": {
     "version": "1.4.4",
@@ -18,14 +21,18 @@
     "linux": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-linux-test-v4.1.1/Siraj-Quran-4.1.1-linux-x86_64.AppImage"
   },
   "features": [
-    "هوية أوضح لسراج ووصول منظم إلى «عن التطبيق».",
-    "إشعار تحديث جديد يظهر تلقائيًا عند فتح التطبيق بآخر إصدار"
+    "خطوط المصحف على صفحات المدينة كما في المصحف المطبوع",
+    "تحديد حر داخل الصفحة مع قائمة نسخ ومشاركة",
+    "مشغّل صوتي بمعلومات على شاشة القفل"
   ],
   "sha256": {
-    "index.html": "6d2748ab87edd2f9a9e59d21b32362eadf0cfa9d847114abd67397f1c3c7f48a",
-    "app.js": "d9bc651dababc713213cf896e9dc734839aa67cd54460fb252ad5801771cc112",
-    "sw.js": "71125e06e959b0dedad71dbb608a5b3968d2954e9e412619608e0464c7ea760c",
-    "quran-hafs.json": "ab1834242eba727c9660b3991878cbaf709311d9ba20418583dcc5bd61020707",
-    "quran-madani-lines.json": "856bee7c3b06200182361b235ac4114d013d2275611ce585960014bd175f606e"
+    "index.html": "76bf981a28ffa1b4591f7ab64b7c5e9e61459952feffa2a78fd48b2a813dd2d0",
+    "smart-context.js": "d7f1995b9164255b5273da80a070a6f2bedd0f2abcbe7a108b20700567f00440",
+    "smart-services.js": "bf98b6f1e10a771435cbf8dea41578b3e148c53901e601de28b5b4085352c10c",
+    "tajweed-learning.js": "0ea4b4cde8f34591f79745275c87559f0f050692fb87d52a8bbb0200bb51e534",
+    "tajweed-curriculum-loader.js": "415cd8d57986316c0c5b50dfc01db2cbad0c6ec10ad76bf0b4986d3fbaee68d5",
+    "tajweed-learning-catalog.json": "a88ca2f3febcb8b530adc24073a03f30fc4441c3102d9300454b24b8b3e52dee",
+    "tajweed-scope-registry.json": "ace20aeda40ce8aa809141f82f36831f92ee4bf6e489a6fb288801ff236246ca",
+    "app.js": "d9bc651dababc713213cf896e9dc734839aa67cd54460fb252ad5801771cc112"
   }
 }

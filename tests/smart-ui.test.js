@@ -93,7 +93,7 @@ test('smart and tajweed engines are included in offline and update channels', ()
     assert.match(source, /tajweed-learning-catalog\.json/);
     assert.match(source, /tajweed-scope-registry\.json/);
   }
-  assert.match(sw, /siraj-shell-v16/);
+  assert.match(sw, /siraj-shell-v\d+/);
 });
 
 test('JSON update overlay is hashed, stored outside localStorage, and fail-closed', () => {
@@ -163,7 +163,11 @@ test('tajweed spaced review is local, scoped, and wired to feedback events', () 
 });
 
 test('learning expansion preserves the existing colored reader and word explanations', () => {
-  assert.match(html, /<option value="quran-tajweed">حفص - بألوان أحكام التجويد<\/option>/);
+  // الواجهة الجديدة تعرض الروايات الأربع في القائمة، وتُبقي ألوان التجويد كمفتاح مستقل.
+  for (const value of ['quran-uthmani', 'warsh', 'qalun', 'duri']) {
+    assert.match(html, new RegExp(`<option value="${value}">`));
+  }
+  assert.match(html, /<input type="checkbox" id="setTajweed" \/> تفعيل ألوان التجويد/);
   assert.match(html, /id="setTajweed"/);
   assert.match(html, /id="tjPanel"/);
   assert.match(html, /\.tj-n \{ color:/);

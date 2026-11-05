@@ -182,8 +182,12 @@ def verify_registry(registry: Any, catalog: Any) -> tuple[dict[str, dict[str, An
     require(select_match is not None, "index.html is missing the mushaf selector")
     selectable = re.findall(r'<option value="([a-z0-9._-]+)"', select_match.group(1))
     require(len(selectable) == len(set(selectable)), "mushaf selector has duplicate setting values")
-    require(set(selectable) == EXPECTED_SETTINGS,
-            f"selector/registry expected settings drift: {sorted(set(selectable) ^ EXPECTED_SETTINGS)}")
+    # كل طبعة معروضة للمستخدم يجب أن تكون مسجّلة بنطاق مستقل ومغلق؛
+    # ويجوز أن تعرض الواجهة مجموعة فرعية من الطبعات المسجّلة (تبسيط الواجهة لا يوسّع النطاق).
+    unregistered = sorted(set(selectable) - EXPECTED_SETTINGS)
+    require(not unregistered,
+            f"selector exposes unregistered mushaf editions: {unregistered}")
+    require(selectable, "mushaf selector must offer at least one registered edition")
 
     require(registry.get("schemaVersion") == 1, "unsupported tajweed registry schema")
     require(registry.get("scopeKey") == "riwayah/tariq/wajh/edition",

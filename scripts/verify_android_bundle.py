@@ -138,7 +138,9 @@ def main() -> None:
     assert "lookupBatch" in app and "TafsirStore" in app
     assert "recordWirdPage" in app and "Reminder" in app
     assert "wdTargetSel" not in app and "wdAdd" not in app
-    assert "APP_BUNDLE_VERSION = '1.4.4'" in html and "الإصدار 1.4.4" in html
+    package_version = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))["version"]
+    assert f"APP_BUNDLE_VERSION = '{package_version}'" in html, (package_version, "APP_BUNDLE_VERSION drift")
+    assert f"الإصدار {package_version}" in html, (package_version, "about version drift")
     about_match = re.search(r'<section class="view" id="view-about">(.*?)</section>', html, re.DOTALL)
     assert about_match, "missing dedicated About view"
     about = about_match.group(1)
@@ -179,7 +181,7 @@ def main() -> None:
     assert "يتوفر تحديث جديد لسراج — الإصدار" in app and "فيه تحديث جديد" not in app
     assert "publicUpdateFeatures" in app and "technicalTerms" in app and "\\nالجديد:" in app
     assert ".upd-banner span { flex: 1; white-space: pre-line; }" in html
-    assert "siraj-shell-v16" in service_worker
+    assert re.search(r"CACHE = 'siraj-shell-v\d+'", service_worker), "service worker cache name missing"
     assert "'./smart-context.js'" in service_worker and "'./smart-services.js'" in service_worker
     assert "'./tajweed-learning.js'" in service_worker
     assert "'./tajweed-curriculum-loader.js'" in service_worker
