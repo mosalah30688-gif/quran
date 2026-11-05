@@ -59,6 +59,11 @@ on:
         description: 'What is new for users; separate up to five concise features with | (required for publication)'
         required: false
         type: string
+      apk_update:
+        description: 'Offer the new APK to installed apps (default: keep delivering in-app shell updates)'
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -415,6 +420,7 @@ jobs:
           TAG: ${{ steps.meta.outputs.tag }}
           ASSET: ${{ steps.meta.outputs.asset }}
           APK_SHA256: ${{ steps.artifacts.outputs.sha256 }}
+          APK_UPDATE: ${{ inputs.apk_update }}
           UPDATE_FEATURES: ${{ inputs.features }}
         run: |
           set -euo pipefail
@@ -426,11 +432,14 @@ jobs:
           path = Path('update/manifest.json')
           data = json.loads(path.read_text(encoding='utf-8'))
           version = os.environ['VERSION']
-          data['apk'] = {
-              'version': version,
-              'url': 'https://github.com/mosalah30688-gif/quran/releases/download/' + os.environ['TAG'] + '/' + os.environ['ASSET'],
-              'sha256': os.environ['APK_SHA256'],
-          }
+          # القناة تفضّل التحديث الداخلي: لا نرفع مؤشر الـAPK إلا إذا طُلب صراحة،
+          # حتى تصل الترقية إلى التطبيق المثبَّت من داخله بدل إجباره على تنزيل ملف.
+          if os.environ.get('APK_UPDATE') == 'true':
+              data['apk'] = {
+                  'version': version,
+                  'url': 'https://github.com/mosalah30688-gif/quran/releases/download/' + os.environ['TAG'] + '/' + os.environ['ASSET'],
+                  'sha256': os.environ['APK_SHA256'],
+              }
           path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
           PY
           git config user.name 'github-actions[bot]'

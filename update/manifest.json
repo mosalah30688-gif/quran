@@ -8,12 +8,13 @@
     "tajweed-curriculum-loader.js",
     "tajweed-learning-catalog.json",
     "tajweed-scope-registry.json",
-    "app.js"
+    "app.js",
+    "quran-hafs.json"
   ],
   "apk": {
-    "version": "1.4.8",
-    "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-android-v1.4.8/Siraj-Android-1.4.8.apk",
-    "sha256": "12e3c1cbee00acf67fd9879871cd9797a74634dac081a7c2b9c49583a6ca7a17"
+    "version": "1.4.7",
+    "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-android-v1.4.7/Siraj-Android-1.4.7.apk",
+    "sha256": "2fdab5b9af460869f3c9f434ee0d08358d6a16391d0acaee2804dc5a33b4e04d"
   },
   "desktop": {
     "version": "4.1.1",
@@ -21,7 +22,7 @@
     "linux": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-linux-test-v4.1.1/Siraj-Quran-4.1.1-linux-x86_64.AppImage"
   },
   "features": [
-    "ضبط صفحة الفاتحة وأول البقرة مع باقي الصفحات",
+    "تحديث داخلي: الفاتحة وأول البقرة مضبوطة",
     "علامة السجدة تظهر في المصحف"
   ],
   "sha256": {
@@ -32,6 +33,11 @@
     "tajweed-curriculum-loader.js": "415cd8d57986316c0c5b50dfc01db2cbad0c6ec10ad76bf0b4986d3fbaee68d5",
     "tajweed-learning-catalog.json": "a88ca2f3febcb8b530adc24073a03f30fc4441c3102d9300454b24b8b3e52dee",
     "tajweed-scope-registry.json": "ace20aeda40ce8aa809141f82f36831f92ee4bf6e489a6fb288801ff236246ca",
-    "app.js": "7c07dbbceb0a97563c82c09af7eff8aaeb7e459f5ad18e1a60ff6ce2bbf28b52"
+    "app.js": "7c07dbbceb0a97563c82c09af7eff8aaeb7e459f5ad18e1a60ff6ce2bbf28b52",
+    "quran-hafs.json": "20cb5d5d09aa5f4ac3f24ecd2ec0df4d8c1d529533a7465babeea4258022758d"
+  },
+  "delivery": {
+    "policy": "OTA_FIRST",
+    "note_ar": "التحديث يُسلَّم داخل التطبيق (IndexedDB) لكل من نسخته >= 1.4.7؛ مؤشر APK يبقى على 1.4.7 حتى لا يُجبَر المستخدم على تنزيل ملف، ويُرفع فقط عند طلب صريح (APK_UPDATE=true)."
   }
 }
