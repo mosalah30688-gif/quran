@@ -2,7 +2,10 @@
   "version": "1.4.5",
   "files": [
     "index.html",
-    "app.js"
+    "app.js",
+    "sw.js",
+    "quran-hafs.json",
+    "quran-madani-lines.json"
   ],
   "apk": {
     "version": "1.4.4",
@@ -19,7 +22,10 @@
     "إشعار تحديث جديد يظهر تلقائيًا عند فتح التطبيق بآخر إصدار"
   ],
   "sha256": {
+    "index.html": "6d2748ab87edd2f9a9e59d21b32362eadf0cfa9d847114abd67397f1c3c7f48a",
     "app.js": "d9bc651dababc713213cf896e9dc734839aa67cd54460fb252ad5801771cc112",
-    "index.html": "6d2748ab87edd2f9a9e59d21b32362eadf0cfa9d847114abd67397f1c3c7f48a"
+    "sw.js": "71125e06e959b0dedad71dbb608a5b3968d2954e9e412619608e0464c7ea760c",
+    "quran-hafs.json": "ab1834242eba727c9660b3991878cbaf709311d9ba20418583dcc5bd61020707",
+    "quran-madani-lines.json": "856bee7c3b06200182361b235ac4114d013d2275611ce585960014bd175f606e"
   }
 }
