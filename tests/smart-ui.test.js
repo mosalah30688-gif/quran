@@ -96,6 +96,16 @@ test('smart and tajweed engines are included in offline and update channels', ()
   assert.match(sw, /siraj-shell-v\d+/);
 });
 
+test('madani page fitting keeps short lines inside the page frame', () => {
+  // كل سطر — بما فيها القصيرة في الفاتحة وأول البقرة وأواخر الصفحات — يُقاس داخل صندوقه،
+  // والسطر القصير لا يكبر عن مقاس الصفحة حتى لا تخرج كلماته عن إطار الورقة.
+  assert.match(app, /querySelectorAll\('\.mline'\)/);
+  assert.match(app, /el\.classList\.contains\('short'\)/);
+  assert.match(app, /Math\.min\(1, shortRatios\.length \? Math\.min\(\.\.\.shortRatios\) : 1\)/);
+  assert.match(app, /Math\.min\(r, 1\)/);
+  assert.match(app, /if \(!all\.length\) return;/);
+});
+
 test('JSON update overlay is hashed, stored outside localStorage, and fail-closed', () => {
   assert.match(html, /SIRAJ_UPDATE_DATA_FILES/);
   assert.match(html, /SIRAJ_UPDATE_VERSION/);

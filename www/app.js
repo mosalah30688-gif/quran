@@ -825,22 +825,42 @@
     const body = $('#pageBody');
     requestAnimationFrame(() => {
       if (!body.classList.contains('madani-lines')) return;
-      const lines = [...body.querySelectorAll('.mline:not(.short)')];
+      const all = [...body.querySelectorAll('.mline')];
+      if (!all.length) return;
+      // الأسطر القصيرة (صفحة الفاتحة وأول البقرة وأواخر الصفحات) تُقاس بصندوقها هي،
+      // وإلا بقي حجمها الأساسي فتخرج كلماتها عن إطار الصفحة من الجانبين.
+      const full = all.filter((el) => !el.classList.contains('short'));
+      const shorts = all.filter((el) => el.classList.contains('short'));
       const base = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--quran-size')) || 26;
-      lines.forEach((el) => { el.style.fontSize = ''; });
-      const ratios = lines.map((el) => {
+      all.forEach((el) => { el.style.fontSize = ''; });
+      const ratioOf = (el) => {
         const avail = el.clientWidth;
+        const keep = el.style.width;
         el.style.width = 'max-content';
         const natural = el.getBoundingClientRect().width;
-        el.style.width = '';
+        el.style.width = keep;
         return avail && natural ? avail / natural : 1;
-      });
-      const sorted = [...ratios].sort((x, y) => x - y);
-      const med = Math.min(1.15, Math.max(0.5, sorted[Math.floor(sorted.length / 2)] || 1));
+      };
+      const fullRatios = full.map(ratioOf);
+      const shortRatios = shorts.map(ratioOf);
+
+      let med;
+      if (fullRatios.length) {
+        const sorted = [...fullRatios].sort((x, y) => x - y);
+        med = Math.min(1.15, Math.max(0.5, sorted[Math.floor(sorted.length / 2)] || 1));
+      } else {
+        // صفحة كل أسطرها قصيرة: مقاس واحد يكفي لدخول أطول سطر داخل صندوقه، بلا تكبير.
+        med = Math.max(0.5, Math.min(1, shortRatios.length ? Math.min(...shortRatios) : 1));
+      }
       body.style.setProperty('--mline-h', `${(base * med * 1.5).toFixed(2)}px`);
-      lines.forEach((el, i) => {
-        const r = ratios[i] / med;
+      full.forEach((el, i) => {
+        const r = fullRatios[i] / med;
         el.style.fontSize = `${(base * med * Math.min(r, 1.08) * 0.995).toFixed(2)}px`;
+      });
+      // السطر القصير لا يكبر أبدًا عن مقاس الصفحة، ويصغر فقط إن تجاوز صندوقه.
+      shorts.forEach((el, i) => {
+        const r = shortRatios[i] / med;
+        el.style.fontSize = `${(base * med * Math.min(r, 1) * 0.995).toFixed(2)}px`;
       });
     });
   }

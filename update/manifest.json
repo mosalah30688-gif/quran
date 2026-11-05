@@ -21,8 +21,8 @@
     "linux": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-linux-test-v4.1.1/Siraj-Quran-4.1.1-linux-x86_64.AppImage"
   },
   "features": [
-    "علامة السجدة ۩ ظاهرة في مواضعها الخمسة عشر",
-    "بقية المصحف بنص مرتب بلا علامات تشويش"
+    "صفحة الفاتحة وأول البقرة مضبوطة كباقي الصفحات",
+    "علامة السجدة ظاهرة في مواضعها الخمسة عشر"
   ],
   "sha256": {
     "index.html": "2bf8fa5042c27810afc5deaa497912101f71b87602dba1c3289d832b14cd9210",
@@ -32,6 +32,6 @@
     "tajweed-curriculum-loader.js": "415cd8d57986316c0c5b50dfc01db2cbad0c6ec10ad76bf0b4986d3fbaee68d5",
     "tajweed-learning-catalog.json": "a88ca2f3febcb8b530adc24073a03f30fc4441c3102d9300454b24b8b3e52dee",
     "tajweed-scope-registry.json": "ace20aeda40ce8aa809141f82f36831f92ee4bf6e489a6fb288801ff236246ca",
-    "app.js": "d9bc651dababc713213cf896e9dc734839aa67cd54460fb252ad5801771cc112"
+    "app.js": "7c07dbbceb0a97563c82c09af7eff8aaeb7e459f5ad18e1a60ff6ce2bbf28b52"
   }
 }
