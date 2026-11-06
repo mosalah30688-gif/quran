@@ -1619,10 +1619,59 @@
     if (settings.backgroundAudio !== 'off') return;
     if (document.hidden && !audio.paused) audio.pause();
   }
+
+  // ---------- تشغيل التلاوة في خدمة أندرويد (يستمر بعد إغلاق التطبيق) ----------
+  // الطبقة الويب تُسلّم قائمة الآيات إلى الخدمة الأمامية عند خروج المستخدم،
+  // فتكمل التلاوة من ملفاتها الخاصة حتى لو أُغلقت واجهة التطبيق.
+  let nativeAudioActive = false;
+  const nativeAudio = () => (hasNativePlugin('QuranAudio') && Cap.registerPlugin
+    ? Cap.registerPlugin('QuranAudio') : null);
+  async function nativeQueueFrom(start, limit = 30) {
+    const items = [];
+    let node = start;
+    for (let i = 0; i < limit && node; i++) {
+      const url = typeof node.audio === 'string' && /^https?:/i.test(node.audio) ? node.audio : '';
+      if (url) items.push({ url, title: `${surahNameShort(node.s)} · ${node.n}` });
+      node = play.nextFn ? await play.nextFn(node).catch(() => null) : null;
+    }
+    return items;
+  }
+  async function handOffToNative() {
+    const api = nativeAudio();
+    if (!api || nativeAudioActive || settings.backgroundAudio === 'off') return false;
+    if (!play.active || !play.cur || audio.paused) return false;
+    const items = await nativeQueueFrom(play.cur);
+    if (!items.length) return false;
+    try {
+      await api.start({ items, index: 0, rate: playRate });
+      nativeAudioActive = true;
+      audio.pause();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  async function takeBackFromNative() {
+    const api = nativeAudio();
+    if (!api || !nativeAudioActive) return;
+    nativeAudioActive = false;
+    try { await api.stop(); } catch { /* الخدمة متوقفة أصلًا */ }
+    if (play.active && play.cur) playAyah(play.cur);
+  }
   document.addEventListener('visibilitychange', () => {
     refreshWakeLock();
     applyBackgroundPolicy();
+    if (!hasNativePlugin('QuranAudio')) return;
+    if (document.hidden) handOffToNative();
+    else takeBackFromNative();
   });
+  if (hasNativePlugin('QuranAudio') && Cap.registerPlugin) {
+    try {
+      Cap.registerPlugin('QuranAudio').addListener('stopped', () => {
+        nativeAudioActive = false;
+      });
+    } catch { /* لا يوجد جسر */ }
+  }
 
   function setPlayerUI() {
     $('#player').classList.toggle('show', play.active);

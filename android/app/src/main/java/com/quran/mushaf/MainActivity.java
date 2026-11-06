@@ -13,6 +13,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(TafsirStorePlugin.class);
         registerPlugin(ReminderPlugin.class);
         registerPlugin(SmartDevicePlugin.class);
+        registerPlugin(QuranAudioPlugin.class);
         super.onCreate(savedInstanceState);
         SmartFeedbackStore.captureOpenIntent(this, getIntent());
     }
