@@ -13,9 +13,9 @@
     "quran-madani-lines.json"
   ],
   "apk": {
-    "version": "1.4.12",
-    "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-android-v1.4.12/Siraj-Android-1.4.12.apk",
-    "sha256": "ea08be8fd2f53c9fe7b202cdc6c327a6295d8e1d1102addf1a5bcd147364645e"
+    "version": "1.4.13",
+    "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-android-v1.4.13/Siraj-Android-1.4.13.apk",
+    "sha256": "0f1cdb72ac72c33de6d228c428606d5c026dda821ff6823d93bd889924dc0ddb"
   },
   "desktop": {
     "version": "4.1.1",
@@ -25,7 +25,7 @@
   "features": [
     "تكبير خط المصحف يعمل من الإعدادات على صفحة حفص",
     "تقليب الصفحة بالسحب أسرع وأدق: صفحة واحدة لكل سحب",
-    "الشاشة تبقى مضاءة والصوت يكمل عند مغادرة التطبيق"
+    "الصوت يستمر عند مغادرة التطبيق ويتوقف عند إغلاقه"
   ],
   "sha256": {
     "index.html": "fa91829f60942dc86987546dde05b8972cec4896a68d600efea057f4039ee78c",
