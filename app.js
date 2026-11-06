@@ -66,6 +66,7 @@
   const DEFAULTS = {
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
     translation: '', font: 'Scheherazade New', size: 26, tajweed: false, dark: false,
+    keepAwake: true, backgroundAudio: 'ask',
     tajweedScopes: {},
   };
   const VIEW_TITLES = { listen: 'استماع', reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', wird: 'الورد', stats: 'الإحصائيات', adhkar: 'الأذكار', search: 'البحث', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق', tajweed: 'أحكام التجويد', meanings: 'المعاني' };
@@ -520,6 +521,8 @@
     document.body.classList.toggle('hafs-reader', hafs);
     document.body.classList.toggle('reader-view-active', readerActive);
     $('.wrap')?.classList.toggle('reader-wide', readerActive && hafs);
+    refreshWakeLock();
+    if (readerActive) wakeHintOnce();
   }
 
   // ---------- التنقل بين الأقسام ----------
@@ -800,7 +803,14 @@
       const last = (s === s1 && n === n1) ? t1 : N + 1;
       const pieces = [];
       for (let k = t; k <= last; k++) {
-        if (k <= N) pieces.push(tj ? renderTajweed(tj[k - 1]) : esc(words[k - 1]));
+        if (k <= N) {
+          const raw = words[k - 1];
+          if (!tj && raw.startsWith('\u06de')) {
+            pieces.push(`<span class="rub">\u06de</span>${esc(raw.slice(1))}`);
+          } else {
+            pieces.push(tj ? renderTajweed(tj[k - 1]) : esc(raw));
+          }
+        }
         else pieces.push(`<span class="end hafs-end" data-act="tafsir" data-g="${item.g}" title="الآية">۝${toArabicDigits(n)}</span>`);
       }
       if (pieces.length) out.push(`<span class="ay" data-g="${item.g}">${pieces.join(' ')}</span>`);
@@ -1552,11 +1562,75 @@
     } catch { /* المتصفح لا يدعم بيانات الإشعار */ }
   }
 
+  // ---------- إبقاء الشاشة مضاءة ----------
+  // الشاشة لا تُطفأ أثناء القراءة أو التلاوة؛ تُترك للمستخدم فقط عند إغلاق الصفحة
+  // أو إغلاق التطبيق أو إيقاف الخيار من الإعدادات.
+  const wake = { sentinel: null, wanted: false };
+  const wakeSupported = () => typeof navigator !== 'undefined' && 'wakeLock' in navigator;
+  function wakeWantedNow() {
+    if (settings.keepAwake === false) return false;
+    if (document.hidden) return false;
+    const playing = play.active && !audio.paused;
+    return playing || curView === 'reader';
+  }
+  async function releaseWakeLock() {
+    wake.wanted = false;
+    const sentinel = wake.sentinel;
+    wake.sentinel = null;
+    if (sentinel) { try { await sentinel.release(); } catch { /* أُطلق مسبقًا */ } }
+  }
+  async function refreshWakeLock() {
+    const wanted = wakeWantedNow();
+    wake.wanted = wanted;
+    if (!wakeSupported()) return;
+    if (!wanted) { await releaseWakeLock(); return; }
+    if (wake.sentinel && !wake.sentinel.released) return;
+    try {
+      wake.sentinel = await navigator.wakeLock.request('screen');
+      wake.sentinel.addEventListener('release', () => { wake.sentinel = null; });
+    } catch { wake.sentinel = null; }
+  }
+  let wakeHintShown = false;
+  function wakeHintOnce() {
+    if (wakeHintShown || wakeSupported() || settings.keepAwake === false) return;
+    wakeHintShown = true;
+    toast('جهازك لا يدعم منع إطفاء الشاشة من التطبيق؛ اضبط مدة الشاشة من إعدادات الهاتف.');
+  }
+
+  // ---------- الصوت في الخلفية ----------
+  function bgPromptNeeded() {
+    return play.active && settings.backgroundAudio === 'ask';
+  }
+  function renderBgPrompt() {
+    const bar = $('#bgPrompt');
+    if (!bar) return;
+    const show = bgPromptNeeded();
+    bar.hidden = !show;
+    bar.classList.toggle('show', show);
+  }
+  function answerBackgroundAudio(keep) {
+    settings.backgroundAudio = keep ? 'on' : 'off';
+    saveSettings();
+    renderBgPrompt();
+    if (keep) toast('هيستمر الصوت شغال لما تخرج من التطبيق.');
+    else toast('هيتوقف الصوت عند الخروج من التطبيق.');
+  }
+  function applyBackgroundPolicy() {
+    if (settings.backgroundAudio !== 'off') return;
+    if (document.hidden && !audio.paused) audio.pause();
+  }
+  document.addEventListener('visibilitychange', () => {
+    refreshWakeLock();
+    applyBackgroundPolicy();
+  });
+
   function setPlayerUI() {
     $('#player').classList.toggle('show', play.active);
     $('#player').classList.toggle('is-playing', play.active && !audio.paused);
     $('#pSpeed').textContent = `${playRate}×`;
     syncMediaSession();
+    refreshWakeLock();
+    renderBgPrompt();
     if (play.active && play.cur) {
       $('#playerInfo').textContent = `${play.label} · الآية ${toArabicDigits(play.cur.n)}` +
         (play.repeatCount > 1
@@ -1731,6 +1805,20 @@
   if (window.ResizeObserver) new ResizeObserver(syncReaderDockHeight).observe($('#readerDock'));
   window.addEventListener('resize', syncReaderDockHeight, { passive: true });
   requestAnimationFrame(syncReaderDockHeight);
+
+  // أزرار إشعار الوسائط في Android (تشغيل/إيقاف/التالي/السابق) تعمل حتى والتطبيق في الخلفية
+  if ('mediaSession' in navigator) {
+    const handlers = {
+      play: () => { $('#pToggle').click(); },
+      pause: () => { $('#pToggle').click(); },
+      nexttrack: () => { if (play.active && play.nextFn) play.nextFn(); },
+      previoustrack: () => { if (play.active && play.prevFn) play.prevFn(); },
+    };
+    Object.entries(handlers).forEach(([action, fn]) => {
+      try { navigator.mediaSession.setActionHandler(action, fn); } catch { /* إجراء غير مدعوم */ }
+    });
+    navigator.mediaSession.setPositionState?.bind(navigator.mediaSession);
+  }
 
   $('#pSpeed').addEventListener('click', () => {
     const i = PLAY_RATES.indexOf(playRate);
@@ -2065,6 +2153,8 @@
     $('#setSize').value = settings.size;
     $('#sizeVal').textContent = settings.size + 'px';
     $('#setTajweed').checked = !!settings.tajweed;
+    if ($('#setKeepAwake')) $('#setKeepAwake').checked = settings.keepAwake !== false;
+    if ($('#setBgAudio')) $('#setBgAudio').checked = settings.backgroundAudio !== 'off';
     fillSmartSettings();
     applyTypography();
   }
@@ -2116,6 +2206,19 @@
   $('#setTafsir').addEventListener('change', (e) => onSettingChange('tafsir', e.target.value));
   $('#setTranslation').addEventListener('change', (e) => onSettingChange('translation', e.target.value));
   $('#setTajweed').addEventListener('change', (e) => onSettingChange('tajweed', e.target.checked));
+  $('#setKeepAwake')?.addEventListener('change', (e) => {
+    settings.keepAwake = e.target.checked;
+    saveSettings();
+    refreshWakeLock();
+    if (!e.target.checked) toast('الشاشة هتنطفئ حسب إعدادات الهاتف.');
+  });
+  $('#setBgAudio')?.addEventListener('change', (e) => {
+    settings.backgroundAudio = e.target.checked ? 'on' : 'off';
+    saveSettings();
+    renderBgPrompt();
+  });
+  $('#bgYes')?.addEventListener('click', () => answerBackgroundAudio(true));
+  $('#bgNo')?.addEventListener('click', () => answerBackgroundAudio(false));
   $('#setFont').addEventListener('change', (e) => {
     settings.font = e.target.value;
     saveSettings();
