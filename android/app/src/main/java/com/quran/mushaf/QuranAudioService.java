@@ -11,8 +11,9 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.AudioAttributes;
 import android.media.MediaPlayer;
-import android.media.session.MediaSession;
-import android.media.session.PlaybackState;
+import android.support.v4.media.MediaMetadataCompat;
+import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
@@ -41,7 +42,7 @@ public class QuranAudioService extends Service implements MediaPlayer.OnCompleti
     private static QuranAudioService instance;
 
     private MediaPlayer player;
-    private MediaSession session;
+    private MediaSessionCompat session;
     private PowerManager.WakeLock wakeLock;
     private final ArrayList<String> urls = new ArrayList<>();
     private final ArrayList<String> titles = new ArrayList<>();
@@ -109,8 +110,8 @@ public class QuranAudioService extends Service implements MediaPlayer.OnCompleti
     }
 
     private void setupSession() {
-        session = new MediaSession(this, "SirajQuran");
-        session.setCallback(new MediaSession.Callback() {
+        session = new MediaSessionCompat(this, "SirajQuran");
+        session.setCallback(new MediaSessionCompat.Callback() {
             @Override
             public void onPlay() {
                 resume();
@@ -227,8 +228,8 @@ public class QuranAudioService extends Service implements MediaPlayer.OnCompleti
         releasePlayer();
         releaseWake();
         if (session != null) {
-            session.setPlaybackState(new PlaybackState.Builder()
-                    .setState(PlaybackState.STATE_STOPPED, PlaybackState.PLAYBACK_POSITION_UNKNOWN, 1f)
+            session.setPlaybackState(new PlaybackStateCompat.Builder()
+                    .setState(PlaybackStateCompat.STATE_STOPPED, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1f)
                     .build());
         }
         QuranAudioPlugin.emit("stopped", stateJson());
@@ -343,19 +344,19 @@ public class QuranAudioService extends Service implements MediaPlayer.OnCompleti
 
     private void updateSession(boolean playing) {
         if (session == null) return;
-        PlaybackState.Builder state = new PlaybackState.Builder()
-                .setActions(PlaybackState.ACTION_PLAY | PlaybackState.ACTION_PAUSE
-                        | PlaybackState.ACTION_PLAY_PAUSE | PlaybackState.ACTION_SKIP_TO_NEXT
-                        | PlaybackState.ACTION_SKIP_TO_PREVIOUS | PlaybackState.ACTION_STOP)
-                .setState(playing ? PlaybackState.STATE_PLAYING : PlaybackState.STATE_PAUSED,
+        PlaybackStateCompat.Builder state = new PlaybackStateCompat.Builder()
+                .setActions(PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PAUSE
+                        | PlaybackStateCompat.ACTION_PLAY_PAUSE | PlaybackStateCompat.ACTION_SKIP_TO_NEXT
+                        | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS | PlaybackStateCompat.ACTION_STOP)
+                .setState(playing ? PlaybackStateCompat.STATE_PLAYING : PlaybackStateCompat.STATE_PAUSED,
                         player == null ? 0 : Math.max(0, player.getCurrentPosition()), 1f);
         session.setPlaybackState(state.build());
         try {
             Bitmap art = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
-            android.media.MediaMetadata.Builder meta = new android.media.MediaMetadata.Builder()
-                    .putString(android.media.MediaMetadata.METADATA_KEY_TITLE, currentTitle())
-                    .putString(android.media.MediaMetadata.METADATA_KEY_ARTIST, "سراج — القرآن الكريم");
-            if (art != null) meta.putBitmap(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART, art);
+            MediaMetadataCompat.Builder meta = new MediaMetadataCompat.Builder()
+                    .putString(MediaMetadataCompat.METADATA_KEY_TITLE, currentTitle())
+                    .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, "سراج — القرآن الكريم");
+            if (art != null) meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, art);
             session.setMetadata(meta.build());
         } catch (Exception ignored) {
         }
