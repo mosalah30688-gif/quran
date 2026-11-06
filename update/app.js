@@ -66,7 +66,6 @@
   const DEFAULTS = {
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
     translation: '', font: 'Scheherazade New', size: 26, tajweed: false, dark: false,
-    keepAwake: true, backgroundAudio: 'ask',
     tajweedScopes: {},
   };
   const VIEW_TITLES = { listen: 'استماع', reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', wird: 'الورد', stats: 'الإحصائيات', adhkar: 'الأذكار', search: 'البحث', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق', tajweed: 'أحكام التجويد', meanings: 'المعاني' };
@@ -161,6 +160,10 @@
   const allowedFonts = new Set(['Amiri Quran', 'Amiri', 'Noto Naskh Arabic', 'Scheherazade New']);
   if (!allowedFonts.has(settings.font)) settings.font = DEFAULTS.font;
   settings.size = Math.min(44, Math.max(18, Number(settings.size) || DEFAULTS.size));
+  // 1.4.13: أُلغيت مفاتيح «الشاشة والصوت» من الإعدادات؛ السلوك صار افتراضيًا دائمًا،
+  // فنحذف أي قيمة قديمة محفوظة حتى لا توقف التشغيل في الخلفية عند من فعّلها سابقًا.
+  delete settings.keepAwake;
+  delete settings.backgroundAudio;
   // ترحيل آمن للطبعات التي حُجبت لعدم اكتمال سجل الحقوق، مع إبقاء بقية بيانات المستخدم.
   if (!TAFSIRS.some(([id]) => id === settings.tafsir) && !/^qp:\d+$/.test(settings.tafsir)) settings.tafsir = DEFAULTS.tafsir;
   const allowedTranslations = new Set(['', 'en.sahih', 'fr.hamidullah', 'ur.jalandhry', 'tr.diyanet']);
@@ -839,6 +842,14 @@
     return out.join('');
   }
 
+  // معامل تكبير خط مصحف حفص: الصفحة مضبوطة على عرض الشاشة، فحجم السطر محسوم هندسيًا؛
+  // ولذلك يضرب المنطق حجم كل سطر في معامل التكبير المختار، فيكبر الخط فعليًا ويلتف
+  // السطر الطويل إلى سطرين بدل أن يُعاد إلى حجمه الأول.
+  const HAFS_BASE_SIZE = 26;
+  const hafsZoom = () => {
+    const size = Number(settings.size) || HAFS_BASE_SIZE;
+    return Math.min(1.8, Math.max(1, size / HAFS_BASE_SIZE));
+  };
   // تصغير الخط قليلًا لو السطر أطول من عرض الشاشة، بنفس النسبة لكل السطور
   // ضبط كل سطر على حدة: الخط يملأ عرض السطر تقريبًا، وتفاوت الحجم بين السطور بسيط جدًا
   function fitMadaniLines() {
@@ -872,16 +883,21 @@
         // صفحة كل أسطرها قصيرة: مقاس واحد يكفي لدخول أطول سطر داخل صندوقه، بلا تكبير.
         med = Math.max(0.5, Math.min(1, shortRatios.length ? Math.min(...shortRatios) : 1));
       }
-      body.style.setProperty('--mline-h', `${(base * med * 1.5).toFixed(2)}px`);
+      const zoom = hafsZoom();
+      body.style.setProperty('--mline-h', `${(base * med * 1.5 * zoom).toFixed(2)}px`);
       full.forEach((el, i) => {
         const r = fullRatios[i] / med;
-        el.style.fontSize = `${(base * med * Math.min(r, 1.08) * 0.995).toFixed(2)}px`;
+        el.style.fontSize = `${(base * med * zoom * Math.min(r, 1.08) * 0.995).toFixed(2)}px`;
       });
       // السطر القصير لا يكبر أبدًا عن مقاس الصفحة، ويصغر فقط إن تجاوز صندوقه.
       shorts.forEach((el, i) => {
         const r = shortRatios[i] / med;
-        el.style.fontSize = `${(base * med * Math.min(r, 1) * 0.995).toFixed(2)}px`;
+        el.style.fontSize = `${(base * med * zoom * Math.min(r, 1) * 0.995).toFixed(2)}px`;
       });
+      // عند التكبير يُسمح للسطر الطويل بالالتفاف إلى سطرين بدل إعادة تصغيره،
+      // فيكبر الخط فعليًا كما يختار المستخدم من الإعدادات.
+      body.classList.toggle('zoomed', zoom > 1.001);
+      if (zoom > 1.001) return;
       // تمريرة تصحيح: أي سطر لا يزال أوسع من إطاره (أحرف الوقف والروزنامة) يُصغَّر بمقدار تجاوزه فقط.
       all.forEach((el) => {
         const over = el.scrollWidth - el.clientWidth;
@@ -1090,17 +1106,38 @@
     if (e.key === 'ArrowLeft') { e.preventDefault(); nextPage(); }
   });
 
-  // السحب باللمس أو الفأرة: الصفحة تتبع الإصبع، ثم تنتقل بسرعة عند تجاوز المسافة أو عند الدفع السريع
-  // يمين ← الصفحة التالية، يسار ← السابقة (كما كان)
+  // ---------- تقليب الصفحة بالسحب ----------
+  // سحب قصير ومباشر: الصفحة تتبع الإصبع مسافة محدودة ثم تستقر، وتُقلب صفحة واحدة فقط
+  // عند تجاوز مسافة بسيطة أو عند سحب سريع، بلا حركة طويلة توحي بقلب عدة صفحات.
+  // يمين ← الصفحة التالية، يسار ← السابقة.
   let drag = null;
   const stage = $('#stage');
   const pageEl = $('#page');
   const hasSelection = () => !!(window.getSelection && window.getSelection().toString().trim());
-  const SWIPE_EASE = 'cubic-bezier(.2,.8,.2,1)';
-  function setPageTransform(x, opacity, animate) {
-    pageEl.style.transition = animate ? `transform .26s ${SWIPE_EASE}, opacity .26s ease` : 'none';
+  const SWIPE_EASE = 'cubic-bezier(.2,.8,.25,1)';
+  const DRAG_FOLLOW = 0.34;   // نسبة حركة الصفحة من حركة الإصبع
+  const DRAG_MAX = 64;        // أقصى انزياح أثناء السحب (بكسل)
+  const FLIP_DISTANCE = 30;   // أقل مسافة تكفي لقلب صفحة
+  const FLIP_VELOCITY = 0.22; // أو سحب سريع (بكسل/مللي ثانية)
+  function setPageTransform(x, animate) {
+    pageEl.style.transition = animate ? `transform .15s ${SWIPE_EASE}` : 'none';
     pageEl.style.transform = x ? `translate3d(${x}px,0,0)` : '';
-    pageEl.style.opacity = opacity === undefined ? '' : String(opacity);
+  }
+  function clampDrag(dx) {
+    const atEdge = (dx > 0 && state.page >= TOTAL_PAGES) || (dx < 0 && state.page <= 1);
+    const followed = dx * DRAG_FOLLOW * (atEdge ? 0.3 : 1);
+    return Math.max(-DRAG_MAX, Math.min(DRAG_MAX, followed));
+  }
+  async function flipBySwipe(goNext) {
+    setPageTransform(0, true);
+    const target = goNext ? state.page + 1 : state.page - 1;
+    if (target < 1 || target > TOTAL_PAGES) return;
+    await showPage(target, { scroll: true });
+    // دخول خفيف من جهة السحب فقط، ثم استقرار فوري — بلا انزلاق على كامل الشاشة.
+    pageEl.style.transition = 'none';
+    pageEl.style.transform = `translate3d(${goNext ? 14 : -14}px,0,0)`;
+    pageEl.offsetWidth;
+    setPageTransform(0, true);
   }
   stage.addEventListener('pointerdown', (e) => {
     // الفأرة للتحديد الحر للنص؛ التقليب بالسحب خاص باللمس (والقلم)
@@ -1112,10 +1149,9 @@
     if (!drag || e.pointerId !== drag.id) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
     if (!drag.dragging) {
-      if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+      if (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy) * 1.15) return;
       // ضغط مطوّل لتحديد النص لا يُعد سحبًا
       if (hasSelection() && !drag.hadSel) { drag = null; return; }
-      if (performance.now() - drag.t > 450 && !drag.hadSel) { drag = null; return; }
       drag.dragging = true;
       window.getSelection()?.removeAllRanges();
       pageEl.classList.add('is-dragging');
@@ -1123,10 +1159,7 @@
     const now = performance.now();
     drag.v = (e.clientX - drag.lastX) / Math.max(1, now - drag.lastT);
     drag.lastX = e.clientX; drag.lastT = now;
-    // مقاومة خفيفة عند الأطراف (صفحة أولى أو أخيرة)
-    const atEdge = (dx > 0 && state.page <= 1) || (dx < 0 && state.page >= TOTAL_PAGES);
-    const x = atEdge ? dx * 0.25 : dx;
-    setPageTransform(x, Math.max(0.55, 1 - Math.abs(x) / 700), false);
+    setPageTransform(clampDrag(dx), false);
   });
   function endDrag(e) {
     if (!drag || (e && e.pointerId !== drag.id)) return;
@@ -1134,27 +1167,19 @@
     pageEl.classList.remove('is-dragging');
     if (!d.dragging) return;
     const dx = e.clientX - d.x;
-    const fast = Math.abs(d.v) > 0.45 && Math.abs(dx) > 24;
-    const far = Math.abs(dx) > Math.min(110, stage.clientWidth * 0.22);
     const goNext = dx > 0;
     const canMove = goNext ? state.page < TOTAL_PAGES : state.page > 1;
-    if (!(fast || far) || !canMove) { setPageTransform(0, 1, true); return; }
-    // الصفحة الحالية تخرج في الاتجاه المعاكس، ثم تدخل الجديدة من الجانب الآخر
-    const outX = goNext ? -stage.clientWidth : stage.clientWidth;
-    setPageTransform(outX, 0, true);
-    setTimeout(async () => {
-      await (goNext ? nextPage() : prevPage());
-      setPageTransform(-outX * 0.18, 0, false);
-      pageEl.offsetWidth; // إعادة الرسم قبل الحركة
-      setPageTransform(0, 1, true);
-    }, 200);
+    const quick = Math.abs(d.v) >= FLIP_VELOCITY && Math.abs(dx) >= 14;
+    const far = Math.abs(dx) >= FLIP_DISTANCE;
+    if (!canMove || !(quick || far)) { setPageTransform(0, true); return; }
+    flipBySwipe(goNext);
   }
   stage.addEventListener('pointerup', endDrag);
   stage.addEventListener('pointercancel', () => {
     if (!drag) return;
     drag = null;
     pageEl.classList.remove('is-dragging');
-    setPageTransform(0, 1, true);
+    setPageTransform(0, true);
   });
 
   // ---------- قائمة التحديد: نسخ · مشاركة · حكم التجويد · تفسير · معاني ----------
@@ -1563,12 +1588,12 @@
   }
 
   // ---------- إبقاء الشاشة مضاءة ----------
-  // الشاشة لا تُطفأ أثناء القراءة أو التلاوة؛ تُترك للمستخدم فقط عند إغلاق الصفحة
-  // أو إغلاق التطبيق أو إيقاف الخيار من الإعدادات.
+  // الشاشة لا تُطفأ أثناء القراءة أو التلاوة، ويُترك ذلك تلقائيًا عند إخفاء الصفحة
+  // أو إغلاق التطبيق؛ لا يوجد مفتاح للمستخدم.
   const wake = { sentinel: null, wanted: false };
   const wakeSupported = () => typeof navigator !== 'undefined' && 'wakeLock' in navigator;
+  // الشاشة تبقى مضاءة ما دام التطبيق مفتوحًا (قراءة أو تلاوة)، وتعود طبيعية عند إغلاقه.
   function wakeWantedNow() {
-    if (settings.keepAwake === false) return false;
     if (document.hidden) return false;
     const playing = play.active && !audio.paused;
     return playing || curView === 'reader';
@@ -1592,33 +1617,14 @@
   }
   let wakeHintShown = false;
   function wakeHintOnce() {
-    if (wakeHintShown || wakeSupported() || settings.keepAwake === false) return;
+    if (wakeHintShown || wakeSupported()) return;
     wakeHintShown = true;
     toast('جهازك لا يدعم منع إطفاء الشاشة من التطبيق؛ اضبط مدة الشاشة من إعدادات الهاتف.');
   }
 
   // ---------- الصوت في الخلفية ----------
-  function bgPromptNeeded() {
-    return play.active && settings.backgroundAudio === 'ask';
-  }
-  function renderBgPrompt() {
-    const bar = $('#bgPrompt');
-    if (!bar) return;
-    const show = bgPromptNeeded();
-    bar.hidden = !show;
-    bar.classList.toggle('show', show);
-  }
-  function answerBackgroundAudio(keep) {
-    settings.backgroundAudio = keep ? 'on' : 'off';
-    saveSettings();
-    renderBgPrompt();
-    if (keep) toast('هيستمر الصوت شغال لما تخرج من التطبيق.');
-    else toast('هيتوقف الصوت عند الخروج من التطبيق.');
-  }
-  function applyBackgroundPolicy() {
-    if (settings.backgroundAudio !== 'off') return;
-    if (document.hidden && !audio.paused) audio.pause();
-  }
+  // لا يوجد سؤال ولا مفتاح: التلاوة تستمر تلقائيًا عند مغادرة التطبيق أو إطفاء الشاشة،
+  // وتنتهي تمامًا عند إغلاق التطبيق.
 
   // ---------- تشغيل التلاوة في خدمة أندرويد (يستمر بعد إغلاق التطبيق) ----------
   // الطبقة الويب تُسلّم قائمة الآيات إلى الخدمة الأمامية عند خروج المستخدم،
@@ -1638,7 +1644,7 @@
   }
   async function handOffToNative() {
     const api = nativeAudio();
-    if (!api || nativeAudioActive || settings.backgroundAudio === 'off') return false;
+    if (!api || nativeAudioActive) return false;
     if (!play.active || !play.cur || audio.paused) return false;
     const items = await nativeQueueFrom(play.cur);
     if (!items.length) return false;
@@ -1660,7 +1666,6 @@
   }
   document.addEventListener('visibilitychange', () => {
     refreshWakeLock();
-    applyBackgroundPolicy();
     if (!hasNativePlugin('QuranAudio')) return;
     if (document.hidden) handOffToNative();
     else takeBackFromNative();
@@ -1668,7 +1673,9 @@
   if (hasNativePlugin('QuranAudio') && Cap.registerPlugin) {
     try {
       Cap.registerPlugin('QuranAudio').addListener('stopped', () => {
+        // الخدمة توقفت (إغلاق التطبيق أو نهاية القائمة): نُبقي حالة الواجهة متسقة
         nativeAudioActive = false;
+        if (!play.active) audio.pause();
       });
     } catch { /* لا يوجد جسر */ }
   }
@@ -1679,7 +1686,6 @@
     $('#pSpeed').textContent = `${playRate}×`;
     syncMediaSession();
     refreshWakeLock();
-    renderBgPrompt();
     if (play.active && play.cur) {
       $('#playerInfo').textContent = `${play.label} · الآية ${toArabicDigits(play.cur.n)}` +
         (play.repeatCount > 1
@@ -2202,8 +2208,6 @@
     $('#setSize').value = settings.size;
     $('#sizeVal').textContent = settings.size + 'px';
     $('#setTajweed').checked = !!settings.tajweed;
-    if ($('#setKeepAwake')) $('#setKeepAwake').checked = settings.keepAwake !== false;
-    if ($('#setBgAudio')) $('#setBgAudio').checked = settings.backgroundAudio !== 'off';
     fillSmartSettings();
     applyTypography();
   }
@@ -2255,19 +2259,6 @@
   $('#setTafsir').addEventListener('change', (e) => onSettingChange('tafsir', e.target.value));
   $('#setTranslation').addEventListener('change', (e) => onSettingChange('translation', e.target.value));
   $('#setTajweed').addEventListener('change', (e) => onSettingChange('tajweed', e.target.checked));
-  $('#setKeepAwake')?.addEventListener('change', (e) => {
-    settings.keepAwake = e.target.checked;
-    saveSettings();
-    refreshWakeLock();
-    if (!e.target.checked) toast('الشاشة هتنطفئ حسب إعدادات الهاتف.');
-  });
-  $('#setBgAudio')?.addEventListener('change', (e) => {
-    settings.backgroundAudio = e.target.checked ? 'on' : 'off';
-    saveSettings();
-    renderBgPrompt();
-  });
-  $('#bgYes')?.addEventListener('click', () => answerBackgroundAudio(true));
-  $('#bgNo')?.addEventListener('click', () => answerBackgroundAudio(false));
   $('#setFont').addEventListener('change', (e) => {
     settings.font = e.target.value;
     saveSettings();
@@ -2277,6 +2268,8 @@
     settings.size = Number(e.target.value);
     $('#sizeVal').textContent = settings.size + 'px';
     applyTypography(); saveSettings();
+    // إعادة ضبط أسطر المصحف فورًا ليعمل التكبير على صفحة حفص أيضًا
+    fitMadaniLines();
   });
 
   // ---------- التحميل للاستماع بدون إنترنت ----------

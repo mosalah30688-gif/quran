@@ -395,6 +395,14 @@ public class QuranAudioService extends Service implements MediaPlayer.OnCompleti
     }
 
     @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        // إغلاق التطبيق من قائمة التطبيقات ينهي التلاوة أيضًا: التشغيل في الخلفية يخدم
+        // مغادرة التطبيق أو إطفاء الشاشة فقط، وينتهي بانتهاء التطبيق نفسه.
+        stopPlayback(false);
+        super.onTaskRemoved(rootIntent);
+    }
+
+    @Override
     public IBinder onBind(Intent intent) {
         return null;
     }
