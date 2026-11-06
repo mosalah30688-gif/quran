@@ -954,6 +954,20 @@
       background: color-mix(in srgb, var(--card) 85%, transparent); border: 1px solid var(--line);
     }
     .hdr-pager .pno { font-size: 11px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; color: var(--ink); }
+    /* شريط سؤال الصوت في الخلفية */
+    .bg-prompt {
+      display: none; position: sticky; bottom: 8px; z-index: 24; margin: 8px 0 0;
+      background: var(--card); border: 1px solid var(--line); border-right: 4px solid var(--brand);
+      border-radius: 14px; padding: 10px 12px; box-shadow: 0 8px 24px rgba(15, 91, 76, .16);
+      align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+    }
+    .bg-prompt.show { display: flex; }
+    .bg-prompt-t { font-size: 14px; font-weight: 700; color: var(--ink); }
+    .bg-prompt-actions { display: flex; gap: 8px; }
+    .btn.tiny { padding: 6px 12px; font-size: 13px; }
+    /* علامة ربع الحزب ۞ داخل السطر */
+    #pageBody.madani-lines .rub { display: inline-block; margin-inline-end: .16em; font-size: .92em; opacity: .92; }
+
     /* ===== المصحف بأسطر ثابتة لرواية حفص: تباعد 1.5 ومحاذاة كاملة للسطر ===== */
     #pageBody.madani-lines { text-align: justify; }
     #pageBody.madani-lines .mline {
@@ -1067,6 +1081,13 @@
           </div>
 
           <div class="reader-dock" id="readerDock">
+            <div class="bg-prompt" id="bgPrompt" hidden role="dialog" aria-label="الصوت في الخلفية">
+              <span class="bg-prompt-t">تحب القرآن يفضل شغال لما تخرج من التطبيق؟</span>
+              <span class="bg-prompt-actions">
+                <button class="btn tiny" id="bgYes">خلي الصوت شغال</button>
+                <button class="btn ghost tiny" id="bgNo">لأ، يوقف</button>
+              </span>
+            </div>
             <div class="player" id="player" role="region" aria-label="مشغل التلاوة">
               <input id="audioSeek" type="range" min="0" max="0" value="0" step="0.1" dir="ltr" aria-label="موضع التلاوة" />
               <div class="player-row">
@@ -1458,6 +1479,14 @@
             <div class="row" style="margin-top:12px">
               <label><input type="checkbox" id="setTajweed" /> تفعيل ألوان التجويد</label>
             </div>
+
+            <label class="lbl">الشاشة والصوت</label>
+            <div class="row">
+              <label><input type="checkbox" id="setKeepAwake" checked /> لا تُطفئ الشاشة أثناء القراءة والتلاوة</label>
+            </div>
+            <div class="row">
+              <label><input type="checkbox" id="setBgAudio" checked /> استمرار الصوت عند الخروج من التطبيق</label>
+            </div>
           </div>
           <details class="card dd">
             <summary>تحميل التلاوات للاستماع بدون إنترنت</summary>
@@ -1539,7 +1568,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.4.10</div>
+              <div class="muted">الإصدار 1.4.11</div>
             </div>
           </div>
 
@@ -1614,7 +1643,7 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.4.10';
+    window.APP_BUNDLE_VERSION = '1.4.11';
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {

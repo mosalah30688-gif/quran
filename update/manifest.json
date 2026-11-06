@@ -1,5 +1,5 @@
 {
-  "version": "1.4.10",
+  "version": "1.4.11",
   "files": [
     "index.html",
     "smart-context.js",
@@ -23,20 +23,20 @@
     "linux": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-linux-test-v4.1.1/Siraj-Quran-4.1.1-linux-x86_64.AppImage"
   },
   "features": [
-    "علامات الوقف ظاهرة في متن المصحف كما في مصحف المدينة",
-    "ضبط رسم كلمات المصحف وحركاته مثل نسخة ورش",
-    "الخط الافتراضي صار أوضح للقراءة والضبط"
+    "علامة ربع الحزب ظاهرة في المصحف كما في مصحف المدينة",
+    "الشاشة لا تنطفئ أثناء القراءة والتلاوة",
+    "الصوت يستمر لما تخرج من التطبيق مع إشعار بالتحكم"
   ],
   "sha256": {
-    "index.html": "a544e2a6a944cf8bd4f35e0acd4019be65c19a6cfa8bcee6998d60c212fcc787",
+    "index.html": "03c0fcbba67f7dc53be785231f26acb7cc3423b98b4b2c1a798d29d126ad593a",
     "smart-context.js": "d7f1995b9164255b5273da80a070a6f2bedd0f2abcbe7a108b20700567f00440",
     "smart-services.js": "bf98b6f1e10a771435cbf8dea41578b3e148c53901e601de28b5b4085352c10c",
     "tajweed-learning.js": "0ea4b4cde8f34591f79745275c87559f0f050692fb87d52a8bbb0200bb51e534",
     "tajweed-curriculum-loader.js": "415cd8d57986316c0c5b50dfc01db2cbad0c6ec10ad76bf0b4986d3fbaee68d5",
     "tajweed-learning-catalog.json": "a88ca2f3febcb8b530adc24073a03f30fc4441c3102d9300454b24b8b3e52dee",
     "tajweed-scope-registry.json": "ace20aeda40ce8aa809141f82f36831f92ee4bf6e489a6fb288801ff236246ca",
-    "app.js": "ef2e680614146f5b504b6fabcf4e654063578883e454cf33328fcb99cb877faa",
-    "quran-hafs.json": "a091c711f8f0f6b92475331f0c79408c724f151b97cb9d76ec856c39f5db65f5",
+    "app.js": "ec69f7f6c6ddd50afcbdec24771430783c04afd50b3282a06d600b03b868180a",
+    "quran-hafs.json": "caa2d0d091a0e6f8758b2852bc36895d579d362558b778bfd4dcb973483bd9ec",
     "quran-madani-lines.json": "856bee7c3b06200182361b235ac4114d013d2275611ce585960014bd175f606e"
   },
   "delivery": {

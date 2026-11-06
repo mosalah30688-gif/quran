@@ -7,7 +7,8 @@
 ثوابت لا تتغيّر في الناتج:
   * ترقيم الصفحات (604 صفحة) يبقى كما هو مقفول في hafs.json السابق، لأن تقسيم
     الأسطر في quran-madani-lines.json مبني عليه.
-  * لا تُضاف علامة الحزب ۞ إلى المتن (قرار المالك).
+  * علامة الحزب ۞ تظهر قبل أول كلمة في الآية التي يبدأ عندها ربع الحزب، كما في
+    مصحف المدينة، وتُلصق بأول كلمة حتى لا يتغيّر عدد كلمات الآية.
   * علامة السجدة ۩ تظهر في نهاية الآية في المواضع الخمسة عشر فقط.
   * عدد كلمات كل آية يبقى مطابقًا للنص المقفول السابق، حتى يظل تقسيم الأسطر صحيحًا.
 
@@ -40,7 +41,7 @@ TARGETS = (
 )
 
 WAQF = "\u06d6\u06d7\u06d8\u06d9\u06da\u06db\u06dc"  # علامات الوقف الست + ۜ
-RUB = "\u06de"  # ۞ علامة الحزب — لا تُضمّ إلى المتن
+RUB = "\u06de"  # ۞ علامة الحزب — تُلصق بأول كلمة في الآية
 SAJDA = "\u06e9"  # ۩ علامة السجدة
 MARK_ONLY = set(WAQF + RUB + SAJDA)
 BASMALA = ["بِسْمِ", "اللَّهِ", "الرَّحْمَٰنِ", "الرَّحِيمِ"]
@@ -93,17 +94,20 @@ def load_source(update_lock: bool) -> tuple[dict[int, dict], dict]:
     return verses, record
 
 
-def split_mark_only(text: str) -> tuple[list[str], bool]:
-    """يرجع كلمات الآية بعد فصل العلامات المستقلة، وهل فيها سجدة."""
+def split_mark_only(text: str) -> tuple[list[str], bool, bool]:
+    """يرجع كلمات الآية بعد فصل العلامات المستقلة، وهل فيها سجدة، وهل تبدأ بربع حزب."""
     words = [word for word in text.split() if not (word and all(ch in MARK_ONLY for ch in word))]
     sajda = SAJDA in text
-    return [word.replace(SAJDA, "") for word in words], sajda
+    rub = RUB in text
+    return [word.replace(SAJDA, "").replace(RUB, "") for word in words], sajda, rub
 
 
 def build(verses: dict[tuple[int, int], dict], pages: dict[tuple[int, int], int], simple: list) -> dict:
     rows = []
     for (surah, ayah), page in sorted(pages.items()):
-        words, sajda = split_mark_only(verses[(surah, ayah)]["text"])
+        words, sajda, rub = split_mark_only(verses[(surah, ayah)]["text"])
+        if rub and words:
+            words[0] = RUB + words[0]
         if (surah, ayah) == (15, 7):
             # المصدر يكتب «لَّوۡمَا» كلمة واحدة، والمصحف المقفول يفصلها؛ نحفظ حدود الكلمات.
             merged = [word for word in words if word.startswith("\u0644\u0651\u064e\u0648\u06e1\u0645")]
@@ -133,8 +137,8 @@ def verify(payload: dict, previous: dict, verses: dict[tuple[int, int], dict]) -
     if len(rows) != 6236:
         raise SystemExit(f"عدد الآيات في الناتج غير صحيح: {len(rows)}")
     marks = Counter(ch for row in rows for ch in row[3] if ch in MARK_ONLY)
-    if marks.get(RUB):
-        raise SystemExit("علامة الحزب ۞ يجب ألا تظهر في المتن")
+    if marks.get(RUB, 0) < 190:
+        raise SystemExit(f"علامات الحزب ۞ ناقصة: {marks.get(RUB)}")
     if marks.get(SAJDA) != 15:
         raise SystemExit(f"عدد علامات السجدة غير صحيح: {marks.get(SAJDA)}")
     if sum(count for mark, count in marks.items() if mark in WAQF) < 4000:
@@ -146,6 +150,7 @@ def verify(payload: dict, previous: dict, verses: dict[tuple[int, int], dict]) -
         if row[2] != before[2]:
             raise SystemExit(f"تغيّر ترقيم الصفحة في {key[0]}:{key[1]}")
         if len(row[3].split()) != len(before[3].split()):
+            # عدد الكلمات محفوظ لأن ۞ تُلصق بأول كلمة
             raise SystemExit(f"تغيّر عدد كلمات الآية {key[0]}:{key[1]}")
         if not row[3].strip():
             raise SystemExit(f"آية فارغة: {key}")
@@ -195,8 +200,9 @@ def main() -> int:
                 "source": source_record,
                 "transformation": {
                     "desc": (
-                        "إسقاط علامة الحزب ۞ من المتن، وإبقاء علامات الوقف الست، ونقل علامة "
-                        "السجدة ۩ إلى نهاية الآية في مواضعها الخمسة عشر، وتوحيد المسافات."
+                        "إبقاء علامات الوقف الست، وإلصاق علامة الحزب ۞ بأول كلمة في الآية التي "
+                        "يبدأ عندها ربع الحزب، ونقل علامة السجدة ۩ إلى نهاية الآية في مواضعها "
+                        "الخمسة عشر، وتوحيد المسافات."
                     ),
                     "pagination": "منقولة كما هي من hafs.json المقفول سابقًا (604 صفحة)",
                     "word_boundaries": "مطابقة للنص السابق؛ 15:7 تُفصل «لَّوۡمَا» إلى كلمتين",
