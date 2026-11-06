@@ -1,0 +1,51 @@
+{
+  "schema": "siraj-hafs-text/1",
+  "retrieved_at": "2026-11-06",
+  "provider": "Quranpedia.net",
+  "terms": "https://quranpedia.net/api-docs#usage-policy",
+  "source": {
+    "url": "https://quranpedia.net/dumps/mushafs-1.json.gz",
+    "bytes": 414700,
+    "sha256": "b547245fde89cd6bd763e13bc78c8ba37971ac92c3b207156ea151e287369b73",
+    "provider_version": "2026-11-06",
+    "schema": "/v1/mushafs/1"
+  },
+  "transformation": {
+    "desc": "إسقاط علامة الحزب ۞ من المتن، وإبقاء علامات الوقف الست، ونقل علامة السجدة ۩ إلى نهاية الآية في مواضعها الخمسة عشر، وتوحيد المسافات.",
+    "pagination": "منقولة كما هي من hafs.json المقفول سابقًا (604 صفحة)",
+    "word_boundaries": "مطابقة للنص السابق؛ 15:7 تُفصل «لَّوۡمَا» إلى كلمتين",
+    "sajda_ayahs": [
+      "7:206",
+      "13:15",
+      "16:50",
+      "17:109",
+      "19:58",
+      "22:18",
+      "22:77",
+      "25:60",
+      "27:26",
+      "32:15",
+      "38:24",
+      "41:38",
+      "53:62",
+      "84:21",
+      "96:19"
+    ]
+  },
+  "marks": {
+    "ۖ": 1651,
+    "ۗ": 511,
+    "ۘ": 21,
+    "ۚ": 2083,
+    "ۛ": 6,
+    "ۜ": 7,
+    "۩": 15
+  },
+  "outputs": {
+    "hafs.json": {
+      "bytes": 2823110,
+      "sha256": "a091c711f8f0f6b92475331f0c79408c724f151b97cb9d76ec856c39f5db65f5"
+    }
+  },
+  "builder": "scripts/build_hafs_text.py"
+}

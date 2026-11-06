@@ -17,7 +17,7 @@
     :root {
       --bg: #f7f4ec; --card: #ffffff; --ink: #1d2b27; --muted: #6b7a75;
       --brand: #0f5b4c; --brand-2: #1a8a74; --gold: #b8860b; --line: #e3ddcf;
-      --hl: #fff4cc; --quran-size: 26px; --quran-font: "Amiri Quran"; --side: 300px; --player-h: 120px;
+      --hl: #fff4cc; --quran-size: 26px; --quran-font: "Scheherazade New"; --side: 300px; --player-h: 120px;
       --paper: #f3e8cc; --paper-edge: #e2cd9c; --paper-ink: #1d170c; --paper-gold: #a8843f; --paper-muted: #6e5629;
     }
     body.dark {
@@ -153,7 +153,7 @@
       border-top: 2px solid var(--paper-gold); border-bottom: 2px solid var(--paper-gold); padding: 6px 0;
       background: linear-gradient(90deg, transparent, rgba(168,132,63,.16), transparent);
     }
-    .bism { text-align: center; font-family: var(--quran-font), "Amiri Quran", Amiri, serif; font-size: calc(var(--quran-size) * .95); margin: 2px 0 6px; }
+    .bism { text-align: center; font-family: var(--quran-font), "Amiri Quran", Amiri, serif; font-size: calc(var(--mline-h, calc(var(--quran-size) * 1.5)) / 1.5); margin: 2px 0 6px; }
     .flow {
       font-family: var(--quran-font), "Amiri Quran", Amiri, serif; font-size: var(--quran-size); line-height: 2.15;
       text-align: justify; margin: 0; word-spacing: .02em;
@@ -242,7 +242,7 @@
     .panel-tafsir .tf, .tf { font-size: 18px; line-height: 2; font-family: var(--quran-font), "Noto Naskh Arabic", serif; white-space: pre-line; }
     .tr { font-size: 16px; line-height: 1.8; }
     @font-face { font-family: 'AmiriQuranBundled'; src: url(fonts/AmiriQuran-arabic.woff2) format('woff2'); }
-    body.riw #pageBody { font-family: 'AmiriQuranBundled', 'Amiri Quran', serif; }
+    body.riw #pageBody { font-family: var(--quran-font), 'AmiriQuranBundled', 'Amiri Quran', serif; }
     .mw-w { display: inline-block; padding: 0 2px; margin: 0 1px; border-radius: 6px; cursor: pointer; }
     .mw-w.h:not(.shown) { color: transparent; background: var(--line); }
     .mw { margin: 6px 0; line-height: 1.9; font-size: 16px; }
@@ -1446,10 +1446,10 @@
 
             <label class="lbl" for="setFont">خط المصحف والتفسير</label>
             <select id="setFont">
+              <option value="Scheherazade New">Scheherazade New</option>
+              <option value="Noto Naskh Arabic">Noto Naskh Arabic</option>
               <option value="Amiri Quran">Amiri Quran</option>
               <option value="Amiri">Amiri</option>
-              <option value="Noto Naskh Arabic">Noto Naskh Arabic</option>
-              <option value="Scheherazade New">Scheherazade New</option>
             </select>
 
             <label class="lbl">حجم الخط: <span id="sizeVal"></span></label>
@@ -1539,7 +1539,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.4.8</div>
+              <div class="muted">الإصدار 1.4.9</div>
             </div>
           </div>
 
@@ -1614,7 +1614,7 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.4.8';
+    window.APP_BUNDLE_VERSION = '1.4.9';
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {

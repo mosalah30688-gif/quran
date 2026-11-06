@@ -17,3 +17,4 @@ windows_app/*.spec
 windows_app/UserData/
 windows_app/data/tafsir-offline.sqlite3
 __pycache__/
+.cache/
