@@ -65,7 +65,7 @@
 
   const DEFAULTS = {
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
-    translation: '', font: 'Amiri Quran', size: 26, tajweed: false, dark: false,
+    translation: '', font: 'Scheherazade New', size: 26, tajweed: false, dark: false,
     tajweedScopes: {},
   };
   const VIEW_TITLES = { listen: 'استماع', reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', wird: 'الورد', stats: 'الإحصائيات', adhkar: 'الأذكار', search: 'البحث', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق', tajweed: 'أحكام التجويد', meanings: 'المعاني' };
@@ -492,8 +492,11 @@
 
   const HAFS_BASMALAS = [
     'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ',
+    'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ',
     'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
   ];
+  // البسملة المعروضة تُؤخذ من نص المصحف نفسه حتى تبقى مطابقة لرسمه (بما فيه علامات الضبط)
+  const bismText = () => (hafsByRef.uthmani.get(refKey(1, 1)) || {}).text || HAFS_BASMALAS[0];
   const plainTajweed = (raw) => clean(raw).replace(/\[([a-z]+)(?::\d+)?\[([^\[\]]*)\]/g, '$2').replace(/\[|\]/g, '');
   function displayHafsSource(surah, ayah, raw) {
     // فصل بصري فقط: لا نغيّر استجابة المصدر ولا ترقيم الآية أو رابط التلاوة.
@@ -811,7 +814,7 @@
     const out = [];
     lines.forEach((ln, i) => {
       if (ln.k === 'sura') { out.push(`<div class="surah-banner">${esc(surahName(surahOfNext(i + 1)))}</div>`); return; }
-      if (ln.k === 'bism') { out.push('<div class="bism">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>'); return; }
+      if (ln.k === 'bism') { out.push(`<div class="bism">${esc(bismText())}</div>`); return; }
       const parts = madaniLineParts(ln.a, ln.b, showTajweed);
       const style = ln.w ? ` style="width:${(ln.w * 100).toFixed(2)}%"` : '';
       out.push(`<div class="mline${ln.w ? ' short' : ''}"${style}>${parts}</div>`);
@@ -861,6 +864,14 @@
       shorts.forEach((el, i) => {
         const r = shortRatios[i] / med;
         el.style.fontSize = `${(base * med * Math.min(r, 1) * 0.995).toFixed(2)}px`;
+      });
+      // تمريرة تصحيح: أي سطر لا يزال أوسع من إطاره (أحرف الوقف والروزنامة) يُصغَّر بمقدار تجاوزه فقط.
+      all.forEach((el) => {
+        const over = el.scrollWidth - el.clientWidth;
+        if (over > 1 && el.scrollWidth > 0) {
+          const fitted = parseFloat(el.style.fontSize || getComputedStyle(el).fontSize) * 0.997;
+          el.style.fontSize = `${(fitted * (el.clientWidth / el.scrollWidth)).toFixed(2)}px`;
+        }
       });
     });
   }
@@ -957,7 +968,7 @@
         if (openP) { html += '</p>'; openP = false; }
         if (a.n === 1) {
           html += `<div class="surah-banner">${esc(surahName(a.s))}</div>`;
-          if (a.s !== 1 && a.s !== 9) html += `<div class="bism">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>`;
+          if (a.s !== 1 && a.s !== 9) html += `<div class="bism">${esc(bismText())}</div>`;
         }
         html += '<p class="flow">';
         openP = true;
