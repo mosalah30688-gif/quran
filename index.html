@@ -1050,10 +1050,10 @@
       </header>
 
       <div class="wrap">
-        <aside class="card smart-suggestion" id="smartSuggestion" hidden aria-live="polite" aria-label="اقتراح ذكي محلي">
+        <aside class="card smart-suggestion" id="smartSuggestion" hidden aria-live="polite" aria-label="رفيق اليوم">
           <div class="smart-suggestion-head">
             <strong id="smartSuggestionTitle"></strong>
-            <span class="smart-badge">محلي على جهازك</span>
+            <span class="smart-badge">على جهازك</span>
           </div>
           <p id="smartSuggestionBody"></p>
           <div class="smart-actions">
@@ -1062,7 +1062,7 @@
             <button class="btn small ghost" id="smartSuggestionDismiss">إخفاء</button>
           </div>
           <details class="smart-why">
-            <summary>لماذا ظهر هذا الاقتراح؟</summary>
+            <summary>لماذا ظهر هذا الآن؟</summary>
             <p id="smartSuggestionWhy"></p>
           </details>
         </aside>
@@ -1503,32 +1503,32 @@
             <p class="muted">تتوفر أصوات حفص السبعة عشر للاستماع المباشر والتحكم الكامل والتنزيل المحلي؛ يعتمد حجم التنزيل على معدل البت الخاص بكل قارئ.</p>
           </details>
           <details class="card dd" id="smartSettingsCard">
-            <summary>الاقتراحات الذكية المحلية</summary>
+            <summary>رفيق اليوم — اقتراحات محلية على جهازك</summary>
             <label style="display:flex;align-items:center;gap:8px">
-              <input type="checkbox" id="setSmartEnabled" /> تفعيل الاقتراحات الذكية
+              <input type="checkbox" id="setSmartEnabled" /> تفعيل رفيق اليوم
             </label>
             <p class="smart-local-note">اختيارك صريح ويمكن إيقافه في أي وقت. يتعلم سراج من أوقات استخدام خدماته فقط، ويحفظ سجلًا محدودًا على هذا الجهاز. لا يقرأ الرسائل أو المواقع التي تزورها أو الحافظة، ولا يرسل ملف عادات إلى خادم.</p>
             <label id="smartNativeRow" hidden style="align-items:center;gap:8px;margin-top:10px">
-              <input type="checkbox" id="setSmartNotifications" /> إشعارات ذكية اختيارية على Android
+              <input type="checkbox" id="setSmartNotifications" /> تذكيرات رفيق اليوم (اختياري على أندرويد)
             </label>
             <div class="muted" id="smartNativeStatus" hidden style="margin-top:5px">لا تُطلب صلاحية الإشعارات إلا عند تفعيل هذا الخيار.</div>
             <div class="smart-settings-grid">
               <label><span class="lbl">بداية الهدوء</span><input type="time" id="smartQuietStart" /></label>
               <label><span class="lbl">نهاية الهدوء</span><input type="time" id="smartQuietEnd" /></label>
-              <label><span class="lbl">أقصى اقتراحات في اليوم</span>
+              <label><span class="lbl">أقصى تذكيرات في اليوم</span>
                 <select id="smartDailyMax"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
               </label>
-              <label><span class="lbl">فاصل بين الاقتراحات</span>
+              <label><span class="lbl">فاصل بين التذكيرات</span>
                 <select id="smartCooldown"><option value="60">ساعة</option><option value="120">ساعتان</option><option value="180">3 ساعات</option><option value="360">6 ساعات</option></select>
               </label>
-              <label><span class="lbl">مدة الاحتفاظ المحلية</span>
+              <label><span class="lbl">مدة حفظ السجل على الجهاز</span>
                 <select id="smartRetention"><option value="14">14 يومًا</option><option value="35">35 يومًا</option><option value="60">60 يومًا</option><option value="90">90 يومًا</option></select>
               </label>
             </div>
             <div class="muted" id="smartLocalStatus" style="margin-top:10px"></div>
             <div class="muted" id="smartDecisionStatus" style="margin-top:5px"></div>
             <div class="row" style="margin-top:10px">
-              <button class="btn small ghost" id="smartDeleteData" type="button">حذف سجل العادات المحلي</button>
+              <button class="btn small ghost" id="smartDeleteData" type="button">حذف سجل رفيق اليوم من الجهاز</button>
             </div>
           </details>
           <div class="card">
@@ -1555,7 +1555,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.4.13</div>
+              <div class="muted">الإصدار 1.4.14</div>
             </div>
           </div>
 
@@ -1630,7 +1630,7 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.4.13';
+    window.APP_BUNDLE_VERSION = '1.4.14';
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {
