@@ -13,9 +13,9 @@
     "quran-madani-lines.json"
   ],
   "apk": {
-    "version": "1.4.7",
-    "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-android-v1.4.7/Siraj-Android-1.4.7.apk",
-    "sha256": "2fdab5b9af460869f3c9f434ee0d08358d6a16391d0acaee2804dc5a33b4e04d"
+    "version": "1.4.12",
+    "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-android-v1.4.12/Siraj-Android-1.4.12.apk",
+    "sha256": "ea08be8fd2f53c9fe7b202cdc6c327a6295d8e1d1102addf1a5bcd147364645e"
   },
   "desktop": {
     "version": "4.1.1",
@@ -25,7 +25,7 @@
   "features": [
     "علامة ربع الحزب ظاهرة في المصحف كما في مصحف المدينة",
     "الشاشة لا تنطفئ أثناء القراءة والتلاوة",
-    "الصوت يكمل في الخلفية عبر خدمة تشغيل مستقلة"
+    "الصوت يكمل بعد إغلاق التطبيق بخدمة تشغيل في الخلفية"
   ],
   "sha256": {
     "index.html": "4d20738aa50c0bdc42498c1576e9316851bbfaac797e9f6898036d8eb8807a21",
