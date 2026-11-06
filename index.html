@@ -954,16 +954,6 @@
       background: color-mix(in srgb, var(--card) 85%, transparent); border: 1px solid var(--line);
     }
     .hdr-pager .pno { font-size: 11px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; color: var(--ink); }
-    /* شريط سؤال الصوت في الخلفية */
-    .bg-prompt {
-      display: none; position: sticky; bottom: 8px; z-index: 24; margin: 8px 0 0;
-      background: var(--card); border: 1px solid var(--line); border-right: 4px solid var(--brand);
-      border-radius: 14px; padding: 10px 12px; box-shadow: 0 8px 24px rgba(15, 91, 76, .16);
-      align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
-    }
-    .bg-prompt.show { display: flex; }
-    .bg-prompt-t { font-size: 14px; font-weight: 700; color: var(--ink); }
-    .bg-prompt-actions { display: flex; gap: 8px; }
     .btn.tiny { padding: 6px 12px; font-size: 13px; }
     /* علامة ربع الحزب ۞ داخل السطر */
     #pageBody.madani-lines .rub { display: inline-block; margin-inline-end: .16em; font-size: .92em; opacity: .92; }
@@ -978,6 +968,15 @@
     }
     #pageBody.madani-lines .mline.short { text-align: center; text-align-last: center; margin: 0 auto; }
     #pageBody.madani-lines .surah-banner, #pageBody.madani-lines .bism { line-height: 1.5; }
+    /* تكبير الخط: السطر الطويل يلتف بدل أن يُصغَّر، فتكبر الحروف فعلًا.
+       عند الالتفاف نُعرض الكلمات متراصّة من اليمين (بلا مدّ للفراغات) حتى يبقى
+       شكل السطر نظيفًا، ونفصل الأسطر بمسافة صغيرة تُظهر بنية الصفحة. */
+    #pageBody.madani-lines.zoomed .mline {
+      white-space: normal; overflow-wrap: break-word;
+      text-align: right; text-align-last: right;
+    }
+    #pageBody.madani-lines.zoomed .mline + .mline { margin-top: .12em; }
+    #pageBody.madani-lines.zoomed .mline.short { text-align: center; text-align-last: center; }
 </style>
 </head>
 <body>
@@ -1081,13 +1080,6 @@
           </div>
 
           <div class="reader-dock" id="readerDock">
-            <div class="bg-prompt" id="bgPrompt" hidden role="dialog" aria-label="الصوت في الخلفية">
-              <span class="bg-prompt-t">تحب القرآن يفضل شغال لما تخرج من التطبيق؟</span>
-              <span class="bg-prompt-actions">
-                <button class="btn tiny" id="bgYes">خلي الصوت شغال</button>
-                <button class="btn ghost tiny" id="bgNo">لأ، يوقف</button>
-              </span>
-            </div>
             <div class="player" id="player" role="region" aria-label="مشغل التلاوة">
               <input id="audioSeek" type="range" min="0" max="0" value="0" step="0.1" dir="ltr" aria-label="موضع التلاوة" />
               <div class="player-row">
@@ -1481,12 +1473,7 @@
             </div>
 
             <label class="lbl">الشاشة والصوت</label>
-            <div class="row">
-              <label><input type="checkbox" id="setKeepAwake" checked /> لا تُطفئ الشاشة أثناء القراءة والتلاوة</label>
-            </div>
-            <div class="row">
-              <label><input type="checkbox" id="setBgAudio" checked /> استمرار الصوت عند الخروج من التطبيق</label>
-            </div>
+            <p class="muted">تبقى الشاشة مضاءة ما دام التطبيق مفتوحًا، وتستمر التلاوة عند مغادرته أو إطفاء الشاشة، وتتوقف عند إغلاق التطبيق.</p>
           </div>
           <details class="card dd">
             <summary>تحميل التلاوات للاستماع بدون إنترنت</summary>
@@ -1568,7 +1555,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.4.12</div>
+              <div class="muted">الإصدار 1.4.13</div>
             </div>
           </div>
 
@@ -1643,7 +1630,7 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.4.12';
+    window.APP_BUNDLE_VERSION = '1.4.13';
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {
