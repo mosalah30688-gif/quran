@@ -3766,7 +3766,7 @@
     toast('بدأت ختمة جديدة');
   });
 
-  // ---------- الاقتراحات الذكية المحلية ----------
+  // ---------- رفيق اليوم: اقتراحات محلية على الجهاز ----------
   let smartLastDecision = null;
 
   function smartCompletedServices(at = Date.now()) {
@@ -3850,7 +3850,7 @@
     if (!smartEngine || !SmartServicesAPI) {
       enabled.checked = false;
       enabled.disabled = true;
-      $('#smartLocalStatus').textContent = 'محرك الاقتراحات غير متاح في هذه الحزمة.';
+      $('#smartLocalStatus').textContent = 'رفيق اليوم غير متاح في هذه الحزمة.';
       return;
     }
     const cfg = smartEngine.config;
@@ -3871,21 +3871,21 @@
       $('#smartNativeStatus').textContent = smartNative.enabled
         ? (smartNative.nextAt > Date.now()
           ? `الإشعار المحلي التالي مخطط بعد بوابات النوم والهدوء: ${new Date(smartNative.nextAt).toLocaleString('ar-EG')}.`
-          : 'الإشعارات الذكية مفعّلة، ولا يوجد اقتراح خارجي مناسب الآن.')
+          : 'تذكيرات رفيق اليوم مفعّلة، ولا تذكير مناسب الآن.')
         : 'لا تُطلب صلاحية إشعارات Android إلا عند تفعيل هذا الخيار.';
     }
     $('#smartLocalStatus').textContent = cfg.enabled
-      ? `مفعّلة · ${toArabicDigits(smartEngine.events.length)} حدثًا تشغيليًا محدودًا محفوظًا محليًا لمدة ${toArabicDigits(cfg.retentionDays)} يومًا كحد أقصى.`
-      : `متوقفة؛ لا تُسجّل أحداثًا جديدة ولا تعرض اقتراحات. السجل المحلي الحالي: ${toArabicDigits(smartEngine.events.length)}.`;
+      ? `مفعّل · ${toArabicDigits(smartEngine.events.length)} حدثًا تشغيليًا محدودًا محفوظًا محليًا لمدة ${toArabicDigits(cfg.retentionDays)} يومًا كحد أقصى.`
+      : `متوقف؛ لا يسجّل أحداثًا جديدة ولا يعرض تذكيرات. السجل المحلي الحالي: ${toArabicDigits(smartEngine.events.length)}.`;
     if (!cfg.enabled) {
       $('#smartDecisionStatus').textContent = 'التفعيل اختياري، وبياناتك لا تغادر الجهاز.';
     } else if (smartLastDecision?.selected) {
-      $('#smartDecisionStatus').textContent = 'آخر قرار: عُرض اقتراح محلي مع سبب قابل للعرض.';
+      $('#smartDecisionStatus').textContent = 'آخر قرار: عُرض تذكير مع سبب ظاهر للمستخدم.';
     } else {
       const reason = primarySmartBlock(smartLastDecision);
       $('#smartDecisionStatus').textContent = reason
         ? `آخر قرار: ${SmartServicesAPI.describeBlock(reason)}`
-        : 'لا يوجد اقتراح مناسب الآن.';
+        : 'لا توجد حاجة إلى تذكير الآن.';
     }
   }
 
@@ -4027,7 +4027,7 @@
     const candidate = selected.candidate;
     const suggestionId = `${candidate.id}:${Date.now()}`.slice(0, 64);
     smartCurrent = { selection: selected, id: suggestionId };
-    $('#smartSuggestionTitle').textContent = candidate.title || 'اقتراح من سراج';
+    $('#smartSuggestionTitle').textContent = candidate.title || 'من رفيق اليوم';
     $('#smartSuggestionBody').textContent = candidate.body || '';
     $('#smartSuggestionOpen').textContent = candidate.cta || 'فتح';
     $('#smartSuggestionWhy').textContent = SmartServicesAPI.explainSelection(selected);
@@ -4107,7 +4107,7 @@
       }, { silent: true });
       queueSmartSuggestion(6500);
       if (getWird().reminderEnabled && getReminderNative()) saveWirdReminder();
-      toast('فُعّلت الاقتراحات المحلية');
+      toast('فُعّل رفيق اليوم');
     } else {
       clearTimeout(smartSuggestionTimer);
       clearTimeout(smartNativeTimer);
@@ -4117,7 +4117,7 @@
       store.set(SMART_NATIVE_KEY, smartNative);
       getSmartDeviceNative()?.cancel().catch(() => {});
       if (getWird().reminderEnabled && getReminderNative()) saveWirdReminder();
-      toast('توقفت الاقتراحات الذكية');
+      toast('توقف رفيق اليوم');
     }
     fillSmartSettings();
   });
@@ -4162,7 +4162,7 @@
     }));
   $('#smartDeleteData').addEventListener('click', () => {
     if (!smartEngine) return;
-    if (!confirm('حذف سجل العادات والاقتراحات المحلي؟ لن تُحذف قراءتك أو علاماتك أو إعدادات المصحف.')) return;
+    if (!confirm('حذف سجل رفيق اليوم من هذا الجهاز؟ لن تُحذف قراءتك أو علاماتك أو إعدادات المصحف.')) return;
     smartEngine.reset();
     smartLastDecision = null;
     persistSmartContext(true);
@@ -4172,7 +4172,7 @@
     getSmartDeviceNative()?.cancel().catch(() => {});
     hideSmartSuggestion();
     fillSmartSettings();
-    toast('حُذف سجل الاقتراحات المحلي');
+    toast('حُذف سجل رفيق اليوم');
   });
 
   function recordSmartSessionEnd() {
