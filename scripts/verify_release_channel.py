@@ -99,7 +99,11 @@ def main() -> int:
         fail(problems, f"manifest apk.url does not point at Siraj-Android-{apk_version}.apk: {apk_url}")
     if apk_version == version and f"/siraj-android-v{version}/" not in apk_url:
         fail(problems, f"manifest apk.url tag must be siraj-android-v{version} for the current release: {apk_url}")
-    if apk_version > version:
+    # مقارنة رقمية لا نصية: 1.4.10 أحدث من 1.4.9 مع أن المقارنة النصية تقول العكس.
+    def as_tuple(value: str) -> tuple[int, ...]:
+        return tuple(int(part) for part in value.split("."))
+
+    if as_tuple(apk_version) > as_tuple(version):
         fail(problems, f"manifest apk.version {apk_version} points at a release newer than the source {version}")
 
     baseline = ROOT / "update/app.apk"

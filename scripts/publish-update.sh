@@ -61,16 +61,15 @@ for relative in curricula:
     bound_assets.add(asset)
 files = base + curricula + sorted(bound_assets - set(base))
 
-# ملفات بيانات القرآن تُشحن في القناة فقط عند اختلافها عن المنشور،
-# فتصل تصحيحات النص إلى التطبيق المثبَّت من داخل التطبيق (IndexedDB) بلا APK جديد.
+# ملفات بيانات القرآن تُشحن في القناة دائمًا مع كل إصدار، لأن المستخدم الذي ينتقل
+# من إصدار قديم مباشرة إلى هذا الإصدار لن يكون قد استلم تصحيح نص سابق؛ وبهذا يصل
+# متن المصحف الصحيح إلى التطبيق المثبَّت من داخل التطبيق (IndexedDB) بلا APK جديد.
 for name in ("quran-hafs.json", "quran-madani-lines.json"):
     source = root / name
-    published = update / name
     if not source.is_file():
         continue
-    if not published.is_file() or published.read_bytes() != source.read_bytes():
-        if name not in files:
-            files.append(name)
+    if name not in files:
+        files.append(name)
 
 stale_dir = update / "tajweed-curricula"
 if stale_dir.exists():

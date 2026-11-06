@@ -135,6 +135,13 @@
     set(key, value) { try { localStorage.setItem('quran:' + key, JSON.stringify(value)); } catch {} },
   };
   const settings = Object.assign({}, DEFAULTS, store.get('settings', {}));
+  // 1.4.9+: خط Amiri Quran كان يفصل حركات الضبط عن حروفها في المتصفح، فننقل من بقي
+  // على هذا الخط الافتراضي القديم إلى الخط الأوضح مرة واحدة، مع احترام أي اختيار لاحق.
+  if (!settings.fontFix149) {
+    if (settings.font === 'Amiri Quran') settings.font = 'Scheherazade New';
+    settings.fontFix149 = true;
+    store.set('settings', settings);
+  }
   // الإعدادات المحفوظة من إصدارات أقدم قد تشير إلى خيارات حفص المحذوفة؛ نرجع لحفص عن عاصم
   const VALID_RIWAYAT = ['quran-uthmani', 'warsh', 'qalun', 'duri'];
   if (!VALID_RIWAYAT.includes(settings.riwaya)) settings.riwaya = 'quran-uthmani';
