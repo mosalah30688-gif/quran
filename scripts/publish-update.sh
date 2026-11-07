@@ -36,7 +36,16 @@ try:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 except (FileNotFoundError, json.JSONDecodeError):
     manifest = {}
-if manifest.get("features") == features:
+try:
+    current_build = int((root / "BUILD_NUMBER").read_text(encoding="utf-8").strip())
+except (FileNotFoundError, ValueError):
+    current_build = 0
+try:
+    released_build = int(manifest.get("build") or 0)
+except (TypeError, ValueError):
+    released_build = 0
+# تكرار النص مرفوض ما دام البناء نفسه؛ أما بناء جديد فله محتواه الجديد ولو تشابهت العناوين.
+if manifest.get("features") == features and current_build <= released_build:
     raise SystemExit("update features must describe what is new, not repeat the current release")
 base = [
     "index.html",
