@@ -8,7 +8,8 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Monotonic code for a true upgrade over all previously published Siraj APKs.
-        versionCode 159
+        // يتقدّم على رقم بناء الواجهة عمدًا حتى تُعرض ترقية الملف على الأجهزة المحدَّثة داخليًا.
+        versionCode 160
         versionName "1.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

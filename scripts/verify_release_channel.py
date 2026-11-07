@@ -52,11 +52,13 @@ def main() -> int:
         build_number = (ROOT / "BUILD_NUMBER").read_text(encoding="utf-8").strip()
         if not build_number.isdigit():
             fail(problems, f"BUILD_NUMBER is not a positive integer: {build_number!r}")
-        elif gradle_code.group(1) != build_number:
+        elif int(gradle_code.group(1)) < int(build_number):
             fail(
                 problems,
-                f"gradle versionCode {gradle_code.group(1)} does not match BUILD_NUMBER {build_number}",
+                f"gradle versionCode {gradle_code.group(1)} is behind BUILD_NUMBER {build_number}",
             )
+        # يجوز أن يتقدّم versionCode على رقم بناء الواجهة: هذا ما يسمح بعرض ترقية
+        # ملف الـAPK على الأجهزة التي وصلها تحديث داخلي أحدث من ملفها المثبَّت.
 
     html = (ROOT / "index.html").read_text(encoding="utf-8")
     if f"APP_BUNDLE_VERSION = '{version}'" not in html:
@@ -108,10 +110,11 @@ def main() -> int:
         fail(problems, f"manifest apk.url tag must be siraj-android-v{version}(-b<build>) for the current release: {apk_url}")
     # مقارنة رقم البناء: رقم الإصدار الظاهر ثابت (1.0.0) بين التحديثات الصغيرة.
     apk_code = int(apk.get("code") or 0)
-    if apk_code > int(build_number or 0):
+    gradle_code_value = int(gradle_code.group(1)) if gradle_code else 0
+    if apk_code > gradle_code_value:
         fail(
             problems,
-            f"manifest apk.code {apk_code} points at a build newer than BUILD_NUMBER {build_number}",
+            f"manifest apk.code {apk_code} points at a build newer than gradle versionCode {gradle_code_value}",
         )
 
     baseline = ROOT / "update/app.apk"

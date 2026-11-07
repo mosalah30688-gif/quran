@@ -428,7 +428,8 @@ jobs:
           IFS='|' read -r -a FEATURES <<< "$UPDATE_FEATURES"
           # القناة قد تكون قُدّمت مسبقًا بنفس البناء عند التحقق المحلي؛ التكرار هنا لا معنى له.
           CHANNEL_BUILD=$(python3 -c "import json;print(json.load(open('update/manifest.json')).get('build') or 0)")
-          if [ "$CHANNEL_BUILD" = "$APK_CODE" ]; then
+          SHELL_BUILD=$(cat BUILD_NUMBER)
+          if [ "$CHANNEL_BUILD" = "$SHELL_BUILD" ]; then
             echo "channel already at build $APK_CODE"
           else
             bash scripts/publish-update.sh "$VERSION" "${FEATURES[@]}"

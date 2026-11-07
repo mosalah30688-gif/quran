@@ -81,7 +81,7 @@ test('الأذان في الخلفية: أرقام الإصدار والبناء
   const html = read('index.html');
   const match = /versionCode\s+(\d+)/.exec(gradle);
   assert.ok(match, 'versionCode موجود في gradle');
-  assert.equal(match[1], build, 'versionCode يساوي BUILD_NUMBER');
+  assert.ok(Number(match[1]) >= Number(build), 'versionCode لا يسبق BUILD_NUMBER');
   assert.match(html, new RegExp(`APP_BUILD_NUMBER = ${build}`));
   assert.match(gradle, /versionName "1\.0\.0"/);
 });
