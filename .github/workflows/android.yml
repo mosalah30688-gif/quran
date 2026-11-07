@@ -426,7 +426,13 @@ jobs:
         run: |
           set -euo pipefail
           IFS='|' read -r -a FEATURES <<< "$UPDATE_FEATURES"
-          bash scripts/publish-update.sh "$VERSION" "${FEATURES[@]}"
+          # القناة قد تكون قُدّمت مسبقًا بنفس البناء عند التحقق المحلي؛ التكرار هنا لا معنى له.
+          CHANNEL_BUILD=$(python3 -c "import json;print(json.load(open('update/manifest.json')).get('build') or 0)")
+          if [ "$CHANNEL_BUILD" = "$APK_CODE" ]; then
+            echo "channel already at build $APK_CODE"
+          else
+            bash scripts/publish-update.sh "$VERSION" "${FEATURES[@]}"
+          fi
           python3 - <<'PY'
           import json, os
           from pathlib import Path

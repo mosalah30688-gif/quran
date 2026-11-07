@@ -85,3 +85,15 @@ test('الأذان في الخلفية: أرقام الإصدار والبناء
   assert.match(html, new RegExp(`APP_BUILD_NUMBER = ${build}`));
   assert.match(gradle, /versionName "1\.0\.0"/);
 });
+
+test('ترقية الـAPK تُقارن برقم بناء الملف المثبَّت لا برقم بناء الواجهة', () => {
+  const app = read('app.js');
+  const plugin = read(`${JAVA}/ApkUpdaterPlugin.java`);
+  assert.match(plugin, /ret\.put\("code", code\)/);
+  assert.match(plugin, /getLongVersionCode\(\)/);
+  assert.match(app, /function installedApkCode\(\)/);
+  assert.match(app, /function resolveApkCode\(\)/);
+  assert.match(app, /apkCode > installedApkCode\(\)/);
+  // لا يجوز أن يُقارن مؤشر الـAPK برقم بناء الواجهة، وإلا حجب التحديث الداخلي ترقية الملف
+  assert.doesNotMatch(app, /apkCode > currentBuild\(\)/);
+});

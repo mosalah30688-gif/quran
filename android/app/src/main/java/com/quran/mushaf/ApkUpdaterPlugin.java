@@ -37,6 +37,11 @@ public class ApkUpdaterPlugin extends Plugin {
             PackageInfo pi = getContext().getPackageManager().getPackageInfo(getContext().getPackageName(), 0);
             JSObject ret = new JSObject();
             ret.put("version", pi.versionName);
+            // رقم البناء المثبَّت على الجهاز: هو المرجع الحقيقي لمقارنة ترقية الـAPK،
+            // لا رقم بناء الواجهة الذي قد يسبقه بتحديث داخلي.
+            long code = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P
+                    ? pi.getLongVersionCode() : pi.versionCode;
+            ret.put("code", code);
             call.resolve(ret);
         } catch (Exception e) {
             call.reject("version: " + e.getMessage());
