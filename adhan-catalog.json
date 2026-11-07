@@ -1,0 +1,149 @@
+{
+ "version": 1,
+ "items": [
+  {
+   "id": "haram-makkah",
+   "name": "الحرم المكي",
+   "region": "مكة المكرمة",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/019--1.mp3",
+   "seconds": 204,
+   "fajr": false
+  },
+  {
+   "id": "mulla-makkah",
+   "name": "علي ملا",
+   "region": "مكة المكرمة",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/047--.mp3",
+   "seconds": 175,
+   "fajr": false
+  },
+  {
+   "id": "haram-madinah",
+   "name": "الحرم المدني",
+   "region": "المدينة المنورة",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/018-.mp3",
+   "seconds": 281,
+   "fajr": false
+  },
+  {
+   "id": "fajr-makkah",
+   "name": "أذان الفجر · الحرم المكي",
+   "region": "مكة المكرمة",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/033--.mp3",
+   "seconds": 222,
+   "fajr": true
+  },
+  {
+   "id": "fajr-madinah",
+   "name": "أذان الفجر · الحرم المدني",
+   "region": "المدينة المنورة",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/034--.mp3",
+   "seconds": 278,
+   "fajr": true
+  },
+  {
+   "id": "abdulbasit",
+   "name": "عبد الباسط عبد الصمد",
+   "region": "مصر",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/049-.mp3",
+   "seconds": 247,
+   "fajr": false
+  },
+  {
+   "id": "alafasy",
+   "name": "مشاري راشد العفاسي",
+   "region": "الكويت",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/074-1_-.mp3",
+   "seconds": 240,
+   "fajr": false
+  },
+  {
+   "id": "alafasy-fajr",
+   "name": "مشاري العفاسي · أذان الفجر",
+   "region": "الكويت",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/038-1.mp3",
+   "seconds": 187,
+   "fajr": true
+  },
+  {
+   "id": "rifat",
+   "name": "محمد رفعت",
+   "region": "مصر",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/042--.mp3",
+   "seconds": 203,
+   "fajr": false
+  },
+  {
+   "id": "husary",
+   "name": "محمود خليل الحصري",
+   "region": "مصر",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/044--.mp3",
+   "seconds": 127,
+   "fajr": false
+  },
+  {
+   "id": "banna",
+   "name": "محمد علي البنا",
+   "region": "مصر",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/043--.mp3",
+   "seconds": 153,
+   "fajr": false
+  },
+  {
+   "id": "naina",
+   "name": "أحمد نعينع",
+   "region": "مصر",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/040--.mp3",
+   "seconds": 210,
+   "fajr": false
+  },
+  {
+   "id": "mustafa-ismail",
+   "name": "مصطفى إسماعيل",
+   "region": "مصر",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/068-.mp3",
+   "seconds": 183,
+   "fajr": false
+  },
+  {
+   "id": "minshawi",
+   "name": "محمد صديق المنشاوي",
+   "region": "مصر",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/048-.mp3",
+   "seconds": 247,
+   "fajr": false
+  },
+  {
+   "id": "shuaisha",
+   "name": "أبو العنين شعيشع",
+   "region": "مصر",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/071--.mp3",
+   "seconds": 236,
+   "fajr": false
+  },
+  {
+   "id": "aqsa",
+   "name": "المسجد الأقصى · ناجي قزاز",
+   "region": "القدس",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/045--.mp3",
+   "seconds": 185,
+   "fajr": false
+  },
+  {
+   "id": "qatar",
+   "name": "أحمد العمادي",
+   "region": "قطر",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/002--.mp3",
+   "seconds": 190,
+   "fajr": false
+  },
+  {
+   "id": "halabiya",
+   "name": "حمزة الحلبية",
+   "region": "سوريا",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/001-.mp3",
+   "seconds": 241,
+   "fajr": false
+  }
+ ]
+}

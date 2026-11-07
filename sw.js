@@ -1,8 +1,8 @@
 // غلاف سراج وبيانات القراءة الأساسية مخزّنة مسبقًا ليعمل المصحف دون اتصال.
-const CACHE = 'siraj-shell-v17';
+const CACHE = 'siraj-shell-v18';
 const SHELL = [
   './', './index.html', './smart-context.js', './smart-services.js', './tajweed-learning.js',
-  './tajweed-curriculum-loader.js', './app.js',
+  './tajweed-curriculum-loader.js', './prayer-times.js', './prayer-data.js', './prayer-ui.js', './app.js',
   './manifest.json', './icon.png', './icon-192.png',
   './quran-hafs.json', './quran-madani-lines.json', './quran-tajweed.json', './tajweed-learning-catalog.json', './tajweed-scope-registry.json',
   './surahs.json', './tafsir-catalog.json',

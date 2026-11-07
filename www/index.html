@@ -180,6 +180,7 @@
 
     /* عرض حفص بأسلوب الشاملة: عرض كامل، عنوان وبسملة مرة واحدة، ونص متصل مضغوط. */
     .wrap.reader-wide { max-width: none; padding-left: 12px; padding-right: 12px; }
+    .page.is-dragging { z-index: 3; box-shadow: 0 18px 40px rgba(40,25,5,.32), 0 1px 0 #d6bf8c; will-change: transform; }
     body.hafs-reader .page {
       max-width: none; min-height: 0; border: 1px solid #9a4438; border-radius: 0;
       padding: 18px 22px 14px; box-shadow: none;
@@ -472,7 +473,8 @@
       .toolbar::-webkit-scrollbar { display: none; }
       .toolbar select { flex: 0 0 auto; max-width: 145px; }
       .page { max-width: 100%; padding-left: 10px; padding-right: 10px; }
-      body.hafs-reader .page { padding: 12px 9px 10px; }
+      .page.is-dragging { z-index: 3; box-shadow: 0 18px 40px rgba(40,25,5,.32), 0 1px 0 #d6bf8c; will-change: transform; }
+    body.hafs-reader .page { padding: 12px 9px 10px; }
       body.hafs-reader .flow { line-height: 1.5; }
       .panel-tafsir { max-height: 76vh; padding-bottom: max(14px, env(safe-area-inset-bottom)); }
     }
@@ -958,6 +960,57 @@
     /* علامة ربع الحزب ۞ داخل السطر */
     #pageBody.madani-lines .rub { display: inline-block; margin-inline-end: .16em; font-size: .92em; opacity: .92; }
 
+
+    /* ===== المواقيت والأذان والقبلة ===== */
+    .pt-chip { border: 1px solid var(--line); background: var(--card); color: var(--brand); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700; cursor: pointer; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .pt-chip:hover { background: var(--hl); }
+    .pt-hero { display: grid; gap: 10px; }
+    .pt-hero-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .pt-hero h2 { margin: 2px 0 0; font-size: 24px; color: var(--brand); }
+    .pt-count { text-align: center; min-width: 92px; }
+    .pt-count b { display: block; font-size: 26px; font-variant-numeric: tabular-nums; color: var(--ink); }
+    .pt-count span { font-size: 12px; color: var(--muted); }
+    .pt-progress { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; }
+    .pt-progress i { display: block; height: 100%; width: 0; background: var(--brand); border-radius: 999px; transition: width .4s ease; }
+    .pt-hero-actions { margin: 2px 0 0; }
+    .pt-times { display: grid; gap: 4px; }
+    .pt-row { display: grid; grid-template-columns: 1fr auto 40px; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; border: 1px solid transparent; }
+    .pt-row + .pt-row { border-top: 1px dashed var(--line); }
+    .pt-row.is-next { background: var(--hl); border-color: #e7d8a4; }
+    .pt-row.is-sunrise { opacity: .85; }
+    .pt-name { font-weight: 700; }
+    .pt-time { font-variant-numeric: tabular-nums; font-size: 17px; color: var(--brand); }
+    .pt-mini { border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 3px 7px; font-size: 13px; cursor: pointer; }
+    .pt-mini.on { background: var(--brand); color: #fff; border-color: var(--brand); }
+    .pt-title { margin: 0 0 8px; font-size: 17px; }
+    .pt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .pt-grid-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+    .pt-grid label { display: grid; gap: 4px; }
+    .pt-inline { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+    .pt-adhan-list { display: grid; gap: 6px; margin-top: 10px; max-height: 340px; overflow: auto; }
+    .pt-adhan { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; }
+    .pt-adhan.is-selected { border-color: var(--brand); background: var(--hl); }
+    .pt-adhan-main { display: grid; gap: 2px; }
+    .pt-adhan-main strong { font-size: 15px; }
+    .pt-adhan-main .muted { font-size: 12px; }
+    .pt-adhan-actions { display: flex; gap: 5px; }
+    .pt-qibla-value { font-size: 30px; font-weight: 800; color: var(--brand); font-variant-numeric: tabular-nums; }
+    .pt-qibla-compass { width: 76px; height: 76px; border-radius: 50%; border: 2px solid var(--brand); display: grid; place-items: center; font-size: 30px; background: var(--bg); transition: transform .2s ease; }
+    .pt-compass { position: relative; width: min(260px, 78vw); aspect-ratio: 1; margin: 14px auto 6px; border-radius: 50%; border: 2px solid var(--line); background: radial-gradient(circle at 50% 50%, var(--card), var(--bg)); transition: transform .12s linear; }
+    .pt-compass-ring { position: absolute; inset: 12px; border-radius: 50%; border: 1px dashed var(--line); }
+    .pt-compass-needle { position: absolute; left: 50%; top: 50%; width: 4px; height: 42%; margin-left: -2px; margin-top: -42%; transform-origin: 50% 100%; background: linear-gradient(to top, var(--brand), #c8922b); border-radius: 3px; transition: transform .12s linear; }
+    .pt-compass-needle::before { content: ""; position: absolute; top: -8px; left: -5px; border: 7px solid transparent; border-bottom-color: #c8922b; }
+    .pt-compass-n, .pt-compass-s, .pt-compass-e, .pt-compass-w { position: absolute; font-size: 13px; font-weight: 700; color: var(--muted); }
+    .pt-compass-n { top: 4px; left: 50%; transform: translateX(-50%); }
+    .pt-compass-s { bottom: 4px; left: 50%; transform: translateX(-50%); }
+    .pt-compass-e { right: 6px; top: 50%; transform: translateY(-50%); }
+    .pt-compass-w { left: 6px; top: 50%; transform: translateY(-50%); }
+    .pt-compass-turn { text-align: center; font-weight: 700; margin: 6px 0; }
+    @media (max-width: 520px) {
+      .pt-grid-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .pt-hero h2 { font-size: 20px; }
+    }
+
     /* ===== المصحف بأسطر ثابتة لرواية حفص: تباعد 1.5 ومحاذاة كاملة للسطر ===== */
     #pageBody.madani-lines { text-align: justify; }
     #pageBody.madani-lines .mline {
@@ -1001,6 +1054,7 @@
             <img src="icon.png" alt="" aria-hidden="true" />
             <span>سراج</span>
           </div>
+          <button class="pt-chip" id="ptChip" hidden type="button" aria-label="مواقيت الصلاة">المواقيت</button>
           <div class="title" id="topTitle">المصحف</div>
         </div>
         <div class="hdr-pager" aria-label="التنقل بين صفحات المصحف">
@@ -1026,6 +1080,7 @@
               <button data-view="stats"><span class="ic" data-icon="stats" aria-hidden="true"></span>الإحصائيات</button>
               <button data-view="memo"><span class="ic" data-icon="memo" aria-hidden="true"></span>الحفظ</button>
               <button data-view="wird"><span class="ic" data-icon="wird" aria-hidden="true"></span>الورد</button>
+              <button data-view="prayer"><span class="ic" data-icon="clock" aria-hidden="true"></span>المواقيت</button>
               <button data-view="bookmarks"><span class="ic" data-icon="bookmarks" aria-hidden="true"></span>المحفوظات</button>
             </div>
           </div>
@@ -1097,6 +1152,124 @@
             </div>
 
             
+          </div>
+        </section>
+
+
+        <!-- المواقيت: أذان وإقامة وقبلة -->
+        <section class="view" id="view-prayer">
+          <div class="card pt-hero">
+            <div class="pt-hero-head">
+              <div>
+                <span class="reader-kicker">الصلاة القادمة</span>
+                <h2 id="ptNextName">—</h2>
+                <p class="muted" id="ptNextAt">—</p>
+              </div>
+              <div class="pt-count"><b id="ptCountdown">—</b><span>متبقٍ</span></div>
+            </div>
+            <div class="pt-progress"><i id="ptBar"></i></div>
+            <div class="row pt-hero-actions">
+              <button class="btn small" id="ptPlayAdhan">تشغيل أذان الصلاة القادمة</button>
+              <button class="btn small ghost" id="ptFajrAdhan">أذان الفجر</button>
+              <button class="btn small ghost" id="ptStop">إيقاف الصوت</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="pt-times" id="ptTimes"></div>
+            <p class="muted" id="ptCityLine"></p>
+          </div>
+
+          <div class="card">
+            <h3 class="pt-title">الموقع والحساب</h3>
+            <label class="lbl">المدينة</label>
+            <select id="ptCity"></select>
+            <div class="row" style="margin-top:8px">
+              <button class="btn small ghost" id="ptGps">حدّد موقعي تلقائيًا</button>
+              <button class="btn small ghost" id="ptManual">حفظ إحداثيات يدوية</button>
+            </div>
+            <div class="pt-grid">
+              <label><span class="lbl">خط العرض</span><input id="ptLat" type="number" step="0.001" dir="ltr" /></label>
+              <label><span class="lbl">خط الطول</span><input id="ptLng" type="number" step="0.001" dir="ltr" /></label>
+              <label><span class="lbl">طريقة الحساب</span><select id="ptMethod"></select></label>
+              <label><span class="lbl">مذهب العصر</span>
+                <select id="ptMadhab"><option value="shafi">الجمهور (ظل ١)</option><option value="hanafi">الحنفية (ظل ٢)</option></select>
+              </label>
+              <label><span class="lbl">خطوط العرض العالية</span><select id="ptHighLat"></select></label>
+              <label><span class="lbl">نظام الوقت</span>
+                <label class="pt-inline"><input type="checkbox" id="ptClock24" /> 24 ساعة</label>
+              </label>
+            </div>
+            <p class="muted" id="ptMethodNote">التعديلات الدقيقة لكل صلاة تُحفظ على جهازك، وتُطبَّق على الحساب الفلكي المحلي.</p>
+          </div>
+
+          <div class="card">
+            <h3 class="pt-title">الأذان</h3>
+            <label class="pt-inline"><input type="checkbox" id="ptAdhanEnabled" checked /> تشغيل الأذان تلقائيًا في وقته</label>
+            <div class="pt-grid">
+              <label><span class="lbl">مستوى الصوت</span><input id="ptVolume" type="range" min="0" max="100" step="5" /></label>
+              <label><span class="lbl">تنبيه قبل الأذان</span>
+                <select id="ptPre">
+                  <option value="0">بلا تنبيه مسبق</option><option value="5">5 دقائق</option>
+                  <option value="10">10 دقائق</option><option value="15">15 دقيقة</option>
+                  <option value="30">30 دقيقة</option>
+                </select>
+              </label>
+            </div>
+            <p class="muted">اختر مؤذنًا للأذان العام، وآخر لأذان الفجر (يُستحب فيه التثويب). زر ⤓ ينزّل الأذان على الجهاز ليعمل دون إنترنت، و▶ لتجربته.</p>
+            <div class="pt-adhan-list" id="ptAdhanList"></div>
+          </div>
+
+          <div class="card">
+            <h3 class="pt-title">الإقامة</h3>
+            <label class="pt-inline"><input type="checkbox" id="ptIqamaEnabled" checked /> تنبيه الإقامة بعد الأذان</label>
+            <label class="pt-inline"><input type="checkbox" id="ptIqamaTone" checked /> نغمة تنبيه مع الإقامة</label>
+            <div class="pt-grid pt-grid-5">
+              <label><span class="lbl">الفجر</span><input id="ptIqama-fajr" type="number" min="0" max="60" step="1" /></label>
+              <label><span class="lbl">الظهر</span><input id="ptIqama-dhuhr" type="number" min="0" max="60" step="1" /></label>
+              <label><span class="lbl">العصر</span><input id="ptIqama-asr" type="number" min="0" max="60" step="1" /></label>
+              <label><span class="lbl">المغرب</span><input id="ptIqama-maghrib" type="number" min="0" max="60" step="1" /></label>
+              <label><span class="lbl">العشاء</span><input id="ptIqama-isha" type="number" min="0" max="60" step="1" /></label>
+            </div>
+            <p class="muted" id="ptIqamaLine"></p>
+          </div>
+
+          <div class="card" id="ptQiblaCard">
+            <h3 class="pt-title">القبلة</h3>
+            <div class="row" style="justify-content:space-between;align-items:flex-start;gap:12px">
+              <div>
+                <div class="pt-qibla-value" id="ptQiblaBearing">—</div>
+                <p class="muted" id="ptQiblaDistance"></p>
+              </div>
+              <div class="pt-qibla-compass" id="ptQiblaCompass">
+                <span class="pt-kaaba">🕋</span>
+              </div>
+            </div>
+            <p class="muted" id="ptQiblaSun"></p>
+            <div class="row" style="margin-top:8px">
+              <button class="btn small" id="ptCompassStart">تشغيل البوصلة</button>
+              <button class="btn small ghost" id="ptQiblaRefresh">تحديث الاتجاه</button>
+            </div>
+            <div class="pt-compass" id="ptCompassDial">
+              <div class="pt-compass-ring"></div>
+              <div class="pt-compass-needle" id="ptCompassNeedle"></div>
+              <span class="pt-compass-n">ش</span><span class="pt-compass-s">ج</span>
+              <span class="pt-compass-e">ق</span><span class="pt-compass-w">غ</span>
+            </div>
+            <p class="pt-compass-turn" id="ptCompassTurn">شغّل البوصلة ثم وجّه الهاتف حتى يستقيم السهم.</p>
+            <p class="muted">اتجاه الهاتف الآن: <span id="ptHeading">—</span></p>
+          </div>
+
+          <div class="card">
+            <h3 class="pt-title">تصحيح المواقيت يدويًا</h3>
+            <p class="muted">بالدقائق، موجب يزيد وسالب ينقص — يُستخدم لمطابقة مسجد حيّك.</p>
+            <div class="pt-grid pt-grid-5">
+              <label><span class="lbl">الفجر</span><input id="ptAdj-fajr" type="number" min="-30" max="30" step="1" value="0" /></label>
+              <label><span class="lbl">الظهر</span><input id="ptAdj-dhuhr" type="number" min="-30" max="30" step="1" value="0" /></label>
+              <label><span class="lbl">العصر</span><input id="ptAdj-asr" type="number" min="-30" max="30" step="1" value="0" /></label>
+              <label><span class="lbl">المغرب</span><input id="ptAdj-maghrib" type="number" min="-30" max="30" step="1" value="0" /></label>
+              <label><span class="lbl">العشاء</span><input id="ptAdj-isha" type="number" min="-30" max="30" step="1" value="0" /></label>
+            </div>
           </div>
         </section>
 
@@ -1533,7 +1706,7 @@
           </details>
           <div class="card">
             <h3 style="margin-top:0">تحديث التطبيق</h3>
-            <div class="muted">الإصدار الحالي: <strong id="verVal"></strong></div>
+            <div class="muted">الإصدار الحالي: <strong id="verVal"></strong> · <span id="buildVal"></span></div>
             <div class="row" style="margin-top:10px">
               <button class="btn" id="btnUpdate">🔄 تحديث التطبيق</button>
               <button class="btn ghost" id="btnRestore" hidden>استعادة النسخة الأصلية</button>
@@ -1555,7 +1728,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.4.14</div>
+              <div class="muted">الإصدار 1.0.0</div>
             </div>
           </div>
 
@@ -1630,7 +1803,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.4.14';
+    window.APP_BUNDLE_VERSION = '1.0.0';
+    // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
+    // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
+    window.APP_BUILD_NUMBER = 156;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {
@@ -1703,8 +1879,8 @@
       }
       if (raw) {
         var parsed = JSON.parse(raw);
-        // APK جديد لا يجوز أن تغطيه ترقية واجهة قديمة باقية في WebView.
-        if (newer(parsed.version, window.APP_BUNDLE_VERSION)) applied = applyUpdate(parsed);
+        // APK جديد لا يجوز أن تغطيه ترقية واجهة أقدم باقية في WebView؛ المقارنة برقم البناء.
+        if (Number(parsed.build || 0) > Number(window.APP_BUILD_NUMBER || 0)) applied = applyUpdate(parsed);
         else { localStorage.removeItem(KEY); localStorage.removeItem(PEND); }
       }
     } catch (e) {
@@ -1721,6 +1897,9 @@
       run(null, 'smart-services.js');
       run(null, 'tajweed-learning.js');
       run(null, 'tajweed-curriculum-loader.js');
+      run(null, 'prayer-times.js');
+      run(null, 'prayer-data.js');
+      run(null, 'prayer-ui.js');
       run(null, 'app.js');
     }
   })();

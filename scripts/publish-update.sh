@@ -46,6 +46,9 @@ base = [
     "tajweed-curriculum-loader.js",
     "tajweed-learning-catalog.json",
     "tajweed-scope-registry.json",
+    "prayer-times.js",
+    "prayer-data.js",
+    "prayer-ui.js",
     "app.js",
 ]
 curricula = sorted(
@@ -82,6 +85,12 @@ for relative in files:
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(source, target)
 
+build_file = root / "BUILD_NUMBER"
+build_number = int(build_file.read_text(encoding="utf-8").strip()) if build_file.is_file() else 0
+previous_build = int(manifest.get("build") or 0)
+if build_number < previous_build:
+    raise SystemExit(f"BUILD_NUMBER {build_number} must not decrease (channel is at {previous_build})")
+manifest["build"] = build_number
 manifest["version"] = version
 manifest["features"] = features
 manifest["files"] = files

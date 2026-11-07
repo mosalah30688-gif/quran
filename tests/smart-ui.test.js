@@ -122,7 +122,8 @@ test('every published update carries a concise what-is-new notification', () => 
   assert.match(app, /function publicUpdateFeatures\(manifest\)/);
   assert.match(app, /\\nالجديد:/);
   assert.match(app, /!availableVersion \|\| !features\.length/);
-  assert.match(app, /newerVersion\(m\.version, currentVersion\(\)\)/);
+  // صار التحديث يُقاس برقم البناء لا برقم الإصدار الظاهر (1.0.0 ثابت بين التحديثات الصغيرة)
+  assert.match(app, /Number\(m\.build\) > currentBuild\(\)/);
   assert.match(publish, /validate_update_features\(sys\.argv\[2:\]\)/);
   assert.match(publish, /manifest\["features"\] = features/);
   assert.match(publish, /manifest\.get\("features"\) == features/);

@@ -47,13 +47,15 @@ def main() -> int:
     else:
         if gradle_version.group(1) != version:
             fail(problems, f"gradle versionName {gradle_version.group(1)} != package.json {version}")
-        major, minor, patch = (int(part) for part in version.split("."))
-        expected_code = major * 100 + minor * 10 + patch
-        if str(expected_code) != gradle_code.group(1):
+        # رقم البناء يزداد مع كل إصدار ويبقى مستقلًا عن رقم الإصدار الظاهر،
+        # فلا يتغيّر «1.0.0» مع كل تحديث صغير، وتبقى الترقية ممكنة على الأجهزة.
+        build_number = (ROOT / "BUILD_NUMBER").read_text(encoding="utf-8").strip()
+        if not build_number.isdigit():
+            fail(problems, f"BUILD_NUMBER is not a positive integer: {build_number!r}")
+        elif gradle_code.group(1) != build_number:
             fail(
                 problems,
-                f"gradle versionCode {gradle_code.group(1)} does not track {version} "
-                f"(expected {expected_code}, scheme major*100+minor*10+patch)",
+                f"gradle versionCode {gradle_code.group(1)} does not match BUILD_NUMBER {build_number}",
             )
 
     html = (ROOT / "index.html").read_text(encoding="utf-8")
@@ -66,6 +68,11 @@ def main() -> int:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     if manifest.get("version") != version:
         fail(problems, f"update/manifest.json version {manifest.get('version')} != {version}")
+    if str(manifest.get("build")) != build_number:
+        fail(problems, f"update/manifest.json build {manifest.get('build')} != BUILD_NUMBER {build_number}")
+    html_build = re.search(r"APP_BUILD_NUMBER\s*=\s*(\d+)", html)
+    if not html_build or html_build.group(1) != build_number:
+        fail(problems, "index.html APP_BUILD_NUMBER does not match BUILD_NUMBER")
 
     files = manifest.get("files") or []
     hashes = manifest.get("sha256") or {}
@@ -99,12 +106,13 @@ def main() -> int:
         fail(problems, f"manifest apk.url does not point at Siraj-Android-{apk_version}.apk: {apk_url}")
     if apk_version == version and f"/siraj-android-v{version}/" not in apk_url:
         fail(problems, f"manifest apk.url tag must be siraj-android-v{version} for the current release: {apk_url}")
-    # مقارنة رقمية لا نصية: 1.4.10 أحدث من 1.4.9 مع أن المقارنة النصية تقول العكس.
-    def as_tuple(value: str) -> tuple[int, ...]:
-        return tuple(int(part) for part in value.split("."))
-
-    if as_tuple(apk_version) > as_tuple(version):
-        fail(problems, f"manifest apk.version {apk_version} points at a release newer than the source {version}")
+    # مقارنة رقم البناء: رقم الإصدار الظاهر ثابت (1.0.0) بين التحديثات الصغيرة.
+    apk_code = int(apk.get("code") or 0)
+    if apk_code > int(build_number or 0):
+        fail(
+            problems,
+            f"manifest apk.code {apk_code} points at a build newer than BUILD_NUMBER {build_number}",
+        )
 
     baseline = ROOT / "update/app.apk"
     if baseline.is_file() and baseline.read_bytes()[:2] != b"PK":

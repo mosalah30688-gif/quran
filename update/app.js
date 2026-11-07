@@ -68,7 +68,7 @@
     translation: '', font: 'Scheherazade New', size: 26, tajweed: false, dark: false,
     tajweedScopes: {},
   };
-  const VIEW_TITLES = { listen: 'استماع', reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', wird: 'الورد', stats: 'الإحصائيات', adhkar: 'الأذكار', search: 'البحث', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق', tajweed: 'أحكام التجويد', meanings: 'المعاني' };
+  const VIEW_TITLES = { listen: 'استماع', reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', wird: 'الورد', stats: 'الإحصائيات', adhkar: 'الأذكار', search: 'البحث', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق', tajweed: 'أحكام التجويد', meanings: 'المعاني', prayer: 'المواقيت' };
   const Cap = window.Capacitor || null;
 
   // قواعد التجويد بحسب رموز مصدر quran-tajweed في alquran.cloud (الاسم، الشرح)
@@ -557,6 +557,7 @@
     if (name === 'settings') syncIndexSelects();
     if (name === 'meanings') renderMeaningsView();
     if (name === 'memo') renderMemoReview();
+    if (name === 'prayer' && window.SirajPrayerUI) window.SirajPrayerUI.refresh();
     syncReaderLayout();
     if (name === 'reader') requestAnimationFrame(syncReaderDockHeight);
     if (name !== previousView) {
@@ -1115,27 +1116,29 @@
   const pageEl = $('#page');
   const hasSelection = () => !!(window.getSelection && window.getSelection().toString().trim());
   const SWIPE_EASE = 'cubic-bezier(.2,.8,.25,1)';
-  const DRAG_FOLLOW = 0.34;   // نسبة حركة الصفحة من حركة الإصبع
-  const DRAG_MAX = 64;        // أقصى انزياح أثناء السحب (بكسل)
-  const FLIP_DISTANCE = 30;   // أقل مسافة تكفي لقلب صفحة
-  const FLIP_VELOCITY = 0.22; // أو سحب سريع (بكسل/مللي ثانية)
+  // الصفحة تتبع الإصبع واحدًا لواحد كما لو كانت ورقة حقيقية، فلا إحساس صناعي.
+  const FLIP_RATIO = 0.22;    // نسبة عرض الصفحة الكافية للتقليب عند الإفلات
+  const FLIP_DISTANCE = 24;   // أو مسافة بايتة صغيرة مع سرعة كافية
+  const FLIP_VELOCITY = 0.2;  // سحب سريع (بكسل/مللي ثانية)
   function setPageTransform(x, animate) {
-    pageEl.style.transition = animate ? `transform .15s ${SWIPE_EASE}` : 'none';
+    pageEl.style.transition = animate ? `transform .14s ${SWIPE_EASE}` : 'none';
     pageEl.style.transform = x ? `translate3d(${x}px,0,0)` : '';
+    pageEl.classList.toggle('is-dragging', !!x);
   }
   function clampDrag(dx) {
     const atEdge = (dx > 0 && state.page >= TOTAL_PAGES) || (dx < 0 && state.page <= 1);
-    const followed = dx * DRAG_FOLLOW * (atEdge ? 0.3 : 1);
-    return Math.max(-DRAG_MAX, Math.min(DRAG_MAX, followed));
+    if (atEdge) return dx * 0.22;
+    const limit = Math.max(120, stage.clientWidth * 0.75);
+    return Math.max(-limit, Math.min(limit, dx));
   }
   async function flipBySwipe(goNext) {
     setPageTransform(0, true);
     const target = goNext ? state.page + 1 : state.page - 1;
     if (target < 1 || target > TOTAL_PAGES) return;
     await showPage(target, { scroll: true });
-    // دخول خفيف من جهة السحب فقط، ثم استقرار فوري — بلا انزلاق على كامل الشاشة.
+    // استقرار فوري: الصفحة تظهر في مكانها ثم تنزلق مسافة صغيرة جدًا لتُحسّ الحركة.
     pageEl.style.transition = 'none';
-    pageEl.style.transform = `translate3d(${goNext ? 14 : -14}px,0,0)`;
+    pageEl.style.transform = `translate3d(${goNext ? 10 : -10}px,0,0)`;
     pageEl.offsetWidth;
     setPageTransform(0, true);
   }
@@ -1169,8 +1172,8 @@
     const dx = e.clientX - d.x;
     const goNext = dx > 0;
     const canMove = goNext ? state.page < TOTAL_PAGES : state.page > 1;
-    const quick = Math.abs(d.v) >= FLIP_VELOCITY && Math.abs(dx) >= 14;
-    const far = Math.abs(dx) >= FLIP_DISTANCE;
+    const quick = Math.abs(d.v) >= FLIP_VELOCITY && Math.abs(dx) >= FLIP_DISTANCE;
+    const far = Math.abs(dx) >= Math.min(stage.clientWidth * FLIP_RATIO, 140);
     if (!canMove || !(quick || far)) { setPageTransform(0, true); return; }
     flipBySwipe(goNext);
   }
@@ -2277,13 +2280,12 @@
   const UPDATE_KEY = 'quran-update';
   const UPDATE_BASE = 'https://raw.githubusercontent.com/mosalah30688-gif/quran/main/update/';
   const storedUpdate = () => { try { return JSON.parse(localStorage.getItem(UPDATE_KEY) || 'null'); } catch (e) { return null; } };
-  const currentVersion = () => {
-    const bundled = window.APP_BUNDLE_VERSION || '1.0.0';
-    const stored = storedUpdate();
-    return stored?.version && newerVersion(stored.version, bundled) ? stored.version : bundled;
-  };
+  // رقم الإصدار الظاهر ثابت (1.0.0) بين التحديثات الصغيرة، والمعيار الفعلي هو رقم البناء.
+  const currentVersion = () => window.SIRAJ_UPDATE_VERSION || window.APP_BUNDLE_VERSION || '1.0.0';
+  const currentBuild = () => Number(window.APP_BUILD_NUMBER) || 0;
   function renderUpdateCard() {
-    $('#verVal').textContent = currentVersion();
+    $('#verVal').textContent = window.APP_BUNDLE_VERSION || '1.0.0';
+    if ($('#buildVal')) $('#buildVal').textContent = `بناء ${toArabicDigits(currentBuild())}`;
     $('#btnRestore').hidden = !storedUpdate();
     if (hasNativePlugin('ApkUpdater')) {
       nativeCall('ApkUpdater', 'getVersion').then((r) => {
@@ -2348,22 +2350,23 @@
       if (!mres.ok) throw new Error('manifest');
       const manifest = await mres.json();
       if (!manifest.version || !validUpdateManifestFiles(manifest.files)) throw new Error('bad manifest');
+      const manifestBuild = Number(manifest.build) || 0;
       // نسخة كاملة أحدث على الهاتف؟ تُثبَّت بدل تحديث الواجهة وحدها
       if (manifest.apk && manifest.apk.url && manifest.apk.version && hasNativePlugin('ApkUpdater')) {
-        const nv = await nativeCall('ApkUpdater', 'getVersion').then((r) => r.version).catch(() => null);
-        if (nv && newerVersion(manifest.apk.version, nv)) {
+        const apkCode = Number(manifest.apk.code) || 0;
+        if (apkCode && apkCode > currentBuild()) {
           await installNewApk(manifest.apk, st);
           btn.disabled = false;
           return;
         }
       }
       // لا نطبّق ترقية واجهة مساوية أو أقدم من النسخة المضمّنة؛ هذا يمنع الرجوع إلى إصدار قديم.
-      if (!newerVersion(manifest.version, currentVersion())) {
-        st.textContent = 'أنت على أحدث نسخة (' + currentVersion() + ')';
+      if (!(manifestBuild > currentBuild())) {
+        st.textContent = 'أنت على أحدث نسخة (' + window.APP_BUNDLE_VERSION + ' · بناء ' + toArabicDigits(currentBuild()) + ')';
         btn.disabled = false;
         return;
       }
-      st.textContent = 'جاري تنزيل الإصدار ' + manifest.version + '...';
+      st.textContent = 'جاري تنزيل التحديث (بناء ' + toArabicDigits(manifestBuild) + ')…';
       const shellFiles = Object.create(null);
       const dataFiles = Object.create(null);
       for (const f of manifest.files) {
@@ -2378,6 +2381,7 @@
       await replaceUpdateDataAssets(manifest.version, dataFiles);
       localStorage.setItem(UPDATE_KEY, JSON.stringify({
         version: manifest.version,
+        build: manifestBuild,
         files: shellFiles,
         dataFiles: Object.keys(dataFiles),
       }));
@@ -2397,6 +2401,15 @@
   });
   renderUpdateCard();
 
+  // ---------- المواقيت والأذان والقبلة ----------
+  if (window.SirajPrayerUI) {
+    try {
+      window.SirajPrayerUI.init({ toast, onNavigate: showView });
+    } catch (e) {
+      console.warn('prayer ui init failed', e);
+    }
+  }
+
   function publicUpdateFeatures(manifest) {
     const technicalTerms = ['ed25519', 'sha-256', 'sha256', 'runtime', 'appimage', 'portable', 'ترقيع', 'توقيع', 'موقّع', 'حزمة', 'محرك'];
     return (Array.isArray(manifest?.features) ? manifest.features : []).slice(0, 5).map((item) => (
@@ -2415,11 +2428,10 @@
       const m = await mres.json();
       let availableVersion = '';
       if (m.apk?.url && m.apk?.version && hasNativePlugin('ApkUpdater')) {
-        const nativeVersion = await nativeCall('ApkUpdater', 'getVersion')
-          .then((result) => result.version).catch(() => null);
-        if (nativeVersion && newerVersion(m.apk.version, nativeVersion)) availableVersion = m.apk.version;
+        const apkCode = Number(m.apk.code) || 0;
+        if (apkCode && apkCode > currentBuild()) availableVersion = m.apk.version;
       }
-      if (!availableVersion && m.version && newerVersion(m.version, currentVersion())) {
+      if (!availableVersion && m.build && Number(m.build) > currentBuild()) {
         availableVersion = m.version;
       }
       const features = publicUpdateFeatures(m);

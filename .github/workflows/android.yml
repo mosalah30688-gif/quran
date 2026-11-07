@@ -420,6 +420,7 @@ jobs:
           TAG: ${{ steps.meta.outputs.tag }}
           ASSET: ${{ steps.meta.outputs.asset }}
           APK_SHA256: ${{ steps.artifacts.outputs.sha256 }}
+          APK_CODE: ${{ steps.meta.outputs.code }}
           APK_UPDATE: ${{ inputs.apk_update }}
           UPDATE_FEATURES: ${{ inputs.features }}
         run: |
@@ -437,6 +438,7 @@ jobs:
           if os.environ.get('APK_UPDATE') == 'true':
               data['apk'] = {
                   'version': version,
+                  'code': int(os.environ['APK_CODE']),
                   'url': 'https://github.com/mosalah30688-gif/quran/releases/download/' + os.environ['TAG'] + '/' + os.environ['ASSET'],
                   'sha256': os.environ['APK_SHA256'],
               }

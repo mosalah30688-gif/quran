@@ -1,0 +1,739 @@
+/*
+ * Siraj Prayer UI v1 — «المواقيت»
+ *
+ * واجهة مستقلة لمواقيت الصلاة والأذان والإقامة والقبلة، تعمل فوق SirajPrayerTimes
+ * و SirajPrayerData. تخزّن إعدادها في localStorage تحت مفتاح واحد، ولا ترسل شيئًا
+ * إلى أي خادم. تُهيّأ من app.js عبر SirajPrayerUI.init().
+ */
+(function (root) {
+  'use strict';
+
+  const PT = root.SirajPrayerTimes;
+  const DATA = root.SirajPrayerData;
+  if (!PT || !DATA) return;
+
+  const KEY = 'quran:prayer';
+  const ADHAN_CACHE = 'siraj-adhan-v1';
+  const PRAYER_KEYS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+  const DEFAULTS = {
+    cityIndex: -1,
+    lat: DATA.cities[0].lat,
+    lng: DATA.cities[0].lng,
+    tz: DATA.cities[0].tz,
+    cityName: DATA.cities[0].n,
+    countryName: DATA.cities[0].c,
+    method: DATA.cities[0].m,
+    madhab: 'shafi',
+    highLatitude: 'middle',
+    adjustments: { fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 },
+    use24h: false,
+    adhanEnabled: true,
+    adhanId: 'haram-makkah',
+    fajrAdhanId: 'fajr-makkah',
+    adhanVolume: 1,
+    preMinutes: 0,
+    iqamaEnabled: true,
+    iqamaMinutes: { fajr: 20, dhuhr: 15, asr: 15, maghrib: 10, isha: 15 },
+    iqamaTone: true,
+  };
+
+  const els = {};
+  const state = {
+    config: null,
+    today: null,
+    next: null,
+    ticking: null,
+    audio: null,
+    playingId: null,
+    adhanCache: new Map(),
+    iqamaTimers: [],
+    lastFired: '',
+    toast: null,
+    compass: { active: false, heading: null, handler: null },
+    aqsaBearing: null,
+  };
+
+  const $ = (sel) => document.querySelector(sel);
+  const el = (id) => document.getElementById(id);
+  const num = (value, fallback) => (Number.isFinite(Number(value)) ? Number(value) : fallback);
+
+  // ---------- التخزين ----------
+  function loadConfig() {
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { saved = null; }
+    const config = Object.assign({}, DEFAULTS, saved && typeof saved === 'object' ? saved : {});
+    config.adjustments = Object.assign({}, DEFAULTS.adjustments, config.adjustments || {});
+    config.iqamaMinutes = Object.assign({}, DEFAULTS.iqamaMinutes, config.iqamaMinutes || {});
+    if (!DATA.adhans.some((a) => a.id === config.adhanId)) config.adhanId = DEFAULTS.adhanId;
+    if (!DATA.adhans.some((a) => a.id === config.fajrAdhanId)) config.fajrAdhanId = DEFAULTS.fajrAdhanId;
+    if (!PT.METHODS[config.method]) config.method = DEFAULTS.method;
+    if (!PT.HIGH_LATITUDE[config.highLatitude]) config.highLatitude = DEFAULTS.highLatitude;
+    state.config = config;
+    return config;
+  }
+
+  function saveConfig() {
+    try { localStorage.setItem(KEY, JSON.stringify(state.config)); } catch { /* مساحة ممتلئة */ }
+  }
+
+  function toast(message) {
+    if (typeof state.toast === 'function') state.toast(message);
+    else if (els.hint) els.hint.textContent = message;
+  }
+
+  function offsetHours(tzName, date) {
+    try {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: tzName, timeZoneName: 'longOffset', hour: '2-digit',
+      }).formatToParts(date);
+      const raw = (parts.find((p) => p.type === 'timeZoneName') || {}).value || 'GMT+00:00';
+      const match = /GMT([+-])(\d{2}):?(\d{2})?/.exec(raw);
+      if (!match) return 0;
+      const sign = match[1] === '-' ? -1 : 1;
+      return sign * (Number(match[2]) + Number(match[3] || 0) / 60);
+    } catch {
+      return -date.getTimezoneOffset() / 60;
+    }
+  }
+
+  function computeTimes(date) {
+    const config = state.config;
+    return PT.times({
+      date,
+      lat: config.lat,
+      lng: config.lng,
+      timezone: offsetHours(config.tz, date),
+      method: config.method,
+      madhab: config.madhab,
+      highLatitude: config.highLatitude,
+      adjustments: config.adjustments,
+      isRamadan: false,
+    });
+  }
+
+  function nextPrayer(date) {
+    const config = state.config;
+    return PT.next({
+      date,
+      lat: config.lat,
+      lng: config.lng,
+      timezone: offsetHours(config.tz, date),
+      method: config.method,
+      madhab: config.madhab,
+      highLatitude: config.highLatitude,
+      adjustments: config.adjustments,
+    });
+  }
+
+  // ---------- الصوت ----------
+  async function adhanSources() {
+    if (state.adhanCache.size) return state.adhanCache;
+    DATA.adhans.forEach((item) => state.adhanCache.set(item.id, item));
+    return state.adhanCache;
+  }
+
+  function adhanById(id) {
+    return DATA.adhans.find((item) => item.id === id) || DATA.adhans[0];
+  }
+
+  async function cachedAdhanUrl(item) {
+    if (typeof caches === 'undefined') return null;
+    try {
+      const cache = await caches.open(ADHAN_CACHE);
+      const hit = await cache.match(item.url);
+      if (!hit) return null;
+      const blob = await hit.blob();
+      return URL.createObjectURL(blob);
+    } catch {
+      return null;
+    }
+  }
+
+  async function isAdhanDownloaded(item) {
+    if (typeof caches === 'undefined') return false;
+    try {
+      const cache = await caches.open(ADHAN_CACHE);
+      return !!(await cache.match(item.url));
+    } catch {
+      return false;
+    }
+  }
+
+  async function downloadAdhan(item, onProgress) {
+    const response = await fetch(item.url, { mode: 'cors' });
+    if (!response.ok) throw new Error('http ' + response.status);
+    const total = Number(response.headers.get('content-length')) || item.seconds * 16000;
+    const reader = response.body && response.body.getReader ? response.body.getReader() : null;
+    let received = 0;
+    let blob;
+    if (reader) {
+      const chunks = [];
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        received += value.length;
+        if (onProgress) onProgress(Math.min(0.99, received / total));
+      }
+      blob = new Blob(chunks, { type: 'audio/mpeg' });
+    } else {
+      blob = await response.blob();
+    }
+    const cache = await caches.open(ADHAN_CACHE);
+    await cache.put(item.url, new Response(blob, { headers: { 'Content-Type': 'audio/mpeg' } }));
+    if (onProgress) onProgress(1);
+    return blob.size;
+  }
+
+  async function removeAdhan(item) {
+    try {
+      const cache = await caches.open(ADHAN_CACHE);
+      await cache.delete(item.url);
+    } catch { /* لا شيء محفوظ */ }
+  }
+
+  function getAudio() {
+    if (!state.audio) {
+      state.audio = new Audio();
+      state.audio.preload = 'none';
+    }
+    return state.audio;
+  }
+
+  async function playAdhan(id, options = {}) {
+    const item = adhanById(id);
+    const audio = getAudio();
+    try { audio.pause(); } catch { /* لم يُشغّل بعد */ }
+    audio.src = '';
+    const local = await cachedAdhanUrl(item);
+    audio.src = local || item.url;
+    audio.volume = Math.min(1, Math.max(0, num(state.config.adhanVolume, 1)));
+    state.playingId = item.id;
+    renderAdhanState();
+    try {
+      await audio.play();
+      if (!options.silent) toast(`أذان ${item.name}`);
+    } catch {
+      toast('تعذّر تشغيل الأذان؛ تحقّق من الصوت أو نزّل الأذان للاستخدام دون إنترنت.');
+    }
+    audio.onended = () => {
+      state.playingId = null;
+      renderAdhanState();
+    };
+    return true;
+  }
+
+  function stopAdhan() {
+    const audio = getAudio();
+    try { audio.pause(); audio.currentTime = 0; } catch { /* لا شيء يعمل */ }
+    state.playingId = null;
+    renderAdhanState();
+  }
+
+  // نغمة الإقامة: قصيرة ومولّدة محليًا حتى لا تحتاج ملفًا
+  function playIqamaTone() {
+    try {
+      const Ctx = root.AudioContext || root.webkitAudioContext;
+      if (!Ctx) return;
+      const ctx = new Ctx();
+      const gain = ctx.createGain();
+      gain.gain.value = 0.16;
+      gain.connect(ctx.destination);
+      [0, 0.45, 0.9].forEach((offset) => {
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = 880;
+        osc.connect(gain);
+        osc.start(ctx.currentTime + offset);
+        osc.stop(ctx.currentTime + offset + 0.28);
+      });
+      setTimeout(() => { try { ctx.close(); } catch { /* أُغلق */ } }, 1800);
+    } catch { /* الصوت غير متاح */ }
+  }
+
+  // ---------- الجدولة أثناء فتح التطبيق ----------
+  function scheduleChecks() {
+    if (state.ticking) clearInterval(state.ticking);
+    state.ticking = setInterval(tick, 15000);
+    tick();
+  }
+
+  function minutesOf(seconds) {
+    const mins = Math.round(seconds / 60);
+    if (mins >= 60) return `${Math.floor(mins / 60)} س ${mins % 60 ? (mins % 60) + ' د' : ''}`.trim();
+    return `${mins} دقيقة`;
+  }
+
+  function fireFor(key, table) {
+    const stamp = `${new Date().toDateString()}:${key}`;
+    if (state.lastFired === stamp) return;
+    state.lastFired = stamp;
+    const config = state.config;
+    if (config.adhanEnabled) {
+      const id = key === 'fajr' ? config.fajrAdhanId : config.adhanId;
+      playAdhan(id);
+    } else {
+      toast(`حان الآن وقت صلاة ${PT.describe(key)}`);
+    }
+    if (config.iqamaEnabled && PRAYER_KEYS.includes(key)) {
+      const minutes = num(config.iqamaMinutes[key], 15);
+      const timer = setTimeout(() => {
+        if (config.iqamaTone) playIqamaTone();
+        toast(`إقامة صلاة ${PT.describe(key)}`);
+        renderTimes();
+      }, Math.max(1, minutes) * 60000);
+      state.iqamaTimers.push(timer);
+    }
+    renderTimes();
+  }
+
+  function tick() {
+    if (!state.config || document.hidden) return;
+    const now = new Date();
+    const table = computeTimes(now);
+    if (!table) return;
+    const minutes = PT.minutesNow(now);
+    const config = state.config;
+    PRAYER_KEYS.forEach((key) => {
+      if (!Number.isFinite(table[key])) return;
+      const diff = minutes - table[key];
+      if (diff >= 0 && diff < 0.25) fireFor(key, table);
+      if (config.preMinutes > 0) {
+        const pre = diff + config.preMinutes;
+        if (pre >= 0 && pre < 0.25) {
+          const stamp = `${new Date().toDateString()}:pre:${key}`;
+          if (state.lastFired !== stamp) {
+            state.lastFired = stamp;
+            toast(`بقي ${config.preMinutes} دقيقة على أذان ${PT.describe(key)}`);
+          }
+        }
+      }
+    });
+    renderHero();
+    renderTimes();
+  }
+
+  // ---------- العرض ----------
+  function prayerRows(table) {
+    return PT.PRAYERS.map((key) => ({
+      key,
+      name: PT.describe(key),
+      minutes: table ? table[key] : null,
+      text: table ? PT.formatMinutes(table[key], state.config.use24h) : '—',
+    }));
+  }
+
+  function renderHero() {
+    if (!els.nextName) return;
+    const info = nextPrayer(new Date());
+    const table = computeTimes(new Date());
+    state.next = info;
+    if (!info) {
+      els.nextName.textContent = '—';
+      els.nextAt.textContent = 'اضبط موقعك لحساب المواقيت';
+      els.countdown.textContent = '—';
+      return;
+    }
+    els.nextName.textContent = `صلاة ${info.name}`;
+    if (els.chip) {
+      const left = Math.max(0, Math.round(info.minutesLeft));
+      els.chip.textContent = `${info.name} · ${left >= 60 ? Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0') : left + ' د'}`;
+    }
+    const when = new Date();
+    when.setHours(0, 0, 0, 0);
+    when.setMinutes(Math.round(info.at));
+    els.nextAt.textContent = `${PT.formatMinutes(info.at, state.config.use24h)} · ${info.today ? 'اليوم' : 'غدًا'}`;
+    const total = Math.max(1, info.minutesLeft);
+    const hours = Math.floor(total / 60);
+    const mins = Math.floor(total % 60);
+    els.countdown.textContent = hours > 0 ? `${hours}:${String(mins).padStart(2, '0')}` : `${mins} د`;
+    if (table) {
+      const prevKey = PRAYER_KEYS.filter((k) => Number.isFinite(table[k]) && table[k] <= PT.minutesNow(new Date())).pop();
+      const from = prevKey ? table[prevKey] : 0;
+      const span = Math.max(1, info.at - from);
+      const percent = Math.min(100, Math.max(0, ((PT.minutesNow(new Date()) - from) / span) * 100));
+      els.bar.style.width = `${percent.toFixed(1)}%`;
+    }
+  }
+
+  function renderTimes() {
+    if (!els.times) return;
+    const table = computeTimes(new Date());
+    state.today = table;
+    const nextKey = state.next ? state.next.key : null;
+    els.times.innerHTML = prayerRows(table).map((row) => `
+      <div class="pt-row${row.key === nextKey ? ' is-next' : ''}${row.key === 'sunrise' ? ' is-sunrise' : ''}">
+        <span class="pt-name">${row.name}</span>
+        <span class="pt-time">${row.text}</span>
+        ${PRAYER_KEYS.includes(row.key) ? `<button class="pt-mini" data-pt-adhan="${row.key}" title="تشغيل الأذان">🔔</button>` : '<span></span>'}
+      </div>
+    `).join('');
+    if (els.cityLine) {
+      els.cityLine.textContent = `${state.config.cityName} — ${state.config.countryName} · ${PT.METHODS[state.config.method].name}`;
+    }
+    els.times.querySelectorAll('[data-pt-adhan]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.ptAdhan === 'fajr' ? state.config.fajrAdhanId : state.config.adhanId;
+        playAdhan(id);
+      });
+    });
+    renderIqamaLine();
+  }
+
+  function renderIqamaLine() {
+    if (!els.iqamaLine) return;
+    const config = state.config;
+    if (!config.iqamaEnabled) { els.iqamaLine.textContent = 'تنبيه الإقامة متوقف.'; return; }
+    const parts = PRAYER_KEYS.map((k) => `${PT.describe(k)} ${config.iqamaMinutes[k]}د`);
+    els.iqamaLine.textContent = `تنبيه الإقامة بعد الأذان: ${parts.join(' · ')}`;
+  }
+
+  function renderAdhanState() {
+    renderAdhanList();
+  }
+
+  async function renderAdhanList() {
+    if (!els.adhanList) return;
+    const config = state.config;
+    const rows = await Promise.all(DATA.adhans.map(async (item) => {
+      const downloaded = await isAdhanDownloaded(item);
+      const selected = config.adhanId === item.id;
+      const selectedFajr = config.fajrAdhanId === item.id;
+      return `
+        <div class="pt-adhan${selected ? ' is-selected' : ''}" data-id="${item.id}">
+          <div class="pt-adhan-main">
+            <strong>${item.name}</strong>
+            <span class="muted">${item.region} · ${Math.round(item.seconds / 60)} د${item.fajr ? ' · أذان فجر' : ''}</span>
+          </div>
+          <div class="pt-adhan-actions">
+            <button class="pt-mini" data-act="preview" data-id="${item.id}" title="تجربة">▶</button>
+            <button class="pt-mini" data-act="download" data-id="${item.id}" title="${downloaded ? 'محفوظ على الجهاز' : 'تنزيل للاستخدام دون إنترنت'}">${downloaded ? '✓' : '⤓'}</button>
+            <button class="pt-mini${selected ? ' on' : ''}" data-act="use" data-id="${item.id}" title="أذان الصلوات">أ</button>
+            <button class="pt-mini${selectedFajr ? ' on' : ''}" data-act="use-fajr" data-id="${item.id}" title="أذان الفجر">ف</button>
+          </div>
+        </div>
+      `;
+    }));
+    els.adhanList.innerHTML = rows.join('');
+    els.adhanList.querySelectorAll('[data-act]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const item = adhanById(btn.dataset.id);
+        const act = btn.dataset.act;
+        if (act === 'preview') { playAdhan(item.id); return; }
+        if (act === 'use') { state.config.adhanId = item.id; saveConfig(); renderAdhanList(); toast(`أذان الصلوات: ${item.name}`); return; }
+        if (act === 'use-fajr') { state.config.fajrAdhanId = item.id; saveConfig(); renderAdhanList(); toast(`أذان الفجر: ${item.name}`); return; }
+        if (act === 'download') {
+          toast(`جاري تنزيل أذان ${item.name}…`);
+          try {
+            const size = await downloadAdhan(item);
+            toast(`حُفظ الأذان على الجهاز (${(size / 1048576).toFixed(1)} ميجا) ويعمل دون إنترنت.`);
+          } catch {
+            toast('تعذّر تنزيل الأذان؛ تحقّق من الاتصال.');
+          }
+          renderAdhanList();
+        }
+      });
+    });
+  }
+
+  function renderCities() {
+    if (!els.citySelect) return;
+    els.citySelect.innerHTML = DATA.cities
+      .map((city, index) => `<option value="${index}">${city.n} — ${city.c}</option>`).join('');
+    if (state.config.cityIndex >= 0) els.citySelect.value = String(state.config.cityIndex);
+  }
+
+  function setCity(index) {
+    const city = DATA.cities[index];
+    if (!city) return;
+    state.config.cityIndex = index;
+    state.config.lat = city.lat;
+    state.config.lng = city.lng;
+    state.config.tz = city.tz;
+    state.config.cityName = city.n;
+    state.config.countryName = city.c;
+    state.config.method = city.m;
+    saveConfig();
+    syncControls();
+    renderHero();
+    renderTimes();
+    toast(`تم ضبط الموقع على ${city.n}.`);
+  }
+
+  function syncControls() {
+    const config = state.config;
+    if (els.citySelect) els.citySelect.value = String(config.cityIndex >= 0 ? config.cityIndex : 0);
+    if (els.methodSelect) els.methodSelect.value = config.method;
+    if (els.madhabSelect) els.madhabSelect.value = config.madhab;
+    if (els.highLat) els.highLat.value = config.highLatitude;
+    if (els.adhanToggle) els.adhanToggle.checked = !!config.adhanEnabled;
+    if (els.iqamaToggle) els.iqamaToggle.checked = !!config.iqamaEnabled;
+    if (els.iqamaTone) els.iqamaTone.checked = !!config.iqamaTone;
+    if (els.preSelect) els.preSelect.value = String(config.preMinutes);
+    if (els.clock24) els.clock24.checked = !!config.use24h;
+    if (els.volumeRange) els.volumeRange.value = String(Math.round(config.adhanVolume * 100));
+    PRAYER_KEYS.forEach((key) => {
+      const field = el(`ptIqama-${key}`);
+      if (field) field.value = String(config.iqamaMinutes[key]);
+      const adj = el(`ptAdj-${key}`);
+      if (adj) adj.value = String(config.adjustments[key]);
+    });
+    renderIqamaLine();
+    renderAdhanList();
+  }
+
+  // ---------- القبلة ----------
+  function renderQibla() {
+    if (!els.qiblaPanel) return;
+    const q = PT.qibla(state.config.lat, state.config.lng);
+    if (!q) return;
+    const sun = PT.sunAzimuth({
+      date: new Date(), lat: state.config.lat, lng: state.config.lng,
+      timezone: offsetHours(state.config.tz, new Date()),
+    });
+    els.qiblaBearing.textContent = `${q.bearing.toFixed(1)}°`;
+    els.qiblaDistance.textContent = `${Math.round(q.distance).toLocaleString('ar-EG')} كم إلى الكعبة`;
+    els.qiblaCompass.style.transform = `rotate(${(-q.bearing).toFixed(1)}deg)`;
+    if (!sun) {
+      els.qiblaSun.textContent = 'لا يمكن حساب موضع الشمس الآن.';
+    } else if (sun.altitude < 3) {
+      els.qiblaSun.textContent = 'الشمس الآن تحت الأفق (ليل أو غروب)؛ استخدم البوصلة أو الإحداثيات، أو أعد المحاولة نهارًا.';
+    } else {
+      els.qiblaSun.textContent = `الشمس الآن على ${sun.azimuth.toFixed(0)}° وارتفاع ${sun.altitude.toFixed(0)}° — القبلة ${describeSunHint(q.bearing, sun.azimuth)}.`;
+    }
+    if (state.compass.heading == null && els.qiblaNeedle) {
+      els.qiblaNeedle.style.transform = `rotate(${q.bearing.toFixed(1)}deg)`;
+    }
+  }
+
+  function describeSunHint(bearing, azimuth) {
+    const diff = ((bearing - azimuth + 540) % 360) - 180;
+    if (Math.abs(diff) < 8) return 'أمامك مباشرة (القبلة في اتجاه الشمس)';
+    if (diff > 0) return `على ${Math.abs(diff) > 90 ? 'يمينك' : 'يمينك قليلًا'} بمقدار ${Math.round(Math.abs(diff))}°`;
+    return `على ${Math.abs(diff) > 90 ? 'يسارك' : 'يسارك قليلًا'} بمقدار ${Math.round(Math.abs(diff))}°`;
+  }
+
+  async function startCompass() {
+    const DeviceOrientation = root.DeviceOrientationEvent;
+    if (!DeviceOrientation) { toast('هذا الجهاز لا يوفّر حساس الاتجاه.'); return; }
+    if (typeof DeviceOrientation.requestPermission === 'function') {
+      try {
+        const granted = await DeviceOrientation.requestPermission();
+        if (granted !== 'granted') { toast('لم يُسمح باستخدام حساس الاتجاه.'); return; }
+      } catch {
+        toast('تعذّر طلب إذن حساس الاتجاه.');
+        return;
+      }
+    }
+    if (state.compass.handler) root.removeEventListener('deviceorientationabsolute', state.compass.handler);
+    state.compass.handler = (event) => {
+      const heading = event.webkitCompassHeading != null ? event.webkitCompassHeading
+        : (event.alpha != null ? 360 - event.alpha : null);
+      if (heading == null) return;
+      state.compass.heading = heading;
+      state.compass.active = true;
+      updateCompass();
+    };
+    root.addEventListener('deviceorientationabsolute', state.compass.handler, true);
+    root.addEventListener('deviceorientation', state.compass.handler, true);
+    toast('حرّك الهاتف على شكل ∞ لمعايرة البوصلة.');
+  }
+
+  function updateCompass() {
+    if (!els.qiblaDial || state.compass.heading == null) return;
+    const q = PT.qibla(state.config.lat, state.config.lng);
+    if (!q) return;
+    const delta = ((q.bearing - state.compass.heading + 540) % 360) - 180;
+    els.qiblaDial.style.transform = `rotate(${(-state.compass.heading).toFixed(1)}deg)`;
+    els.qiblaNeedle.style.transform = `rotate(${q.bearing.toFixed(1)}deg)`;
+    els.qiblaTurn.textContent = Math.abs(delta) < 4
+      ? 'أنت تواجه القبلة الآن ✓'
+      : `أدر الهاتف ${delta > 0 ? 'يمينًا' : 'يسارًا'} بمقدار ${Math.round(Math.abs(delta))}°`;
+    if (els.qiblaHeading) els.qiblaHeading.textContent = `${Math.round(state.compass.heading)}°`;
+  }
+
+  function useGps() {
+    if (!navigator.geolocation) { toast('لا يتوفّر تحديد الموقع في هذا الجهاز.'); return; }
+    toast('جاري تحديد موقعك…');
+    navigator.geolocation.getCurrentPosition((position) => {
+      const { latitude, longitude } = position.coords;
+      let nearest = 0;
+      let best = Infinity;
+      DATA.cities.forEach((city, index) => {
+        const d = (city.lat - latitude) ** 2 + ((city.lng - longitude) * Math.cos(latitude * Math.PI / 180)) ** 2;
+        if (d < best) { best = d; nearest = index; }
+      });
+      state.config.lat = latitude;
+      state.config.lng = longitude;
+      state.config.cityIndex = nearest;
+      state.config.cityName = DATA.cities[nearest].n;
+      state.config.countryName = DATA.cities[nearest].c;
+      state.config.tz = (function guessZone() {
+        try { return Intl.DateTimeFormat().resolvedOptions().timeZone || DATA.cities[nearest].tz; }
+        catch { return DATA.cities[nearest].tz; }
+      })();
+      saveConfig();
+      syncControls();
+      renderHero();
+      renderTimes();
+      renderQibla();
+      toast(`تم تحديد موقعك (${latitude.toFixed(2)}, ${longitude.toFixed(2)}) وضُبط على ${state.config.cityName}.`);
+    }, () => toast('تعذّر تحديد الموقع؛ اختر مدينتك يدويًا من القائمة.'), {
+      enableHighAccuracy: false, timeout: 12000, maximumAge: 600000,
+    });
+  }
+
+  function setManualCoords() {
+    const lat = num(els.coordLat.value, NaN);
+    const lng = num(els.coordLng.value, NaN);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+      toast('أدخل خط عرض بين -90 و90 وخط طول بين -180 و180.');
+      return;
+    }
+    state.config.lat = lat;
+    state.config.lng = lng;
+    state.config.cityIndex = -1;
+    state.config.cityName = 'موقع مخصّص';
+    state.config.countryName = `${lat.toFixed(2)}, ${lng.toFixed(2)}`;
+    saveConfig();
+    renderHero();
+    renderTimes();
+    renderQibla();
+    toast('حُفظ الموقع المخصّص.');
+  }
+
+  // ---------- التركيب ----------
+  function bindEvents() {
+    if (els.citySelect) els.citySelect.addEventListener('change', (e) => setCity(Number(e.target.value)));
+    els.gpsBtn && els.gpsBtn.addEventListener('click', useGps);
+    els.manualBtn && els.manualBtn.addEventListener('click', setManualCoords);
+    els.methodSelect && els.methodSelect.addEventListener('change', (e) => {
+      state.config.method = e.target.value; saveConfig(); renderHero(); renderTimes();
+    });
+    els.madhabSelect && els.madhabSelect.addEventListener('change', (e) => {
+      state.config.madhab = e.target.value; saveConfig(); renderHero(); renderTimes();
+    });
+    els.highLat && els.highLat.addEventListener('change', (e) => {
+      state.config.highLatitude = e.target.value; saveConfig(); renderHero(); renderTimes();
+    });
+    els.clock24 && els.clock24.addEventListener('change', (e) => {
+      state.config.use24h = e.target.checked; saveConfig(); renderHero(); renderTimes();
+    });
+    els.adhanToggle && els.adhanToggle.addEventListener('change', (e) => {
+      state.config.adhanEnabled = e.target.checked; saveConfig();
+      toast(e.target.checked ? 'تشغيل الأذان تلقائيًا مفعّل.' : 'تشغيل الأذان تلقائيًا متوقف.');
+    });
+    els.iqamaToggle && els.iqamaToggle.addEventListener('change', (e) => {
+      state.config.iqamaEnabled = e.target.checked; saveConfig(); renderIqamaLine();
+    });
+    els.iqamaTone && els.iqamaTone.addEventListener('change', (e) => {
+      state.config.iqamaTone = e.target.checked; saveConfig();
+    });
+    els.preSelect && els.preSelect.addEventListener('change', (e) => {
+      state.config.preMinutes = Number(e.target.value); saveConfig();
+    });
+    els.volumeRange && els.volumeRange.addEventListener('input', (e) => {
+      state.config.adhanVolume = Number(e.target.value) / 100; saveConfig();
+      if (state.audio) state.audio.volume = state.config.adhanVolume;
+    });
+    PRAYER_KEYS.forEach((key) => {
+      const field = el(`ptIqama-${key}`);
+      field && field.addEventListener('change', () => {
+        state.config.iqamaMinutes[key] = Math.max(0, Math.min(60, num(field.value, 15)));
+        saveConfig(); renderIqamaLine();
+      });
+      const adj = el(`ptAdj-${key}`);
+      adj && adj.addEventListener('change', () => {
+        state.config.adjustments[key] = Math.max(-30, Math.min(30, num(adj.value, 0)));
+        saveConfig(); renderHero(); renderTimes();
+      });
+    });
+    els.stopAdhan && els.stopAdhan.addEventListener('click', stopAdhan);
+    els.playNextAdhan && els.playNextAdhan.addEventListener('click', () => {
+      const key = state.next ? state.next.key : 'dhuhr';
+      playAdhan(key === 'fajr' ? state.config.fajrAdhanId : state.config.adhanId);
+    });
+    els.fajrAdhanBtn && els.fajrAdhanBtn.addEventListener('click', () => playAdhan(state.config.fajrAdhanId));
+    els.compassBtn && els.compassBtn.addEventListener('click', startCompass);
+    els.qiblaRefresh && els.qiblaRefresh.addEventListener('click', renderQibla);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) { renderHero(); renderTimes(); }
+    });
+  }
+
+  function init(options = {}) {
+    loadConfig();
+    state.toast = options.toast || null;
+    state.onNavigate = options.onNavigate || null;
+    els.chip = el('ptChip');
+    els.nextName = el('ptNextName');
+    els.nextAt = el('ptNextAt');
+    els.countdown = el('ptCountdown');
+    if (els.chip) {
+      els.chip.hidden = false;
+      els.chip.addEventListener('click', () => {
+        if (typeof state.onNavigate === 'function') state.onNavigate('prayer');
+      });
+    }
+    els.bar = el('ptBar');
+    els.times = el('ptTimes');
+    els.cityLine = el('ptCityLine');
+    els.citySelect = el('ptCity');
+    els.gpsBtn = el('ptGps');
+    els.methodSelect = el('ptMethod');
+    els.madhabSelect = el('ptMadhab');
+    els.highLat = el('ptHighLat');
+    els.clock24 = el('ptClock24');
+    els.adhanToggle = el('ptAdhanEnabled');
+    els.adhanList = el('ptAdhanList');
+    els.iqamaToggle = el('ptIqamaEnabled');
+    els.iqamaTone = el('ptIqamaTone');
+    els.iqamaLine = el('ptIqamaLine');
+    els.preSelect = el('ptPre');
+    els.volumeRange = el('ptVolume');
+    els.stopAdhan = el('ptStop');
+    els.playNextAdhan = el('ptPlayAdhan');
+    els.fajrAdhanBtn = el('ptFajrAdhan');
+    els.qiblaPanel = el('ptQiblaCard');
+    els.qiblaBearing = el('ptQiblaBearing');
+    els.qiblaDistance = el('ptQiblaDistance');
+    els.qiblaCompass = el('ptQiblaCompass');
+    els.qiblaSun = el('ptQiblaSun');
+    els.qiblaDial = el('ptCompassDial');
+    els.qiblaNeedle = el('ptCompassNeedle');
+    els.qiblaTurn = el('ptCompassTurn');
+    els.qiblaHeading = el('ptHeading');
+    els.compassBtn = el('ptCompassStart');
+    els.qiblaRefresh = el('ptQiblaRefresh');
+    els.manualBtn = el('ptManual');
+    els.coordLat = el('ptLat');
+    els.coordLng = el('ptLng');
+    els.methodNote = el('ptMethodNote');
+    if (!els.times) return false;
+
+    renderCities();
+    if (els.methodSelect) {
+      els.methodSelect.innerHTML = Object.entries(PT.METHODS)
+        .map(([key, value]) => `<option value="${key}">${value.name}</option>`).join('');
+    }
+    if (els.highLat) {
+      els.highLat.innerHTML = Object.entries(PT.HIGH_LATITUDE)
+        .map(([key, value]) => `<option value="${key}">${value}</option>`).join('');
+    }
+    if (els.coordLat) els.coordLat.value = String(state.config.lat.toFixed(3));
+    if (els.coordLng) els.coordLng.value = String(state.config.lng.toFixed(3));
+    syncControls();
+    bindEvents();
+    renderHero();
+    renderTimes();
+    renderQibla();
+    scheduleChecks();
+    return true;
+  }
+
+  root.SirajPrayerUI = {
+    init, refresh: () => { renderHero(); renderTimes(); renderQibla(); },
+    playAdhan, stopAdhan, next: () => nextPrayer(new Date()),
+    config: () => ({ ...state.config }),
+  };
+})(typeof globalThis !== 'undefined' ? globalThis : this);
