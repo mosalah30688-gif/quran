@@ -2283,6 +2283,23 @@
   // رقم الإصدار الظاهر ثابت (1.0.0) بين التحديثات الصغيرة، والمعيار الفعلي هو رقم البناء.
   const currentVersion = () => window.SIRAJ_UPDATE_VERSION || window.APP_BUNDLE_VERSION || '1.0.0';
   const currentBuild = () => Number(window.APP_BUILD_NUMBER) || 0;
+
+  // رقم بناء الـAPK المثبَّت (لا رقم بناء الواجهة): التحديث الداخلي قد يرفع رقم الواجهة
+  // فوق رقم الـAPK، فيظن التطبيق أنه أحدث من الملف ولا يعرض ترقيته أبدًا.
+  let apkNativeCode = 0;
+  function installedApkCode() {
+    return apkNativeCode > 0 ? apkNativeCode : currentBuild();
+  }
+  function resolveApkCode() {
+    if (!hasNativePlugin('ApkUpdater')) return Promise.resolve(apkNativeCode);
+    return nativeCall('ApkUpdater', 'getVersion')
+      .then((r) => {
+        const code = Number(r && r.code);
+        if (Number.isFinite(code) && code > 0) apkNativeCode = code;
+        return apkNativeCode;
+      })
+      .catch(() => apkNativeCode);
+  }
   function renderUpdateCard() {
     $('#verVal').textContent = window.APP_BUNDLE_VERSION || '1.0.0';
     if ($('#buildVal')) $('#buildVal').textContent = `بناء ${toArabicDigits(currentBuild())}`;
@@ -2354,7 +2371,8 @@
       // نسخة كاملة أحدث على الهاتف؟ تُثبَّت بدل تحديث الواجهة وحدها
       if (manifest.apk && manifest.apk.url && manifest.apk.version && hasNativePlugin('ApkUpdater')) {
         const apkCode = Number(manifest.apk.code) || 0;
-        if (apkCode && apkCode > currentBuild()) {
+        await resolveApkCode();
+        if (apkCode && apkCode > installedApkCode()) {
           await installNewApk(manifest.apk, st);
           btn.disabled = false;
           return;
@@ -2429,7 +2447,8 @@
       let availableVersion = '';
       if (m.apk?.url && m.apk?.version && hasNativePlugin('ApkUpdater')) {
         const apkCode = Number(m.apk.code) || 0;
-        if (apkCode && apkCode > currentBuild()) availableVersion = m.apk.version;
+        await resolveApkCode();
+        if (apkCode && apkCode > installedApkCode()) availableVersion = m.apk.version;
       }
       if (!availableVersion && m.build && Number(m.build) > currentBuild()) {
         availableVersion = m.version;
