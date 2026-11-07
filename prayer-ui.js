@@ -74,6 +74,7 @@
 
   function saveConfig() {
     try { localStorage.setItem(KEY, JSON.stringify(state.config)); } catch { /* مساحة ممتلئة */ }
+    if (typeof syncBackground === 'function') syncBackground(false);
   }
 
   function toast(message) {
@@ -269,13 +270,15 @@
     if (state.lastFired === stamp) return;
     state.lastFired = stamp;
     const config = state.config;
-    if (config.adhanEnabled) {
+    // في نسخة أندرويد يتولى النظام تشغيل الأذان والإقامة، فلا نكرر الصوت داخل الواجهة.
+    const handledBySystem = hasBackgroundBridge() && bgState.scheduled > 0;
+    if (config.adhanEnabled && !handledBySystem) {
       const id = key === 'fajr' ? config.fajrAdhanId : config.adhanId;
       playAdhan(id);
-    } else {
+    } else if (!config.adhanEnabled) {
       toast(`حان الآن وقت صلاة ${PT.describe(key)}`);
     }
-    if (config.iqamaEnabled && PRAYER_KEYS.includes(key)) {
+    if (config.iqamaEnabled && !handledBySystem && PRAYER_KEYS.includes(key)) {
       const minutes = num(config.iqamaMinutes[key], 15);
       const timer = setTimeout(() => {
         if (config.iqamaTone) playIqamaTone();
@@ -292,11 +295,12 @@
     const now = new Date();
     const table = computeTimes(now);
     if (!table) return;
-    const minutes = PT.minutesNow(now);
+    // table بالساعات العشرية، فالآن يُحوَّل إلى ساعات أيضًا
+    const hoursNow = PT.minutesNow(now) / 60;
     const config = state.config;
     PRAYER_KEYS.forEach((key) => {
       if (!Number.isFinite(table[key])) return;
-      const diff = minutes - table[key];
+      const diff = hoursNow - table[key];
       if (diff >= 0 && diff < 0.25) fireFor(key, table);
       if (config.preMinutes > 0) {
         const pre = diff + config.preMinutes;
@@ -311,6 +315,142 @@
     });
     renderHero();
     renderTimes();
+  }
+
+
+  // ---------- الأذان في الخلفية ----------
+  // الطبقة الويب تحسب المواقيت، وتسلّم الجدول لخدمة أندرويد مرة واحدة،
+  // فتشغّل الأذان في وقته ومنبّه الإقامة بعده ولو كان التطبيق مغلقًا.
+  const Cap = (typeof window !== 'undefined' ? window : root).Capacitor || null;
+  const BG_PLUGIN = 'AdhanBackground';
+  const BG_HORIZON_DAYS = 14;
+
+  function hasBackgroundBridge() {
+    return !!(Cap && Cap.isPluginAvailable && Cap.isPluginAvailable(BG_PLUGIN));
+  }
+
+  function bgCall(method, payload) {
+    if (!hasBackgroundBridge() || !Cap.nativePromise) return Promise.resolve(null);
+    return Cap.nativePromise(BG_PLUGIN, method, payload || {}).catch(() => null);
+  }
+
+  // تاريخ اليوم في مدينة المستخدم (قد تختلف عن تاريخ الجهاز في منطقة أخرى)
+  function cityParts(instant) {
+    const tz = state.config.tz;
+    try {
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit',
+      }).formatToParts(instant);
+      const pick = (type) => Number((parts.find((p) => p.type === type) || {}).value);
+      return { y: pick('year'), m: pick('month'), d: pick('day') };
+    } catch {
+      return { y: instant.getFullYear(), m: instant.getMonth() + 1, d: instant.getDate() };
+    }
+  }
+
+  // ساعات المدينة بعد منتصف ليل اليوم ← لحظة مطلقة بالميلي ثانية
+  function cityEpoch(instant, hours) {
+    const { y, m, d } = cityParts(instant);
+    const offset = offsetHours(state.config.tz, instant);
+    return Date.UTC(y, m - 1, d) - offset * 3600000 + Math.round(hours * 3600000);
+  }
+
+  // جدول المواقيت بالساعات العشرية؛ نحوّله هنا إلى لحظة مطلقة بالميلي ثانية
+  function buildBackgroundSchedule() {
+    const config = state.config;
+    const events = [];
+    const now = Date.now();
+    const base = new Date();
+    for (let day = 0; day < BG_HORIZON_DAYS; day += 1) {
+      const date = new Date(base.getTime() + day * 86400000);
+      const table = computeTimes(date);
+      if (!table) continue;
+      PRAYER_KEYS.forEach((key) => {
+        const hours = table[key];
+        if (!Number.isFinite(hours)) return;
+        const at = cityEpoch(date, hours);
+        if (at <= now + 60000) return;
+        const adhanId = key === 'fajr' ? config.fajrAdhanId : config.adhanId;
+        const item = adhanById(adhanId) || {};
+        events.push({
+          prayer: key,
+          label: PT.describe(key),
+          at,
+          adhanId,
+          url: item.url || '',
+          iqamaMinutes: Math.max(0, num(config.iqamaMinutes[key], 0)),
+        });
+      });
+    }
+    events.sort((a, b) => a.at - b.at);
+    return {
+      events,
+      settings: {
+        adhanEnabled: !!config.adhanEnabled,
+        iqamaEnabled: !!config.iqamaEnabled,
+        preMinutes: num(config.preMinutes, 0),
+        horizonDays: BG_HORIZON_DAYS,
+        city: config.cityName || '',
+        timezone: config.tz || '',
+        version: 1,
+      },
+    };
+  }
+
+  let bgSyncTimer = null;
+  let bgState = { scheduled: 0, exact: false, native: false };
+
+  function syncBackground(immediate) {
+    if (bgSyncTimer) clearTimeout(bgSyncTimer);
+    const run = async () => {
+      if (!hasBackgroundBridge()) {
+        bgState = { scheduled: 0, exact: false, native: false };
+        renderBackgroundStatus();
+        return;
+      }
+      const payload = buildBackgroundSchedule();
+      const result = await bgCall('configure', payload);
+      bgState = {
+        native: true,
+        scheduled: result && Number.isFinite(Number(result.scheduled)) ? Number(result.scheduled) : payload.events.length,
+        events: payload.events.length,
+        exact: !!(result && result.exact),
+        until: payload.events.length ? payload.events[payload.events.length - 1].at : 0,
+      };
+      renderBackgroundStatus();
+    };
+    if (immediate) run();
+    else bgSyncTimer = setTimeout(run, 700);
+  }
+
+  function formatUntil(ms) {
+    if (!ms) return '';
+    try {
+      return new Intl.DateTimeFormat('ar-EG', {
+        timeZone: state.config.tz, day: 'numeric', month: 'long',
+      }).format(new Date(ms));
+    } catch {
+      return new Date(ms).toLocaleDateString();
+    }
+  }
+
+  function renderBackgroundStatus() {
+    const hint = el('ptBgStatus');
+    if (!hint) return;
+    if (!bgState.native) {
+      hint.textContent = 'الأذان يُشغَّل تلقائيًا في وقته داخل التطبيق. في نسخة أندرويد يعمل أيضًا عندما يكون التطبيق مغلقًا.';
+      return;
+    }
+    if (!state.config.adhanEnabled && !state.config.iqamaEnabled) {
+      hint.textContent = 'الأذان والإقامة متوقفان حاليًا؛ لن يعمل شيء في الخلفية.';
+      return;
+    }
+    const parts = [];
+    if (state.config.adhanEnabled) parts.push(`الأذان مجدول في وقته (${bgState.scheduled} موعدًا)`);
+    if (state.config.iqamaEnabled) parts.push('وتنبيه الإقامة بعده');
+    const until = formatUntil(bgState.until);
+    hint.textContent = `${parts.join(' ')} حتى ${until} — يعمل والتطبيق مغلق، ويُجدَّد الجدول تلقائيًا.`
+      + (bgState.exact ? '' : ' قد يتأخر دقائق لأن النظام لم يمنح إذن المنبّهات الدقيقة.');
   }
 
   // ---------- العرض ----------
@@ -348,10 +488,11 @@
     const mins = Math.floor(total % 60);
     els.countdown.textContent = hours > 0 ? `${hours}:${String(mins).padStart(2, '0')}` : `${mins} د`;
     if (table) {
-      const prevKey = PRAYER_KEYS.filter((k) => Number.isFinite(table[k]) && table[k] <= PT.minutesNow(new Date())).pop();
+      const hoursNow = PT.minutesNow(new Date()) / 60;
+      const prevKey = PRAYER_KEYS.filter((k) => Number.isFinite(table[k]) && table[k] <= hoursNow).pop();
       const from = prevKey ? table[prevKey] : 0;
       const span = Math.max(1, info.at - from);
-      const percent = Math.min(100, Math.max(0, ((PT.minutesNow(new Date()) - from) / span) * 100));
+      const percent = Math.min(100, Math.max(0, ((hoursNow - from) / span) * 100));
       els.bar.style.width = `${percent.toFixed(1)}%`;
     }
   }
@@ -709,6 +850,7 @@
     els.coordLat = el('ptLat');
     els.coordLng = el('ptLng');
     els.methodNote = el('ptMethodNote');
+    els.bgStatus = el('ptBgStatus');
     if (!els.times) return false;
 
     renderCities();
@@ -728,12 +870,18 @@
     renderTimes();
     renderQibla();
     scheduleChecks();
+    syncBackground(true);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) syncBackground(false);
+    });
     return true;
   }
 
   root.SirajPrayerUI = {
-    init, refresh: () => { renderHero(); renderTimes(); renderQibla(); },
+    init, refresh: () => { renderHero(); renderTimes(); renderQibla(); syncBackground(false); },
     playAdhan, stopAdhan, next: () => nextPrayer(new Date()),
     config: () => ({ ...state.config }),
+    backgroundStatus: () => ({ ...bgState }),
+    playBackgroundTest: (key) => { const cfg = state.config; const id = key === 'fajr' ? cfg.fajrAdhanId : cfg.adhanId; const item = adhanById(id) || {}; return bgCall('play', { prayer: key || 'fajr', label: PT.describe(key || 'fajr'), adhanId: id, url: item.url || '' }); },
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

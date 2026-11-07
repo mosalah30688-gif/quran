@@ -221,10 +221,15 @@
     const date = options && options.date instanceof Date ? options.date : new Date();
     const table = times({ ...options, date });
     if (!table) return null;
-    const now = minutesNow(date);
+    // جدول المواقيت بالساعات العشرية، و«الآن» بالدقائق — نوحّد الوحدة قبل المقارنة
+    const nowMinutes = minutesNow(date);
+    const nowHours = nowMinutes / 60;
     for (const key of ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']) {
-      if (Number.isFinite(table[key]) && table[key] > now) {
-        return { key, name: NAMES[key], at: table[key], minutesLeft: table[key] - now, today: true };
+      if (Number.isFinite(table[key]) && table[key] > nowHours) {
+        return {
+          key, name: NAMES[key], at: table[key],
+          minutesLeft: (table[key] - nowHours) * 60, today: true,
+        };
       }
     }
     const tomorrow = new Date(date.getTime() + 24 * 3600 * 1000);
@@ -232,7 +237,7 @@
     if (!nextTable || !Number.isFinite(nextTable.fajr)) return null;
     return {
       key: 'fajr', name: NAMES.fajr, at: nextTable.fajr,
-      minutesLeft: 24 * 60 - now + nextTable.fajr, today: false,
+      minutesLeft: (24 - nowHours + nextTable.fajr) * 60, today: false,
     };
   }
 
