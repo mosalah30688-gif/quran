@@ -446,7 +446,8 @@
       return;
     }
     const parts = [];
-    if (state.config.adhanEnabled) parts.push(`الأذان مجدول في وقته (${bgState.scheduled} موعدًا)`);
+    const count = Number(bgState.scheduled || 0).toLocaleString('ar-EG');
+    if (state.config.adhanEnabled) parts.push(`الأذان مجدول في وقته (${count} موعدًا)`);
     if (state.config.iqamaEnabled) parts.push('وتنبيه الإقامة بعده');
     const until = formatUntil(bgState.until);
     hint.textContent = `${parts.join(' ')} حتى ${until} — يعمل والتطبيق مغلق، ويُجدَّد الجدول تلقائيًا.`
