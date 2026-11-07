@@ -104,8 +104,8 @@ def main() -> int:
         fail(problems, f"manifest apk.sha256 is not a sha256: {apk_sha!r}")
     if not apk_url.endswith(f"Siraj-Android-{apk_version}.apk"):
         fail(problems, f"manifest apk.url does not point at Siraj-Android-{apk_version}.apk: {apk_url}")
-    if apk_version == version and f"/siraj-android-v{version}/" not in apk_url:
-        fail(problems, f"manifest apk.url tag must be siraj-android-v{version} for the current release: {apk_url}")
+    if apk_version == version and f"/siraj-android-v{version}" not in apk_url:
+        fail(problems, f"manifest apk.url tag must be siraj-android-v{version}(-b<build>) for the current release: {apk_url}")
     # مقارنة رقم البناء: رقم الإصدار الظاهر ثابت (1.0.0) بين التحديثات الصغيرة.
     apk_code = int(apk.get("code") or 0)
     if apk_code > int(build_number or 0):

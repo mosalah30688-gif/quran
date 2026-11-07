@@ -52,7 +52,7 @@ on:
         type: boolean
         default: false
       confirmation:
-        description: 'For publication type: PUBLISH IMMUTABLE siraj-android-v<the version in android/app/build.gradle>'
+        description: 'For publication type: PUBLISH IMMUTABLE siraj-android-v<version>-b<versionCode> (e.g. siraj-android-v1.0.0-b157)'
         required: false
         type: string
       features:
@@ -154,7 +154,7 @@ jobs:
           {
             echo "version=$VERSION"
             echo "code=$CODE"
-            echo "tag=siraj-android-v$VERSION"
+            echo "tag=siraj-android-v$VERSION-b$CODE"
             echo "asset=Siraj-Android-$VERSION.apk"
           } >> "$GITHUB_OUTPUT"
 
