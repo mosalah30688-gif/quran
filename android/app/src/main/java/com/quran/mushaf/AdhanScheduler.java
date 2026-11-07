@@ -164,7 +164,12 @@ final class AdhanScheduler {
                 manager.set(AlarmManager.RTC_WAKEUP, safeAt, pending);
             }
         } catch (SecurityException error) {
-            manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, safeAt, pending);
+            // أندرويد ٦+ يسمح بالتنبيه أثناء نوم الجهاز بدون إذن خاص
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, safeAt, pending);
+            } else {
+                manager.set(AlarmManager.RTC_WAKEUP, safeAt, pending);
+            }
         }
     }
 
