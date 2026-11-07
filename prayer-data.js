@@ -1,0 +1,928 @@
+/*
+ * Siraj Prayer Data v1 — مدن المواقيت وقائمة الأذانات المعتمدة.
+ * البيانات ثابتة ومحلية (بلا شبكة)؛ ملفات الأذان تُنزّل بطلب المستخدم وتُحفظ على الجهاز.
+ */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.SirajPrayerData = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+  const cities = [
+    {
+      "n": "القاهرة",
+      "c": "مصر",
+      "lat": 30.0444,
+      "lng": 31.2357,
+      "tz": "Africa/Cairo",
+      "m": "egypt"
+    },
+    {
+      "n": "الجيزة",
+      "c": "مصر",
+      "lat": 30.0131,
+      "lng": 31.2089,
+      "tz": "Africa/Cairo",
+      "m": "egypt"
+    },
+    {
+      "n": "الإسكندرية",
+      "c": "مصر",
+      "lat": 31.2001,
+      "lng": 29.9187,
+      "tz": "Africa/Cairo",
+      "m": "egypt"
+    },
+    {
+      "n": "الفيوم",
+      "c": "مصر",
+      "lat": 29.3084,
+      "lng": 30.8428,
+      "tz": "Africa/Cairo",
+      "m": "egypt"
+    },
+    {
+      "n": "المنصورة",
+      "c": "مصر",
+      "lat": 31.0409,
+      "lng": 31.3785,
+      "tz": "Africa/Cairo",
+      "m": "egypt"
+    },
+    {
+      "n": "طنطا",
+      "c": "مصر",
+      "lat": 30.7865,
+      "lng": 31.0004,
+      "tz": "Africa/Cairo",
+      "m": "egypt"
+    },
+    {
+      "n": "أسيوط",
+      "c": "مصر",
+      "lat": 27.1809,
+      "lng": 31.1837,
+      "tz": "Africa/Cairo",
+      "m": "egypt"
+    },
+    {
+      "n": "سوهاج",
+      "c": "مصر",
+      "lat": 26.5591,
+      "lng": 31.6957,
+      "tz": "Africa/Cairo",
+      "m": "egypt"
+    },
+    {
+      "n": "الأقصر",
+      "c": "مصر",
+      "lat": 25.6872,
+      "lng": 32.6396,
+      "tz": "Africa/Cairo",
+      "m": "egypt"
+    },
+    {
+      "n": "أسوان",
+      "c": "مصر",
+      "lat": 24.0889,
+      "lng": 32.8998,
+      "tz": "Africa/Cairo",
+      "m": "egypt"
+    },
+    {
+      "n": "بورسعيد",
+      "c": "مصر",
+      "lat": 31.2653,
+      "lng": 32.3019,
+      "tz": "Africa/Cairo",
+      "m": "egypt"
+    },
+    {
+      "n": "الإسماعيلية",
+      "c": "مصر",
+      "lat": 30.5965,
+      "lng": 32.2715,
+      "tz": "Africa/Cairo",
+      "m": "egypt"
+    },
+    {
+      "n": "دمياط",
+      "c": "مصر",
+      "lat": 31.4165,
+      "lng": 31.8133,
+      "tz": "Africa/Cairo",
+      "m": "egypt"
+    },
+    {
+      "n": "الزقازيق",
+      "c": "مصر",
+      "lat": 30.5877,
+      "lng": 31.502,
+      "tz": "Africa/Cairo",
+      "m": "egypt"
+    },
+    {
+      "n": "بنها",
+      "c": "مصر",
+      "lat": 30.466,
+      "lng": 31.1848,
+      "tz": "Africa/Cairo",
+      "m": "egypt"
+    },
+    {
+      "n": "مرسى مطروح",
+      "c": "مصر",
+      "lat": 31.3543,
+      "lng": 27.2373,
+      "tz": "Africa/Cairo",
+      "m": "egypt"
+    },
+    {
+      "n": "الغردقة",
+      "c": "مصر",
+      "lat": 27.2579,
+      "lng": 33.8116,
+      "tz": "Africa/Cairo",
+      "m": "egypt"
+    },
+    {
+      "n": "شرم الشيخ",
+      "c": "مصر",
+      "lat": 27.9158,
+      "lng": 34.33,
+      "tz": "Africa/Cairo",
+      "m": "egypt"
+    },
+    {
+      "n": "مكة المكرمة",
+      "c": "السعودية",
+      "lat": 21.4225,
+      "lng": 39.8262,
+      "tz": "Asia/Riyadh",
+      "m": "makkah"
+    },
+    {
+      "n": "المدينة المنورة",
+      "c": "السعودية",
+      "lat": 24.5247,
+      "lng": 39.5692,
+      "tz": "Asia/Riyadh",
+      "m": "makkah"
+    },
+    {
+      "n": "الرياض",
+      "c": "السعودية",
+      "lat": 24.7136,
+      "lng": 46.6753,
+      "tz": "Asia/Riyadh",
+      "m": "makkah"
+    },
+    {
+      "n": "جدة",
+      "c": "السعودية",
+      "lat": 21.4858,
+      "lng": 39.1925,
+      "tz": "Asia/Riyadh",
+      "m": "makkah"
+    },
+    {
+      "n": "الدمام",
+      "c": "السعودية",
+      "lat": 26.4207,
+      "lng": 50.0888,
+      "tz": "Asia/Riyadh",
+      "m": "makkah"
+    },
+    {
+      "n": "أبها",
+      "c": "السعودية",
+      "lat": 18.2164,
+      "lng": 42.5053,
+      "tz": "Asia/Riyadh",
+      "m": "makkah"
+    },
+    {
+      "n": "دبي",
+      "c": "الإمارات",
+      "lat": 25.2048,
+      "lng": 55.2708,
+      "tz": "Asia/Dubai",
+      "m": "dubai"
+    },
+    {
+      "n": "أبوظبي",
+      "c": "الإمارات",
+      "lat": 24.4539,
+      "lng": 54.3773,
+      "tz": "Asia/Dubai",
+      "m": "dubai"
+    },
+    {
+      "n": "الشارقة",
+      "c": "الإمارات",
+      "lat": 25.3463,
+      "lng": 55.4209,
+      "tz": "Asia/Dubai",
+      "m": "dubai"
+    },
+    {
+      "n": "الدوحة",
+      "c": "قطر",
+      "lat": 25.2854,
+      "lng": 51.531,
+      "tz": "Asia/Qatar",
+      "m": "qatar"
+    },
+    {
+      "n": "الكويت",
+      "c": "الكويت",
+      "lat": 29.3759,
+      "lng": 47.9774,
+      "tz": "Asia/Kuwait",
+      "m": "kuwait"
+    },
+    {
+      "n": "المنامة",
+      "c": "البحرين",
+      "lat": 26.2285,
+      "lng": 50.586,
+      "tz": "Asia/Bahrain",
+      "m": "makkah"
+    },
+    {
+      "n": "مسقط",
+      "c": "عمان",
+      "lat": 23.588,
+      "lng": 58.3829,
+      "tz": "Asia/Muscat",
+      "m": "makkah"
+    },
+    {
+      "n": "صنعاء",
+      "c": "اليمن",
+      "lat": 15.3694,
+      "lng": 44.191,
+      "tz": "Asia/Aden",
+      "m": "makkah"
+    },
+    {
+      "n": "عدن",
+      "c": "اليمن",
+      "lat": 12.7855,
+      "lng": 45.0187,
+      "tz": "Asia/Aden",
+      "m": "makkah"
+    },
+    {
+      "n": "بغداد",
+      "c": "العراق",
+      "lat": 33.3152,
+      "lng": 44.3661,
+      "tz": "Asia/Baghdad",
+      "m": "karachi"
+    },
+    {
+      "n": "أربيل",
+      "c": "العراق",
+      "lat": 36.1901,
+      "lng": 44.0091,
+      "tz": "Asia/Baghdad",
+      "m": "karachi"
+    },
+    {
+      "n": "عمّان",
+      "c": "الأردن",
+      "lat": 31.9539,
+      "lng": 35.9106,
+      "tz": "Asia/Amman",
+      "m": "jordan"
+    },
+    {
+      "n": "إربد",
+      "c": "الأردن",
+      "lat": 32.5556,
+      "lng": 35.85,
+      "tz": "Asia/Amman",
+      "m": "jordan"
+    },
+    {
+      "n": "دمشق",
+      "c": "سوريا",
+      "lat": 33.5138,
+      "lng": 36.2765,
+      "tz": "Asia/Damascus",
+      "m": "mwl"
+    },
+    {
+      "n": "حلب",
+      "c": "سوريا",
+      "lat": 36.2021,
+      "lng": 37.1343,
+      "tz": "Asia/Damascus",
+      "m": "mwl"
+    },
+    {
+      "n": "بيروت",
+      "c": "لبنان",
+      "lat": 33.8938,
+      "lng": 35.5018,
+      "tz": "Asia/Beirut",
+      "m": "mwl"
+    },
+    {
+      "n": "القدس",
+      "c": "فلسطين",
+      "lat": 31.7683,
+      "lng": 35.2137,
+      "tz": "Asia/Hebron",
+      "m": "jordan"
+    },
+    {
+      "n": "غزة",
+      "c": "فلسطين",
+      "lat": 31.5017,
+      "lng": 34.4668,
+      "tz": "Asia/Hebron",
+      "m": "jordan"
+    },
+    {
+      "n": "رام الله",
+      "c": "فلسطين",
+      "lat": 31.9038,
+      "lng": 35.2034,
+      "tz": "Asia/Hebron",
+      "m": "jordan"
+    },
+    {
+      "n": "الخرطوم",
+      "c": "السودان",
+      "lat": 15.5007,
+      "lng": 32.5599,
+      "tz": "Africa/Khartoum",
+      "m": "egypt"
+    },
+    {
+      "n": "طرابلس",
+      "c": "ليبيا",
+      "lat": 32.8872,
+      "lng": 13.1913,
+      "tz": "Africa/Tripoli",
+      "m": "mwl"
+    },
+    {
+      "n": "بنغازي",
+      "c": "ليبيا",
+      "lat": 32.1167,
+      "lng": 20.0667,
+      "tz": "Africa/Tripoli",
+      "m": "mwl"
+    },
+    {
+      "n": "تونس",
+      "c": "تونس",
+      "lat": 36.8065,
+      "lng": 10.1815,
+      "tz": "Africa/Tunis",
+      "m": "tunisia"
+    },
+    {
+      "n": "الجزائر",
+      "c": "الجزائر",
+      "lat": 36.7538,
+      "lng": 3.0588,
+      "tz": "Africa/Algiers",
+      "m": "algeria"
+    },
+    {
+      "n": "وهران",
+      "c": "الجزائر",
+      "lat": 35.6971,
+      "lng": -0.6308,
+      "tz": "Africa/Algiers",
+      "m": "algeria"
+    },
+    {
+      "n": "الدار البيضاء",
+      "c": "المغرب",
+      "lat": 33.5731,
+      "lng": -7.5898,
+      "tz": "Africa/Casablanca",
+      "m": "morocco"
+    },
+    {
+      "n": "الرباط",
+      "c": "المغرب",
+      "lat": 34.0209,
+      "lng": -6.8416,
+      "tz": "Africa/Casablanca",
+      "m": "morocco"
+    },
+    {
+      "n": "مراكش",
+      "c": "المغرب",
+      "lat": 31.6295,
+      "lng": -7.9811,
+      "tz": "Africa/Casablanca",
+      "m": "morocco"
+    },
+    {
+      "n": "نواكشوط",
+      "c": "موريتانيا",
+      "lat": 18.0735,
+      "lng": -15.9582,
+      "tz": "Africa/Nouakchott",
+      "m": "mwl"
+    },
+    {
+      "n": "مقديشو",
+      "c": "الصومال",
+      "lat": 2.0469,
+      "lng": 45.3182,
+      "tz": "Africa/Mogadishu",
+      "m": "mwl"
+    },
+    {
+      "n": "دجيبوتي",
+      "c": "جيبوتي",
+      "lat": 11.5721,
+      "lng": 43.1456,
+      "tz": "Africa/Djibouti",
+      "m": "mwl"
+    },
+    {
+      "n": "بانجول",
+      "c": "غامبيا",
+      "lat": 13.4549,
+      "lng": -16.579,
+      "tz": "Africa/Banjul",
+      "m": "mwl"
+    },
+    {
+      "n": "لاغوس",
+      "c": "نيجيريا",
+      "lat": 6.5244,
+      "lng": 3.3792,
+      "tz": "Africa/Lagos",
+      "m": "mwl"
+    },
+    {
+      "n": "نيروبي",
+      "c": "كينيا",
+      "lat": -1.2921,
+      "lng": 36.8219,
+      "tz": "Africa/Nairobi",
+      "m": "mwl"
+    },
+    {
+      "n": "أديس أبابا",
+      "c": "إثيوبيا",
+      "lat": 9.032,
+      "lng": 38.7469,
+      "tz": "Africa/Addis_Ababa",
+      "m": "mwl"
+    },
+    {
+      "n": "إستانبول",
+      "c": "تركيا",
+      "lat": 41.0082,
+      "lng": 28.9784,
+      "tz": "Europe/Istanbul",
+      "m": "turkey"
+    },
+    {
+      "n": "أنقرة",
+      "c": "تركيا",
+      "lat": 39.9334,
+      "lng": 32.8597,
+      "tz": "Europe/Istanbul",
+      "m": "turkey"
+    },
+    {
+      "n": "طهران",
+      "c": "إيران",
+      "lat": 35.6892,
+      "lng": 51.389,
+      "tz": "Asia/Tehran",
+      "m": "mwl"
+    },
+    {
+      "n": "كابل",
+      "c": "أفغانستان",
+      "lat": 34.5553,
+      "lng": 69.2075,
+      "tz": "Asia/Kabul",
+      "m": "karachi"
+    },
+    {
+      "n": "إسلام أباد",
+      "c": "باكستان",
+      "lat": 33.6844,
+      "lng": 73.0479,
+      "tz": "Asia/Karachi",
+      "m": "karachi"
+    },
+    {
+      "n": "لاهور",
+      "c": "باكستان",
+      "lat": 31.5204,
+      "lng": 74.3587,
+      "tz": "Asia/Karachi",
+      "m": "karachi"
+    },
+    {
+      "n": "كراتشي",
+      "c": "باكستان",
+      "lat": 24.8607,
+      "lng": 67.0011,
+      "tz": "Asia/Karachi",
+      "m": "karachi"
+    },
+    {
+      "n": "دلهي",
+      "c": "الهند",
+      "lat": 28.6139,
+      "lng": 77.209,
+      "tz": "Asia/Kolkata",
+      "m": "karachi"
+    },
+    {
+      "n": "مومباي",
+      "c": "الهند",
+      "lat": 19.076,
+      "lng": 72.8777,
+      "tz": "Asia/Kolkata",
+      "m": "karachi"
+    },
+    {
+      "n": "حيدر آباد",
+      "c": "الهند",
+      "lat": 17.385,
+      "lng": 78.4867,
+      "tz": "Asia/Kolkata",
+      "m": "karachi"
+    },
+    {
+      "n": "دكا",
+      "c": "بنغلاديش",
+      "lat": 23.8103,
+      "lng": 90.4125,
+      "tz": "Asia/Dhaka",
+      "m": "karachi"
+    },
+    {
+      "n": "كولالمبور",
+      "c": "ماليزيا",
+      "lat": 3.139,
+      "lng": 101.6869,
+      "tz": "Asia/Kuala_Lumpur",
+      "m": "singapore"
+    },
+    {
+      "n": "سنغافورة",
+      "c": "سنغافورة",
+      "lat": 1.3521,
+      "lng": 103.8198,
+      "tz": "Asia/Singapore",
+      "m": "singapore"
+    },
+    {
+      "n": "جاكرتا",
+      "c": "إندونيسيا",
+      "lat": -6.2088,
+      "lng": 106.8456,
+      "tz": "Asia/Jakarta",
+      "m": "singapore"
+    },
+    {
+      "n": "سورابايا",
+      "c": "إندونيسيا",
+      "lat": -7.2575,
+      "lng": 112.7521,
+      "tz": "Asia/Jakarta",
+      "m": "singapore"
+    },
+    {
+      "n": "مانيلا",
+      "c": "الفلبين",
+      "lat": 14.5995,
+      "lng": 120.9842,
+      "tz": "Asia/Manila",
+      "m": "mwl"
+    },
+    {
+      "n": "طشقند",
+      "c": "أوزبكستان",
+      "lat": 41.2995,
+      "lng": 69.2401,
+      "tz": "Asia/Tashkent",
+      "m": "mwl"
+    },
+    {
+      "n": "باكو",
+      "c": "أذربيجان",
+      "lat": 40.4093,
+      "lng": 49.8671,
+      "tz": "Asia/Baku",
+      "m": "mwl"
+    },
+    {
+      "n": "لندن",
+      "c": "بريطانيا",
+      "lat": 51.5072,
+      "lng": -0.1276,
+      "tz": "Europe/London",
+      "m": "mwl"
+    },
+    {
+      "n": "باريس",
+      "c": "فرنسا",
+      "lat": 48.8566,
+      "lng": 2.3522,
+      "tz": "Europe/Paris",
+      "m": "france"
+    },
+    {
+      "n": "برلين",
+      "c": "ألمانيا",
+      "lat": 52.52,
+      "lng": 13.405,
+      "tz": "Europe/Berlin",
+      "m": "mwl"
+    },
+    {
+      "n": "أمستردام",
+      "c": "هولندا",
+      "lat": 52.3676,
+      "lng": 4.9041,
+      "tz": "Europe/Amsterdam",
+      "m": "mwl"
+    },
+    {
+      "n": "بروكسل",
+      "c": "بلجيكا",
+      "lat": 50.8503,
+      "lng": 4.3517,
+      "tz": "Europe/Brussels",
+      "m": "mwl"
+    },
+    {
+      "n": "ستوكهولم",
+      "c": "السويد",
+      "lat": 59.3293,
+      "lng": 18.0686,
+      "tz": "Europe/Stockholm",
+      "m": "mwl"
+    },
+    {
+      "n": "أوسلو",
+      "c": "النرويج",
+      "lat": 59.9139,
+      "lng": 10.7522,
+      "tz": "Europe/Oslo",
+      "m": "mwl"
+    },
+    {
+      "n": "موسكو",
+      "c": "روسيا",
+      "lat": 55.7558,
+      "lng": 37.6173,
+      "tz": "Europe/Moscow",
+      "m": "mwl"
+    },
+    {
+      "n": "مدريد",
+      "c": "إسبانيا",
+      "lat": 40.4168,
+      "lng": -3.7038,
+      "tz": "Europe/Madrid",
+      "m": "mwl"
+    },
+    {
+      "n": "روما",
+      "c": "إيطاليا",
+      "lat": 41.9028,
+      "lng": 12.4964,
+      "tz": "Europe/Rome",
+      "m": "mwl"
+    },
+    {
+      "n": "فيينا",
+      "c": "النمسا",
+      "lat": 48.2082,
+      "lng": 16.3738,
+      "tz": "Europe/Vienna",
+      "m": "mwl"
+    },
+    {
+      "n": "نيويورك",
+      "c": "أمريكا",
+      "lat": 40.7128,
+      "lng": -74.006,
+      "tz": "America/New_York",
+      "m": "isna"
+    },
+    {
+      "n": "شيكاغو",
+      "c": "أمريكا",
+      "lat": 41.8781,
+      "lng": -87.6298,
+      "tz": "America/Chicago",
+      "m": "isna"
+    },
+    {
+      "n": "لوس أنجلوس",
+      "c": "أمريكا",
+      "lat": 34.0522,
+      "lng": -118.2437,
+      "tz": "America/Los_Angeles",
+      "m": "isna"
+    },
+    {
+      "n": "هيوستن",
+      "c": "أمريكا",
+      "lat": 29.7604,
+      "lng": -95.3698,
+      "tz": "America/Chicago",
+      "m": "isna"
+    },
+    {
+      "n": "تورونتو",
+      "c": "كندا",
+      "lat": 43.6532,
+      "lng": -79.3832,
+      "tz": "America/Toronto",
+      "m": "isna"
+    },
+    {
+      "n": "ساو باولو",
+      "c": "البرازيل",
+      "lat": -23.5505,
+      "lng": -46.6333,
+      "tz": "America/Sao_Paulo",
+      "m": "mwl"
+    },
+    {
+      "n": "سيدني",
+      "c": "أستراليا",
+      "lat": -33.8688,
+      "lng": 151.2093,
+      "tz": "Australia/Sydney",
+      "m": "mwl"
+    },
+    {
+      "n": "ملبورن",
+      "c": "أستراليا",
+      "lat": -37.8136,
+      "lng": 144.9631,
+      "tz": "Australia/Melbourne",
+      "m": "mwl"
+    }
+  ];
+  const adhans = [
+    {
+      "id": "haram-makkah",
+      "name": "الحرم المكي",
+      "region": "مكة المكرمة",
+      "url": "https://archive.org/download/AdhaN_M_up-by-muslem/019--1.mp3",
+      "seconds": 204,
+      "fajr": false
+    },
+    {
+      "id": "mulla-makkah",
+      "name": "علي ملا",
+      "region": "مكة المكرمة",
+      "url": "https://archive.org/download/AdhaN_M_up-by-muslem/047--.mp3",
+      "seconds": 175,
+      "fajr": false
+    },
+    {
+      "id": "haram-madinah",
+      "name": "الحرم المدني",
+      "region": "المدينة المنورة",
+      "url": "https://archive.org/download/AdhaN_M_up-by-muslem/018-.mp3",
+      "seconds": 281,
+      "fajr": false
+    },
+    {
+      "id": "fajr-makkah",
+      "name": "أذان الفجر · الحرم المكي",
+      "region": "مكة المكرمة",
+      "url": "https://archive.org/download/AdhaN_M_up-by-muslem/033--.mp3",
+      "seconds": 222,
+      "fajr": true
+    },
+    {
+      "id": "fajr-madinah",
+      "name": "أذان الفجر · الحرم المدني",
+      "region": "المدينة المنورة",
+      "url": "https://archive.org/download/AdhaN_M_up-by-muslem/034--.mp3",
+      "seconds": 278,
+      "fajr": true
+    },
+    {
+      "id": "abdulbasit",
+      "name": "عبد الباسط عبد الصمد",
+      "region": "مصر",
+      "url": "https://archive.org/download/AdhaN_M_up-by-muslem/049-.mp3",
+      "seconds": 247,
+      "fajr": false
+    },
+    {
+      "id": "alafasy",
+      "name": "مشاري راشد العفاسي",
+      "region": "الكويت",
+      "url": "https://archive.org/download/AdhaN_M_up-by-muslem/074-1_-.mp3",
+      "seconds": 240,
+      "fajr": false
+    },
+    {
+      "id": "alafasy-fajr",
+      "name": "مشاري العفاسي · أذان الفجر",
+      "region": "الكويت",
+      "url": "https://archive.org/download/AdhaN_M_up-by-muslem/038-1.mp3",
+      "seconds": 187,
+      "fajr": true
+    },
+    {
+      "id": "rifat",
+      "name": "محمد رفعت",
+      "region": "مصر",
+      "url": "https://archive.org/download/AdhaN_M_up-by-muslem/042--.mp3",
+      "seconds": 203,
+      "fajr": false
+    },
+    {
+      "id": "husary",
+      "name": "محمود خليل الحصري",
+      "region": "مصر",
+      "url": "https://archive.org/download/AdhaN_M_up-by-muslem/044--.mp3",
+      "seconds": 127,
+      "fajr": false
+    },
+    {
+      "id": "banna",
+      "name": "محمد علي البنا",
+      "region": "مصر",
+      "url": "https://archive.org/download/AdhaN_M_up-by-muslem/043--.mp3",
+      "seconds": 153,
+      "fajr": false
+    },
+    {
+      "id": "naina",
+      "name": "أحمد نعينع",
+      "region": "مصر",
+      "url": "https://archive.org/download/AdhaN_M_up-by-muslem/040--.mp3",
+      "seconds": 210,
+      "fajr": false
+    },
+    {
+      "id": "mustafa-ismail",
+      "name": "مصطفى إسماعيل",
+      "region": "مصر",
+      "url": "https://archive.org/download/AdhaN_M_up-by-muslem/068-.mp3",
+      "seconds": 183,
+      "fajr": false
+    },
+    {
+      "id": "minshawi",
+      "name": "محمد صديق المنشاوي",
+      "region": "مصر",
+      "url": "https://archive.org/download/AdhaN_M_up-by-muslem/048-.mp3",
+      "seconds": 247,
+      "fajr": false
+    },
+    {
+      "id": "shuaisha",
+      "name": "أبو العنين شعيشع",
+      "region": "مصر",
+      "url": "https://archive.org/download/AdhaN_M_up-by-muslem/071--.mp3",
+      "seconds": 236,
+      "fajr": false
+    },
+    {
+      "id": "aqsa",
+      "name": "المسجد الأقصى · ناجي قزاز",
+      "region": "القدس",
+      "url": "https://archive.org/download/AdhaN_M_up-by-muslem/045--.mp3",
+      "seconds": 185,
+      "fajr": false
+    },
+    {
+      "id": "qatar",
+      "name": "أحمد العمادي",
+      "region": "قطر",
+      "url": "https://archive.org/download/AdhaN_M_up-by-muslem/002--.mp3",
+      "seconds": 190,
+      "fajr": false
+    },
+    {
+      "id": "halabiya",
+      "name": "حمزة الحلبية",
+      "region": "سوريا",
+      "url": "https://archive.org/download/AdhaN_M_up-by-muslem/001-.mp3",
+      "seconds": 241,
+      "fajr": false
+    }
+  ];
+  return { version: 1, cities, adhans };
+});
