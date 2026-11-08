@@ -57,6 +57,21 @@
     duri: [
       ['duri_husary', 'محمود خليل الحصري', { type: 'surah', base: 'https://cdn.mp3quran.net/audio/mahmoud-husary/r4/' }],
     ],
+    shubah: [
+      ['shubah_deeban', 'أحمد ديبان', { type: 'surah', base: 'https://cdn.mp3quran.net/audio/ahmad-deeban/r2/' }],
+      ['shubah_saber', 'صابر عبدالحكم', { type: 'surah', base: 'https://cdn.mp3quran.net/audio/saber-abdulhakam/r7/' }],
+      ['shubah_hudhaify', 'علي الحذيفي', { type: 'surah', base: 'https://cdn.mp3quran.net/audio/ali-hudhaifi/r3/' }],
+    ],
+    susi: [
+      ['susi_sufi', 'عبدالرشيد صوفي', { type: 'surah', base: 'https://cdn.mp3quran.net/audio/abdulrasheed-sufi/r2/' }],
+    ],
+    bazzi: [
+      ['bazzi_deeban', 'أحمد ديبان', { type: 'surah', base: 'https://cdn.mp3quran.net/audio/ahmad-deeban/r4/' }],
+      ['bazzi_kameny', 'عكاشة كميني', { type: 'surah', base: 'https://cdn.mp3quran.net/audio/okasha-kameny/r2/' }],
+    ],
+    qunbul: [
+      ['qunbul_deeban', 'أحمد ديبان', { type: 'surah', base: 'https://cdn.mp3quran.net/audio/ahmad-deeban/r3/' }],
+    ],
   };
   // قارئ الرواية الحالي (أو null إن لم يكن الاختيار متاحاً لهذه الرواية)
   const riwEntry = () => (RIW_RECITERS[settings.riwaya] || []).find(([id]) => id === settings.reciter) || null;
@@ -147,12 +162,12 @@
     store.set('settings', settings);
   }
   // الإعدادات المحفوظة من إصدارات أقدم قد تشير إلى خيارات حفص المحذوفة؛ نرجع لحفص عن عاصم
-  const VALID_RIWAYAT = ['quran-uthmani', 'warsh', 'qalun', 'duri'];
+  const VALID_RIWAYAT = ['quran-uthmani', 'warsh', 'qalun', 'duri', 'shubah', 'susi', 'bazzi', 'qunbul'];
   if (!VALID_RIWAYAT.includes(settings.riwaya)) settings.riwaya = 'quran-uthmani';
   const savedTajweedScopes = settings.tajweedScopes && typeof settings.tajweedScopes === 'object'
     && !Array.isArray(settings.tajweedScopes) ? settings.tajweedScopes : {};
   settings.tajweedScopes = {};
-  ['quran-uthmani', 'quran-simple', 'quran-uthmani-min', 'quran-tajweed', 'warsh', 'qalun', 'duri']
+  ['quran-uthmani', 'quran-simple', 'quran-uthmani-min', 'quran-tajweed', 'warsh', 'qalun', 'duri', 'shubah', 'susi', 'bazzi', 'qunbul']
     .forEach((settingId) => {
       const value = savedTajweedScopes[settingId];
       if (typeof value === 'string'
@@ -687,8 +702,8 @@
 
   // ---------- تحميل الصفحات ----------
   // الصفحة = آيات من إصدارات متعددة (نص + تلاوة + تفسير + ترجمة اختيارية)
-  // الروايات الثلاث (ورش وقالون والدوري): نص كل آية مع صفحتها من ملف quran-riwayat.json
-  const RIW_IDS = ['warsh', 'qalun', 'duri'];
+  // الروايات السبع (ورش، قالون، الدوري، شعبة، السوسي، البزي، قنبل): نص كل آية مع صفحتها من quran-riwayat.json
+  const RIW_IDS = ['warsh', 'qalun', 'duri', 'shubah', 'susi', 'bazzi', 'qunbul'];
   const isRiw = () => RIW_IDS.includes(settings.riwaya);
   let riwAll = null;
   let riwPages = {};
