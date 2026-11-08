@@ -15,6 +15,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(SmartDevicePlugin.class);
         registerPlugin(QuranAudioPlugin.class);
         registerPlugin(AdhanPlugin.class);
+        registerPlugin(SirajSensorsPlugin.class);
         super.onCreate(savedInstanceState);
         SmartFeedbackStore.captureOpenIntent(this, getIntent());
     }

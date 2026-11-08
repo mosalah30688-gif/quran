@@ -65,11 +65,15 @@
 
   const DEFAULTS = {
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
+    surahReciter: 0, surahAudio: true,
     translation: '', font: 'Scheherazade New', size: 26, tajweed: false, dark: false,
     tajweedScopes: {},
   };
   const VIEW_TITLES = { listen: 'استماع', reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', wird: 'الورد', stats: 'الإحصائيات', adhkar: 'الأذكار', search: 'البحث', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق', tajweed: 'أحكام التجويد', meanings: 'المعاني', prayer: 'المواقيت' };
   const Cap = window.Capacitor || null;
+
+  // قائمة القراء المتوفرة بتلاوة كاملة للسورة (ملف واحد لكل سورة) من mp3quran.
+  let SURAH_RECITERS = [];
 
   // قواعد التجويد بحسب رموز مصدر quran-tajweed في alquran.cloud (الاسم، الشرح)
   const TJ_RULES = {
@@ -406,6 +410,8 @@
   }
 
   async function loadBundledData() {
+    // قائمة القراء الكاملة اختيارية: فشل تحميلها لا يمنع فتح المصحف.
+    tryLoadSurahReciters();
     const [surahData, hafsData, tajweedData, catalog, learningCatalog, scopeRegistry] = await Promise.all([
       getJSON('surahs.json'), getJSON('quran-hafs.json'),
       getJSON('quran-tajweed.json'), getJSON('tafsir-catalog.json'),
@@ -455,7 +461,9 @@
     localTajweed.forEach((row) => tajweedByRef.set(refKey(row[0], row[1]), clean(row[3])));
     buildTajweedLearningCards();
     tafsirCatalog = catalog;
-    const classical = (catalog.books || []).filter((book) => !/^qp:\d+$/.test(book.edition)).map((book) => [
+    // كل كتب الكتالوج تظهر في القائمة: الخمسة الأساسية تعمل عبر الشبكة،
+    // والبقية تُقرأ من حزمة التفاسير المحلية بعد تنزيلها (٧٨ طبعة).
+    const classical = (catalog.books || []).map((book) => [
       book.edition,
       `${book.name} — ${book.author} (ت ${toArabicDigits(book.author_death_hijri)}هـ)`,
     ]);
@@ -851,65 +859,90 @@
     const size = Number(settings.size) || HAFS_BASE_SIZE;
     return Math.min(1.8, Math.max(1, size / HAFS_BASE_SIZE));
   };
-  // تصغير الخط قليلًا لو السطر أطول من عرض الشاشة، بنفس النسبة لكل السطور
-  // ضبط كل سطر على حدة: الخط يملأ عرض السطر تقريبًا، وتفاوت الحجم بين السطور بسيط جدًا
+  // قياس المصحف الموحّد: مقاس خط واحد لكل أسطر الصفحة (كما في مصحف المدينة/الشاملة).
+  // نقيس أطول سطر عند مقاس مرجعي، ثم نستنتج المقاس الذي يملأ عرض الصفحة تمامًا،
+  // ثم نضرب في معامل اختيار المستخدم — فيكبر الخط كله معًا بلا «جمل صغيرة وجمل كبيرة».
+  const HAFS_REF_SIZE = 100;
+  function userFontScale() {
+    const size = Number(settings.size) || HAFS_BASE_SIZE;
+    return Math.min(2.4, Math.max(0.72, size / HAFS_BASE_SIZE));
+  }
+
+  // عرض أطول سطر عند مقاس خط معيّن (بلا أي التفاف)، ثم بحث ثنائي على المقاس
+  // الذي يملأ عرض الصفحة تمامًا. كل الأسطر تأخذ المقاس النهائي نفسه.
   function fitMadaniLines() {
     const body = $('#pageBody');
+    if (!body) return;
     requestAnimationFrame(() => {
       if (!body.classList.contains('madani-lines')) return;
-      const all = [...body.querySelectorAll('.mline')];
-      if (!all.length) return;
-      // الأسطر القصيرة (صفحة الفاتحة وأول البقرة وأواخر الصفحات) تُقاس بصندوقها هي،
-      // وإلا بقي حجمها الأساسي فتخرج كلماتها عن إطار الصفحة من الجانبين.
-      const full = all.filter((el) => !el.classList.contains('short'));
-      const shorts = all.filter((el) => el.classList.contains('short'));
-      const base = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--quran-size')) || 26;
-      all.forEach((el) => { el.style.fontSize = ''; });
-      const ratioOf = (el) => {
-        const avail = el.clientWidth;
-        const keep = el.style.width;
-        el.style.width = 'max-content';
-        const natural = el.getBoundingClientRect().width;
-        el.style.width = keep;
-        return avail && natural ? avail / natural : 1;
+      const lines = [...body.querySelectorAll('.mline')];
+      if (!lines.length) return;
+      body.classList.remove('zoomed');
+      const avail = Math.max(180, (body.clientWidth || 320) - 6);
+      const widthAt = (size) => {
+        body.style.setProperty('--quran-size', `${size}px`);
+        body.classList.add('measuring');
+        let max = 0;
+        lines.forEach((el) => {
+          const w = el.getBoundingClientRect().width;
+          if (w > max) max = w;
+        });
+        body.classList.remove('measuring');
+        return max;
       };
-      const fullRatios = full.map(ratioOf);
-      const shortRatios = shorts.map(ratioOf);
-
-      let med;
-      if (fullRatios.length) {
-        const sorted = [...fullRatios].sort((x, y) => x - y);
-        med = Math.min(1.15, Math.max(0.5, sorted[Math.floor(sorted.length / 2)] || 1));
-      } else {
-        // صفحة كل أسطرها قصيرة: مقاس واحد يكفي لدخول أطول سطر داخل صندوقه، بلا تكبير.
-        med = Math.max(0.5, Math.min(1, shortRatios.length ? Math.min(...shortRatios) : 1));
+      let lo = 8;
+      let hi = 80;
+      for (let i = 0; i < 14; i += 1) {
+        const mid = (lo + hi) / 2;
+        if (widthAt(mid) > avail) hi = mid; else lo = mid;
       }
-      const zoom = hafsZoom();
-      body.style.setProperty('--mline-h', `${(base * med * 1.5 * zoom).toFixed(2)}px`);
-      full.forEach((el, i) => {
-        const r = fullRatios[i] / med;
-        el.style.fontSize = `${(base * med * zoom * Math.min(r, 1.08) * 0.995).toFixed(2)}px`;
-      });
-      // السطر القصير لا يكبر أبدًا عن مقاس الصفحة، ويصغر فقط إن تجاوز صندوقه.
-      shorts.forEach((el, i) => {
-        const r = shortRatios[i] / med;
-        el.style.fontSize = `${(base * med * zoom * Math.min(r, 1) * 0.995).toFixed(2)}px`;
-      });
-      // عند التكبير يُسمح للسطر الطويل بالالتفاف إلى سطرين بدل إعادة تصغيره،
-      // فيكبر الخط فعليًا كما يختار المستخدم من الإعدادات.
-      body.classList.toggle('zoomed', zoom > 1.001);
-      if (zoom > 1.001) return;
-      // تمريرة تصحيح: أي سطر لا يزال أوسع من إطاره (أحرف الوقف والروزنامة) يُصغَّر بمقدار تجاوزه فقط.
-      all.forEach((el) => {
-        const over = el.scrollWidth - el.clientWidth;
-        if (over > 1 && el.scrollWidth > 0) {
-          const fitted = parseFloat(el.style.fontSize || getComputedStyle(el).fontSize) * 0.997;
-          el.style.fontSize = `${(fitted * (el.clientWidth / el.scrollWidth)).toFixed(2)}px`;
-        }
-      });
+      const fitSize = lo;
+      const size = Math.max(9, Math.min(90, fitSize * userFontScale()));
+      body.style.setProperty('--quran-size', `${size.toFixed(2)}px`);
+      body.style.setProperty('--mushaf-w', `${Math.ceil(widthAt(size))}px`);
+      // توزيع الأسطر رأسيًا حتى تملأ الصفحة ارتفاعها المتاح (كما في المصحف المطبوع)،
+      // بنفس المقاس لكل الأسطر وبتباعد لا يقل عن ١.٥ ولا يزيد على ٢.٤.
+      // الارتفاع المتاح فعلًا للأسطر: من أعلى الصفحة حتى شريط التنقل السفلي،
+      // ناقص رأس الصفحة وتذييلها — حتى تظهر الصفحة كاملة على كل مقاسات الهواتف.
+      const pageBox = body.closest('.page') || body.parentElement;
+      const chromeH = Math.max(0, (pageBox ? pageBox.clientHeight : 0) - (body.clientHeight || 0));
+      const navBar = document.querySelector('.navbar');
+      const navTop = navBar ? navBar.getBoundingClientRect().top : (window.innerHeight || 640);
+      const pageTop = pageBox ? pageBox.getBoundingClientRect().top : 0;
+      const visibleH = navTop - pageTop;
+      const stageH = (stage && stage.clientHeight) || window.innerHeight || 640;
+      const availH = Math.max(120, Math.min(stageH, visibleH > 160 ? visibleH : stageH) - chromeH - 10);
+      const lineCount = Math.max(1, lines.length);
+      const needed = lineCount * size;
+      const lh = Math.min(2.3, Math.max(1.5, availH / needed));
+      body.style.setProperty('--mline-h', `${(size * lh).toFixed(2)}px`);
+      body.scrollLeft = 0;
+      if (typeof applyTajweedScale === 'function') applyTajweedScale();
     });
   }
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitMadaniLines());
+
+  // ربط شريط حجم الخط في المصحف (يُستخدم نفس مفتاح الإعدادات size).
+  function syncFontControl() {
+    const range = $('#fontRange');
+    const val = $('#fontVal');
+    if (range) range.value = String(Math.round(Number(settings.size) || HAFS_BASE_SIZE));
+    if (val) val.textContent = toArabicDigits(Math.round(Number(settings.size) || HAFS_BASE_SIZE));
+    if ($('#setSize')) $('#setSize').value = String(Math.round(Number(settings.size) || HAFS_BASE_SIZE));
+  }
+  function setFontSize(value, opts = {}) {
+    const next = Math.min(44, Math.max(18, Math.round(Number(value) || HAFS_BASE_SIZE)));
+    settings.size = next;
+    document.documentElement.style.setProperty('--quran-size', `${next}px`);
+    saveSettings();
+    syncFontControl();
+    fitMadaniLines();
+  }
+
+  if (document.fonts && document.fonts.ready) {
+    // الخط يُحمّل بعد أول رسم؛ نعيد القياس بعده ليكون مقاس المصحف مضبوطًا من أول مرة.
+    document.fonts.ready.then(() => fitMadaniLines());
+    if (document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', () => fitMadaniLines());
+  }
   window.addEventListener('resize', () => fitMadaniLines());
 
   // رقم الصفحة لأي آية (من بيانات السورة)
@@ -1265,8 +1298,14 @@
     const mw = selMenu.offsetWidth, mh = selMenu.offsetHeight;
     let left = rect.left + rect.width / 2 - mw / 2;
     left = Math.max(8, Math.min(window.innerWidth - mw - 8, left));
+    // لا تغطية للرأس ولا لشريط التنقل: القائمة تبقى داخل مساحة الصفحة المرئية.
+    const hdr = document.querySelector('.hdr');
+    const navBar = document.querySelector('.navbar');
+    const topBound = (hdr ? hdr.getBoundingClientRect().bottom : 8) + 8;
+    const bottomBound = (navBar ? navBar.getBoundingClientRect().top : window.innerHeight) - 8;
     let top = rect.top - mh - 10;
-    if (top < 8) top = rect.bottom + 10;
+    if (top < topBound) top = rect.bottom + 10;
+    if (top + mh > bottomBound) top = Math.max(topBound, bottomBound - mh);
     selMenu.style.left = `${left}px`;
     selMenu.style.top = `${top}px`;
   }
@@ -1356,6 +1395,11 @@
   $('#playFrom').addEventListener('change', (e) => {
     goToAyah(Number($('#playSurah').value), Number(e.target.value));
   });
+  if ($('#playSurahReciter')) $('#playSurahReciter').addEventListener('change', (e) => {
+    settings.surahReciter = Number(e.target.value) || settings.surahReciter;
+    saveSettings();
+    toast('تغيّر قارئ السورة الكاملة.');
+  });
   $('#playReciter').addEventListener('change', (e) => {
     onSettingChange('reciter', e.target.value);
   });
@@ -1406,6 +1450,10 @@
     $('#tafsirPanel').classList.add('show');
   }
   $('#tafsirClose').addEventListener('click', () => $('#tafsirPanel').classList.remove('show'));
+  // أزرار حزمة التفاسير
+  if ($('#tfPackBtn')) $('#tfPackBtn').addEventListener('click', () => startTafsirPackDownload());
+  if ($('#tfPackCancel')) $('#tfPackCancel').addEventListener('click', () => cancelTafsirPackDownload());
+  if ($('#tfPackDelete')) $('#tfPackDelete').addEventListener('click', () => deleteTafsirPack());
 
   // ---------- اختيار الآية بلا إعادة رسم كاملة ----------
   function selectAyah(a) {
@@ -1720,11 +1768,80 @@
     });
   }
 
+  // ---------- تلاوة السورة كاملة (ملف واحد للسورة) ----------
+  function tryLoadSurahReciters() {
+    getJSON('quran-reciters.json').then((data) => {
+      SURAH_RECITERS = Array.isArray(data?.items) ? data.items : [];
+      syncSurahReciterSelect();
+    }).catch(() => { SURAH_RECITERS = []; syncSurahReciterSelect(); });
+  }
+
+  function surahReciterEntry() {
+    if (!SURAH_RECITERS.length) return null;
+    const found = SURAH_RECITERS.find((r) => String(r.id) === String(settings.surahReciter));
+    if (found) return found;
+    const afasy = SURAH_RECITERS.find((r) => r.name.includes('العفاسي'));
+    const chosen = afasy || SURAH_RECITERS[0];
+    settings.surahReciter = chosen.id;
+    saveSettings();
+    return chosen;
+  }
+
+  function surahAudioUrl(entry, surah) {
+    if (!entry || !entry.server) return null;
+    return entry.server + String(surah).padStart(3, '0') + '.mp3';
+  }
+
+  function syncSurahReciterSelect() {
+    const select = $('#playSurahReciter');
+    if (!select) return;
+    if (!SURAH_RECITERS.length) {
+      select.innerHTML = '<option value="">قائمة القراء غير متاحة الآن</option>';
+      return;
+    }
+    const current = surahReciterEntry();
+    select.innerHTML = SURAH_RECITERS
+      .map((r) => `<option value="${r.id}">${r.name}</option>`).join('');
+    select.value = String(current.id);
+    if ($('#surahReciterCount')) {
+      $('#surahReciterCount').textContent = `${toArabicDigits(SURAH_RECITERS.length)} قارئًا — تلاوة كاملة لكل سورة`;
+    }
+  }
+
+  async function playSurahFull(surah, options = {}) {
+    const entry = surahReciterEntry();
+    const url = surahAudioUrl(entry, surah);
+    if (!url) { toast('لا تتوفر تلاوة كاملة لهذه السورة الآن.'); return; }
+    const first = await findAyah(surah, 1).catch(() => null);
+    const label = `سورة ${surahNameShort(surah)} — ${entry.name}`;
+    play.label = label;
+    play.repeatCount = 1;
+    play.repeatLeft = 1;
+    play.follow = false;
+    play.nextFn = async (cur) => {
+      if (!cur || cur.s >= 114) return null;
+      const next = cur.s + 1;
+      const firstNext = await findAyah(next, 1).catch(() => null);
+      return {
+        s: next, n: 1, g: `${next}:1`, text: '', page: firstNext ? firstNext.page : null,
+        audio: surahAudioUrl(entry, next), fromSurah: true,
+      };
+    };
+    if (options.scroll !== false && first && first.page && first.page !== state.page) {
+      await showPage(first.page, { selG: first.g, save: false, scroll: false });
+    }
+    await playAyah({
+      s: surah, n: 1, g: `${surah}:1`, text: '',
+      page: first ? first.page : null, audio: url, fromSurah: true,
+    });
+  }
+
   async function playAyah(a) {
     if (isRiw() && !riwAudioOk()) { toast('اختر قارئاً لهذه الرواية من الإعدادات'); return; }
     if (!a) { stopPlayback(); return; }
     play.cur = a;
-    const local = await localAudioUrl(settings.reciter, a.s, a.n).catch(() => null);
+    // تلاوة السورة كاملة تُقرأ من ملف السورة مباشرة، دون الرجوع لملفات الآيات.
+    const local = a.fromSurah ? null : await localAudioUrl(settings.reciter, a.s, a.n).catch(() => null);
     if (!local && !a.audio) {
       toast('لا يوجد تسجيل لهذه الآية مع القارئ المختار');
       const nxt = await play.nextFn(a);
@@ -1752,9 +1869,12 @@
     setPlayerUI();
   }
 
-  // بدء تشغيل السورة من آية محددة حتى نهايتها
+  // بدء تشغيل السورة: ملف واحد كامل ما لم يكن المستخدم يريد آيةً آية
   async function startSurahPlay(s, n) {
     if (isRiw() && !riwAudioOk()) { toast('اختر قارئاً لهذه الرواية من الإعدادات'); return; }
+    if (settings.surahAudio !== false && !isRiw() && SURAH_RECITERS.length) {
+      return playSurahFull(s);
+    }
     const first = isRiw() ? await findRiwAyah(s, n) : await findAyah(s, n);
     if (riwSurahOnly()) toast('تلاوة السورة كاملة (لا يتوفر توقيت للآيات مع هذا القارئ)');
     if (!first) return;
@@ -2213,6 +2333,7 @@
     $('#setTajweed').checked = !!settings.tajweed;
     fillSmartSettings();
     applyTypography();
+    syncFontControl();
   }
   function applyTypography() {
     document.documentElement.style.setProperty('--quran-size', settings.size + 'px');
@@ -2259,6 +2380,12 @@
     if (state.sel) showPage(state.page, { selG: state.sel.g, save: false });
   });
   $('#setReciter').addEventListener('change', (e) => onSettingChange('reciter', e.target.value));
+  ['#fontRange'].forEach((sel) => {
+    const el = $(sel);
+    if (el) el.addEventListener('input', (e) => setFontSize(e.target.value));
+  });
+  if ($('#fontInc')) $('#fontInc').addEventListener('click', () => setFontSize((Number(settings.size) || HAFS_BASE_SIZE) + 2));
+  if ($('#fontDec')) $('#fontDec').addEventListener('click', () => setFontSize((Number(settings.size) || HAFS_BASE_SIZE) - 2));
   $('#setTafsir').addEventListener('change', (e) => onSettingChange('tafsir', e.target.value));
   $('#setTranslation').addEventListener('change', (e) => onSettingChange('translation', e.target.value));
   $('#setTajweed').addEventListener('change', (e) => onSettingChange('tajweed', e.target.checked));
@@ -2268,11 +2395,9 @@
     applyTypography();
   });
   $('#setSize').addEventListener('input', (e) => {
-    settings.size = Number(e.target.value);
-    $('#sizeVal').textContent = settings.size + 'px';
-    applyTypography(); saveSettings();
-    // إعادة ضبط أسطر المصحف فورًا ليعمل التكبير على صفحة حفص أيضًا
-    fitMadaniLines();
+    setFontSize(e.target.value);
+    $('#sizeVal').textContent = (Number(settings.size) || HAFS_BASE_SIZE) + 'px';
+    applyTypography();
   });
 
   // ---------- التحميل للاستماع بدون إنترنت ----------
@@ -2471,12 +2596,95 @@
     if (value >= 1024 ** 2) return (value / 1024 ** 2).toFixed(0) + ' م.ب';
     return (value / 1024).toFixed(0) + ' ك.ب';
   };
-  // التفاسير المحلية أُزيلت من الإعدادات: تبقى الطبعات الخمس الأساسية عبر الإنترنت فقط
-  function renderTafsirPackStatus() {}
+  // حزمة التفاسير المحلية: تنزيل اختياري مرة واحدة، ثم تعمل هذه التفاسير دون إنترنت.
+  function renderTafsirPackStatus() {
+    const card = $('#tfPackCard');
+    if (!card) return;
+    if (!tafsirPack.supported) { card.hidden = true; return; }
+    card.hidden = false;
+    const percent = tafsirPack.total ? Math.min(100, (tafsirPack.bytes / tafsirPack.total) * 100) : 0;
+    if ($('#tfPackFill')) $('#tfPackFill').style.width = `${tafsirPack.ready ? 100 : percent}%`;
+    if ($('#tfPackStatus')) {
+      $('#tfPackStatus').textContent = tafsirPack.ready
+        ? 'حزمة التفاسير جاهزة على جهازك، وكل الطبعات تعمل دون إنترنت.'
+        : tafsirPack.downloading
+          ? `جاري التنزيل: ${formatBytes(tafsirPack.bytes)} من ${formatBytes(tafsirPack.total)} (${Math.round(percent)}٪) — يمكنك المتابعة داخل التطبيق.`
+          : `لم تُنزَّل بعد. الحجم ${formatBytes(tafsirPack.total)}، ويُستحسن اتصال Wi‑Fi ومساحة كافية.`;
+    }
+    if ($('#tfPackBtn')) {
+      $('#tfPackBtn').hidden = tafsirPack.ready;
+      $('#tfPackBtn').disabled = tafsirPack.downloading;
+      $('#tfPackBtn').textContent = tafsirPack.downloading ? 'جاري التنزيل…' : 'نزّل حزمة التفاسير';
+    }
+    if ($('#tfPackCancel')) $('#tfPackCancel').hidden = !tafsirPack.downloading;
+    if ($('#tfPackDelete')) $('#tfPackDelete').hidden = !tafsirPack.ready;
+  }
+
+  let tafsirPackPoll = null;
+  async function startTafsirPackDownload() {
+    const plugin = getTafsirNative();
+    if (!plugin) return;
+    toast('بدأ تنزيل حزمة التفاسير؛ يمكنك استخدام التطبيق أثناء التنزيل.');
+    plugin.download().catch(() => {});
+    if (tafsirPackPoll) clearInterval(tafsirPackPoll);
+    tafsirPackPoll = setInterval(() => {
+      plugin.status().then((status) => {
+        tafsirPack = {
+          supported: true,
+          ready: !!status.ready,
+          downloading: !!status.downloading,
+          bytes: Number(status.bytes) || 0,
+          total: Number(status.total) || 0,
+          freeBytes: Number(status.freeBytes) || 0,
+        };
+        renderTafsirPackStatus();
+        if (tafsirPack.ready || !tafsirPack.downloading) {
+          clearInterval(tafsirPackPoll);
+          tafsirPackPoll = null;
+          pageCache.clear();
+          fillSettings();
+          if (tafsirPack.ready) toast('تم تنزيل حزمة التفاسير. اختر أي كتاب من القائمة.');
+        }
+      }).catch(() => {});
+    }, 2000);
+  }
+  async function cancelTafsirPackDownload() {
+    const plugin = getTafsirNative();
+    if (plugin) { try { await plugin.cancel(); } catch { /* تجاهل */ } }
+    toast('أُوقف التنزيل؛ ما نُزّل محفوظ ويُستكمل لاحقًا.');
+    refreshTafsirPackStatus();
+  }
+  async function deleteTafsirPack() {
+    const plugin = getTafsirNative();
+    if (plugin) { try { await plugin.delete(); } catch { /* تجاهل */ } }
+    settings.tafsir = DEFAULTS.tafsir;
+    saveSettings();
+    await refreshTafsirPackStatus();
+    toast('حُذفت حزمة التفاسير من الجهاز.');
+  }
   async function refreshTafsirPackStatus() {
-    tafsirPack = { ready: false, downloading: false, bytes: 0, freeBytes: 0 };
-    if (/^qp:\d+$/.test(settings.tafsir)) { settings.tafsir = DEFAULTS.tafsir; saveSettings(); }
+    const plugin = getTafsirNative();
+    if (!plugin) {
+      tafsirPack = { ready: false, downloading: false, bytes: 0, total: 0, freeBytes: 0, supported: false };
+      renderTafsirPackStatus();
+      fillSettings();
+      return;
+    }
+    try {
+      const status = await plugin.status();
+      tafsirPack = {
+        supported: true,
+        ready: !!status.ready,
+        downloading: !!status.downloading,
+        bytes: Number(status.bytes) || 0,
+        total: Number(status.total) || 0,
+        freeBytes: Number(status.freeBytes) || 0,
+      };
+    } catch {
+      tafsirPack = { supported: true, ready: false, downloading: false, bytes: 0, total: 0, freeBytes: 0 };
+    }
     pageCache.clear();
+    renderTafsirPackStatus();
     fillSettings();
   }
 

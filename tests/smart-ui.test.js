@@ -96,14 +96,19 @@ test('smart and tajweed engines are included in offline and update channels', ()
   assert.match(sw, /siraj-shell-v\d+/);
 });
 
-test('madani page fitting keeps short lines inside the page frame', () => {
-  // كل سطر — بما فيها القصيرة في الفاتحة وأول البقرة وأواخر الصفحات — يُقاس داخل صندوقه،
-  // والسطر القصير لا يكبر عن مقاس الصفحة حتى لا تخرج كلماته عن إطار الورقة.
+test('madani page fitting uses one uniform size per page and keeps lines un-wrapped', () => {
+  // مقاس خط واحد لكل أسطر الصفحة (كما في مصحف المدينة/الشاملة): بحث ثنائي على المقاس
+  // الذي يملأ عرض الصفحة، ثم معامل تكبير المستخدم، بلا التفاف ولا تفاوت بين الأسطر.
   assert.match(app, /querySelectorAll\('\.mline'\)/);
-  assert.match(app, /el\.classList\.contains\('short'\)/);
-  assert.match(app, /Math\.min\(1, shortRatios\.length \? Math\.min\(\.\.\.shortRatios\) : 1\)/);
-  assert.match(app, /Math\.min\(r, 1\)/);
-  assert.match(app, /if \(!all\.length\) return;/);
+  assert.match(app, /const widthAt = \(size\) =>/);
+  assert.match(app, /for \(let i = 0; i < 14; i \+= 1\)/);
+  assert.match(app, /const size = Math\.max\(9, Math\.min\(90, fitSize \* userFontScale\(\)\)\)/);
+  assert.match(app, /--mushaf-w/);
+  assert.match(app, /body\.style\.setProperty\('--mline-h'/);
+  assert.match(app, /function setFontSize\(value, opts = \{\}\)/);
+  assert.match(html, /id="fontRange"/);
+  assert.match(html, /id="fontInc"/);
+  assert.match(html, /id="fontDec"/);
 });
 
 test('JSON update overlay is hashed, stored outside localStorage, and fail-closed', () => {
@@ -220,7 +225,11 @@ test('native delivery repeats the sleep and quiet hard gates without sensitive p
   assert.match(app, /respectSafety: !!smartEngine\?\.config\.enabled/);
   assert.match(smartTimeWindow, /contains\(minute, quietStart, quietEnd\)/);
   assert.match(smartTimeWindow, /contains\(minute, sleepStart, sleepEnd\)/);
-  assert.doesNotMatch(androidManifest, /ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION|READ_CONTACTS|RECORD_AUDIO/);
+  // «رفيق اليوم» لا يطلب أي إذن حسّاس. إذن الموقع مخصّص لمواقيت الصلاة والقبلة فقط
+  // (يُطلب من المستخدم عند الضغط على «حدّد موقعي»)، ولذلك نفصل بينهما في الفحص.
+  assert.doesNotMatch(androidManifest, /READ_CONTACTS|RECORD_AUDIO|READ_SMS|ACCESS_BACKGROUND_LOCATION/);
+  assert.doesNotMatch(smartPlugin, /ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION|LocationManager/);
+  assert.match(androidManifest, /ACCESS_COARSE_LOCATION/);
   assert.match(smartPlugin, /isInteractive\(\)/);
   assert.match(smartPlugin, /isKeyguardLocked\(\)/);
 });
@@ -232,4 +241,14 @@ test('About remains the last settings control after adding smart settings', () =
   const aboutAt = settings[1].indexOf('id="settingsAboutBtn"');
   assert.ok(smartAt >= 0 && aboutAt > smartAt);
   assert.match(settings[1].slice(aboutAt), /<\/button>\s*$/);
+});
+
+test('التظليل الحر: طبقة تظليل بلون ظاهر وقائمة لا تغطي الرأس ولا شريط التنقل', () => {
+  assert.match(html, /#hlLayer i \{\s*position: absolute/);
+  assert.match(html, /background: rgba\(15, 110, 90, \.26\)/);          // لون احتياطي صريح
+  assert.match(html, /#pageBody \*::selection \{ background: rgba\(15, 110, 90, \.22\)/);
+  assert.match(app, /function drawHighlight\(/);
+  assert.match(app, /const topBound = \(hdr \? hdr\.getBoundingClientRect\(\)\.bottom : 8\) \+ 8;/);
+  assert.match(app, /bottomBound/);
+  assert.match(html, /min-width: 158px/);
 });

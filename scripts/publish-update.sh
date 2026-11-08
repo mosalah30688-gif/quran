@@ -58,6 +58,7 @@ base = [
     "prayer-times.js",
     "prayer-data.js",
     "prayer-ui.js",
+    "quran-reciters.json",
     "app.js",
 ]
 curricula = sorted(

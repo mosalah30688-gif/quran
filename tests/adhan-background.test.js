@@ -97,3 +97,47 @@ test('ترقية الـAPK تُقارن برقم بناء الملف المثب�
   // لا يجوز أن يُقارن مؤشر الـAPK برقم بناء الواجهة، وإلا حجب التحديث الداخلي ترقية الملف
   assert.doesNotMatch(app, /apkCode > currentBuild\(\)/);
 });
+
+test('الموقع والبوصلة: الإذن والحساسات عبر الجسر الأصلي لا عبر WebView', () => {
+  const manifest = read('android/app/src/main/AndroidManifest.xml');
+  assert.match(manifest, /android\.permission\.ACCESS_FINE_LOCATION/);
+  const plugin = read(`${JAVA}/SirajSensorsPlugin.java`);
+  assert.match(plugin, /@CapacitorPlugin\(\s*name = "SirajSensors"/);
+  assert.match(plugin, /Manifest\.permission\.ACCESS_FINE_LOCATION/);
+  assert.match(plugin, /requestPermissionForAlias\("location"/);
+  assert.match(plugin, /TYPE_ROTATION_VECTOR/);
+  assert.match(plugin, /notifyListeners\("heading"/);
+  const activity = read(`${JAVA}/MainActivity.java`);
+  assert.match(activity, /registerPlugin\(SirajSensorsPlugin\.class\)/);
+  const ui = read('prayer-ui.js');
+  assert.match(ui, /SENSORS_PLUGIN = 'SirajSensors'/);
+  assert.match(ui, /sensorCall\('getLocation'\)/);
+  assert.match(ui, /sensorCall\('startCompass'\)/);
+});
+
+test('التلاوة حسب السورة: كتالوج قراء كامل وملف واحد لكل سورة', () => {
+  const catalog = JSON.parse(read('quran-reciters.json'));
+  assert.ok(Array.isArray(catalog.items) && catalog.items.length >= 100, 'عدد القراء');
+  catalog.items.forEach((item) => {
+    assert.match(item.server, /^https:\/\/[a-z0-9.-]*mp3quran\.net\/[A-Za-z0-9._\/-]+\/$/);
+    assert.equal(item.surahs, 114);
+  });
+  const app = read('app.js');
+  assert.match(app, /function playSurahFull\(surah, options = \{\}\)/);
+  assert.match(app, /settings\.surahAudio !== false && !isRiw\(\) && SURAH_RECITERS\.length/);
+  assert.match(read('scripts/build-www.sh'), /quran-reciters\.json/);
+  assert.match(read('scripts/publish-update.sh'), /quran-reciters\.json/);
+  assert.match(read('sw.js'), /quran-reciters\.json/);
+});
+
+test('حزمة التفاسير ال٧٨ معروضة في الواجهة مع التنزيل', () => {
+  const html = read('index.html');
+  for (const id of ['tfPackCard', 'tfPackStatus', 'tfPackFill', 'tfPackBtn', 'tfPackCancel', 'tfPackDelete']) {
+    assert.match(html, new RegExp(`id="${id}"`));
+  }
+  const app = read('app.js');
+  assert.match(app, /async function startTafsirPackDownload\(\)/);
+  assert.match(app, /await plugin\.status\(\)/);
+  // كل كتب الكتالوج في القائمة، لا الخمسة فقط
+  assert.match(app, /const classical = \(catalog\.books \|\| \[\]\)\.map/);
+});

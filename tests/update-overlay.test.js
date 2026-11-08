@@ -13,7 +13,7 @@ const BASE = [
   'index.html', 'smart-context.js', 'smart-services.js', 'tajweed-learning.js',
   'tajweed-curriculum-loader.js', 'tajweed-learning-catalog.json',
   'tajweed-scope-registry.json', 'prayer-times.js', 'prayer-data.js',
-  'prayer-ui.js', 'app.js',
+  'prayer-ui.js', 'quran-reciters.json', 'app.js',
 ];
 const sha256 = (file) => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 
