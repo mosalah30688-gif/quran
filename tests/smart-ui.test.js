@@ -253,3 +253,24 @@ test('التظليل الحر: طبقة تظليل بلون ظاهر وقائم�
   assert.match(app, /bottomBound/);
   assert.match(html, /min-width: 158px/);
 });
+
+test('التفاسير الجاهزة فورًا ظاهرة وحدها، وكتب الحزمة في مجموعة منفصلة', () => {
+  // الخمسة الشبكية تعمل بلا تنزيل، والـ٧٣ في مجموعة الحزمة المحلية
+  assert.match(app, /const online = TAFSIRS\.filter\(\(\[id\]\) => !\/\^qp:/);
+  assert.match(app, /<optgroup label="متاح فورًا">/);
+  assert.match(app, /كتب الحزمة المحلية/);
+  assert.match(app, /async function fetchOnlineTafsir\(surah, ayah, edition\)/);
+  assert.match(app, /const ONLINE_TAFSIRS = new Set\(/);
+  // جلب عند الطلب من الواجهة واللوحة
+  assert.match(app, /fetchOnlineTafsir\(a\.s, a\.n, edition\)/);
+});
+
+test('مصحف أوضح: خط معرّض وخانة صفحة صغيرة وأزرار كلمات واضحة', () => {
+  assert.match(html, /webkit-text-stroke-width: calc\(var\(--quran-size, 26px\) \* 0\.018\)/);
+  assert.match(html, /max-width: 3\.6ch/);
+  assert.match(html, /width: 3ch; text-align: center/);
+  assert.match(html, /font-size: clamp\(12px, 3\.6vw, 14px\); font-weight: 800/);
+  assert.match(app, /const FLIP_RATIO = 0\.15;/);
+  assert.match(app, /const FLIP_VELOCITY = 0\.11;/);
+  assert.match(app, /rotateY\(\$\{tilt\.toFixed\(2\)\}deg\)/);
+});

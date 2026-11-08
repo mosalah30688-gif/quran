@@ -1158,12 +1158,18 @@
   const hasSelection = () => !!(window.getSelection && window.getSelection().toString().trim());
   const SWIPE_EASE = 'cubic-bezier(.2,.8,.25,1)';
   // الصفحة تتبع الإصبع واحدًا لواحد كما لو كانت ورقة حقيقية، فلا إحساس صناعي.
-  const FLIP_RATIO = 0.22;    // نسبة عرض الصفحة الكافية للتقليب عند الإفلات
-  const FLIP_DISTANCE = 24;   // أو مسافة بايتة صغيرة مع سرعة كافية
-  const FLIP_VELOCITY = 0.2;  // سحب سريع (بكسل/مللي ثانية)
+  const FLIP_RATIO = 0.15;    // نسبة عرض الصفحة الكافية للتقليب عند الإفلات
+  const FLIP_DISTANCE = 16;   // أو مسافة صغيرة مع سرعة كافية
+  const FLIP_VELOCITY = 0.11; // سحب سريع (بكسل/مللي ثانية)
+  // الورقة تتبع الإصبع مع ميل بسيط حول الكعب لتعطي إحساس كتاب حقيقي بسرعة استجابة عالية.
   function setPageTransform(x, animate) {
-    pageEl.style.transition = animate ? `transform .14s ${SWIPE_EASE}` : 'none';
-    pageEl.style.transform = x ? `translate3d(${x}px,0,0)` : '';
+    pageEl.style.transition = animate ? `transform .17s ${SWIPE_EASE}` : 'none';
+    if (!x) {
+      pageEl.style.transform = '';
+    } else {
+      const tilt = Math.max(-14, Math.min(14, (x / Math.max(200, stage.clientWidth)) * 26));
+      pageEl.style.transform = `perspective(1400px) translate3d(${x}px,0,0) rotateY(${tilt.toFixed(2)}deg)`;
+    }
     pageEl.classList.toggle('is-dragging', !!x);
   }
   function clampDrag(dx) {
@@ -1503,12 +1509,39 @@
     }
     return 'لا يوجد نص خاص بهذه الآية في هذا الكتاب.';
   }
+  const ONLINE_TAFSIRS = new Set(['ar.muyassar', 'ar.jalalayn', 'ar.baghawi', 'ar.qurtubi', 'ar.miqbas']);
+  const tafsirAyahCache = new Map();
+
+  // جلب تفسير آية واحدة من الشبكة عند الطلب — يعمل لأي وقت ولأي آية،
+  // وهو ما كان يظهر سابقًا قبل أن تُضاف كتب الحزمة المحلية.
+  async function fetchOnlineTafsir(surah, ayah, edition) {
+    const key = `${edition}:${surah}:${ayah}`;
+    if (tafsirAyahCache.has(key)) return tafsirAyahCache.get(key);
+    const data = await getJSON(`${API}/ayah/${surah}:${ayah}/${edition}`);
+    const text = (data && data.data && data.data.text) || '';
+    if (text) tafsirAyahCache.set(key, text);
+    return text;
+  }
+
   function showTafsirPanel(a) {
-    const book = TAFSIRS.find((t) => t[0] === settings.tafsir)?.[1] || '';
+    const edition = settings.tafsir;
+    const book = TAFSIRS.find((t) => t[0] === edition)?.[1] || '';
     $('#tafsirTitle').textContent = `${surahName(a.s)} - الآية ${toArabicDigits(a.n)}`;
     $('#tafsirAyah').textContent = a.text;
     $('#tafsirLabel').textContent = book || 'التفسير';
     $('#tafsirBody').textContent = a.tafsir || missingTafsirText();
+    // نص ناقص لكتاب شبكي؟ نطلبه الآن بدل أن نترك المستخدم بلا تفسير.
+    if (!a.tafsir && ONLINE_TAFSIRS.has(edition)) {
+      $('#tafsirBody').textContent = 'جاري تحميل التفسير…';
+      fetchOnlineTafsir(a.s, a.n, edition).then((text) => {
+        const panel = $('#tafsirPanel');
+        if (!panel || !panel.classList.contains('show')) return;
+        $('#tafsirBody').textContent = text || 'لا يوجد نص خاص بهذه الآية في هذا الكتاب.';
+        a.tafsir = text || a.tafsir;
+      }).catch(() => {
+        $('#tafsirBody').textContent = 'تعذّر تحميل التفسير الآن؛ تحقّق من الاتصال أو استخدم كتابًا من حزمة التفاسير المحلية.';
+      });
+    }
     const hasTr = !!settings.translation;
     $('#transLabel').style.display = hasTr ? 'block' : 'none';
     $('#tafsirTrans').style.display = hasTr ? 'block' : 'none';
@@ -1585,6 +1618,17 @@
     $('#tfTitle').textContent = `${surahName(a.s)} - الآية ${toArabicDigits(a.n)}`;
     $('#tfArabic').textContent = a.text;
     $('#tfTafsir').textContent = a.tafsir || missingTafsirText();
+    if (!a.tafsir && ONLINE_TAFSIRS.has(settings.tafsir)) {
+      $('#tfTafsir').textContent = 'جاري تحميل التفسير…';
+      const edition = settings.tafsir;
+      fetchOnlineTafsir(a.s, a.n, edition).then((text) => {
+        if (settings.tafsir !== edition) return;
+        $('#tfTafsir').textContent = text || 'لا يوجد نص خاص بهذه الآية في هذا الكتاب.';
+        a.tafsir = text || a.tafsir;
+      }).catch(() => {
+        $('#tfTafsir').textContent = 'تعذّر تحميل التفسير الآن؛ تحقّق من الاتصال.';
+      });
+    }
     $('#tfTransText').textContent = settings.translation ? (a.tr || 'لا توجد ترجمة لهذه الآية.') : 'بدون ترجمة مختارة.';
   }
 
@@ -2379,10 +2423,16 @@
   }
 
   function tafsirOptionsHtml() {
-    return TAFSIRS.map(([id, name]) => {
-      const needsPack = /^qp:\d+$/.test(id) && !tafsirPack.ready;
-      return `<option value="${id}" ${needsPack ? 'disabled' : ''}>${name}${needsPack ? ' — نزّل الحزمة أولاً' : ''}</option>`;
+    // مجموعة أولى: التفاسير الجاهزة فورًا (تعمل بلا تنزيل) — وهي التي كانت ظاهرة دائمًا.
+    const online = TAFSIRS.filter(([id]) => !/^qp:\d+$/.test(id));
+    const packed = TAFSIRS.filter(([id]) => /^qp:\d+$/.test(id));
+    const onlineHtml = online.map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
+    const packedHtml = packed.map(([id, name]) => {
+      const needsPack = !tafsirPack.ready;
+      return `<option value="${id}" ${needsPack ? 'disabled' : ''}>${name}${needsPack ? ' — يحتاج تنزيل الحزمة' : ''}</option>`;
     }).join('');
+    return `<optgroup label="متاح فورًا">${onlineHtml}</optgroup>`
+      + (packed.length ? `<optgroup label="كتب الحزمة المحلية (${toArabicDigits(packed.length)})">${packedHtml}</optgroup>` : '');
   }
   function fillSettings() {
     $('#setRiwaya').value = settings.riwaya;

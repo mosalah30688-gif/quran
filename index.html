@@ -238,7 +238,8 @@
 
     .pager { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 12px 0 4px; }
     .pager .btn { padding: 5px 12px; font-size: 13px; }
-    .pager .pno { font-size: 13px; color: var(--muted); min-width: 110px; text-align: center; }
+    .pager .pno, .hdr-pager .pno { min-width: 0; }
+    .pager .pno { font-size: 13px; color: var(--muted); min-width: 0; text-align: center; }
     .hint { text-align: center; font-size: 12px; color: var(--muted); margin-top: 6px; }
 
     /* ---------- شريط التشغيل ---------- */
@@ -972,22 +973,29 @@
     }
     /* أزرار «السابق/التالي» كلمات لا أيقونات: عرض مرن بارتفاع مناسب للمس، وخط متناسب مع الهاتف */
     .hdr-pager .pager-btn {
-      flex: 0 1 auto; width: auto; min-width: 0; height: auto; min-height: 0; padding: 4px clamp(7px, 2.6vw, 12px);
-      border: 1px solid var(--line); border-radius: 9px; display: inline-flex; align-items: center; justify-content: center;
+      flex: 0 1 auto; width: auto; min-width: 0; height: auto; min-height: 0; padding: 5px clamp(8px, 3vw, 14px);
+      border: 1.5px solid color-mix(in srgb, var(--brand) 55%, var(--line)); border-radius: 10px;
+      display: inline-flex; align-items: center; justify-content: center;
       cursor: pointer; color: var(--ink); background: var(--card);
-      font-family: inherit; font-size: clamp(11px, 3.2vw, 13px); font-weight: 700; line-height: 1.5;
-      white-space: nowrap; transition: background .15s ease, color .15s ease, opacity .2s ease;
+      font-family: inherit; font-size: clamp(12px, 3.6vw, 14px); font-weight: 800; line-height: 1.45;
+      letter-spacing: 0; white-space: nowrap; transition: background .15s ease, color .15s ease, opacity .2s ease;
     }
     .hdr-pager .pager-btn:not(:disabled):hover { border-color: var(--brand); color: var(--brand); }
     .hdr-pager .pager-btn:not(:disabled):active { background: var(--brand); color: #fff; transform: scale(.97); }
     .hdr-pager .pager-btn:disabled { opacity: .35; cursor: default; }
     .hdr-pager .pager-arrow { font-family: Arial, sans-serif; font-size: 15px; line-height: 1; }
+    /* خانة صغيرة جدًا: تتسع لثلاثة أرقام فقط (٦٠٤ كأقصى رقم صفحة) */
     .hdr-pager .pager-location {
-      flex: 0 1 auto; min-width: 44px; max-width: 104px; height: auto; padding: 2px clamp(6px, 2.2vw, 10px);
-      border-radius: 9px; display: grid; place-items: center; gap: 0;
+      flex: 0 0 auto; min-width: 0; max-width: 3.6ch; padding: 1px 3px;
+      border-radius: 8px; display: grid; place-items: center; gap: 0;
       background: color-mix(in srgb, var(--card) 85%, transparent); border: 1px solid var(--line);
     }
-    .hdr-pager .pno { font-size: clamp(11px, 3.1vw, 13px); font-weight: 800; line-height: 1.35; font-variant-numeric: tabular-nums; color: var(--ink); }
+    .hdr-pager .pno {
+      font-size: clamp(10px, 2.9vw, 12px); font-weight: 800; line-height: 1.3;
+      font-variant-numeric: tabular-nums; color: var(--ink);
+      width: 3ch; text-align: center; overflow: hidden; letter-spacing: -.02em;
+    }
+    .hdr-pager .pager-location small { display: none; }
     .btn.tiny { padding: 6px 12px; font-size: 13px; }
     /* علامة ربع الحزب ۞ داخل السطر */
     #pageBody.madani-lines .rub { display: inline-block; margin-inline-end: .16em; font-size: .92em; opacity: .92; }
@@ -1082,6 +1090,10 @@
     #pageBody.madani-lines { text-align: justify; }
     #pageBody.madani-lines .mline {
       display: block; white-space: nowrap; text-align: justify; text-align-last: justify;
+      /* تعريض الحروف بحدود رقيقة متناسبة مع المقاس: أوضح للقراءة بلا تشويه الحركات */
+      -webkit-text-stroke-width: calc(var(--quran-size, 26px) * 0.018);
+      -webkit-text-stroke-color: currentColor;
+      paint-order: stroke fill;
       font-family: var(--quran-font), "Amiri Quran", Amiri, serif;
       font-size: var(--quran-size);
       line-height: var(--mline-h, calc(var(--quran-size) * 1.5)); margin: 0; padding: 0;
@@ -1891,7 +1903,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.5.5</div>
+              <div class="muted">الإصدار 1.5.6</div>
             </div>
           </div>
 
@@ -1966,10 +1978,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.5.5';
+    window.APP_BUNDLE_VERSION = '1.5.6';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 166;
+    window.APP_BUILD_NUMBER = 167;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {
