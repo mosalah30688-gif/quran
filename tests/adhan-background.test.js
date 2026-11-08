@@ -84,7 +84,7 @@ test('الأذان في الخلفية: أرقام الإصدار والبناء
   assert.ok(Number(match[1]) >= Number(build), 'versionCode لا يسبق BUILD_NUMBER');
   assert.match(html, new RegExp(`APP_BUILD_NUMBER = ${build}`));
   assert.match(gradle, /versionName "1\.5\.\d+"/);
-  assert.match(gradle, /versionCode 170/);
+  assert.match(gradle, /versionCode 171/);
 });
 
 test('ترقية الـAPK تُقارن برقم بناء الملف المثبَّت لا برقم بناء الواجهة', () => {
@@ -243,4 +243,18 @@ test('خدمة الأذان تنسخ الأذان المحزوم من الأصو
   assert.match(service, /AdhanAudioStore\.ensure\(getApplicationContext\(\), id, remote\)/);
   assert.match(service, /private void startPlayback\(String label, File file, String url\)/);
   assert.match(service, /"siraj-adhan-prepare"/);
+});
+
+test('كل المؤذنين الـ٦٧ ظاهرين في القائمة مع بحث وعدّاد', () => {
+  const data = read('prayer-data.js');
+  const rows = data.match(/\{"id": "[^"]+", "name":/g) || [];
+  assert.equal(rows.length, 67);
+  assert.equal((data.match(/"bundled": true/g) || []).length, 18);
+  const ui = read('prayer-ui.js');
+  assert.ok(ui.includes('ptAdhanSearch'), 'بحث المؤذنين مفقود');
+  assert.ok(ui.includes('ptAdhanCount'), 'عدّاد المؤذنين مفقود');
+  assert.match(ui, /const esc = \(value\) =>/, 'لا بد من تهريب محلي داخل prayer-ui.js');
+  const html = read('index.html');
+  assert.match(html, /\.pt-adhan-list \{[^}]*grid-template-columns: minmax\(0, 1fr\)/, 'القائمة يجب أن تكون عمودًا واحدًا بلا قص');
+  assert.doesNotMatch(html, /\.pt-adhan-list \{[^}]*max-height/, 'لا نُخفي المؤذنين داخل صندوق تمرير');
 });

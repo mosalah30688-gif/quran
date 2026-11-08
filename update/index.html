@@ -1062,7 +1062,11 @@
     #ptLng::-webkit-outer-spin-button, #ptLng::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     #ptLat, #ptLng { -moz-appearance: textfield; appearance: textfield; }
     .pt-inline { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
-    .pt-adhan-list { display: grid; gap: 6px; margin-top: 10px; max-height: 340px; overflow: auto; }
+    .pt-adhan-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; margin-top: 10px; }
+    .pt-adhan-list > * { min-width: 0; }
+    .pt-adhan-filter { display: flex; align-items: center; gap: 8px; margin: 4px 0 2px; min-width: 0; }
+    .pt-adhan-filter input { flex: 1 1 auto; min-width: 0; width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(0,0,0,.14); font: inherit; }
+    .pt-adhan-filter .muted { flex: 0 0 auto; font-size: 12px; white-space: nowrap; }
     .pt-adhan { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; }
     .pt-adhan.is-selected { border-color: var(--brand); background: var(--hl); }
     .pt-adhan-main { display: grid; gap: 2px; }
@@ -1893,7 +1897,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.5.9</div>
+              <div class="muted">الإصدار 1.5.10</div>
             </div>
           </div>
 
@@ -1968,10 +1972,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.5.9';
+    window.APP_BUNDLE_VERSION = '1.5.10';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 170;
+    window.APP_BUILD_NUMBER = 171;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {
