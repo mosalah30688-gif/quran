@@ -1177,7 +1177,6 @@
               <button data-view="stats"><span class="ic" data-icon="stats" aria-hidden="true"></span>الإحصائيات</button>
               <button data-view="memo"><span class="ic" data-icon="memo" aria-hidden="true"></span>الحفظ</button>
               <button data-view="wird"><span class="ic" data-icon="wird" aria-hidden="true"></span>الورد</button>
-              <button data-view="prayer"><span class="ic" data-icon="clock" aria-hidden="true"></span>مواقيت الصلاة</button>
               <button data-view="bookmarks"><span class="ic" data-icon="bookmarks" aria-hidden="true"></span>المحفوظات</button>
             </div>
           </div>
@@ -1624,16 +1623,6 @@
             <select id="tfBook"></select>
             <div class="tf" id="tfTafsir" style="margin-top:10px"></div>
           </div>
-          <div class="card" id="tfPackCard" hidden>
-            <h3 class="pt-title">تنزيل كل كتب التفسير للاستخدام دون إنترنت</h3>
-            <p class="muted" id="tfPackStatus"></p>
-            <div class="wbar" style="margin:8px 0 12px"><div class="wfill" id="tfPackFill"></div></div>
-            <div class="row">
-              <button class="btn small" id="tfPackBtn" type="button">نزّل حزمة التفاسير</button>
-              <button class="btn small ghost" id="tfPackCancel" type="button" hidden>إيقاف التنزيل</button>
-              <button class="btn small ghost" id="tfPackDelete" type="button" hidden>حذف الحزمة</button>
-            </div>
-          </div>
           <div class="card">
             <label class="lbl">الترجمة</label>
             <select id="tfTrans"></select>
@@ -1728,6 +1717,10 @@
           <div class="card">
             <h3 style="margin-top:0">الصلاة والقبلة</h3>
             <div class="settings-links">
+              <button class="settings-link" data-view="prayer">
+                <span class="ic" data-icon="clock" aria-hidden="true"></span>
+                <span><strong>مواقيت الصلاة</strong><small>الموقع والحساب والأذان والإقامة</small></span>
+              </button>
               <button class="settings-link" data-view="qibla">
                 <span class="ic" data-icon="stats" aria-hidden="true"></span>
                 <span><strong>القبلة والبوصلة</strong><small>اتجاه القبلة والبوصلة الحيّة</small></span>
@@ -1896,7 +1889,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.5.7</div>
+              <div class="muted">الإصدار 1.5.8</div>
             </div>
           </div>
 
@@ -1971,10 +1964,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.5.7';
+    window.APP_BUNDLE_VERSION = '1.5.8';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 168;
+    window.APP_BUILD_NUMBER = 169;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {

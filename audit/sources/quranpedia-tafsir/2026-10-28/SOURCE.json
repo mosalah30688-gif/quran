@@ -51,12 +51,12 @@
   },
   "outputs": {
     "mushaf_app/data/tafsir-catalog.json": {
-      "bytes": 14386,
-      "sha256": "47b76e098df4bbb780a26e984063deb0c3d995393743740df9066a6f1dc8434a"
+      "bytes": 20183,
+      "sha256": "e5d76b5a62e8c90d654e50740b9ca5e56b7bc247475ad1a6ef79e00b8b987718"
     },
     "windows_app/data/tafsir-catalog.json": {
-      "bytes": 14386,
-      "sha256": "47b76e098df4bbb780a26e984063deb0c3d995393743740df9066a6f1dc8434a"
+      "bytes": 20183,
+      "sha256": "e5d76b5a62e8c90d654e50740b9ca5e56b7bc247475ad1a6ef79e00b8b987718"
     }
   }
 }

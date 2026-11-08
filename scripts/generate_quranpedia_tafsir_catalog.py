@@ -49,7 +49,9 @@ DUPLICATE_EDITION_IDS = {
 EXCLUDED_TITLE_PREFIXES = ("جهود ", "آراء ")
 EXPECTED_AYAH_ROWS = 6236
 EXPECTED_SOURCE_BOOKS = 149
-EXPECTED_SELECTED_BOOKS = 73
+EXPECTED_SELECTED_BOOKS = 75
+# كتابان معاصران بطلب صريح من مالك التطبيق (التفسير الوسيط للزحيلي وطنطاوي).
+REQUESTED_CONTEMPORARY_IDS = (70, 321)
 
 
 def sha256(data: bytes) -> str:
@@ -205,7 +207,8 @@ def build(source_dir: Path) -> tuple[bytes, dict]:
         title = str(item.get("name") or "").strip()
         author = str(item.get("author") or "").strip()
         book_id = int(item["id"])
-        if not isinstance(death_year, int) or death_year > MAX_CLASSICAL_DEATH_YEAR:
+        requested = book_id in REQUESTED_CONTEMPORARY_IDS
+        if not requested and (not isinstance(death_year, int) or death_year > MAX_CLASSICAL_DEATH_YEAR):
             continue
         if title.startswith(EXCLUDED_TITLE_PREFIXES) or book_id in excluded_ids:
             continue

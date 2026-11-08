@@ -84,7 +84,7 @@ test('الأذان في الخلفية: أرقام الإصدار والبناء
   assert.ok(Number(match[1]) >= Number(build), 'versionCode لا يسبق BUILD_NUMBER');
   assert.match(html, new RegExp(`APP_BUILD_NUMBER = ${build}`));
   assert.match(gradle, /versionName "1\.5\.\d+"/);
-  assert.match(gradle, /versionCode 168/);
+  assert.match(gradle, /versionCode 169/);
 });
 
 test('ترقية الـAPK تُقارن برقم بناء الملف المثبَّت لا برقم بناء الواجهة', () => {
@@ -131,16 +131,17 @@ test('التلاوة حسب السورة: كتالوج قراء كامل ومل�
   assert.match(read('sw.js'), /quran-reciters\.json/);
 });
 
-test('حزمة التفاسير ال٧٨ معروضة في الواجهة مع التنزيل', () => {
+test('كل كتب التفسير معروضة بلا بطاقة تنزيل ولا شروط', () => {
   const html = read('index.html');
-  for (const id of ['tfPackCard', 'tfPackStatus', 'tfPackFill', 'tfPackBtn', 'tfPackCancel', 'tfPackDelete']) {
-    assert.match(html, new RegExp(`id="${id}"`));
+  // بطاقة «نزّل حزمة التفاسير» أُزيلت: كل كتاب يعمل عند اختياره.
+  for (const id of ['tfPackCard', 'tfPackBtn', 'tfPackStatus']) {
+    assert.ok(!html.includes(`id="${id}"`), `بقيت بطاقة تنزيل: ${id}`);
   }
   const app = read('app.js');
-  assert.match(app, /async function startTafsirPackDownload\(\)/);
-  assert.match(app, /await plugin\.status\(\)/);
   // كل كتب الكتالوج في القائمة، لا الخمسة فقط
   assert.match(app, /const classical = \(catalog\.books \|\| \[\]\)\.map/);
+  const catalog = JSON.parse(read('tafsir-catalog.json'));
+  assert.equal(catalog['books'].length, 75);
 });
 
 test('الأذان محلي افتراضيًا: ملفات محزومة داخل التطبيق والباقي تنزيل', () => {
@@ -214,13 +215,14 @@ test('البوصلة: سلسلة حساسات بديلة + ثلاث طرق لل�
   assert.match(html, /class="qibla-method" data-method="manual"/);
 });
 
-test('تبويب القبلة مستقل ويُفتح من الإعدادات، والمواقيت من قائمة التطبيق فقط', () => {
+test('تبويب القبلة مستقل ويُفتح من الإعدادات، والمواقيت في الإعدادات لا في «رصيدك»', () => {
   const html = read('index.html');
   assert.match(html, /<section class="view" id="view-qibla">/);
   assert.match(html, /class="settings-link" data-view="qibla"/);
-  // زر «مواقيت الصلاة» أُزيل من قائمة الإعدادات بناءً على طلب المستخدم، ويبقى تبويبه في القائمة الرئيسية.
-  assert.ok(!/class="settings-link" data-view="prayer"/.test(html));
-  assert.match(html, /<button data-view="prayer">/);
+  // «مواقيت الصلاة» يبقى رابطًا داخل الإعدادات، وأُزيل من قائمة «رصيدك» بطلب المستخدم.
+  assert.match(html, /class="settings-link" data-view="prayer"/);
+  assert.ok(!/<button data-view="prayer">/.test(html));
+  assert.ok(!/data-group="rasid"[\s\S]{0,600}data-view="prayer"/.test(html));
   assert.match(html, /مواقيت الصلاة/);
   assert.match(read('app.js'), /qibla: 'القبلة والبوصلة'/);
   assert.match(read('app.js'), /settings-link\[data-view\]/);

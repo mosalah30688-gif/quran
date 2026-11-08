@@ -1,5 +1,5 @@
 {
-  "version": "1.5.7",
+  "version": "1.5.8",
   "files": [
     "index.html",
     "smart-context.js",
@@ -28,12 +28,12 @@
     "linux": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-linux-test-v4.1.1/Siraj-Quran-4.1.1-linux-x86_64.AppImage"
   },
   "features": [
-    "كل كتب التفسير تظهر الآن في قائمة واحدة وتفتح بنصها فورًا",
-    "أزلنا كلمة «محلية» من قائمة التفاسير ومن رفيق اليوم",
-    "أزلنا زر ألوان التجويد وزر مواقيت الصلاة من الإعدادات"
+    "زر مواقيت الصلاة رجع في الإعدادات وأصبح مكانه الصحيح",
+    "التفسير الوسيط ظهر في قائمة التفاسير ويعمل مباشرة",
+    "حذفنا بطاقة تنزيل التفاسير: كل الكتب تفتح بلا أي شرط"
   ],
   "sha256": {
-    "index.html": "b3c74dc3c41d2e8e9b5393e2d93907d70d6200d195e192e1fa75649ba3835db0",
+    "index.html": "52b064b8c159ce399a7518287ddb1eea025a6ba5b5d2b986b674b3cdf37056f9",
     "smart-context.js": "d7f1995b9164255b5273da80a070a6f2bedd0f2abcbe7a108b20700567f00440",
     "smart-services.js": "bf98b6f1e10a771435cbf8dea41578b3e148c53901e601de28b5b4085352c10c",
     "tajweed-learning.js": "0ea4b4cde8f34591f79745275c87559f0f050692fb87d52a8bbb0200bb51e534",
@@ -52,5 +52,5 @@
     "policy": "OTA_FIRST",
     "note_ar": "التحديث يُسلَّم داخل التطبيق (IndexedDB) لكل من نسخته >= 1.4.7؛ مؤشر APK يبقى على 1.4.7 حتى لا يُجبَر المستخدم على تنزيل ملف، ويُرفع فقط عند طلب صريح (APK_UPDATE=true)."
   },
-  "build": 168
+  "build": 169
 }

@@ -55,11 +55,15 @@ def main() -> None:
     assert [row["number"] for row in surahs] == list(range(1, 115))
 
     books = catalog["books"]
-    assert len(books) == 73
-    assert len({book["edition"] for book in books}) == 73
+    assert len(books) == 75
+    assert len({book["edition"] for book in books}) == 75
     assert all(re.fullmatch(r"qp:\d+", book["edition"]) for book in books)
-    assert all(int(book["author_death_hijri"]) <= 1350 for book in books)
-    assert catalog["selection"]["kind"] == "classical-primary-works"
+    requested = set(catalog["selection"]["requested_contemporary_book_ids"])
+    assert requested == {70, 321}
+    assert all(
+        int(book["author_death_hijri"]) <= 1350 or book["book_id"] in requested for book in books
+    )
+    assert catalog["selection"]["kind"] == "classical-primary-works-plus-requested-contemporary"
 
     required_fonts = {
         "fonts/Amiri-Regular.ttf": 400_000,
@@ -202,7 +206,7 @@ def main() -> None:
     assert "--quran-font" in html and "setFont" in html
     assert "data-icon=\"tajweed\"" in html and "🎵" not in html
 
-    print("Verified Android local bundle: 6,236 Hafs/tajweed rows, 604 pages, 78 licensed tafsirs, four fonts")
+    print("Verified Android local bundle: 6,236 Hafs/tajweed rows, 604 pages, 80 licensed tafsirs, four fonts")
 
 
 if __name__ == "__main__":
