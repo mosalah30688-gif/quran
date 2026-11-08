@@ -17,10 +17,10 @@
     "quran-madani-lines.json"
   ],
   "apk": {
-    "version": "1.5.4",
-    "code": 165,
-    "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-android-v1.5.4-b165/Siraj-Android-1.5.4.apk",
-    "sha256": "70713c4c3aeb50d2b46a9b753adc3ea3239e4eb50cf6b54124b574fccce2f013"
+    "version": "1.5.5",
+    "code": 166,
+    "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-android-v1.5.5-b166/Siraj-Android-1.5.5.apk",
+    "sha256": "181b28386354bfd50d3bd10657a3fb9e824ffe1adb1026606a01f27be46df3d8"
   },
   "desktop": {
     "version": "4.1.1",
