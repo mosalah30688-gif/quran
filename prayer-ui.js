@@ -37,6 +37,9 @@
   };
 
   const els = {};
+  // تهريب HTML آمن داخل هذا الملف (app.js يحتفظ بنسخته الخاصة)
+  const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
   const state = {
     config: null,
     today: null,
@@ -45,6 +48,7 @@
     audio: null,
     playingId: null,
     adhanCache: new Map(),
+    adhanFilter: '',
     downloaded: new Set(),
     iqamaTimers: [],
     lastFired: '',
@@ -587,7 +591,7 @@
       const selected = config.adhanId === item.id;
       const selectedFajr = config.fajrAdhanId === item.id;
       return `
-        <div class="pt-adhan${selected ? ' is-selected' : ''}" data-id="${item.id}">
+        <div class="pt-adhan${selected ? ' is-selected' : ''}" data-id="${item.id}" data-name="${esc(item.name)} ${esc(item.region || '')}">
           <div class="pt-adhan-main">
             <strong>${item.name}</strong>
             <span class="muted">${item.region ? esc(item.region) + ' · ' : ''}${Math.round(item.seconds / 60)} د${item.fajr ? ' · أذان فجر' : ''} · ${item.local ? 'محلي' : (downloaded ? 'منزّل' : 'يحتاج تنزيل')}</span>
@@ -604,9 +608,29 @@
     els.adhanList.innerHTML = `<div class="pt-adhan-summary">
         <span class="muted">${DATA.adhans.filter((i) => i.local).length} أذانًا محليًا جاهزًا دون إنترنت · ${DATA.adhans.filter((i) => !i.local).length} يحتاج تنزيلًا</span>
         <button class="btn small ghost" id="ptAdhanDownloadAll">تنزيل المتبقي</button>
+      </div>
+      <div class="pt-adhan-filter">
+        <input id="ptAdhanSearch" type="search" inputmode="search" placeholder="ابحث باسم المؤذن…" value="${esc(state.adhanFilter || '')}" aria-label="بحث المؤذنين" />
+        <span class="muted" id="ptAdhanCount">${DATA.adhans.length} مؤذنًا</span>
       </div>` + rows.join('');
     const allBtn = els.adhanList.querySelector('#ptAdhanDownloadAll');
     if (allBtn) allBtn.addEventListener('click', downloadAllAdhans);
+    const searchEl = els.adhanList.querySelector('#ptAdhanSearch');
+    const countEl = els.adhanList.querySelector('#ptAdhanCount');
+    const applyFilter = () => {
+      const q = (state.adhanFilter || '').trim();
+      let shown = 0;
+      els.adhanList.querySelectorAll('.pt-adhan').forEach((row) => {
+        const hit = !q || (row.dataset.name || '').includes(q);
+        row.hidden = !hit;
+        if (hit) shown += 1;
+      });
+      if (countEl) countEl.textContent = q ? `${shown} من ${DATA.adhans.length} مؤذنًا` : `${DATA.adhans.length} مؤذنًا`;
+    };
+    if (searchEl) {
+      searchEl.addEventListener('input', () => { state.adhanFilter = searchEl.value; applyFilter(); });
+    }
+    applyFilter();
     els.adhanList.querySelectorAll('[data-act]').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const item = adhanById(btn.dataset.id);
