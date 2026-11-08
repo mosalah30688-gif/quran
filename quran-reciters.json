@@ -1,0 +1,1238 @@
+{
+ "version": "2026-11-08",
+ "source": "https://www.mp3quran.net/api/v3/reciters",
+ "items": [
+  {
+   "id": 6,
+   "name": "أحمد الحواشي",
+   "letter": "أ",
+   "server": "https://cdn.mp3quran.net/audio/ahmad-hawashi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 252,
+   "name": "أحمد السويلم",
+   "letter": "أ",
+   "server": "https://cdn.mp3quran.net/audio/ahmad-suwailem/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 201,
+   "name": "أحمد الطرابلسي",
+   "letter": "أ",
+   "server": "https://cdn.mp3quran.net/audio/ahmad-tarabulsi/r2/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 259,
+   "name": "أحمد النفيس",
+   "letter": "أ",
+   "server": "https://cdn.mp3quran.net/audio/ahmad-nufais/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 5,
+   "name": "أحمد بن علي العجمي",
+   "letter": "أ",
+   "server": "https://cdn.mp3quran.net/audio/ahmad-ajmi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 256,
+   "name": "أحمد خليل شاهين",
+   "letter": "أ",
+   "server": "https://cdn.mp3quran.net/audio/ahmad-shaheen/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 265,
+   "name": "أحمد ديبان",
+   "letter": "أ",
+   "server": "https://cdn.mp3quran.net/audio/ahmad-deeban/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 8,
+   "name": "أحمد صابر",
+   "letter": "أ",
+   "server": "https://cdn.mp3quran.net/audio/ahmad-saber/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 203,
+   "name": "أحمد عامر",
+   "letter": "أ",
+   "server": "https://cdn.mp3quran.net/audio/ahmad-amer/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 278,
+   "name": "أحمد عيسى المعصراوي",
+   "letter": "أ",
+   "server": "https://cdn.mp3quran.net/audio/ahmad-masarawi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 9,
+   "name": "أحمد نعينع",
+   "letter": "أ",
+   "server": "https://cdn.mp3quran.net/audio/ahmad-naina/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 10,
+   "name": "أكرم العلاقمي",
+   "letter": "أ",
+   "server": "https://cdn.mp3quran.net/audio/akram-alaqmi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 302,
+   "name": "أنس العمادي",
+   "letter": "أ",
+   "server": "https://cdn.mp3quran.net/audio/anas-emadi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 21203,
+   "name": "أيمن رشدي سويد",
+   "letter": "أ",
+   "server": "https://server15.mp3quran.net/a-rushdi/Almusshaf-Al-Mo-lim/",
+   "rewaya": "حفص عن عاصم - المصحف المعلم",
+   "surahs": 114
+  },
+  {
+   "id": 1,
+   "name": "إبراهيم الأخضر",
+   "letter": "إ",
+   "server": "https://cdn.mp3quran.net/audio/ibrahim-akhdar/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 164,
+   "name": "إبراهيم الجرمي",
+   "letter": "إ",
+   "server": "https://cdn.mp3quran.net/audio/ibrahim-jormy/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 178,
+   "name": "إبراهيم الدوسري",
+   "letter": "إ",
+   "server": "https://cdn.mp3quran.net/audio/ibrahim-dosari/r2/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 3,
+   "name": "إبراهيم العسيري",
+   "letter": "إ",
+   "server": "https://cdn.mp3quran.net/audio/ibrahim-asiri/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 12,
+   "name": "إدريس أبكر",
+   "letter": "إ",
+   "server": "https://cdn.mp3quran.net/audio/idrees-abkar/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 13,
+   "name": "الزين محمد أحمد",
+   "letter": "ا",
+   "server": "https://cdn.mp3quran.net/audio/zain-ahmad/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 254,
+   "name": "بدر التركي",
+   "letter": "ب",
+   "server": "https://cdn.mp3quran.net/audio/badr-turki/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 217,
+   "name": "بندر بليله",
+   "letter": "ب",
+   "server": "https://cdn.mp3quran.net/audio/bandar-baleela/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 268,
+   "name": "بيشه وا قادر الكردي",
+   "letter": "ب",
+   "server": "https://cdn.mp3quran.net/audio/peshawa-kurdi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 17,
+   "name": "توفيق الصايغ",
+   "letter": "ت",
+   "server": "https://cdn.mp3quran.net/audio/tawfeeq-sayegh/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 18,
+   "name": "جمال شاكر عبدالله",
+   "letter": "ج",
+   "server": "https://cdn.mp3quran.net/audio/jamal-abdullah/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 181,
+   "name": "جمعان العصيمي",
+   "letter": "ج",
+   "server": "https://cdn.mp3quran.net/audio/jamaan-osaimi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 21186,
+   "name": "جنيد آدم عبدالله",
+   "letter": "ج",
+   "server": "https://cdn.mp3quran.net/audio/junaid-abdullah/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 163,
+   "name": "حاتم فريد الواعر",
+   "letter": "ح",
+   "server": "https://cdn.mp3quran.net/audio/hatem-waer/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 21183,
+   "name": "حسن الدغريري",
+   "letter": "ح",
+   "server": "https://cdn.mp3quran.net/audio/hassan-daghriri/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 286,
+   "name": "حسن صالح",
+   "letter": "ح",
+   "server": "https://cdn.mp3quran.net/audio/hassan-saleh/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 20,
+   "name": "خالد الجليل",
+   "letter": "خ",
+   "server": "https://cdn.mp3quran.net/audio/khalid-jalil/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 21187,
+   "name": "خالد الزيادي",
+   "letter": "خ",
+   "server": "https://cdn.mp3quran.net/audio/khalid-ziyadi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 21,
+   "name": "خالد القحطاني",
+   "letter": "خ",
+   "server": "https://cdn.mp3quran.net/audio/khalid-qahtani/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 159,
+   "name": "خالد المهنا",
+   "letter": "خ",
+   "server": "https://cdn.mp3quran.net/audio/khalid-mohanna/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 22,
+   "name": "خالد عبدالكافي",
+   "letter": "خ",
+   "server": "https://cdn.mp3quran.net/audio/khalid-abdulkafi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 283,
+   "name": "خالد كريم محمدي",
+   "letter": "خ",
+   "server": "https://cdn.mp3quran.net/audio/khalid-mohammadi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 24,
+   "name": "خليفة الطنيجي",
+   "letter": "خ",
+   "server": "https://cdn.mp3quran.net/audio/khalifa-tunaiji/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 25,
+   "name": "داود حمزة",
+   "letter": "د",
+   "server": "https://cdn.mp3quran.net/audio/dawood-hamza/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 230,
+   "name": "رامي الدعيس",
+   "letter": "ر",
+   "server": "https://cdn.mp3quran.net/audio/rami-duais/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 221,
+   "name": "رعد محمد الكردي",
+   "letter": "ر",
+   "server": "https://cdn.mp3quran.net/audio/raad-kurdi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 33,
+   "name": "زكي داغستاني",
+   "letter": "ز",
+   "server": "https://cdn.mp3quran.net/audio/zaki-daghistani/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 30,
+   "name": "سعد الغامدي",
+   "letter": "س",
+   "server": "https://cdn.mp3quran.net/audio/saad-ghamdi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 257,
+   "name": "سعد المقرن",
+   "letter": "س",
+   "server": "https://cdn.mp3quran.net/audio/saad-muqrin/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 31,
+   "name": "سعود الشريم",
+   "letter": "س",
+   "server": "https://cdn.mp3quran.net/audio/saud-shuraim/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 285,
+   "name": "سلمان الصديق",
+   "letter": "س",
+   "server": "https://cdn.mp3quran.net/audio/salman-siddiq/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 32,
+   "name": "سهل ياسين",
+   "letter": "س",
+   "server": "https://cdn.mp3quran.net/audio/sahl-yassin/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 282,
+   "name": "سيد أحمد هاشمي",
+   "letter": "س",
+   "server": "https://cdn.mp3quran.net/audio/sayed-hashemi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 36,
+   "name": "سيد رمضان",
+   "letter": "س",
+   "server": "https://cdn.mp3quran.net/audio/sayed-ramadan/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 4,
+   "name": "شيخ أبو بكر الشاطري",
+   "letter": "ش",
+   "server": "https://cdn.mp3quran.net/audio/abubakr-shatri/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 38,
+   "name": "شيرزاد عبدالرحمن طاهر",
+   "letter": "ش",
+   "server": "https://cdn.mp3quran.net/audio/shirzad-taher/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 39,
+   "name": "صابر عبدالحكم",
+   "letter": "ص",
+   "server": "https://cdn.mp3quran.net/audio/saber-abdulhakam/r6/",
+   "rewaya": "حفص عن عاصم - القصر - المصحف المعلم",
+   "surahs": 114
+  },
+  {
+   "id": 300,
+   "name": "صالح الشمراني",
+   "letter": "ص",
+   "server": "https://cdn.mp3quran.net/audio/saleh-shamrani/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 40,
+   "name": "صالح الصاهود",
+   "letter": "ص",
+   "server": "https://cdn.mp3quran.net/audio/saleh-sahood/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 290,
+   "name": "صالح القريشي",
+   "letter": "ص",
+   "server": "https://cdn.mp3quran.net/audio/saleh-quraishi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 42,
+   "name": "صالح الهبدان",
+   "letter": "ص",
+   "server": "https://cdn.mp3quran.net/audio/saleh-habdan/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 43,
+   "name": "صلاح البدير",
+   "letter": "ص",
+   "server": "https://cdn.mp3quran.net/audio/salah-budair/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 44,
+   "name": "صلاح الهاشم",
+   "letter": "ص",
+   "server": "https://cdn.mp3quran.net/audio/salah-hashim/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 46,
+   "name": "صلاح بو خاطر",
+   "letter": "ص",
+   "server": "https://cdn.mp3quran.net/audio/salah-bukhatir/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 160,
+   "name": "عادل الكلباني",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/adel-kalbani/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 48,
+   "name": "عادل ريان",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/adel-rayyan/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 21201,
+   "name": "عاصم اللحیدان",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/asim-luhaidan/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 136,
+   "name": "عبدالإله بن عون",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdulelah-aoun/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 49,
+   "name": "عبدالبارئ الثبيتي",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdulbari-thubaiti/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 50,
+   "name": "عبدالبارئ محمد",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdulbari-muhammad/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 51,
+   "name": "عبدالباسط عبدالصمد",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdulbasit-abdulsamad/r3/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 21148,
+   "name": "عبدالبديع غيلان",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdulbadi-ghailan/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 54,
+   "name": "عبدالرحمن السديس",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdulrahman-sudais/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 287,
+   "name": "عبدالرحمن الشحات",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdulrahman-shahat/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 225,
+   "name": "عبدالرحمن العوسي",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdulrahman-oosi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 236,
+   "name": "عبدالرحمن الماجد",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdulrahman-majed/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 21193,
+   "name": "عبدالرحمن بن عبدالرزاق البدر",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdulrahman-badr/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 64,
+   "name": "عبدالرشيد صوفي",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdulrasheed-sufi/r3/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 55,
+   "name": "عبدالعزيز الأحمد",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdulaziz-ahmad/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 79,
+   "name": "عبدالعزيز التركي",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdulaziz-turki/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 56,
+   "name": "عبدالعزيز الزهراني",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdulaziz-zahrani/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 304,
+   "name": "عبدالكريم الحازمي",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdulkareem-hazmi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 58,
+   "name": "عبدالله البعيجان",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdullah-buaijan/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 244,
+   "name": "عبدالله الخلف",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdullah-khalaf/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 21136,
+   "name": "عبدالله القرافي",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdullah-qarafi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 202,
+   "name": "عبدالله الكندري",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdullah-kandari/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 59,
+   "name": "عبدالله المطرود",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdullah-matrood/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 243,
+   "name": "عبدالله الموسى",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdullah-mousa/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 60,
+   "name": "عبدالله بصفر",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdullah-basfar/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 61,
+   "name": "عبدالله خياط",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdullah-khayyat/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 98,
+   "name": "عبدالله عبدل",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdullah-abdal/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 62,
+   "name": "عبدالله عواد الجهني",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdullah-juhani/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 63,
+   "name": "عبدالله غيلان",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdullah-ghailan/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 267,
+   "name": "عبدالله كامل",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdullah-kamel/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 66,
+   "name": "عبدالمحسن الحارثي",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdulmohsen-harthi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 69,
+   "name": "عبدالمحسن العبيكان",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdulmohsen-obaikan/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 67,
+   "name": "عبدالمحسن القاسم",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdulmohsen-qasim/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 70,
+   "name": "عبدالهادي أحمد كناكري",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdulhadi-kanakeri/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 71,
+   "name": "عبدالودود حنيف",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdulwadood-haneef/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 72,
+   "name": "عبدالولي الأركاني",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/abdulwali-arkani/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 74,
+   "name": "علي بن عبدالرحمن الحذيفي",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/ali-hudhaifi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 76,
+   "name": "علي جابر",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/ali-jaber/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 77,
+   "name": "علي حجاج السويسي",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/ali-souissi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 21196,
+   "name": "عليجان قوري حمدان",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/alijon-hamdan/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 78,
+   "name": "عماد زهير حافظ",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/imad-hafez/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 260,
+   "name": "عمر الدريويز",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/omar-duraiwiz/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 288,
+   "name": "عيسى عمر سناكو",
+   "letter": "ع",
+   "server": "https://cdn.mp3quran.net/audio/issa-sanankoua/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 281,
+   "name": "فؤاد الخامري",
+   "letter": "ف",
+   "server": "https://cdn.mp3quran.net/audio/fouad-khamiri/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 81,
+   "name": "فارس عباد",
+   "letter": "ف",
+   "server": "https://cdn.mp3quran.net/audio/fares-abbad/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 301,
+   "name": "فيصل الهاجري",
+   "letter": "ف",
+   "server": "https://cdn.mp3quran.net/audio/faisal-hajri/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 139,
+   "name": "ماجد الزامل",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/majed-zamil/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 284,
+   "name": "مال الله عبدالرحمن الجابر",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/malallah-jaber/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 102,
+   "name": "ماهر المعيقلي",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/maher-muaiqly/r3/",
+   "rewaya": "حفص عن عاصم - المصحف المجود",
+   "surahs": 114
+  },
+  {
+   "id": 149,
+   "name": "ماهر شخاشيرو",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/maher-shakhashiro/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 109,
+   "name": "محمد أيوب",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/muhammad-ayyub/r2/",
+   "rewaya": "حفص عن عاصم - تلاوة مميزة",
+   "surahs": 114
+  },
+  {
+   "id": 250,
+   "name": "محمد البخيت",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/muhammad-bukhait/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 21197,
+   "name": "محمد الزبيدي",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/muhammad-zubaidi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 106,
+   "name": "محمد الطبلاوي",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/muhammad-tablawi/r2/",
+   "rewaya": "حفص عن عاصم - المصحف المجود",
+   "surahs": 114
+  },
+  {
+   "id": 21184,
+   "name": "محمد الفقيه",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/muhammad-faqih/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 107,
+   "name": "محمد اللحيدان",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/muhammad-luhaidan/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 108,
+   "name": "محمد المحيسني",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/muhammad-muhaisni/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 21181,
+   "name": "محمد برهجي",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/muhammad-burhaji/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 111,
+   "name": "محمد جبريل",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/muhammad-jibreel/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 229,
+   "name": "محمد خليل القارئ",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/muhammad-khalil/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 198,
+   "name": "محمد رشاد الشريف",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/muhammad-shareef/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 110,
+   "name": "محمد صالح عالم شاه",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/muhammad-shah/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 112,
+   "name": "محمد صديق المنشاوي",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/muhammad-minshawi/r3/",
+   "rewaya": "حفص عن عاصم - المصحف المعلم",
+   "surahs": 114
+  },
+  {
+   "id": 115,
+   "name": "محمد عبدالكريم",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/muhammad-abdulkareem/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 206,
+   "name": "محمد عثمان خان",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/muhammad-khan/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 165,
+   "name": "محمود الرفاعي",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/mahmoud-rifai/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 21202,
+   "name": "محمود حرفوش",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/mahmoud-harfoush/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 118,
+   "name": "محمود خليل الحصري",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/mahmoud-husary/r2/",
+   "rewaya": "حفص عن عاصم - المصحف المجود",
+   "surahs": 114
+  },
+  {
+   "id": 277,
+   "name": "محمود عبدالحكم",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/mahmoud-abdulhakam/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 121,
+   "name": "محمود علي البنا",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/mahmoud-banna/r2/",
+   "rewaya": "حفص عن عاصم - المصحف المجود",
+   "surahs": 114
+  },
+  {
+   "id": 47,
+   "name": "مختار الحاج",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/mukhtar-haj/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 123,
+   "name": "مشاري العفاسي",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/mishary-alafasy/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 125,
+   "name": "مصطفى إسماعيل",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/mustafa-ismail/r2/",
+   "rewaya": "حفص عن عاصم - المصحف المجود",
+   "surahs": 114
+  },
+  {
+   "id": 126,
+   "name": "مصطفى اللاهوني",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/mustafa-lahouni/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 127,
+   "name": "مصطفى رعد العزاوي",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/mustafa-azzawi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 197,
+   "name": "معيض الحارثي",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/moeedh-harthi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 129,
+   "name": "مفتاح السلطني",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/muftah-saltani/r3/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 245,
+   "name": "منصور السالمي",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/mansour-salimi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 161,
+   "name": "موسى بلال",
+   "letter": "م",
+   "server": "https://cdn.mp3quran.net/audio/musa-bilal/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 248,
+   "name": "ناصر العصفور",
+   "letter": "ن",
+   "server": "https://cdn.mp3quran.net/audio/nasser-asfour/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 86,
+   "name": "ناصر القطامي",
+   "letter": "ن",
+   "server": "https://cdn.mp3quran.net/audio/nasser-qatami/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 251,
+   "name": "ناصر الماجد",
+   "letter": "ن",
+   "server": "https://cdn.mp3quran.net/audio/nasser-majed/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 87,
+   "name": "نبيل الرفاعي",
+   "letter": "ن",
+   "server": "https://cdn.mp3quran.net/audio/nabil-rifai/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 271,
+   "name": "نذير المالكي",
+   "letter": "ن",
+   "server": "https://cdn.mp3quran.net/audio/nadhir-maliki/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 88,
+   "name": "نعمة الحسان",
+   "letter": "ن",
+   "server": "https://cdn.mp3quran.net/audio/neama-hassan/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 280,
+   "name": "هاشم أبو دلال",
+   "letter": "ه",
+   "server": "https://cdn.mp3quran.net/audio/hashim-abudalal/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 89,
+   "name": "هاني الرفاعي",
+   "letter": "ه",
+   "server": "https://cdn.mp3quran.net/audio/hani-rifai/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 273,
+   "name": "هيثم الدخين",
+   "letter": "ه",
+   "server": "https://cdn.mp3quran.net/audio/haitham-dukhain/r1/",
+   "rewaya": "حفص عن عاصم - تلاوة مميزة",
+   "surahs": 114
+  },
+  {
+   "id": 219,
+   "name": "وديع اليمني",
+   "letter": "و",
+   "server": "https://cdn.mp3quran.net/audio/wadee-yamani/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 92,
+   "name": "ياسر الدوسري",
+   "letter": "ي",
+   "server": "https://cdn.mp3quran.net/audio/yasser-dosari/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 93,
+   "name": "ياسر القرشي",
+   "letter": "ي",
+   "server": "https://cdn.mp3quran.net/audio/yasser-qurashi/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 152,
+   "name": "ياسر سلامة",
+   "letter": "ي",
+   "server": "https://cdn.mp3quran.net/audio/yasser-salama/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 96,
+   "name": "يحيى حوا",
+   "letter": "ي",
+   "server": "https://cdn.mp3quran.net/audio/yahya-hawwa/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 97,
+   "name": "يوسف الشويعي",
+   "letter": "ي",
+   "server": "https://cdn.mp3quran.net/audio/yousef-shoaey/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  },
+  {
+   "id": 21182,
+   "name": "يوسف العيدروس",
+   "letter": "ي",
+   "server": "https://cdn.mp3quran.net/audio/yousef-aidarous/r1/",
+   "rewaya": "حفص عن عاصم - تلاوة مميزة",
+   "surahs": 114
+  },
+  {
+   "id": 193,
+   "name": "يوسف بن نوح أحمد",
+   "letter": "ي",
+   "server": "https://cdn.mp3quran.net/audio/yousef-ahmad/r1/",
+   "rewaya": "حفص عن عاصم - مرتل",
+   "surahs": 114
+  }
+ ]
+}

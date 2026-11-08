@@ -49,7 +49,7 @@
     iqamaTimers: [],
     lastFired: '',
     toast: null,
-    compass: { active: false, heading: null, handler: null },
+    compass: { active: false, heading: null, handler: null, listening: false },
     aqsaBearing: null,
   };
 
@@ -323,10 +323,20 @@
   // فتشغّل الأذان في وقته ومنبّه الإقامة بعده ولو كان التطبيق مغلقًا.
   const Cap = (typeof window !== 'undefined' ? window : root).Capacitor || null;
   const BG_PLUGIN = 'AdhanBackground';
+  const SENSORS_PLUGIN = 'SirajSensors';
   const BG_HORIZON_DAYS = 14;
 
   function hasBackgroundBridge() {
     return !!(Cap && Cap.isPluginAvailable && Cap.isPluginAvailable(BG_PLUGIN));
+  }
+
+  function hasSensors() {
+    return !!(Cap && Cap.isPluginAvailable && Cap.isPluginAvailable(SENSORS_PLUGIN));
+  }
+
+  function sensorCall(method, payload) {
+    if (!hasSensors() || !Cap.nativePromise) return Promise.resolve(null);
+    return Cap.nativePromise(SENSORS_PLUGIN, method, payload || {}).catch(() => null);
   }
 
   function bgCall(method, payload) {
@@ -656,6 +666,25 @@
   }
 
   async function startCompass() {
+    if (hasSensors()) {
+      const started = await sensorCall('startCompass');
+      if (!started) {
+        toast('هذا الجهاز لا يحوي حساس اتجاه (بوصلة).');
+        return;
+      }
+      if (!state.compass.listening && Cap.registerPlugin) {
+        state.compass.listening = true;
+        Cap.registerPlugin(SENSORS_PLUGIN).addListener('heading', (event) => {
+          const heading = Number(event && event.heading);
+          if (!Number.isFinite(heading)) return;
+          state.compass.heading = heading;
+          state.compass.active = true;
+          updateCompass();
+        });
+      }
+      toast('حرّك الهاتف على شكل ∞ لمعايرة البوصلة.');
+      return;
+    }
     const DeviceOrientation = root.DeviceOrientationEvent;
     if (!DeviceOrientation) { toast('هذا الجهاز لا يوفّر حساس الاتجاه.'); return; }
     if (typeof DeviceOrientation.requestPermission === 'function') {
@@ -667,7 +696,10 @@
         return;
       }
     }
-    if (state.compass.handler) root.removeEventListener('deviceorientationabsolute', state.compass.handler);
+    if (state.compass.handler) {
+      root.removeEventListener('deviceorientationabsolute', state.compass.handler);
+      root.removeEventListener('deviceorientation', state.compass.handler);
+    }
     state.compass.handler = (event) => {
       const heading = event.webkitCompassHeading != null ? event.webkitCompassHeading
         : (event.alpha != null ? 360 - event.alpha : null);
@@ -694,35 +726,49 @@
     if (els.qiblaHeading) els.qiblaHeading.textContent = `${Math.round(state.compass.heading)}°`;
   }
 
-  function useGps() {
-    if (!navigator.geolocation) { toast('لا يتوفّر تحديد الموقع في هذا الجهاز.'); return; }
-    toast('جاري تحديد موقعك…');
-    navigator.geolocation.getCurrentPosition((position) => {
-      const { latitude, longitude } = position.coords;
-      let nearest = 0;
-      let best = Infinity;
-      DATA.cities.forEach((city, index) => {
-        const d = (city.lat - latitude) ** 2 + ((city.lng - longitude) * Math.cos(latitude * Math.PI / 180)) ** 2;
-        if (d < best) { best = d; nearest = index; }
-      });
-      state.config.lat = latitude;
-      state.config.lng = longitude;
-      state.config.cityIndex = nearest;
-      state.config.cityName = DATA.cities[nearest].n;
-      state.config.countryName = DATA.cities[nearest].c;
-      state.config.tz = (function guessZone() {
-        try { return Intl.DateTimeFormat().resolvedOptions().timeZone || DATA.cities[nearest].tz; }
-        catch { return DATA.cities[nearest].tz; }
-      })();
-      saveConfig();
-      syncControls();
-      renderHero();
-      renderTimes();
-      renderQibla();
-      toast(`تم تحديد موقعك (${latitude.toFixed(2)}, ${longitude.toFixed(2)}) وضُبط على ${state.config.cityName}.`);
-    }, () => toast('تعذّر تحديد الموقع؛ اختر مدينتك يدويًا من القائمة.'), {
-      enableHighAccuracy: false, timeout: 12000, maximumAge: 600000,
+  function applyPosition(latitude, longitude) {
+    let nearest = 0;
+    let best = Infinity;
+    DATA.cities.forEach((city, index) => {
+      const d = (city.lat - latitude) ** 2 + ((city.lng - longitude) * Math.cos(latitude * Math.PI / 180)) ** 2;
+      if (d < best) { best = d; nearest = index; }
     });
+    state.config.lat = latitude;
+    state.config.lng = longitude;
+    state.config.cityIndex = nearest;
+    state.config.cityName = DATA.cities[nearest].n;
+    state.config.countryName = DATA.cities[nearest].c;
+    state.config.tz = (function guessZone() {
+      try { return Intl.DateTimeFormat().resolvedOptions().timeZone || DATA.cities[nearest].tz; }
+      catch { return DATA.cities[nearest].tz; }
+    })();
+    saveConfig();
+    syncControls();
+    renderHero();
+    renderTimes();
+    renderQibla();
+    toast(`تم تحديد موقعك (${latitude.toFixed(2)}, ${longitude.toFixed(2)}) وضُبط على ${state.config.cityName}.`);
+  }
+
+  async function useGps() {
+    toast('جاري تحديد موقعك…');
+    // في نسخة أندرويد نطلب إذن الموقع من النظام مباشرة، وإلا فشل الطلب بصمت.
+    if (hasSensors()) {
+      const result = await sensorCall('getLocation');
+      if (result && Number.isFinite(Number(result.lat)) && Number.isFinite(Number(result.lng))) {
+        applyPosition(Number(result.lat), Number(result.lng));
+        if (result.stale) toast('استُخدم آخر موقع معروف؛ جرّب في مكان مكشوف لدقة أعلى.');
+        return;
+      }
+      toast('لم يُسمح بالوصول إلى الموقع أو هو مغلق؛ فعّل خدمة الموقع وامنح الإذن ثم أعد المحاولة.');
+      return;
+    }
+    if (!navigator.geolocation) { toast('لا يتوفّر تحديد الموقع في هذا الجهاز.'); return; }
+    navigator.geolocation.getCurrentPosition(
+      (position) => applyPosition(position.coords.latitude, position.coords.longitude),
+      () => toast('تعذّر تحديد الموقع؛ اختر مدينتك يدويًا من القائمة.'),
+      { enableHighAccuracy: false, timeout: 12000, maximumAge: 600000 },
+    );
   }
 
   function setManualCoords() {
