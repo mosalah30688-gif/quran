@@ -1,7 +1,9 @@
 package com.quran.mushaf;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -11,6 +13,8 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+
+import androidx.core.content.ContextCompat;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PermissionState;
@@ -119,6 +123,10 @@ public class SirajSensorsPlugin extends Plugin implements SensorEventListener {
         }
 
         // لا يوجد موقع حديث: نطلب تحديثًا واحدًا ونعيد أول قراءة تصل.
+        if (!hasLocationPermission()) {
+            call.reject("إذن الموقع مرفوض");
+            return;
+        }
         final Handler handler = new Handler(Looper.getMainLooper());
         final boolean[] done = new boolean[]{false};
         final LocationManager locationManager = manager;
@@ -172,7 +180,13 @@ public class SirajSensorsPlugin extends Plugin implements SensorEventListener {
     }
 
     /** إن انتهت المدة بلا قراءة نعيد آخر موقع معروف ولو قديمًا. */
+    @SuppressLint("MissingPermission")
     private void LayoutFallback(PluginCall call) {
+        // لا نقرأ أي موقع قبل التحقق الصريح من الإذن (متطلب فحص Lint وسياسة Google Play).
+        if (!hasLocationPermission()) {
+            call.reject("إذن الموقع مرفوض");
+            return;
+        }
         LocationManager manager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
         try {
             if (manager != null) {
@@ -188,6 +202,12 @@ public class SirajSensorsPlugin extends Plugin implements SensorEventListener {
             // لا شيء
         }
         call.reject("لم يصل تحديد الموقع؛ جرّب في مكان مكشوف أو أدخل الإحداثيات يدويًا");
+    }
+
+    private boolean hasLocationPermission() {
+        Context context = getContext();
+        return ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            || ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
     private void resolveLocation(PluginCall call, Location location, boolean stale) {
