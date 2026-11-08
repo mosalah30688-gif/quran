@@ -31,10 +31,9 @@
     adhanId: 'haram-makkah',
     fajrAdhanId: 'fajr-makkah',
     adhanVolume: 1,
-    preMinutes: 0,
+    preMinutes: 10,
     iqamaEnabled: true,
     iqamaMinutes: { fajr: 20, dhuhr: 15, asr: 15, maghrib: 10, isha: 15 },
-    iqamaTone: true,
   };
 
   const els = {};
@@ -46,10 +45,11 @@
     audio: null,
     playingId: null,
     adhanCache: new Map(),
+    downloaded: new Set(),
     iqamaTimers: [],
     lastFired: '',
     toast: null,
-    compass: { active: false, heading: null, handler: null, listening: false },
+    compass: { active: false, heading: null, raw: null, mode: '', offset: 0, handler: null, listening: false },
     aqsaBearing: null,
   };
 
@@ -151,6 +151,7 @@
   }
 
   async function isAdhanDownloaded(item) {
+    if (item && item.local) return true;
     if (typeof caches === 'undefined') return false;
     try {
       const cache = await caches.open(ADHAN_CACHE);
@@ -206,7 +207,10 @@
     const audio = getAudio();
     try { audio.pause(); } catch { /* لم يُشغّل بعد */ }
     audio.src = '';
-    const local = await cachedAdhanUrl(item);
+    // 1) ملف محزوم داخل التطبيق (يعمل بلا إنترنت من أول تشغيل)
+    // 2) ملف منزّل على الجهاز 3) البث من الشبكة كحل أخير
+    const bundled = item.local || '';
+    const local = bundled || await cachedAdhanUrl(item);
     audio.src = local || item.url;
     audio.volume = Math.min(1, Math.max(0, num(state.config.adhanVolume, 1)));
     state.playingId = item.id;
@@ -232,25 +236,6 @@
   }
 
   // نغمة الإقامة: قصيرة ومولّدة محليًا حتى لا تحتاج ملفًا
-  function playIqamaTone() {
-    try {
-      const Ctx = root.AudioContext || root.webkitAudioContext;
-      if (!Ctx) return;
-      const ctx = new Ctx();
-      const gain = ctx.createGain();
-      gain.gain.value = 0.16;
-      gain.connect(ctx.destination);
-      [0, 0.45, 0.9].forEach((offset) => {
-        const osc = ctx.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.value = 880;
-        osc.connect(gain);
-        osc.start(ctx.currentTime + offset);
-        osc.stop(ctx.currentTime + offset + 0.28);
-      });
-      setTimeout(() => { try { ctx.close(); } catch { /* أُغلق */ } }, 1800);
-    } catch { /* الصوت غير متاح */ }
-  }
 
   // ---------- الجدولة أثناء فتح التطبيق ----------
   function scheduleChecks() {
@@ -281,8 +266,9 @@
     if (config.iqamaEnabled && !handledBySystem && PRAYER_KEYS.includes(key)) {
       const minutes = num(config.iqamaMinutes[key], 15);
       const timer = setTimeout(() => {
-        if (config.iqamaTone) playIqamaTone();
-        toast(`إقامة صلاة ${PT.describe(key)}`);
+        // لا صوت إقامة: إشعار نصي فقط «قم إلى صلاتك»
+        notifyLocal(`قم إلى صلاتك — حان وقت إقامة صلاة ${PT.describe(key)}`);
+        toast(`قم إلى صلاتك — إقامة ${PT.describe(key)}`);
         renderTimes();
       }, Math.max(1, minutes) * 60000);
       state.iqamaTimers.push(timer);
@@ -308,7 +294,8 @@
           const stamp = `${new Date().toDateString()}:pre:${key}`;
           if (state.lastFired !== stamp) {
             state.lastFired = stamp;
-            toast(`بقي ${config.preMinutes} دقيقة على أذان ${PT.describe(key)}`);
+            speakReminder(`أذان ${PT.describe(key)} بعد ${config.preMinutes} دقيقة`);
+            notifyLocal(`أذان ${PT.describe(key)} بعد ${config.preMinutes} دقائق`);
           }
         }
       }
@@ -389,6 +376,7 @@
           adhanId,
           url: item.url || '',
           iqamaMinutes: Math.max(0, num(config.iqamaMinutes[key], 0)),
+          preMinutes: Math.max(0, num(config.preMinutes, 0)),
         });
       });
     }
@@ -409,6 +397,31 @@
 
   let bgSyncTimer = null;
   let bgState = { scheduled: 0, exact: false, native: false };
+
+  // تنبيه ما قبل الأذان منطوق داخل التطبيق (وإشعار إن كان مسموحًا)
+  function speakReminder(text) {
+    try {
+      const synth = root.speechSynthesis;
+      if (!synth) { toast(text); return; }
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'ar-SA';
+      utter.rate = 0.95;
+      synth.cancel();
+      synth.speak(utter);
+      toast(text);
+    } catch {
+      toast(text);
+    }
+  }
+
+  function notifyLocal(text) {
+    try {
+      if (typeof root.Notification !== 'function') return;
+      if (root.Notification.permission === 'granted') {
+        new root.Notification('سراج', { body: text, tag: 'siraj-pre-adhan' });
+      }
+    } catch { /* الإشعارات غير مسموحة */ }
+  }
 
   function syncBackground(immediate) {
     if (bgSyncTimer) clearTimeout(bgSyncTimer);
@@ -537,10 +550,27 @@
     const config = state.config;
     if (!config.iqamaEnabled) { els.iqamaLine.textContent = 'تنبيه الإقامة متوقف.'; return; }
     const parts = PRAYER_KEYS.map((k) => `${PT.describe(k)} ${config.iqamaMinutes[k]}د`);
-    els.iqamaLine.textContent = `تنبيه الإقامة بعد الأذان: ${parts.join(' · ')}`;
+    els.iqamaLine.textContent = `إشعار «قم إلى صلاتك» بعد الأذان: ${parts.join(' · ')}`;
   }
 
   function renderAdhanState() {
+    renderAdhanList();
+  }
+
+  // تنزيل كل الأذان غير المحزوم (يعمل بعدها دون إنترنت للأبد)
+  async function downloadAllAdhans() {
+    const pending = DATA.adhans.filter((item) => !item.local && !state.downloaded.has(item.id));
+    if (!pending.length) { toast('كل الأذان متاح دون إنترنت بالفعل.'); return; }
+    toast(`جاري تنزيل ${pending.length} أذانًا…`);
+    let done = 0;
+    for (const item of pending) {
+      try {
+        await downloadAdhan(item);
+        state.downloaded.add(item.id);
+        done += 1;
+      } catch { /* نتجاوز الفاشل ونكمل */ }
+    }
+    toast(done ? `تم تنزيل ${done} أذانًا على الجهاز.` : 'تعذّر التنزيل؛ تحقّق من الاتصال.');
     renderAdhanList();
   }
 
@@ -555,7 +585,7 @@
         <div class="pt-adhan${selected ? ' is-selected' : ''}" data-id="${item.id}">
           <div class="pt-adhan-main">
             <strong>${item.name}</strong>
-            <span class="muted">${item.region} · ${Math.round(item.seconds / 60)} د${item.fajr ? ' · أذان فجر' : ''}</span>
+            <span class="muted">${item.region ? esc(item.region) + ' · ' : ''}${Math.round(item.seconds / 60)} د${item.fajr ? ' · أذان فجر' : ''} · ${item.local ? 'محلي' : (downloaded ? 'منزّل' : 'يحتاج تنزيل')}</span>
           </div>
           <div class="pt-adhan-actions">
             <button class="pt-mini" data-act="preview" data-id="${item.id}" title="تجربة">▶</button>
@@ -566,7 +596,12 @@
         </div>
       `;
     }));
-    els.adhanList.innerHTML = rows.join('');
+    els.adhanList.innerHTML = `<div class="pt-adhan-summary">
+        <span class="muted">${DATA.adhans.filter((i) => i.local).length} أذانًا محليًا جاهزًا دون إنترنت · ${DATA.adhans.filter((i) => !i.local).length} يحتاج تنزيلًا</span>
+        <button class="btn small ghost" id="ptAdhanDownloadAll">تنزيل المتبقي</button>
+      </div>` + rows.join('');
+    const allBtn = els.adhanList.querySelector('#ptAdhanDownloadAll');
+    if (allBtn) allBtn.addEventListener('click', downloadAllAdhans);
     els.adhanList.querySelectorAll('[data-act]').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const item = adhanById(btn.dataset.id);
@@ -620,7 +655,6 @@
     if (els.highLat) els.highLat.value = config.highLatitude;
     if (els.adhanToggle) els.adhanToggle.checked = !!config.adhanEnabled;
     if (els.iqamaToggle) els.iqamaToggle.checked = !!config.iqamaEnabled;
-    if (els.iqamaTone) els.iqamaTone.checked = !!config.iqamaTone;
     if (els.preSelect) els.preSelect.value = String(config.preMinutes);
     if (els.clock24) els.clock24.checked = !!config.use24h;
     if (els.volumeRange) els.volumeRange.value = String(Math.round(config.adhanVolume * 100));
@@ -669,15 +703,19 @@
     if (hasSensors()) {
       const started = await sensorCall('startCompass');
       if (!started) {
-        toast('هذا الجهاز لا يحوي حساس اتجاه (بوصلة).');
+        // لا يوجد أي حساس اتجاه: ننتقل إلى الاتجاه بالموقع والشمس.
+        enableFallbackDirection('لا يوجد حسّاس اتجاه في هذا الهاتف؛ استخدم المعايرة بالشمس أو الاتجاه بالدرجات.');
         return;
       }
+      state.compass.mode = (started && started.mode) || 'rotation';
       if (!state.compass.listening && Cap.registerPlugin) {
         state.compass.listening = true;
         Cap.registerPlugin(SENSORS_PLUGIN).addListener('heading', (event) => {
           const heading = Number(event && event.heading);
           if (!Number.isFinite(heading)) return;
-          state.compass.heading = heading;
+          state.compass.raw = heading;
+          state.compass.mode = event.mode || state.compass.mode;
+          state.compass.heading = (heading + state.compass.offset + 720) % 360;
           state.compass.active = true;
           updateCompass();
         });
@@ -686,7 +724,10 @@
       return;
     }
     const DeviceOrientation = root.DeviceOrientationEvent;
-    if (!DeviceOrientation) { toast('هذا الجهاز لا يوفّر حساس الاتجاه.'); return; }
+    if (!DeviceOrientation) {
+      enableFallbackDirection('المتصفح لا يوفّر حسّاس اتجاه؛ استخدم المعايرة بالشمس أو الاتجاه بالدرجات.');
+      return;
+    }
     if (typeof DeviceOrientation.requestPermission === 'function') {
       try {
         const granted = await DeviceOrientation.requestPermission();
@@ -711,6 +752,61 @@
     root.addEventListener('deviceorientationabsolute', state.compass.handler, true);
     root.addEventListener('deviceorientation', state.compass.handler, true);
     toast('حرّك الهاتف على شكل ∞ لمعايرة البوصلة.');
+  }
+
+  // وضع بديل للاتجاه عندما لا يوجد حسّاس: القرص يبقى ثابتًا على الشمال
+  // ونعرض زاوية القبلة والشمس، مع إمكانية معايرة يدوية بالدرجات.
+  function enableFallbackDirection(message) {
+    state.compass.fallback = true;
+    if (els.qiblaTurn) els.qiblaTurn.textContent = 'البوصلة غير متاحة على هذا الجهاز — استخدم «معايرة بالشمس» أو «الاتجاه بالدرجات».';
+    const note = document.getElementById('qiblaFallbackNote');
+    if (note) note.textContent = message || '';
+    if (els.qiblaHeading) els.qiblaHeading.textContent = 'غير متاح';
+    renderQibla();
+    toast('لا يوجد حسّاس اتجاه؛ فعّلنا طريقة الشمس والدرجات.');
+  }
+
+  function calibrateTo(deg) {
+    const raw = state.compass.raw;
+    if (!Number.isFinite(raw)) {
+      // لا قراءة حيّة: نتحول إلى وضع الدرجات اليدوي.
+      state.compass.heading = Number(deg) || 0;
+      state.compass.active = true;
+      updateCompass();
+      return false;
+    }
+    state.compass.offset = (Number(deg) - raw + 720) % 360;
+    state.compass.heading = (raw + state.compass.offset) % 360;
+    updateCompass();
+    return true;
+  }
+
+  function calibrateBySun() {
+    const sun = PT.sunAzimuth({
+      date: new Date(), lat: state.config.lat, lng: state.config.lng,
+      timezone: offsetHours(state.config.tz, new Date()),
+    });
+    const note = document.getElementById('qiblaFallbackNote');
+    if (!sun || sun.altitude < 3) {
+      if (note) note.textContent = 'الشمس الآن قريبة من الأفق؛ انتظر النهار أو استخدم ضبط الدرجات.';
+      toast('لا يمكن ضبط الاتجاه بالشمس الآن.');
+      return;
+    }
+    calibrateTo(sun.azimuth);
+    if (note) {
+      note.textContent = `تم الضبط على الشمس (${sun.azimuth.toFixed(0)}°) — وجّه أعلى الهاتف نحو الشمس وقت الضغط ليكون الاتجاه صحيحًا.`;
+    }
+    toast('تمت المعايرة بالشمس.');
+  }
+
+  function calibrateManual() {
+    const input = document.getElementById('qiblaManualDeg');
+    const deg = input ? Number(input.value) : NaN;
+    if (!Number.isFinite(deg) || deg < 0 || deg > 359) { toast('اكتب اتجاهًا بين 0 و359 درجة.'); return; }
+    calibrateTo(deg);
+    const note = document.getElementById('qiblaFallbackNote');
+    if (note) note.textContent = `الاتجاه المضبوط: ${deg}° — أدر الهاتف بعد ذلك وسيتابع العقرب.`;
+    toast('تم ضبط الاتجاه يدويًا.');
   }
 
   function updateCompass() {
@@ -747,6 +843,7 @@
     renderHero();
     renderTimes();
     renderQibla();
+    refreshQiblaPlace();
     toast(`تم تحديد موقعك (${latitude.toFixed(2)}, ${longitude.toFixed(2)}) وضُبط على ${state.config.cityName}.`);
   }
 
@@ -792,6 +889,10 @@
 
   // ---------- التركيب ----------
   function bindEvents() {
+    const sunBtn = document.getElementById('qiblaSunBtn');
+    if (sunBtn) sunBtn.addEventListener('click', calibrateBySun);
+    const northBtn = document.getElementById('qiblaNorthBtn');
+    if (northBtn) northBtn.addEventListener('click', calibrateManual);
     if (els.citySelect) els.citySelect.addEventListener('change', (e) => setCity(Number(e.target.value)));
     els.gpsBtn && els.gpsBtn.addEventListener('click', useGps);
     els.manualBtn && els.manualBtn.addEventListener('click', setManualCoords);
@@ -813,9 +914,6 @@
     });
     els.iqamaToggle && els.iqamaToggle.addEventListener('change', (e) => {
       state.config.iqamaEnabled = e.target.checked; saveConfig(); renderIqamaLine();
-    });
-    els.iqamaTone && els.iqamaTone.addEventListener('change', (e) => {
-      state.config.iqamaTone = e.target.checked; saveConfig();
     });
     els.preSelect && els.preSelect.addEventListener('change', (e) => {
       state.config.preMinutes = Number(e.target.value); saveConfig();
@@ -875,7 +973,6 @@
     els.adhanToggle = el('ptAdhanEnabled');
     els.adhanList = el('ptAdhanList');
     els.iqamaToggle = el('ptIqamaEnabled');
-    els.iqamaTone = el('ptIqamaTone');
     els.iqamaLine = el('ptIqamaLine');
     els.preSelect = el('ptPre');
     els.volumeRange = el('ptVolume');
@@ -924,8 +1021,19 @@
     return true;
   }
 
+  // اسم المكان في تبويب القبلة المستقل
+  function refreshQiblaPlace() {
+    const node = document.getElementById('qiblaPlace');
+    if (!node) return;
+    const name = state.config.cityName || `${state.config.lat.toFixed(2)}°، ${state.config.lng.toFixed(2)}°`;
+    const q = PT.qibla ? PT.qibla(state.config.lat, state.config.lng) : null;
+    const bearing = q && Number.isFinite(q.bearing) ? `${Math.round(q.bearing)}°` : '—';
+    node.textContent = `${name} · القبلة ${bearing} من الشمال`;
+  }
+
   root.SirajPrayerUI = {
     init, refresh: () => { renderHero(); renderTimes(); renderQibla(); syncBackground(false); },
+    refreshQibla: () => { renderQibla(); refreshQiblaPlace(); },
     playAdhan, stopAdhan, next: () => nextPrayer(new Date()),
     config: () => ({ ...state.config }),
     backgroundStatus: () => ({ ...bgState }),
