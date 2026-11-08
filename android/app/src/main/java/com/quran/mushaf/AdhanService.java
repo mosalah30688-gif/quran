@@ -115,6 +115,27 @@ public class AdhanService extends Service implements MediaPlayer.OnCompletionLis
         String path = AdhanScheduler.audioPath(this, adhanId);
         File file = path.isEmpty() ? null : new File(path);
         boolean local = file != null && file.exists() && file.length() > 16_384;
+        if (!local && adhanId != null && !adhanId.isEmpty()) {
+            // الأذان المحزوم داخل التطبيق يُنسخ من الأصول على خيط منفصل ثم يُشغَّل،
+            // فيعمل الأذان في وقته بلا إنترنت ولو كان التطبيق مغلقًا.
+            final String id = adhanId;
+            final String remote = url;
+            final String labelCopy = label;
+            new Thread(() -> {
+                final String resolved = AdhanAudioStore.ensure(getApplicationContext(), id, remote);
+                handler.post(() -> {
+                    String playPath = resolved.isEmpty() ? AdhanScheduler.audioPath(this, id) : resolved;
+                    File playFile = playPath.isEmpty() ? null : new File(playPath);
+                    boolean ready = playFile != null && playFile.exists() && playFile.length() > 16_384;
+                    startPlayback(labelCopy, ready ? playFile : null, remote);
+                });
+            }, "siraj-adhan-prepare").start();
+            return;
+        }
+        startPlayback(label, local ? file : null, url);
+    }
+
+    private void startPlayback(String label, File file, String url) {
         player = new MediaPlayer();
         player.setAudioAttributes(new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_ALARM)
@@ -123,7 +144,7 @@ public class AdhanService extends Service implements MediaPlayer.OnCompletionLis
         player.setOnCompletionListener(this);
         player.setOnErrorListener(this);
         try {
-            if (local) {
+            if (file != null && file.exists() && file.length() > 16_384) {
                 player.setDataSource(file.getAbsolutePath());
             } else if (url != null && !url.isEmpty()) {
                 player.setDataSource(url);

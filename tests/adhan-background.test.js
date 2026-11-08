@@ -84,7 +84,7 @@ test('الأذان في الخلفية: أرقام الإصدار والبناء
   assert.ok(Number(match[1]) >= Number(build), 'versionCode لا يسبق BUILD_NUMBER');
   assert.match(html, new RegExp(`APP_BUILD_NUMBER = ${build}`));
   assert.match(gradle, /versionName "1\.5\.\d+"/);
-  assert.match(gradle, /versionCode 163/);
+  assert.match(gradle, /versionCode 164/);
 });
 
 test('ترقية الـAPK تُقارن برقم بناء الملف المثبَّت لا برقم بناء الواجهة', () => {
@@ -220,4 +220,11 @@ test('تقليب الصفحة ثلاثي الأبعاد سريع مع بقاء �
   assert.match(app, /await turnTo\(target, goNext\)/);
   assert.match(app, /stage\.addEventListener\('pointerdown'/);
   assert.match(read('index.html'), /\.page-ghost \{/);
+});
+
+test('خدمة الأذان تنسخ الأذان المحزوم من الأصول قبل البث', () => {
+  const service = read(`${JAVA}/AdhanService.java`);
+  assert.match(service, /AdhanAudioStore\.ensure\(getApplicationContext\(\), id, remote\)/);
+  assert.match(service, /private void startPlayback\(String label, File file, String url\)/);
+  assert.match(service, /"siraj-adhan-prepare"/);
 });
