@@ -84,7 +84,7 @@ test('الأذان في الخلفية: أرقام الإصدار والبناء
   assert.ok(Number(match[1]) >= Number(build), 'versionCode لا يسبق BUILD_NUMBER');
   assert.match(html, new RegExp(`APP_BUILD_NUMBER = ${build}`));
   assert.match(gradle, /versionName "1\.5\.\d+"/);
-  assert.match(gradle, /versionCode 167/);
+  assert.match(gradle, /versionCode 168/);
 });
 
 test('ترقية الـAPK تُقارن برقم بناء الملف المثبَّت لا برقم بناء الواجهة', () => {
@@ -214,11 +214,13 @@ test('البوصلة: سلسلة حساسات بديلة + ثلاث طرق لل�
   assert.match(html, /class="qibla-method" data-method="manual"/);
 });
 
-test('تبويب القبلة مستقل ويُفتح من الإعدادات مع «مواقيت الصلاة»', () => {
+test('تبويب القبلة مستقل ويُفتح من الإعدادات، والمواقيت من قائمة التطبيق فقط', () => {
   const html = read('index.html');
   assert.match(html, /<section class="view" id="view-qibla">/);
-  assert.match(html, /class="settings-link" data-view="prayer"/);
   assert.match(html, /class="settings-link" data-view="qibla"/);
+  // زر «مواقيت الصلاة» أُزيل من قائمة الإعدادات بناءً على طلب المستخدم، ويبقى تبويبه في القائمة الرئيسية.
+  assert.ok(!/class="settings-link" data-view="prayer"/.test(html));
+  assert.match(html, /<button data-view="prayer">/);
   assert.match(html, /مواقيت الصلاة/);
   assert.match(read('app.js'), /qibla: 'القبلة والبوصلة'/);
   assert.match(read('app.js'), /settings-link\[data-view\]/);

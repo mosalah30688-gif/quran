@@ -184,8 +184,8 @@ test('learning expansion preserves the existing colored reader and word explanat
   for (const value of ['quran-uthmani', 'warsh', 'qalun', 'duri']) {
     assert.match(html, new RegExp(`<option value="${value}">`));
   }
-  assert.match(html, /<input type="checkbox" id="setTajweed" \/> تفعيل ألوان التجويد/);
-  assert.match(html, /id="setTajweed"/);
+  // مفتاح «تفعيل ألوان التجويد» أُزيل من الإعدادات بطلب المستخدم، وبقيت طبقة التلوين نفسها.
+  assert.ok(!/id="setTajweed"/.test(html));
   assert.match(html, /id="tjPanel"/);
   assert.match(html, /\.tj-n \{ color:/);
   assert.match(app, /function renderTajweed\(raw\)/);
@@ -254,15 +254,20 @@ test('التظليل الحر: طبقة تظليل بلون ظاهر وقائم�
   assert.match(html, /min-width: 158px/);
 });
 
-test('التفاسير الجاهزة فورًا ظاهرة وحدها، وكتب الحزمة في مجموعة منفصلة', () => {
-  // الخمسة الشبكية تعمل بلا تنزيل، والـ٧٣ في مجموعة الحزمة المحلية
-  assert.match(app, /const online = TAFSIRS\.filter\(\(\[id\]\) => !\/\^qp:/);
-  assert.match(app, /<optgroup label="متاح فورًا">/);
-  assert.match(app, /كتب الحزمة المحلية/);
+test('كل كتب التفسير في قائمة واحدة متاحة بلا زر تنزيل ولا كلمة «محلية»', () => {
+  // لا مجموعات ولا تعطيل: كل كتاب قابل للاختيار ويعمل مباشرة.
+  assert.ok(app.includes('return TAFSIRS.map(([id, name]) => `<option value="${id}">${name}</option>`).join(\'\');'));
+  assert.ok(!/optgroup/.test(app.slice(app.indexOf('function tafsirOptionsHtml'), app.indexOf('function fillSettings'))));
+  assert.ok(!/كتب الحزمة المحلية|الحزمة المحلية|\(٧٣\)/.test(app));
   assert.match(app, /async function fetchOnlineTafsir\(surah, ayah, edition\)/);
   assert.match(app, /const ONLINE_TAFSIRS = new Set\(/);
-  // جلب عند الطلب من الواجهة واللوحة
-  assert.match(app, /fetchOnlineTafsir\(a\.s, a\.n, edition\)/);
+  assert.match(app, /\['ar\.miqbas', 'تنوير المقباس'\]/);
+  // كتب الموسوعة تُجهَّز عند أول اختيار ثم تُقرأ من الجهاز
+  assert.match(app, /QP_BOOK_BASE = 'https:\/\/quranpedia\.net\/dumps\/tafsir-book-'/);
+  assert.match(app, /async function loadTafsirBook\(bookId\)/);
+  assert.match(app, /async function tafsirForAyah\(s, n, edition\)/);
+  assert.match(app, /DecompressionStream\('gzip'\)/);
+  assert.match(app, /indexedDB\.open\('siraj-tafsir-books', 1\)/);
 });
 
 test('مصحف أوضح: خط معرّض وخانة صفحة صغيرة وأزرار كلمات واضحة', () => {
