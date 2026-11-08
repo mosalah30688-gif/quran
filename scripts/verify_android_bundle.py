@@ -24,6 +24,7 @@ def main() -> None:
     assert_same("quran-tajweed.json", "mushaf_app/data/quran-tajweed.json")
     assert_same("surahs.json", "mushaf_app/data/surahs.json")
     assert_same("tafsir-catalog.json", "mushaf_app/data/tafsir-catalog.json")
+    assert_same("quran-reciters.json", "mushaf_app/data/quran-reciters.json")
     assert_same("tajweed-learning-catalog.json", "windows_app/data/tajweed-learning-catalog.json")
     assert_same("tajweed-learning-catalog.json", "mushaf_app/data/tajweed-learning-catalog.json")
     assert_same("windows_app/tajweed_learning.py", "mushaf_app/tajweed_learning.py")
@@ -108,7 +109,17 @@ def main() -> None:
     assert 'name = "SmartDevice"' in smart_plugin and 'consumeFeedback' in smart_plugin
     assert 'SmartTimeWindow.nextAllowedAt' in smart_receiver
     assert 'SmartTimeWindow.nextAllowedAt' in reminder_receiver
-    assert "ACCESS_FINE_LOCATION" not in android_manifest and "READ_CONTACTS" not in android_manifest
+    # إذن الموقع مطلوب لمواقيت الصلاة والقبلة فقط (يُطلب من المستخدم عند الحاجة)،
+    # بينما تبقى بقية الأذونات الحسّاسة ممنوعة على «رفيق اليوم».
+    assert "READ_CONTACTS" not in android_manifest and "RECORD_AUDIO" not in android_manifest
+    assert "ACCESS_BACKGROUND_LOCATION" not in android_manifest
+    assert "ACCESS_COARSE_LOCATION" in android_manifest and "ACCESS_FINE_LOCATION" in android_manifest
+    sensors_plugin = (ROOT / "android/app/src/main/java/com/quran/mushaf/SirajSensorsPlugin.java").read_text(encoding="utf-8")
+    assert 'name = "SirajSensors"' in sensors_plugin
+    assert "requestPermissionForAlias" in sensors_plugin and "TYPE_ROTATION_VECTOR" in sensors_plugin
+    assert "registerPlugin(SirajSensorsPlugin.class)" in (ROOT / "android/app/src/main/java/com/quran/mushaf/MainActivity.java").read_text(encoding="utf-8")
+    reciters = load("quran-reciters.json")
+    assert isinstance(reciters.get("items"), list) and len(reciters["items"]) >= 100
     assert "loadBundledData()" in app
     assert "SmartContextEngine" in smart_context and "LIKELY_SLEEPING" in smart_context
     assert "buildCandidates" in smart_services and "open_adhkar:morning" in smart_services
