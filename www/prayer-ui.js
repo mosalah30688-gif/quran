@@ -49,7 +49,12 @@
     iqamaTimers: [],
     lastFired: '',
     toast: null,
-    compass: { active: false, heading: null, raw: null, mode: '', offset: 0, handler: null, listening: false },
+    compass: { active: false, heading: null, raw: null, mode: '', offset: 0, handler: null, listening: false, fallback: false },
+    altMethod: '',
+    gpsWatch: null,
+    gpsHeading: null,
+    gpsLast: null,
+    compassWatchdog: null,
     aqsaBearing: null,
   };
 
@@ -699,7 +704,22 @@
     return `على ${Math.abs(diff) > 90 ? 'يسارك' : 'يسارك قليلًا'} بمقدار ${Math.round(Math.abs(diff))}°`;
   }
 
+  // لا نترك المستخدم أمام عقرب ثابت: إن لم تصل قراءة خلال ٢٫٥ ثانية نفتح الطرق البديلة.
+  function armCompassWatchdog() {
+    if (state.compassWatchdog) clearTimeout(state.compassWatchdog);
+    state.compassWatchdog = setTimeout(() => {
+      if (state.compass.heading == null) {
+        enableFallbackDirection('لم يصل أي قراءة من حسّاس الاتجاه؛ استخدم إحدى الطرق البديلة بالأسفل.');
+      }
+    }, 2500);
+  }
+  function disarmCompassWatchdog() {
+    if (state.compassWatchdog) clearTimeout(state.compassWatchdog);
+    state.compassWatchdog = null;
+  }
+
   async function startCompass() {
+    armCompassWatchdog();
     if (hasSensors()) {
       const started = await sensorCall('startCompass');
       if (!started) {
@@ -717,6 +737,8 @@
           state.compass.mode = event.mode || state.compass.mode;
           state.compass.heading = (heading + state.compass.offset + 720) % 360;
           state.compass.active = true;
+          state.compass.fallback = false;
+          disarmCompassWatchdog();
           updateCompass();
         });
       }
@@ -747,29 +769,180 @@
       if (heading == null) return;
       state.compass.heading = heading;
       state.compass.active = true;
+      state.compass.fallback = false;
+      disarmCompassWatchdog();
       updateCompass();
     };
     root.addEventListener('deviceorientationabsolute', state.compass.handler, true);
     root.addEventListener('deviceorientation', state.compass.handler, true);
+    armCompassWatchdog();
     toast('حرّك الهاتف على شكل ∞ لمعايرة البوصلة.');
   }
 
-  // وضع بديل للاتجاه عندما لا يوجد حسّاس: القرص يبقى ثابتًا على الشمال
-  // ونعرض زاوية القبلة والشمس، مع إمكانية معايرة يدوية بالدرجات.
+  // ---------- طرق تحديد القبلة بدون حسّاس بوصلة ----------
+  // 1) الشمس والظل: سمت الشمس يُحسب فلكيًا من الموقع والوقت، فيُخبر المستخدم
+  //    بمقدار الانحراف من الشمس/الظل مباشرة — لا يحتاج أي حسّاس.
+  // 2) التنقل بالـGPS: اتجاه الحركة من الإحداثيات المتتابعة يعطي الشمال فعليًا.
+  // 3) الدرجات: إدخال اتجاه معروف يدويًا.
+  function normDelta(deg) {
+    let d = deg % 360;
+    if (d > 180) d -= 360;
+    if (d < -180) d += 360;
+    return d;
+  }
+
+  function qiblaBearing() {
+    const q = PT.qibla(state.config.lat, state.config.lng);
+    return q && Number.isFinite(q.bearing) ? q.bearing : null;
+  }
+
+  function selectAltMethod(method) {
+    state.altMethod = method;
+    document.querySelectorAll('.qibla-method').forEach((b) => {
+      const on = b.dataset.method === method;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    const panels = { sun: 'qiblaSunPanel', gps: 'qiblaGpsPanel', manual: 'qiblaManualPanel' };
+    Object.entries(panels).forEach(([key, id]) => {
+      const node = document.getElementById(id);
+      if (node) node.hidden = key !== method;
+    });
+    if (method === 'sun') renderSunGuide();
+    if (method === 'gps') renderGpsGuide();
+    if (method === 'manual') stopGpsWatch();
+    if (method !== 'gps') stopGpsWatch();
+  }
+
+  function renderSunGuide() {
+    const head = document.getElementById('qiblaSunHead');
+    const how = document.getElementById('qiblaSunHow');
+    const data = document.getElementById('qiblaSunData');
+    if (!head) return;
+    const q = qiblaBearing();
+    const sun = PT.sunAzimuth({
+      date: new Date(), lat: state.config.lat, lng: state.config.lng,
+      timezone: offsetHours(state.config.tz, new Date()),
+    });
+    if (q == null) { head.textContent = 'حدّد موقعك أولًا.'; return; }
+    if (!sun) { head.textContent = 'تعذّر حساب موضع الشمس.'; return; }
+    if (sun.altitude < 3) {
+      head.textContent = 'الشمس قريبة من الأفق الآن (فجر/غروب/ليل).';
+      if (how) how.textContent = 'انتظر ارتفاع الشمس أو استخدم طريقة «التنقل GPS» أو الدرجات.';
+      if (data) data.textContent = `ارتفاع الشمس الآن ${sun.altitude.toFixed(1)}°.`;
+      return;
+    }
+    // الزاوية بين الشمس والقبلة مقاسة في اتجاه عقارب الساعة من الشمس
+    const fromSun = normDelta(q - sun.azimuth);
+    const side = fromSun >= 0 ? 'يمينك' : 'يسارك';
+    const abs = Math.abs(Math.round(fromSun));
+    head.textContent = `أنت تواجه الشمس؟ القبلة على ${side} بمقدار ${abs}°`;
+    if (how) {
+      const shadowSide = fromSun >= 0 ? 'يسارك' : 'يمينك';
+      how.textContent = `طريقة الظل: قف والشمس خلفك (ظلّك أمامك) فتكون القبلة على ${shadowSide} بمقدار ${abs}°. ولو كانت الشمس على وجهك فالقبلة على ${side} بمقدار ${abs}°.`;
+    }
+    if (data) {
+      data.textContent = `سمت الشمس ${sun.azimuth.toFixed(0)}° · القبلة ${q.toFixed(0)}° · ارتفاع الشمس ${sun.altitude.toFixed(0)}° — يُحدَّث كل دقيقة.`;
+    }
+  }
+
+  function renderGpsGuide() {
+    const head = document.getElementById('qiblaGpsHead');
+    const how = document.getElementById('qiblaGpsHow');
+    if (!head) return;
+    const q = qiblaBearing();
+    if (q == null) { head.textContent = 'حدّد موقعك أولًا.'; return; }
+    if (state.gpsHeading == null) {
+      head.textContent = 'امشِ عشر خطوات في اتجاه ثابت…';
+      if (how) how.textContent = 'بعد أول حركة حقيقية يظهر اتجاهك من الشمال، ثم نقول لك كم تنحرف عن القبلة. لا يحتاج أي حسّاس.';
+      return;
+    }
+    const delta = normDelta(q - state.gpsHeading);
+    const side = delta >= 0 ? 'يمينًا' : 'يسارًا';
+    head.textContent = Math.abs(delta) <= 6
+      ? 'أنت تسير نحو القبلة ✓'
+      : `اتجاهك الآن ${Math.round(state.gpsHeading)}° — انحرف ${side} بمقدار ${Math.abs(Math.round(delta))}°`;
+    if (how) how.textContent = `اتجاه سيرك من الـGPS ${Math.round(state.gpsHeading)}° · القبلة ${Math.round(q)}°. استمر بالمشي قليلًا لتثبيت القراءة.`;
+  }
+
+  function stopGpsWatch() {
+    if (state.gpsWatch != null && root.navigator && root.navigator.geolocation) {
+      root.navigator.geolocation.clearWatch(state.gpsWatch);
+    }
+    state.gpsWatch = null;
+    state.gpsLast = null;
+  }
+
+  function bearingBetween(a, b) {
+    const r = (v) => (v * Math.PI) / 180;
+    const y = Math.sin(r(b.lng - a.lng)) * Math.cos(r(b.lat));
+    const x = Math.cos(r(a.lat)) * Math.sin(r(b.lat)) - Math.sin(r(a.lat)) * Math.cos(r(b.lat)) * Math.cos(r(b.lng - a.lng));
+    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+  }
+
+  function startGpsWatch() {
+    if (!root.navigator || !root.navigator.geolocation) {
+      toast('هذا الجهاز لا يدعم تحديد الموقع.');
+      return;
+    }
+    stopGpsWatch();
+    selectAltMethod('gps');
+    state.gpsWatch = root.navigator.geolocation.watchPosition((pos) => {
+      const c = pos.coords;
+      if (Number.isFinite(c.heading) && c.speed > 0.6) {
+        state.gpsHeading = c.heading;
+      } else if (state.gpsLast && Number.isFinite(c.accuracy)) {
+        const moved = bearingBetween(state.gpsLast, { lat: c.latitude, lng: c.longitude });
+        const dist = Math.abs(c.latitude - state.gpsLast.lat) + Math.abs(c.longitude - state.gpsLast.lng);
+        if (dist > 0.00004) state.gpsHeading = moved; // ~4 أمتار حركة كافية
+      }
+      state.gpsLast = { lat: c.latitude, lng: c.longitude };
+      renderGpsGuide();
+    }, () => toast('تعذّر قراءة الموقع؛ تحقّق من إذن الموقع.'), {
+      enableHighAccuracy: true, maximumAge: 1000, timeout: 15000,
+    });
+  }
+
+  let altBound = false;
+  function renderAltMethods() {
+    if (altBound) { selectAltMethod(state.altMethod || 'sun'); return; }
+    altBound = true;
+    document.querySelectorAll('.qibla-method').forEach((btn) => {
+      btn.addEventListener('click', () => selectAltMethod(btn.dataset.method));
+    });
+    const start = document.getElementById('qiblaGpsStart');
+    if (start) start.addEventListener('click', startGpsWatch);
+    const stop = document.getElementById('qiblaGpsStop');
+    if (stop) stop.addEventListener('click', () => { stopGpsWatch(); renderGpsGuide(); });
+    const refresh = document.getElementById('qiblaSunRefresh');
+    if (refresh) refresh.addEventListener('click', renderSunGuide);
+    // اختيار تلقائي: الشمس نهارًا، GPS ليلًا — تُستبدل بالبوصلة إذا وُجدت.
+    selectAltMethod(state.altMethod || (new Date().getHours() >= 5 && new Date().getHours() <= 18 ? 'sun' : 'gps'));
+    setInterval(() => { if (state.altMethod === 'sun') renderSunGuide(); }, 60000);
+  }
+
   function enableFallbackDirection(message) {
     state.compass.fallback = true;
-    if (els.qiblaTurn) els.qiblaTurn.textContent = 'البوصلة غير متاحة على هذا الجهاز — استخدم «معايرة بالشمس» أو «الاتجاه بالدرجات».';
+    if (els.qiblaTurn) els.qiblaTurn.textContent = 'لا يوجد حسّاس بوصلة — اختر طريقة من الأسفل لتحديد القبلة.';
     const note = document.getElementById('qiblaFallbackNote');
     if (note) note.textContent = message || '';
-    if (els.qiblaHeading) els.qiblaHeading.textContent = 'غير متاح';
+    if (els.qiblaHeading) els.qiblaHeading.textContent = 'بلا حسّاس';
     renderQibla();
-    toast('لا يوجد حسّاس اتجاه؛ فعّلنا طريقة الشمس والدرجات.');
+    renderAltMethods();
+    // نرفع بطاقة الطرق البديلة فوق البوصلة حتى لا يبحث عنها المستخدم
+    const view = document.getElementById('view-qibla');
+    const card = document.getElementById('qiblaFallbackCard');
+    if (view && card) {
+      const head = view.querySelector('.card');
+      if (head && head !== card) view.insertBefore(card, head.nextSibling);
+      setTimeout(() => card.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 120);
+    }
+    toast('هاتفك بلا حسّاس بوصلة، فتحنا لك طرقًا بديلة.');
   }
 
   function calibrateTo(deg) {
     const raw = state.compass.raw;
     if (!Number.isFinite(raw)) {
-      // لا قراءة حيّة: نتحول إلى وضع الدرجات اليدوي.
       state.compass.heading = Number(deg) || 0;
       state.compass.active = true;
       updateCompass();
@@ -844,6 +1017,7 @@
     renderTimes();
     renderQibla();
     refreshQiblaPlace();
+    renderAltMethods();
     toast(`تم تحديد موقعك (${latitude.toFixed(2)}, ${longitude.toFixed(2)}) وضُبط على ${state.config.cityName}.`);
   }
 
@@ -1013,6 +1187,8 @@
     renderHero();
     renderTimes();
     renderQibla();
+    refreshQiblaPlace();
+    renderAltMethods();
     scheduleChecks();
     syncBackground(true);
     document.addEventListener('visibilitychange', () => {
@@ -1033,7 +1209,12 @@
 
   root.SirajPrayerUI = {
     init, refresh: () => { renderHero(); renderTimes(); renderQibla(); syncBackground(false); },
-    refreshQibla: () => { renderQibla(); refreshQiblaPlace(); },
+    refreshQibla: () => {
+      renderQibla();
+      refreshQiblaPlace();
+      if (!document.getElementById('qiblaSunPanel').hidden) renderSunGuide();
+      if (!document.getElementById('qiblaGpsPanel').hidden) renderGpsGuide();
+    },
     playAdhan, stopAdhan, next: () => nextPrayer(new Date()),
     config: () => ({ ...state.config }),
     backgroundStatus: () => ({ ...bgState }),

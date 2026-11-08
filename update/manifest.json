@@ -1,5 +1,5 @@
 {
-  "version": "1.5.3",
+  "version": "1.5.4",
   "files": [
     "index.html",
     "smart-context.js",
@@ -28,11 +28,11 @@
     "linux": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-linux-test-v4.1.1/Siraj-Quran-4.1.1-linux-x86_64.AppImage"
   },
   "features": [
-    "الأذان يعمل من داخل التطبيق دون إنترنت ولو كانت الشاشة مغلقة",
-    "إصلاح تشغيل الأذان المحلي في الخلفية عند إغلاق التطبيق"
+    "القبلة تعمل بلا حسّاس: بالشمس والظل أو بتتبّع اتجاه المشي بالـGPS أو بالدرجات",
+    "البوصلة لم تعد تبقى ثابتة: إن لم تصل قراءة تظهر الطرق البديلة فورًا"
   ],
   "sha256": {
-    "index.html": "9d5b1e66b5de29f553417699772bb5c801e6d5f004ab3befbe50805ac3aead8f",
+    "index.html": "db71d20a065cc977927e9bfda73a3aca8cd87c21fd927747884f11fed728b7ae",
     "smart-context.js": "d7f1995b9164255b5273da80a070a6f2bedd0f2abcbe7a108b20700567f00440",
     "smart-services.js": "bf98b6f1e10a771435cbf8dea41578b3e148c53901e601de28b5b4085352c10c",
     "tajweed-learning.js": "0ea4b4cde8f34591f79745275c87559f0f050692fb87d52a8bbb0200bb51e534",
@@ -41,7 +41,7 @@
     "tajweed-scope-registry.json": "ace20aeda40ce8aa809141f82f36831f92ee4bf6e489a6fb288801ff236246ca",
     "prayer-times.js": "1c46557f419a4c6b3ae34b17c50c2c7aa5b842dcb9167d173c9332bc95cad0c4",
     "prayer-data.js": "9d8a75f31d7c80272924250ff5fc42c0a5d551178147db87551323b6bb9fbcec",
-    "prayer-ui.js": "8d07f80b8de39a5e22553aad76833cd7b78060576f2232115716f1c24548851b",
+    "prayer-ui.js": "2855b8fcb2e24eb2f03e7911fea6380f6bf6386021c354592a0857e613b88f04",
     "quran-reciters.json": "0d63b30bd85b7147cd070709b0313e1debe63da12004a14c8f5092ff97591baf",
     "app.js": "8a5fe2b5f7fa79f03e7ee0524a009a7fe2858dc97201fe2f9329ddcbaa760859",
     "quran-hafs.json": "caa2d0d091a0e6f8758b2852bc36895d579d362558b778bfd4dcb973483bd9ec",
@@ -51,5 +51,5 @@
     "policy": "OTA_FIRST",
     "note_ar": "التحديث يُسلَّم داخل التطبيق (IndexedDB) لكل من نسخته >= 1.4.7؛ مؤشر APK يبقى على 1.4.7 حتى لا يُجبَر المستخدم على تنزيل ملف، ويُرفع فقط عند طلب صريح (APK_UPDATE=true)."
   },
-  "build": 164
+  "build": 165
 }

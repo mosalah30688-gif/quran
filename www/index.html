@@ -994,6 +994,19 @@
 
 
     /* ===== المواقيت والأذان والقبلة ===== */
+    /* طرق تحديد القبلة بدون حسّاس */
+    .qibla-methods { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 10px 0; }
+    .qibla-method {
+      border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 10px;
+      padding: 8px 4px; font-family: inherit; font-size: clamp(11px, 3vw, 13px); font-weight: 700; cursor: pointer;
+      line-height: 1.4;
+    }
+    .qibla-method.on { background: var(--brand); color: #fff; border-color: var(--brand); }
+    .qibla-panel[hidden] { display: none; }
+    .qibla-panel { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: var(--bg); }
+    .qibla-big { font-size: clamp(15px, 4.4vw, 19px); font-weight: 800; margin: 0 0 6px; line-height: 1.5; color: var(--brand); }
+    .qibla-panel p { margin: 4px 0; }
+
     /* روابط الإعدادات إلى تبويبي المواقيت والقبلة */
     .settings-links { display: grid; gap: 8px; }
     .settings-link {
@@ -1357,16 +1370,41 @@
             <p class="muted">اتجاه الهاتف الآن: <span id="ptHeading">—</span></p>
           </div>
 
-          <div class="card">
-            <h3 class="pt-title">إذا لم تتحرك البوصلة</h3>
-            <p class="muted">بعض الهواتف لا تحتوي حساس مغناطيسي. في هذه الحالة يعرض التطبيق اتجاه القبلة بالدرجات من الشمال، ويمكنك ضبط الشمال بالشمس أو بالموقع:</p>
-            <div class="row" style="margin-top:8px">
-              <button class="btn small" id="qiblaSunBtn">معايرة بالشمس</button>
-              <button class="btn small ghost" id="qiblaNorthBtn">الاتجاه بالدرجات</button>
+          <div class="card" id="qiblaFallbackCard">
+            <h3 class="pt-title">تحديد القبلة بدون حسّاس بوصلة</h3>
+            <p class="muted">هذه الطرق تعمل على أي هاتف، حتى لو لم يكن فيه حسّاس مغناطيسي:</p>
+            <div class="qibla-methods" role="tablist" aria-label="طرق تحديد القبلة">
+              <button type="button" class="qibla-method" data-method="sun" role="tab">☀ بالشمس والظل</button>
+              <button type="button" class="qibla-method" data-method="gps" role="tab">🧭 بالتنقل GPS</button>
+              <button type="button" class="qibla-method" data-method="manual" role="tab">№ بالدرجات</button>
             </div>
-            <label class="lbl" for="qiblaManualDeg">الاتجاه الذي تواجهه الآن بالدرجات (0 = شمال، 90 = شرق)</label>
-            <input id="qiblaManualDeg" type="number" min="0" max="359" step="1" dir="ltr" inputmode="numeric" placeholder="0" />
-            <p class="muted" id="qiblaFallbackNote" style="margin-top:8px"></p>
+
+            <div class="qibla-panel" id="qiblaSunPanel" hidden>
+              <p class="qibla-big" id="qiblaSunHead">—</p>
+              <p id="qiblaSunHow" class="muted"></p>
+              <p class="muted" id="qiblaSunData"></p>
+              <button class="btn small ghost" id="qiblaSunRefresh" type="button">تحديث حساب الشمس</button>
+            </div>
+
+            <div class="qibla-panel" id="qiblaGpsPanel" hidden>
+              <p class="qibla-big" id="qiblaGpsHead">امشِ عشر خطوات في اتجاه ثابت…</p>
+              <p id="qiblaGpsHow" class="muted">نستخدم اتجاه حركتك من الـGPS (بلا أي حسّاس) لمعرفة الشمال ثم نحسب انحرافك عن القبلة.</p>
+              <div class="row" style="margin-top:8px">
+                <button class="btn small" id="qiblaGpsStart" type="button">ابدأ تتبع الاتجاه</button>
+                <button class="btn small ghost" id="qiblaGpsStop" type="button">إيقاف</button>
+              </div>
+            </div>
+
+            <div class="qibla-panel" id="qiblaManualPanel" hidden>
+              <label class="lbl" for="qiblaManualDeg">الاتجاه الذي تواجهه الآن بالدرجات (0 = شمال، 90 = شرق)</label>
+              <div class="row">
+                <input id="qiblaManualDeg" type="number" min="0" max="359" step="1" dir="ltr" inputmode="numeric" placeholder="0" style="flex:1;min-width:0" />
+                <button class="btn small ghost" id="qiblaNorthBtn" type="button">اضبط</button>
+              </div>
+              <p class="muted" style="margin-top:6px">إن عرفت اتجاهك (من خريطة أو لوحة شارع) أدخله هنا ليتابع العقرب دورانه.</p>
+            </div>
+
+            <p class="muted" id="qiblaFallbackNote" style="margin-top:10px"></p>
           </div>
         </section>
 
@@ -1853,7 +1891,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.5.3</div>
+              <div class="muted">الإصدار 1.5.4</div>
             </div>
           </div>
 
@@ -1928,10 +1966,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.5.3';
+    window.APP_BUNDLE_VERSION = '1.5.4';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 164;
+    window.APP_BUILD_NUMBER = 165;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {

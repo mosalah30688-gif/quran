@@ -84,7 +84,7 @@ test('الأذان في الخلفية: أرقام الإصدار والبناء
   assert.ok(Number(match[1]) >= Number(build), 'versionCode لا يسبق BUILD_NUMBER');
   assert.match(html, new RegExp(`APP_BUILD_NUMBER = ${build}`));
   assert.match(gradle, /versionName "1\.5\.\d+"/);
-  assert.match(gradle, /versionCode 164/);
+  assert.match(gradle, /versionCode 165/);
 });
 
 test('ترقية الـAPK تُقارن برقم بناء الملف المثبَّت لا برقم بناء الواجهة', () => {
@@ -186,7 +186,7 @@ test('تنبيه ما قبل الأذان: منبّه مجدول وإشعار ص
   assert.match(ui, /preMinutes: 10,/);
 });
 
-test('البوصلة: سلسلة حساسات بديلة ومعايرة بالشمس وبالدرجات', () => {
+test('البوصلة: سلسلة حساسات بديلة + ثلاث طرق للقبلة بلا حسّاس', () => {
   const plugin = read(`${JAVA}/SirajSensorsPlugin.java`);
   assert.match(plugin, /TYPE_ACCELEROMETER/);
   assert.match(plugin, /TYPE_MAGNETIC_FIELD/);
@@ -195,11 +195,23 @@ test('البوصلة: سلسلة حساسات بديلة ومعايرة بالش
   assert.match(plugin, /emitCompositeHeading/);
   assert.match(plugin, /emitGyroHeading/);
   const ui = read('prayer-ui.js');
-  assert.match(ui, /function calibrateBySun\(\)/);
-  assert.match(ui, /function calibrateTo\(deg\)/);
-  assert.match(ui, /enableFallbackDirection/);
-  assert.match(read('index.html'), /id="qiblaSunBtn"/);
-  assert.match(read('index.html'), /id="qiblaManualDeg"/);
+  // طرق بديلة: الشمس والظل · التنقل بالـGPS · الدرجات
+  assert.match(ui, /function renderSunGuide\(\)/);
+  assert.match(ui, /طريقة الظل: قف والشمس خلفك/);
+  assert.match(ui, /function startGpsWatch\(\)/);
+  assert.match(ui, /function bearingBetween\(a, b\)/);
+  assert.match(ui, /انحرف \$\{side\} بمقدار/);
+  assert.match(ui, /function calibrateManual\(\)/);
+  // لا عقرب صامت: حارس زمني ثم طرق بديلة
+  assert.match(ui, /function armCompassWatchdog\(\)/);
+  assert.match(ui, /if \(state\.compass\.heading == null\) \{/);
+  const html = read('index.html');
+  for (const id of ['qiblaSunPanel', 'qiblaGpsPanel', 'qiblaManualPanel', 'qiblaGpsStart', 'qiblaSunHead']) {
+    assert.match(html, new RegExp(`id="${id}"`));
+  }
+  assert.match(html, /class="qibla-method" data-method="sun"/);
+  assert.match(html, /class="qibla-method" data-method="gps"/);
+  assert.match(html, /class="qibla-method" data-method="manual"/);
 });
 
 test('تبويب القبلة مستقل ويُفتح من الإعدادات مع «مواقيت الصلاة»', () => {
