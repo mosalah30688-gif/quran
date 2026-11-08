@@ -760,11 +760,21 @@
         }
       } catch { localHandled = false; }
     }
-    if (!localHandled && BASIC_TAFSIRS.some(([id]) => id === settings.tafsir)) {
+    if (!localHandled && ONLINE_TAFSIRS.has(settings.tafsir)) {
       try {
         const rows = (await getJSON(`${API}/page/${p}/${settings.tafsir}`)).data.ayahs || [];
         tafsirTexts = rows.map((row) => row.text || '');
       } catch { tafsirTexts = new Array(base.length).fill(''); }
+    }
+    if (!localHandled && !ONLINE_TAFSIRS.has(settings.tafsir) && isClassicalTafsir(settings.tafsir)) {
+      const edition = settings.tafsir;
+      const bookId = tafsirBookId(edition);
+      if (await bookIsStored(bookId)) {
+        tafsirTexts = await Promise.all(base.map((a) => storedBookText(bookId, a.s, a.n)));
+      } else {
+        // الكتاب لا يُمنع أبدًا: يُجهَّز الآن ويظهر النص بعد لحظات.
+        loadTafsirBook(bookId);
+      }
     }
 
     const showTajweed = settings.riwaya === 'quran-tajweed' || settings.tajweed;
@@ -1504,16 +1514,13 @@
 
   // ---------- التفسير ----------
   function missingTafsirText() {
-    if (/^qp:\d+$/.test(settings.tafsir) && !tafsirPack.ready) {
-      return 'نزّل حزمة التفاسير المحلية من الإعدادات لقراءة هذا الكتاب دون إنترنت.';
-    }
     return 'لا يوجد نص خاص بهذه الآية في هذا الكتاب.';
   }
-  const ONLINE_TAFSIRS = new Set(['ar.muyassar', 'ar.jalalayn', 'ar.baghawi', 'ar.qurtubi', 'ar.miqbas']);
+  const ONLINE_TAFSIRS = new Set(BASIC_TAFSIRS.map(([id]) => id));
   const tafsirAyahCache = new Map();
 
   // جلب تفسير آية واحدة من الشبكة عند الطلب — يعمل لأي وقت ولأي آية،
-  // وهو ما كان يظهر سابقًا قبل أن تُضاف كتب الحزمة المحلية.
+  // وهو ما كان يظهر سابقًا، ويعمل الآن لكل الآيات مباشرة.
   async function fetchOnlineTafsir(surah, ayah, edition) {
     const key = `${edition}:${surah}:${ayah}`;
     if (tafsirAyahCache.has(key)) return tafsirAyahCache.get(key);
@@ -1523,6 +1530,308 @@
     return text;
   }
 
+  // ---------- كتب التفسير الإضافية من الموسوعة القرآنية ----------
+  // كل كتاب يُطلب مرة واحدة عند اختياره (ملف مضغوط من الموسوعة القرآنية)،
+  // ثم تُستخرج آياته وتُخزَّن على الجهاز، فتُقرأ بعدها فورًا وبلا إنترنت.
+  const QP_BOOK_BASE = 'https://quranpedia.net/dumps/tafsir-book-';
+  const tafsirBookState = new Map(); // bookId -> { state, percent }
+  let tafsirIdbPromise = null;
+
+  function tafsirIdb() {
+    if (tafsirIdbPromise) return tafsirIdbPromise;
+    tafsirIdbPromise = new Promise((resolve, reject) => {
+      if (typeof indexedDB === 'undefined') { reject(new Error('no-idb')); return; }
+      const req = indexedDB.open('siraj-tafsir-books', 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains('texts')) db.createObjectStore('texts');
+        if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta');
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error || new Error('idb-open'));
+    });
+    return tafsirIdbPromise;
+  }
+
+  async function idbRead(store, key) {
+    const db = await tafsirIdb();
+    return new Promise((resolve, reject) => {
+      const req = db.transaction(store, 'readonly').objectStore(store).get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function idbWrite(store, pairs) {
+    if (!pairs.length) return;
+    const db = await tafsirIdb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readwrite');
+      const bucket = tx.objectStore(store);
+      pairs.forEach(([key, value]) => bucket.put(value, key));
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error || new Error('idb-abort'));
+    });
+  }
+
+  function tafsirTextKey(bookId, s) { return `${bookId}:${s}`; }
+
+  async function gzipText(text) {
+    const stream = new CompressionStream('gzip');
+    const writer = stream.writable.getWriter();
+    writer.write(new TextEncoder().encode(text));
+    writer.close();
+    return new Uint8Array(await new Response(stream.readable).arrayBuffer());
+  }
+
+  async function gunzipText(bytes) {
+    const stream = new DecompressionStream('gzip');
+    const writer = stream.writable.getWriter();
+    writer.write(bytes);
+    writer.close();
+    return new TextDecoder().decode(await new Response(stream.readable).arrayBuffer());
+  }
+
+  // سور الكتاب تُحفظ مضغوطة على الجهاز، وتُفكّ عند الحاجة فقط.
+  const tafsirSurahCache = new Map(); // "book:surah" -> { ayah: text }
+  async function storedSurah(bookId, surah) {
+    const key = tafsirTextKey(bookId, surah);
+    if (tafsirSurahCache.has(key)) return tafsirSurahCache.get(key);
+    let map = null;
+    try {
+      const raw = await idbRead('texts', key);
+      if (raw) map = JSON.parse(typeof raw === 'string' ? raw : await gunzipText(raw));
+    } catch { map = null; }
+    if (map) {
+      if (tafsirSurahCache.size > 24) tafsirSurahCache.clear();
+      tafsirSurahCache.set(key, map);
+    }
+    return map;
+  }
+
+  function bookHtmlToPlainText(html) {
+    return String(html || '')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/(p|div|li|h[1-6])>/gi, '\n')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/[ \t]+/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  function bookRowText(row) {
+    const parts = Array.isArray(row && row.content) ? row.content : [];
+    return parts
+      .map((part) => (part && part.text ? bookHtmlToPlainText(part.text) : ''))
+      .filter(Boolean)
+      .join('\n\n');
+  }
+
+  // نهاية كائن JSON متوازن داخل نص متدفق، مع تجاهل الأقواس داخل النصوص.
+  function jsonObjectEnd(text, start) {
+    let depth = 0, inString = false, escaped = false;
+    for (let i = start; i < text.length; i++) {
+      const ch = text[i];
+      if (inString) {
+        if (escaped) escaped = false;
+        else if (ch === '\\') escaped = true;
+        else if (ch === '"') inString = false;
+        continue;
+      }
+      if (ch === '"') inString = true;
+      else if (ch === '{') depth++;
+      else if (ch === '}') { depth--; if (!depth) return i; }
+    }
+    return -1;
+  }
+
+  function bookState(bookId) {
+    return tafsirBookState.get(bookId) || { state: 'idle', percent: 0 };
+  }
+
+  function tafsirBookLoadingNote(bookId) {
+    const st = bookState(bookId);
+    if (st.state === 'error') {
+      return /quota/i.test(st.message || '')
+        ? 'المساحة على جهازك لا تكفي لهذا الكتاب؛ أفرغ مساحة ثم أعد اختياره.'
+        : 'تعذّر تجهيز هذا الكتاب الآن؛ تحقّق من الاتصال ثم أعد اختياره.';
+    }
+    if (st.state === 'loading' && st.percent > 0) return `جاري تجهيز الكتاب… ${toArabicDigits(st.percent)}٪`;
+    return 'جاري تجهيز الكتاب…';
+  }
+
+  function isClassicalTafsir(edition) { return /^qp:\d+$/.test(edition || ''); }
+  function tafsirBookId(edition) { return Number(String(edition).slice(3)); }
+
+  let tafsirBookTicker = null;
+  function stopTafsirBookTicker() {
+    if (tafsirBookTicker) clearInterval(tafsirBookTicker);
+    tafsirBookTicker = null;
+  }
+  function refreshLoadingNotes() {
+    const edition = settings.tafsir;
+    if (!isClassicalTafsir(edition)) { stopTafsirBookTicker(); return; }
+    const note = tafsirBookLoadingNote(tafsirBookId(edition));
+    const body = $('#tafsirBody');
+    const view = $('#tfTafsir');
+    if (body && body.textContent && body.textContent.indexOf('جاري تجهيز') === 0) body.textContent = note;
+    if (view && view.textContent && view.textContent.indexOf('جاري تجهيز') === 0) view.textContent = note;
+  }
+  function startTafsirBookTicker() {
+    if (tafsirBookTicker) return;
+    tafsirBookTicker = setInterval(refreshLoadingNotes, 600);
+  }
+
+  async function storedBookText(bookId, s, n) {
+    const map = await storedSurah(bookId, s);
+    return (map && map[n]) || '';
+  }
+
+  async function bookIsStored(bookId) {
+    try {
+      const meta = await idbRead('meta', bookId);
+      return !!(meta && meta.ready);
+    } catch { return false; }
+  }
+
+  // تجهيز كتاب كامل مرة واحدة: تنزيل مضغوط + استخراج الآيات + تخزينها على الجهاز.
+  async function loadTafsirBook(bookId) {
+    if (bookState(bookId).state === 'loading') return false;
+    if (await bookIsStored(bookId)) {
+      tafsirBookState.set(bookId, { state: 'ready', percent: 100 });
+      return true;
+    }
+    tafsirBookState.set(bookId, { state: 'loading', percent: 0 });
+    startTafsirBookTicker();
+    let received = 0;
+    let total = 0;
+    let hugeBook = false;
+    try {
+      if (typeof DecompressionStream !== 'function' || typeof CompressionStream !== 'function') throw new Error('no-gunzip');
+      const res = await fetch(`${QP_BOOK_BASE}${bookId}.json.gz`);
+      if (!res.ok || !res.body) throw new Error(`http ${res.status}`);
+      total = Number(res.headers.get('content-length')) || 0;
+      hugeBook = total > 30 * 1024 * 1024;
+      // مساحة حرة قبل البدء: النص بعد فكّ الضغط يقارب ضعف الملف المضغوط.
+      try {
+        if (navigator.storage && navigator.storage.persist) await navigator.storage.persist();
+      } catch { /* تجاهل */ }
+      const counter = new TransformStream({
+        transform(chunk, controller) {
+          received += chunk.byteLength;
+          if (total) {
+            const percent = Math.min(99, Math.round((received / total) * 100));
+            if (percent !== bookState(bookId).percent) tafsirBookState.set(bookId, { state: 'loading', percent });
+          }
+          controller.enqueue(chunk);
+        },
+      });
+      const reader = res.body.pipeThrough(counter).pipeThrough(new DecompressionStream('gzip')).getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let inAyahs = false;
+      let rows = 0;
+      let surah = 0;
+      let bucket = {};
+      const flush = async () => {
+        if (!surah || !Object.keys(bucket).length) { bucket = {}; return; }
+        const key = tafsirTextKey(bookId, surah);
+        let existing = null;
+        try { existing = await idbRead('texts', key); } catch { existing = null; }
+        let map = bucket;
+        if (existing) {
+          // سورة مكرّرة في المصدر: ندمج النصوص بدل فقدانها.
+          try { map = { ...JSON.parse(typeof existing === 'string' ? existing : await gunzipText(existing)), ...bucket }; } catch { map = bucket; }
+        }
+        const payload = JSON.stringify(map);
+        // الكتب الضخمة تُحفظ نصًّا لتفادي ضغط مئات الميغابايت على حساب سرعة الفتح.
+        await idbWrite('texts', [[key, hugeBook ? payload : await gzipText(payload)]]);
+        tafsirSurahCache.set(key, map);
+        bucket = {};
+      };
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        if (!inAyahs) {
+          const marker = buffer.indexOf('"ayahs"');
+          if (marker < 0) { if (buffer.length > 400000) buffer = buffer.slice(-2000); continue; }
+          const open = buffer.indexOf('[', marker);
+          if (open < 0) continue;
+          buffer = buffer.slice(open + 1);
+          inAyahs = true;
+        }
+        let cursor = 0;
+        for (;;) {
+          let start = -1;
+          for (let at = buffer.indexOf('{', cursor); at >= 0; at = buffer.indexOf('{', at + 1)) {
+            if (/^\{\s*"surah"/.test(buffer.slice(at, at + 40))) { start = at; break; }
+          }
+          if (start < 0) break;
+          const end = jsonObjectEnd(buffer, start);
+          if (end < 0) break;
+          try {
+            const row = JSON.parse(buffer.slice(start, end + 1));
+            const text = bookRowText(row);
+            const rowSurah = Number(row.surah);
+            if (rowSurah !== surah) { await flush(); surah = rowSurah; }
+            if (text) bucket[row.ayah] = text;
+            rows++;
+          } catch { /* صف غير مكتمل أو مشوّه — نتجاوزه */ }
+          cursor = end + 1;
+        }
+        buffer = buffer.slice(cursor);
+      }
+      await flush();
+      if (!rows) throw new Error('empty-book');
+      await idbWrite('meta', [[bookId, { ready: true, rows, storedAt: Date.now() }]]);
+      tafsirBookState.set(bookId, { state: 'ready', percent: 100 });
+      tafsirAyahCache.clear();
+      pageCache.clear();
+      stopTafsirBookTicker();
+      refreshTafsirSurfaces();
+      return true;
+    } catch (error) {
+      const message = String((error && error.message) || error);
+      console.warn('tafsir-book', bookId, message);
+      tafsirBookState.set(bookId, { state: 'error', percent: bookState(bookId).percent, message });
+      stopTafsirBookTicker();
+      refreshTafsirSurfaces();
+      return false;
+    }
+  }
+
+  // مضمون آية واحدة من الكتاب المختار، مع بدء تجهيز الكتاب عند أول طلب.
+  async function tafsirForAyah(s, n, edition) {
+    if (ONLINE_TAFSIRS.has(edition)) {
+      try { return await fetchOnlineTafsir(s, n, edition); } catch { return ''; }
+    }
+    if (!isClassicalTafsir(edition)) return '';
+    const bookId = tafsirBookId(edition);
+    if (await bookIsStored(bookId)) return storedBookText(bookId, s, n);
+    if (bookState(bookId).state !== 'loading') loadTafsirBook(bookId);
+    else startTafsirBookTicker();
+    return '';
+  }
+
+  // إعادة رسم مواضع عرض التفسير بعد أن يصبح الكتاب جاهزًا.
+  function refreshTafsirSurfaces() {
+    const panel = $('#tafsirPanel');
+    if (panel && panel.classList.contains('show') && state.sel) showTafsirPanel(state.sel);
+    const view = $('#view-tafsir');
+    if (view && view.classList.contains('active')) renderTafsirView();
+    if (state.sel) {
+      showPage(state.page, { selG: state.sel.g, save: false }).catch(() => {});
+    }
+  }
+
   function showTafsirPanel(a) {
     const edition = settings.tafsir;
     const book = TAFSIRS.find((t) => t[0] === edition)?.[1] || '';
@@ -1530,16 +1839,26 @@
     $('#tafsirAyah').textContent = a.text;
     $('#tafsirLabel').textContent = book || 'التفسير';
     $('#tafsirBody').textContent = a.tafsir || missingTafsirText();
-    // نص ناقص لكتاب شبكي؟ نطلبه الآن بدل أن نترك المستخدم بلا تفسير.
-    if (!a.tafsir && ONLINE_TAFSIRS.has(edition)) {
-      $('#tafsirBody').textContent = 'جاري تحميل التفسير…';
-      fetchOnlineTafsir(a.s, a.n, edition).then((text) => {
+    // النص غير جاهز؟ نجلبه الآن (شبكة أو تجهيز كتاب) بدل أن نترك المستخدم بلا تفسير.
+    if (!a.tafsir) {
+      const classical = isClassicalTafsir(edition);
+      const bookId = classical ? tafsirBookId(edition) : 0;
+      $('#tafsirBody').textContent = classical ? tafsirBookLoadingNote(bookId) : 'جاري تحميل التفسير…';
+      if (classical) startTafsirBookTicker();
+      tafsirForAyah(a.s, a.n, edition).then((text) => {
         const panel = $('#tafsirPanel');
-        if (!panel || !panel.classList.contains('show')) return;
-        $('#tafsirBody').textContent = text || 'لا يوجد نص خاص بهذه الآية في هذا الكتاب.';
-        a.tafsir = text || a.tafsir;
+        if (!panel || !panel.classList.contains('show') || settings.tafsir !== edition) return;
+        if (text) {
+          $('#tafsirBody').textContent = text;
+          a.tafsir = text;
+          if (classical) stopTafsirBookTicker();
+        } else if (classical && bookState(bookId).state !== 'ready') {
+          $('#tafsirBody').textContent = tafsirBookLoadingNote(bookId);
+        } else {
+          $('#tafsirBody').textContent = missingTafsirText();
+        }
       }).catch(() => {
-        $('#tafsirBody').textContent = 'تعذّر تحميل التفسير الآن؛ تحقّق من الاتصال أو استخدم كتابًا من حزمة التفاسير المحلية.';
+        $('#tafsirBody').textContent = 'تعذّر تحميل التفسير الآن؛ تحقّق من الاتصال.';
       });
     }
     const hasTr = !!settings.translation;
@@ -1618,13 +1937,23 @@
     $('#tfTitle').textContent = `${surahName(a.s)} - الآية ${toArabicDigits(a.n)}`;
     $('#tfArabic').textContent = a.text;
     $('#tfTafsir').textContent = a.tafsir || missingTafsirText();
-    if (!a.tafsir && ONLINE_TAFSIRS.has(settings.tafsir)) {
-      $('#tfTafsir').textContent = 'جاري تحميل التفسير…';
+    if (!a.tafsir) {
       const edition = settings.tafsir;
-      fetchOnlineTafsir(a.s, a.n, edition).then((text) => {
+      const classical = isClassicalTafsir(edition);
+      const bookId = classical ? tafsirBookId(edition) : 0;
+      $('#tfTafsir').textContent = classical ? tafsirBookLoadingNote(bookId) : 'جاري تحميل التفسير…';
+      if (classical) startTafsirBookTicker();
+      tafsirForAyah(a.s, a.n, edition).then((text) => {
         if (settings.tafsir !== edition) return;
-        $('#tfTafsir').textContent = text || 'لا يوجد نص خاص بهذه الآية في هذا الكتاب.';
-        a.tafsir = text || a.tafsir;
+        if (text) {
+          $('#tfTafsir').textContent = text;
+          a.tafsir = text;
+          if (classical) stopTafsirBookTicker();
+        } else if (classical && bookState(bookId).state !== 'ready') {
+          $('#tfTafsir').textContent = tafsirBookLoadingNote(bookId);
+        } else {
+          $('#tfTafsir').textContent = missingTafsirText();
+        }
       }).catch(() => {
         $('#tfTafsir').textContent = 'تعذّر تحميل التفسير الآن؛ تحقّق من الاتصال.';
       });
@@ -2423,16 +2752,9 @@
   }
 
   function tafsirOptionsHtml() {
-    // مجموعة أولى: التفاسير الجاهزة فورًا (تعمل بلا تنزيل) — وهي التي كانت ظاهرة دائمًا.
-    const online = TAFSIRS.filter(([id]) => !/^qp:\d+$/.test(id));
-    const packed = TAFSIRS.filter(([id]) => /^qp:\d+$/.test(id));
-    const onlineHtml = online.map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
-    const packedHtml = packed.map(([id, name]) => {
-      const needsPack = !tafsirPack.ready;
-      return `<option value="${id}" ${needsPack ? 'disabled' : ''}>${name}${needsPack ? ' — يحتاج تنزيل الحزمة' : ''}</option>`;
-    }).join('');
-    return `<optgroup label="متاح فورًا">${onlineHtml}</optgroup>`
-      + (packed.length ? `<optgroup label="كتب الحزمة المحلية (${toArabicDigits(packed.length)})">${packedHtml}</optgroup>` : '');
+    // كل كتب التفسير في قائمة واحدة، كلها متاحة: الخمسة الأساسية من الشبكة،
+    // وباقي الكتب تُجهَّز عند اختيارها لمرة واحدة ثم تُقرأ من الجهاز بلا إنترنت.
+    return TAFSIRS.map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
   }
   function fillSettings() {
     $('#setRiwaya').value = settings.riwaya;
@@ -2448,7 +2770,7 @@
     $('#setFont').value = settings.font;
     $('#setSize').value = settings.size;
     $('#sizeVal').textContent = settings.size + 'px';
-    $('#setTajweed').checked = !!settings.tajweed;
+    if ($('#setTajweed')) $('#setTajweed').checked = !!settings.tajweed;
     fillSmartSettings();
     applyTypography();
     syncFontControl();
@@ -2500,7 +2822,7 @@
   $('#setReciter').addEventListener('change', (e) => onSettingChange('reciter', e.target.value));
   $('#setTafsir').addEventListener('change', (e) => onSettingChange('tafsir', e.target.value));
   $('#setTranslation').addEventListener('change', (e) => onSettingChange('translation', e.target.value));
-  $('#setTajweed').addEventListener('change', (e) => onSettingChange('tajweed', e.target.checked));
+  if ($('#setTajweed')) $('#setTajweed').addEventListener('change', (e) => onSettingChange('tajweed', e.target.checked));
   $('#setFont').addEventListener('change', (e) => {
     settings.font = e.target.value;
     saveSettings();
@@ -2701,14 +3023,14 @@
   }
   silentUpdateCheck();
 
-  // ---------- حزمة التفاسير المحلية الكبيرة (تنزيل اختياري خارج الـ APK) ----------
+  // ---------- تنزيل مكتبة التفاسير الكاملة (اختياري، خارج الـ APK) ----------
   const formatBytes = (n) => {
     const value = Number(n) || 0;
     if (value >= 1024 ** 3) return (value / 1024 ** 3).toFixed(1) + ' ج.ب';
     if (value >= 1024 ** 2) return (value / 1024 ** 2).toFixed(0) + ' م.ب';
     return (value / 1024).toFixed(0) + ' ك.ب';
   };
-  // حزمة التفاسير المحلية: تنزيل اختياري مرة واحدة، ثم تعمل هذه التفاسير دون إنترنت.
+  // تنزيل اختياري مرة واحدة لمكتبة التفاسير كاملة، ثم تعمل دون إنترنت.
   function renderTafsirPackStatus() {
     const card = $('#tfPackCard');
     if (!card) return;

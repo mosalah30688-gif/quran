@@ -1625,7 +1625,7 @@
             <div class="tf" id="tfTafsir" style="margin-top:10px"></div>
           </div>
           <div class="card" id="tfPackCard" hidden>
-            <h3 class="pt-title">حزمة التفاسير الكاملة</h3>
+            <h3 class="pt-title">تنزيل كل كتب التفسير للاستخدام دون إنترنت</h3>
             <p class="muted" id="tfPackStatus"></p>
             <div class="wbar" style="margin:8px 0 12px"><div class="wfill" id="tfPackFill"></div></div>
             <div class="row">
@@ -1728,10 +1728,6 @@
           <div class="card">
             <h3 style="margin-top:0">الصلاة والقبلة</h3>
             <div class="settings-links">
-              <button class="settings-link" data-view="prayer">
-                <span class="ic" data-icon="clock" aria-hidden="true"></span>
-                <span><strong>مواقيت الصلاة</strong><small>الموقع والحساب والأذان والإقامة</small></span>
-              </button>
               <button class="settings-link" data-view="qibla">
                 <span class="ic" data-icon="stats" aria-hidden="true"></span>
                 <span><strong>القبلة والبوصلة</strong><small>اتجاه القبلة والبوصلة الحيّة</small></span>
@@ -1816,9 +1812,6 @@
             <label class="lbl">حجم الخط: <span id="sizeVal"></span></label>
             <input type="range" id="setSize" min="18" max="44" step="1" />
 
-            <div class="row" style="margin-top:12px">
-              <label><input type="checkbox" id="setTajweed" /> تفعيل ألوان التجويد</label>
-            </div>
 
             <label class="lbl">الشاشة والصوت</label>
             <p class="muted">تبقى الشاشة مضاءة ما دام التطبيق مفتوحًا، وتستمر التلاوة عند مغادرته أو إطفاء الشاشة، وتتوقف عند إغلاق التطبيق.</p>
@@ -1851,7 +1844,7 @@
             <p class="muted">تتوفر أصوات حفص السبعة عشر للاستماع المباشر والتحكم الكامل والتنزيل المحلي؛ يعتمد حجم التنزيل على معدل البت الخاص بكل قارئ.</p>
           </details>
           <details class="card dd" id="smartSettingsCard">
-            <summary>رفيق اليوم — اقتراحات محلية على جهازك</summary>
+            <summary>رفيق اليوم</summary>
             <label style="display:flex;align-items:center;gap:8px">
               <input type="checkbox" id="setSmartEnabled" /> تفعيل رفيق اليوم
             </label>
@@ -1903,7 +1896,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.5.6</div>
+              <div class="muted">الإصدار 1.5.7</div>
             </div>
           </div>
 
@@ -1978,10 +1971,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.5.6';
+    window.APP_BUNDLE_VERSION = '1.5.7';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 167;
+    window.APP_BUILD_NUMBER = 168;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {
