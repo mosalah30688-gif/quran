@@ -96,19 +96,20 @@ test('smart and tajweed engines are included in offline and update channels', ()
   assert.match(sw, /siraj-shell-v\d+/);
 });
 
-test('madani page fitting uses one uniform size per page and keeps lines un-wrapped', () => {
-  // مقاس خط واحد لكل أسطر الصفحة (كما في مصحف المدينة/الشاملة): بحث ثنائي على المقاس
-  // الذي يملأ عرض الصفحة، ثم معامل تكبير المستخدم، بلا التفاف ولا تفاوت بين الأسطر.
+test('madani page fitting: مقاس واحد لكل الصفحة وتمدد طولي فقط بلا خروج عن الهوامش', () => {
   assert.match(app, /querySelectorAll\('\.mline'\)/);
   assert.match(app, /const widthAt = \(size\) =>/);
   assert.match(app, /for \(let i = 0; i < 14; i \+= 1\)/);
-  assert.match(app, /const size = Math\.max\(9, Math\.min\(90, fitSize \* userFontScale\(\)\)\)/);
-  assert.match(app, /--mushaf-w/);
-  assert.match(app, /body\.style\.setProperty\('--mline-h'/);
-  assert.match(app, /function setFontSize\(value, opts = \{\}\)/);
-  assert.match(html, /id="fontRange"/);
-  assert.match(html, /id="fontInc"/);
-  assert.match(html, /id="fontDec"/);
+  assert.match(app, /const size = Math\.max\(9, Math\.min\(90, fitSize \* scale\)\)/);
+  // التكبير يفعّل الالتفاف بمقاس موحّد بدل مدّ الصفحة أفقيًا
+  assert.match(app, /const wrapping = scale > 1\.001;/);
+  assert.match(app, /body\.classList\.toggle\('wrapping', wrapping\)/);
+  assert.match(app, /--mushaf-w', wrapping \? '100%'/);
+  assert.match(html, /#pageBody\.madani-lines\.wrapping \.mline/);
+  // حجم الخط داخل الإعدادات فقط (لا شريط في رأس المصحف)
+  assert.match(html, /id="setSize"/);
+  assert.doesNotMatch(html, /id="fontRange"/);
+  assert.doesNotMatch(html, /id="fontInc"/);
 });
 
 test('JSON update overlay is hashed, stored outside localStorage, and fail-closed', () => {

@@ -25,6 +25,7 @@ final class AdhanScheduler {
 
     private static final int REQUEST_ADHAN = 21000;
     private static final int REQUEST_IQAMA = 31000;
+    private static final int REQUEST_PRE = 41000;
 
     private AdhanScheduler() {}
 
@@ -98,6 +99,7 @@ final class AdhanScheduler {
             for (int i = 0; i < count; i++) {
                 manager.cancel(adhanIntent(context, i));
                 manager.cancel(iqamaIntent(context, i));
+                manager.cancel(preIntent(context, i));
             }
         }
         prefs(context).edit().putInt(KEY_COUNT, 0).apply();
@@ -115,6 +117,7 @@ final class AdhanScheduler {
         boolean exact = canScheduleExact(context);
         boolean adhanEnabled = settings.optBoolean("adhanEnabled", true);
         boolean iqamaEnabled = settings.optBoolean("iqamaEnabled", true);
+        int preMinutes = settings.optInt("preMinutes", 0);
         long now = System.currentTimeMillis();
         int scheduled = 0;
 
@@ -126,6 +129,11 @@ final class AdhanScheduler {
             if (adhanEnabled) {
                 setAlarm(manager, exact, at, adhanIntent(context, i));
                 scheduled++;
+            }
+            // تنبيه ما قبل الأذان: إشعار صوتي «أذان الظهر بعد ١٠ دقائق»
+            if (preMinutes > 0) {
+                long preAt = at - preMinutes * 60_000L;
+                if (preAt > now + 3_000L) setAlarm(manager, exact, preAt, preIntent(context, i));
             }
             if (iqamaEnabled) {
                 int minutes = event.optInt("iqamaMinutes", 0);
@@ -178,6 +186,13 @@ final class AdhanScheduler {
         intent.setAction(AdhanReceiver.ACTION_ADHAN);
         intent.putExtra("index", index);
         return PendingIntent.getBroadcast(context, REQUEST_ADHAN + index, intent, flags());
+    }
+
+    private static PendingIntent preIntent(Context context, int index) {
+        Intent intent = new Intent(context, AdhanReceiver.class);
+        intent.setAction(AdhanReceiver.ACTION_PRE_ADHAN);
+        intent.putExtra("index", index);
+        return PendingIntent.getBroadcast(context, REQUEST_PRE + index, intent, flags());
     }
 
     private static PendingIntent iqamaIntent(Context context, int index) {

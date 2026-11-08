@@ -45,6 +45,16 @@ public class SirajSensorsPlugin extends Plugin implements SensorEventListener {
 
     private SensorManager sensorManager;
     private Sensor rotationSensor;
+    private Sensor accelerometerSensor;
+    private Sensor magnetometerSensor;
+    private Sensor gyroscopeSensor;
+    /** نظام بديل: دمج التسارع + المغناطيسية، أو الجيروسكوب عند غياب المغناطيسية. */
+    private final float[] gravityValues = new float[3];
+    private final float[] magneticValues = new float[3];
+    private boolean hasGravity;
+    private boolean hasMagnetic;
+    private long lastGyroAt;
+    private float gyroHeading = Float.NaN;
     private long lastHeadingAt = 0L;
 
     @Override
@@ -53,6 +63,10 @@ public class SirajSensorsPlugin extends Plugin implements SensorEventListener {
         if (sensorManager != null) {
             rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
             if (rotationSensor == null) rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR);
+            // حساسات احتياطية: أكثر الهواتف تملك التسارع والمغناطيسية حتى لو غاب حساس التدوير.
+            accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            magnetometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+            gyroscopeSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         }
     }
 
@@ -60,7 +74,12 @@ public class SirajSensorsPlugin extends Plugin implements SensorEventListener {
     @PluginMethod
     public void capabilities(PluginCall call) {
         JSObject result = new JSObject();
-        result.put("compass", rotationSensor != null);
+        result.put("compass", rotationSensor != null
+                || (accelerometerSensor != null && magnetometerSensor != null)
+                || gyroscopeSensor != null);
+        result.put("rotationVector", rotationSensor != null);
+        result.put("magneticField", magnetometerSensor != null);
+        result.put("gyroscope", gyroscopeSensor != null);
         result.put("location", getContext().getPackageManager()
                 .hasSystemFeature(android.content.pm.PackageManager.FEATURE_LOCATION));
         result.put("locationPermission", getPermissionState("location").toString());
@@ -223,14 +242,30 @@ public class SirajSensorsPlugin extends Plugin implements SensorEventListener {
 
     @PluginMethod
     public void startCompass(PluginCall call) {
-        if (sensorManager == null || rotationSensor == null) {
-            call.reject("هذا الجهاز لا يحوي حساس اتجاه (بوصلة)");
+        if (sensorManager == null) {
+            call.reject("خدمة الحساسات غير متاحة على هذا الجهاز");
             return;
         }
         lastHeadingAt = 0L;
-        sensorManager.registerListener(this, rotationSensor, SensorManager.SENSOR_DELAY_UI);
+        hasGravity = false;
+        hasMagnetic = false;
+        gyroHeading = Float.NaN;
+        // السلسلة: حساس التدوير أولًا، ثم التسارع + المغناطيسية، ثم الجيروسكوب كحل أخير.
+        if (rotationSensor != null) {
+            sensorManager.registerListener(this, rotationSensor, SensorManager.SENSOR_DELAY_UI);
+        } else if (accelerometerSensor != null && magnetometerSensor != null) {
+            sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_UI);
+            sensorManager.registerListener(this, magnetometerSensor, SensorManager.SENSOR_DELAY_UI);
+        } else if (gyroscopeSensor != null) {
+            sensorManager.registerListener(this, gyroscopeSensor, SensorManager.SENSOR_DELAY_UI);
+        } else {
+            call.reject("هذا الجهاز لا يحوي حسّاس اتجاه؛ استخدم تحديد الشمال بالشمس أو يدويًا");
+            return;
+        }
         JSObject result = new JSObject();
         result.put("started", true);
+        result.put("mode", rotationSensor != null ? "rotation"
+                : (magnetometerSensor != null ? "accelMag" : "gyro"));
         call.resolve(result);
     }
 
@@ -242,6 +277,24 @@ public class SirajSensorsPlugin extends Plugin implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent event) {
+        int type = event.sensor.getType();
+        if (type == Sensor.TYPE_ACCELEROMETER) {
+            System.arraycopy(event.values, 0, gravityValues, 0, 3);
+            hasGravity = true;
+            emitCompositeHeading(event.accuracy);
+            return;
+        }
+        if (type == Sensor.TYPE_MAGNETIC_FIELD) {
+            System.arraycopy(event.values, 0, magneticValues, 0, 3);
+            hasMagnetic = true;
+            emitCompositeHeading(event.accuracy);
+            return;
+        }
+        if (type == Sensor.TYPE_GYROSCOPE) {
+            emitGyroHeading(event);
+            return;
+        }
+        // حساس التدوير (الأدق)
         long now = System.currentTimeMillis();
         if (now - lastHeadingAt < 60L) return; // ~١٦ تحديثًا في الثانية كافية للعقرب
         lastHeadingAt = now;
@@ -249,11 +302,44 @@ public class SirajSensorsPlugin extends Plugin implements SensorEventListener {
         float[] orientation = new float[3];
         SensorManager.getRotationMatrixFromVector(rotation, event.values);
         SensorManager.getOrientation(rotation, orientation);
-        float azimuth = (float) Math.toDegrees(orientation[0]);
-        if (azimuth < 0) azimuth += 360f;
+        emitHeading((float) Math.toDegrees(orientation[0]), event.accuracy, "rotation");
+    }
+
+    /** اتجاه من دمج التسارع والمغناطيسية — يعمل على الهواتف بلا حساس تدوير. */
+    private void emitCompositeHeading(int accuracy) {
+        if (!hasGravity || !hasMagnetic) return;
+        long now = System.currentTimeMillis();
+        if (now - lastHeadingAt < 60L) return;
+        lastHeadingAt = now;
+        float[] rotation = new float[9];
+        float[] orientation = new float[3];
+        if (!SensorManager.getRotationMatrix(rotation, null, gravityValues, magneticValues)) return;
+        SensorManager.getOrientation(rotation, orientation);
+        emitHeading((float) Math.toDegrees(orientation[0]), accuracy, "accelMag");
+    }
+
+    /** حل أخير: دمج معدل الدوران حول المحور الرأسي بعد معايرة، مع تصحيح انزلاق بسيط. */
+    private void emitGyroHeading(SensorEvent event) {
+        long now = System.currentTimeMillis();
+        if (lastGyroAt == 0L) { lastGyroAt = now; return; }
+        long dt = Math.max(1L, now - lastGyroAt);
+        lastGyroAt = now;
+        if (Float.isNaN(gyroHeading)) gyroHeading = 0f;
+        gyroHeading -= (float) Math.toDegrees(event.values[2] * (dt / 1000.0));
+        while (gyroHeading < 0f) gyroHeading += 360f;
+        while (gyroHeading >= 360f) gyroHeading -= 360f;
+        if (now - lastHeadingAt < 60L) return;
+        lastHeadingAt = now;
+        emitHeading(gyroHeading, event.accuracy, "gyro");
+    }
+
+    private void emitHeading(float azimuth, int accuracy, String mode) {
+        while (azimuth < 0f) azimuth += 360f;
+        while (azimuth >= 360f) azimuth -= 360f;
         JSObject payload = new JSObject();
         payload.put("heading", azimuth);
-        payload.put("accuracy", event.accuracy);
+        payload.put("accuracy", accuracy);
+        payload.put("mode", mode);
         notifyListeners("heading", payload, true);
     }
 

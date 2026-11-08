@@ -69,7 +69,7 @@
     translation: '', font: 'Scheherazade New', size: 26, tajweed: false, dark: false,
     tajweedScopes: {},
   };
-  const VIEW_TITLES = { listen: 'استماع', reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', wird: 'الورد', stats: 'الإحصائيات', adhkar: 'الأذكار', search: 'البحث', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق', tajweed: 'أحكام التجويد', meanings: 'المعاني', prayer: 'المواقيت' };
+  const VIEW_TITLES = { listen: 'استماع', reader: 'المصحف', tafsir: 'التفسير', memo: 'وضع الحفظ', wird: 'الورد', stats: 'الإحصائيات', adhkar: 'الأذكار', search: 'البحث', bookmarks: 'المحفوظات', settings: 'الإعدادات', about: 'عن التطبيق', tajweed: 'أحكام التجويد', meanings: 'المعاني', prayer: 'مواقيت الصلاة', qibla: 'القبلة والبوصلة' };
   const Cap = window.Capacitor || null;
 
   // قائمة القراء المتوفرة بتلاوة كاملة للسورة (ملف واحد لكل سورة) من mp3quran.
@@ -566,6 +566,7 @@
     if (name === 'meanings') renderMeaningsView();
     if (name === 'memo') renderMemoReview();
     if (name === 'prayer' && window.SirajPrayerUI) window.SirajPrayerUI.refresh();
+    if (name === 'qibla' && window.SirajPrayerUI) window.SirajPrayerUI.refreshQibla();
     syncReaderLayout();
     if (name === 'reader') requestAnimationFrame(syncReaderDockHeight);
     if (name !== previousView) {
@@ -580,6 +581,13 @@
   function popView() { showView(navStack.pop() || 'reader', { back: true }); }
   $('#backBtn').addEventListener('click', () => handleBack());
   $('#settingsBtn').addEventListener('click', () => showView('settings'));
+  // روابط داخل الإعدادات تفتح تبويبي «مواقيت الصلاة» و«القبلة والبوصلة»
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('.settings-link[data-view]');
+    if (!link) return;
+    closeGroups();
+    showView(link.dataset.view);
+  });
   $('#settingsAboutBtn').addEventListener('click', () => showView('about'));
   function closeSide() { document.body.classList.remove('side-open'); }
 
@@ -897,37 +905,31 @@
         if (widthAt(mid) > avail) hi = mid; else lo = mid;
       }
       const fitSize = lo;
-      const size = Math.max(9, Math.min(90, fitSize * userFontScale()));
+      const scale = userFontScale();
+      const size = Math.max(9, Math.min(90, fitSize * scale));
       body.style.setProperty('--quran-size', `${size.toFixed(2)}px`);
-      body.style.setProperty('--mushaf-w', `${Math.ceil(widthAt(size))}px`);
-      // توزيع الأسطر رأسيًا حتى تملأ الصفحة ارتفاعها المتاح (كما في المصحف المطبوع)،
-      // بنفس المقاس لكل الأسطر وبتباعد لا يقل عن ١.٥ ولا يزيد على ٢.٤.
-      // الارتفاع المتاح فعلًا للأسطر: من أعلى الصفحة حتى شريط التنقل السفلي،
-      // ناقص رأس الصفحة وتذييلها — حتى تظهر الصفحة كاملة على كل مقاسات الهواتف.
+      // التكبير لا يمدّ الصفحة عرضيًا أبدًا: عند تجاوز مقاس الملاءمة نسمح للسطر
+      // بالالتفاف بمقاس خط واحد لكل الصفحة، فتمتد الصفحة طوليًا فقط
+      // وتبقى الكلمات داخل هوامش الورقة.
+      const wrapping = scale > 1.001;
+      body.classList.toggle('wrapping', wrapping);
+      body.style.setProperty('--mushaf-w', wrapping ? '100%' : `${Math.ceil(widthAt(size))}px`);
       const pageBox = body.closest('.page') || body.parentElement;
-      const chromeH = Math.max(0, (pageBox ? pageBox.clientHeight : 0) - (body.clientHeight || 0));
       const navBar = document.querySelector('.navbar');
       const navTop = navBar ? navBar.getBoundingClientRect().top : (window.innerHeight || 640);
       const pageTop = pageBox ? pageBox.getBoundingClientRect().top : 0;
-      const visibleH = navTop - pageTop;
-      const stageH = (stage && stage.clientHeight) || window.innerHeight || 640;
-      const availH = Math.max(120, Math.min(stageH, visibleH > 160 ? visibleH : stageH) - chromeH - 10);
-      const lineCount = Math.max(1, lines.length);
-      const needed = lineCount * size;
-      const lh = Math.min(2.3, Math.max(1.5, availH / needed));
+      const visibleH = Math.max(160, navTop - pageTop);
+      const lineCount = Math.max(1, wrapping ? lines.length * scale : lines.length);
+      const lh = wrapping ? 1.85 : Math.min(2.3, Math.max(1.5, visibleH / (lineCount * size)));
       body.style.setProperty('--mline-h', `${(size * lh).toFixed(2)}px`);
-      body.scrollLeft = 0;
       if (typeof applyTajweedScale === 'function') applyTajweedScale();
     });
   }
 
   // ربط شريط حجم الخط في المصحف (يُستخدم نفس مفتاح الإعدادات size).
   function syncFontControl() {
-    const range = $('#fontRange');
-    const val = $('#fontVal');
-    if (range) range.value = String(Math.round(Number(settings.size) || HAFS_BASE_SIZE));
-    if (val) val.textContent = toArabicDigits(Math.round(Number(settings.size) || HAFS_BASE_SIZE));
     if ($('#setSize')) $('#setSize').value = String(Math.round(Number(settings.size) || HAFS_BASE_SIZE));
+    if ($('#sizeVal')) $('#sizeVal').textContent = `${Math.round(Number(settings.size) || HAFS_BASE_SIZE)}px`;
   }
   function setFontSize(value, opts = {}) {
     const next = Math.min(44, Math.max(18, Math.round(Number(value) || HAFS_BASE_SIZE)));
@@ -1122,8 +1124,14 @@
   }
 
   // ---------- التقليب ----------
-  function nextPage() { if (state.page < TOTAL_PAGES) return showPage(state.page + 1, { dir: 'next' }); return null; }
-  function prevPage() { if (state.page > 1) return showPage(state.page - 1, { dir: 'prev' }); return null; }
+  function nextPage() {
+    if (state.page < TOTAL_PAGES) return turnTo(state.page + 1, true);
+    return null;
+  }
+  function prevPage() {
+    if (state.page > 1) return turnTo(state.page - 1, false);
+    return null;
+  }
   // تحميل الصفحتين المجاورتين مسبقًا ليصبح التقليب فوريًا
   function prefetchAround(p) {
     [p - 1, p + 1].forEach((q) => { if (q >= 1 && q <= TOTAL_PAGES) loadPage(q).catch(() => {}); });
@@ -1164,16 +1172,76 @@
     const limit = Math.max(120, stage.clientWidth * 0.75);
     return Math.max(-limit, Math.min(limit, dx));
   }
+  // ---------- تقليب ثلاثي الأبعاد كما في الكتاب ----------
+  // عند تغيير الصفحة نُبقي صورة الصفحة القديمة (أو الجديدة عند الرجوع) فوق الصفحة
+  // الحقيقية ونديرها حول كعب الورقة بمنظور ثلاثي الأبعاد مع ظل متحرك.
+  const TURN_MS = 330;
+  function pageGhost(node, zIndex) {
+    const rect = node.getBoundingClientRect();
+    const ghost = node.cloneNode(true);
+    ghost.classList.add('page-ghost');
+    ghost.removeAttribute('id');
+    ghost.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
+    Object.assign(ghost.style, {
+      position: 'fixed', left: `${rect.left}px`, top: `${rect.top}px`,
+      width: `${rect.width}px`, height: `${rect.height}px`, margin: '0',
+      zIndex: String(zIndex), pointerEvents: 'none', willChange: 'transform',
+    });
+    document.body.appendChild(ghost);
+    return ghost;
+  }
+  function runTurn(ghost, fromDeg, toDeg, origin, ms = TURN_MS) {
+    return new Promise((resolve) => {
+      const shade = document.createElement('i');
+      shade.className = 'page-ghost-shade';
+      shade.style.zIndex = String(Number(ghost.style.zIndex) + 1);
+      const rect = ghost.getBoundingClientRect();
+      Object.assign(shade.style, {
+        position: 'fixed', left: `${rect.left}px`, top: `${rect.top}px`,
+        width: `${rect.width}px`, height: `${rect.height}px`, pointerEvents: 'none',
+      });
+      document.body.appendChild(shade);
+      ghost.style.transformOrigin = origin;
+      ghost.style.transform = `perspective(1300px) rotateY(${fromDeg}deg)`;
+      ghost.getBoundingClientRect();
+      ghost.style.transition = `transform ${ms}ms cubic-bezier(.22,.61,.36,1), opacity ${ms}ms linear`;
+      shade.style.transition = `opacity ${ms}ms linear`;
+      ghost.style.transform = `perspective(1300px) rotateY(${toDeg}deg)`;
+      ghost.style.opacity = Math.abs(toDeg) > 60 ? '0' : '1';
+      shade.style.opacity = Math.abs(toDeg) > 60 ? '0.42' : '0';
+      setTimeout(() => { ghost.remove(); shade.remove(); resolve(); }, ms + 20);
+    });
+  }
+  let turning = false;
+  async function turnTo(target, goNext) {
+    if (turning || target < 1 || target > TOTAL_PAGES) return;
+    turning = true;
+    document.body.classList.add('page-turning');
+    const oldGhost = pageGhost(pageEl, 41);
+    try {
+      await showPage(target, { scroll: true });
+      if (goNext) {
+        // الورقة الحالية تدور إلى اليسار (كعب الورقة على اليمين في المصحف العربي)
+        await runTurn(oldGhost, 0, -86, 'right center');
+      } else {
+        // الصفحة السابقة تنفتح من اليمين فوق الصفحة الحالية
+        oldGhost.style.zIndex = '39';
+        const newGhost = pageGhost(pageEl, 41);
+        await runTurn(newGhost, 82, 0, 'right center');
+        oldGhost.remove();
+      }
+    } finally {
+      document.body.classList.remove('page-turning');
+      turning = false;
+    }
+  }
+
   async function flipBySwipe(goNext) {
-    setPageTransform(0, true);
+    pageEl.style.transition = 'none';
+    pageEl.style.transform = '';
     const target = goNext ? state.page + 1 : state.page - 1;
     if (target < 1 || target > TOTAL_PAGES) return;
-    await showPage(target, { scroll: true });
-    // استقرار فوري: الصفحة تظهر في مكانها ثم تنزلق مسافة صغيرة جدًا لتُحسّ الحركة.
-    pageEl.style.transition = 'none';
-    pageEl.style.transform = `translate3d(${goNext ? 10 : -10}px,0,0)`;
-    pageEl.offsetWidth;
-    setPageTransform(0, true);
+    await turnTo(target, goNext);
   }
   stage.addEventListener('pointerdown', (e) => {
     // الفأرة للتحديد الحر للنص؛ التقليب بالسحب خاص باللمس (والقلم)
@@ -2380,12 +2448,6 @@
     if (state.sel) showPage(state.page, { selG: state.sel.g, save: false });
   });
   $('#setReciter').addEventListener('change', (e) => onSettingChange('reciter', e.target.value));
-  ['#fontRange'].forEach((sel) => {
-    const el = $(sel);
-    if (el) el.addEventListener('input', (e) => setFontSize(e.target.value));
-  });
-  if ($('#fontInc')) $('#fontInc').addEventListener('click', () => setFontSize((Number(settings.size) || HAFS_BASE_SIZE) + 2));
-  if ($('#fontDec')) $('#fontDec').addEventListener('click', () => setFontSize((Number(settings.size) || HAFS_BASE_SIZE) - 2));
   $('#setTafsir').addEventListener('change', (e) => onSettingChange('tafsir', e.target.value));
   $('#setTranslation').addEventListener('change', (e) => onSettingChange('translation', e.target.value));
   $('#setTajweed').addEventListener('change', (e) => onSettingChange('tajweed', e.target.checked));

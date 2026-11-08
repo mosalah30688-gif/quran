@@ -84,7 +84,7 @@ test('الأذان في الخلفية: أرقام الإصدار والبناء
   assert.ok(Number(match[1]) >= Number(build), 'versionCode لا يسبق BUILD_NUMBER');
   assert.match(html, new RegExp(`APP_BUILD_NUMBER = ${build}`));
   assert.match(gradle, /versionName "1\.5\.\d+"/);
-  assert.match(gradle, /versionCode 162/);
+  assert.match(gradle, /versionCode 163/);
 });
 
 test('ترقية الـAPK تُقارن برقم بناء الملف المثبَّت لا برقم بناء الواجهة', () => {
@@ -141,4 +141,83 @@ test('حزمة التفاسير ال٧٨ معروضة في الواجهة مع �
   assert.match(app, /await plugin\.status\(\)/);
   // كل كتب الكتالوج في القائمة، لا الخمسة فقط
   assert.match(app, /const classical = \(catalog\.books \|\| \[\]\)\.map/);
+});
+
+test('الأذان محلي افتراضيًا: ملفات محزومة داخل التطبيق والباقي تنزيل', () => {
+  const fs = require('node:fs');
+  const catalog = JSON.parse(read('adhan-catalog.json'));
+  const bundled = catalog.items.filter((i) => i.bundled);
+  assert.ok(catalog.items.length >= 60, 'كل المؤذنين موجودون');
+  assert.ok(bundled.length >= 18, 'الأذان المحلي الافتراضي');
+  bundled.forEach((item) => {
+    const asset = `android/app/src/main/assets/adhans/${item.id}.mp3`;
+    const web = `audio/adhans/${item.id}.mp3`;
+    assert.ok(fs.existsSync(asset) && fs.statSync(asset).size > 50_000, `ملف محزوم: ${item.id}`);
+    assert.ok(fs.existsSync(web) && fs.statSync(web).size > 50_000, `ملف الويب: ${item.id}`);
+  });
+  const store = read('android/app/src/main/java/com/quran/mushaf/AdhanAudioStore.java');
+  assert.match(store, /static String copyBundled\(/);
+  assert.match(store, /getAssets\(\)\.open\("adhans\/"/);
+  const ui = read('prayer-ui.js');
+  assert.match(ui, /const bundled = item\.local \|\| '';/);
+  assert.match(ui, /downloadAllAdhans/);
+  assert.match(read('scripts/build-www.sh'), /audio\/adhans/);
+  const data = read('prayer-data.js');
+  assert.match(data, /"local": "audio\/adhans\//);
+});
+
+test('الإقامة إشعار «قم إلى صلاتك» بلا أي صوت إقامة', () => {
+  const receiver = read(`${JAVA}/AdhanReceiver.java`);
+  assert.match(receiver, /"قم إلى صلاتك"/);
+  assert.doesNotMatch(read('prayer-ui.js'), /playIqamaTone/);
+  assert.doesNotMatch(read('index.html'), /ptIqamaTone/);
+});
+
+test('تنبيه ما قبل الأذان: منبّه مجدول وإشعار صوتي بالدقائق', () => {
+  const scheduler = read(`${JAVA}/AdhanScheduler.java`);
+  assert.match(scheduler, /REQUEST_PRE = 41000/);
+  assert.match(scheduler, /long preAt = at - preMinutes \* 60_000L;/);
+  assert.match(scheduler, /preIntent\(context, i\)/);
+  const receiver = read(`${JAVA}/AdhanReceiver.java`);
+  assert.match(receiver, /ACTION_PRE_ADHAN/);
+  assert.match(receiver, /"أذان " \+ label \+ " بعد " \+ minutes \+ " دقائق"/);
+  const ui = read('prayer-ui.js');
+  assert.match(ui, /function speakReminder\(text\)/);
+  assert.match(ui, /preMinutes: 10,/);
+});
+
+test('البوصلة: سلسلة حساسات بديلة ومعايرة بالشمس وبالدرجات', () => {
+  const plugin = read(`${JAVA}/SirajSensorsPlugin.java`);
+  assert.match(plugin, /TYPE_ACCELEROMETER/);
+  assert.match(plugin, /TYPE_MAGNETIC_FIELD/);
+  assert.match(plugin, /TYPE_GYROSCOPE/);
+  assert.match(plugin, /SensorManager\.getRotationMatrix\(/);
+  assert.match(plugin, /emitCompositeHeading/);
+  assert.match(plugin, /emitGyroHeading/);
+  const ui = read('prayer-ui.js');
+  assert.match(ui, /function calibrateBySun\(\)/);
+  assert.match(ui, /function calibrateTo\(deg\)/);
+  assert.match(ui, /enableFallbackDirection/);
+  assert.match(read('index.html'), /id="qiblaSunBtn"/);
+  assert.match(read('index.html'), /id="qiblaManualDeg"/);
+});
+
+test('تبويب القبلة مستقل ويُفتح من الإعدادات مع «مواقيت الصلاة»', () => {
+  const html = read('index.html');
+  assert.match(html, /<section class="view" id="view-qibla">/);
+  assert.match(html, /class="settings-link" data-view="prayer"/);
+  assert.match(html, /class="settings-link" data-view="qibla"/);
+  assert.match(html, /مواقيت الصلاة/);
+  assert.match(read('app.js'), /qibla: 'القبلة والبوصلة'/);
+  assert.match(read('app.js'), /settings-link\[data-view\]/);
+});
+
+test('تقليب الصفحة ثلاثي الأبعاد سريع مع بقاء السحب', () => {
+  const app = read('app.js');
+  assert.match(app, /async function turnTo\(target, goNext\)/);
+  assert.match(app, /function pageGhost\(node, zIndex\)/);
+  assert.match(app, /perspective\(1300px\) rotateY/);
+  assert.match(app, /await turnTo\(target, goNext\)/);
+  assert.match(app, /stage\.addEventListener\('pointerdown'/);
+  assert.match(read('index.html'), /\.page-ghost \{/);
 });

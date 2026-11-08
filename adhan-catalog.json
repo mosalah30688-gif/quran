@@ -1,149 +1,676 @@
 {
- "version": 1,
+ "version": 2,
+ "source": "https://archive.org/details/AdhaN_M_up-by-muslem",
  "items": [
   {
    "id": "haram-makkah",
    "name": "الحرم المكي",
-   "region": "مكة المكرمة",
+   "region": "",
+   "file": "019--1.mp3",
    "url": "https://archive.org/download/AdhaN_M_up-by-muslem/019--1.mp3",
    "seconds": 204,
-   "fajr": false
+   "fajr": false,
+   "bundled": true
   },
   {
    "id": "mulla-makkah",
-   "name": "علي ملا",
-   "region": "مكة المكرمة",
+   "name": "علي ملا · مكة",
+   "region": "",
+   "file": "047--.mp3",
    "url": "https://archive.org/download/AdhaN_M_up-by-muslem/047--.mp3",
    "seconds": 175,
-   "fajr": false
+   "fajr": false,
+   "bundled": true
   },
   {
    "id": "haram-madinah",
    "name": "الحرم المدني",
-   "region": "المدينة المنورة",
+   "region": "",
+   "file": "018-.mp3",
    "url": "https://archive.org/download/AdhaN_M_up-by-muslem/018-.mp3",
    "seconds": 281,
-   "fajr": false
+   "fajr": false,
+   "bundled": true
   },
   {
    "id": "fajr-makkah",
    "name": "أذان الفجر · الحرم المكي",
-   "region": "مكة المكرمة",
+   "region": "",
+   "file": "033--.mp3",
    "url": "https://archive.org/download/AdhaN_M_up-by-muslem/033--.mp3",
    "seconds": 222,
-   "fajr": true
+   "fajr": true,
+   "bundled": true
   },
   {
    "id": "fajr-madinah",
    "name": "أذان الفجر · الحرم المدني",
-   "region": "المدينة المنورة",
+   "region": "",
+   "file": "034--.mp3",
    "url": "https://archive.org/download/AdhaN_M_up-by-muslem/034--.mp3",
    "seconds": 278,
-   "fajr": true
+   "fajr": true,
+   "bundled": true
   },
   {
    "id": "abdulbasit",
    "name": "عبد الباسط عبد الصمد",
-   "region": "مصر",
+   "region": "",
+   "file": "049-.mp3",
    "url": "https://archive.org/download/AdhaN_M_up-by-muslem/049-.mp3",
    "seconds": 247,
-   "fajr": false
+   "fajr": false,
+   "bundled": true
   },
   {
    "id": "alafasy",
    "name": "مشاري راشد العفاسي",
-   "region": "الكويت",
+   "region": "",
+   "file": "074-1_-.mp3",
    "url": "https://archive.org/download/AdhaN_M_up-by-muslem/074-1_-.mp3",
    "seconds": 240,
-   "fajr": false
+   "fajr": false,
+   "bundled": true
   },
   {
    "id": "alafasy-fajr",
    "name": "مشاري العفاسي · أذان الفجر",
-   "region": "الكويت",
+   "region": "",
+   "file": "038-1.mp3",
    "url": "https://archive.org/download/AdhaN_M_up-by-muslem/038-1.mp3",
    "seconds": 187,
-   "fajr": true
+   "fajr": true,
+   "bundled": true
   },
   {
    "id": "rifat",
    "name": "محمد رفعت",
-   "region": "مصر",
+   "region": "",
+   "file": "042--.mp3",
    "url": "https://archive.org/download/AdhaN_M_up-by-muslem/042--.mp3",
    "seconds": 203,
-   "fajr": false
+   "fajr": false,
+   "bundled": true
   },
   {
    "id": "husary",
    "name": "محمود خليل الحصري",
-   "region": "مصر",
+   "region": "",
+   "file": "044--.mp3",
    "url": "https://archive.org/download/AdhaN_M_up-by-muslem/044--.mp3",
    "seconds": 127,
-   "fajr": false
+   "fajr": false,
+   "bundled": true
   },
   {
    "id": "banna",
    "name": "محمد علي البنا",
-   "region": "مصر",
+   "region": "",
+   "file": "043--.mp3",
    "url": "https://archive.org/download/AdhaN_M_up-by-muslem/043--.mp3",
    "seconds": 153,
-   "fajr": false
+   "fajr": false,
+   "bundled": true
   },
   {
    "id": "naina",
    "name": "أحمد نعينع",
-   "region": "مصر",
+   "region": "",
+   "file": "040--.mp3",
    "url": "https://archive.org/download/AdhaN_M_up-by-muslem/040--.mp3",
    "seconds": 210,
-   "fajr": false
+   "fajr": false,
+   "bundled": true
   },
   {
    "id": "mustafa-ismail",
    "name": "مصطفى إسماعيل",
-   "region": "مصر",
+   "region": "",
+   "file": "068-.mp3",
    "url": "https://archive.org/download/AdhaN_M_up-by-muslem/068-.mp3",
    "seconds": 183,
-   "fajr": false
+   "fajr": false,
+   "bundled": true
   },
   {
    "id": "minshawi",
    "name": "محمد صديق المنشاوي",
-   "region": "مصر",
+   "region": "",
+   "file": "048-.mp3",
    "url": "https://archive.org/download/AdhaN_M_up-by-muslem/048-.mp3",
    "seconds": 247,
-   "fajr": false
+   "fajr": false,
+   "bundled": true
   },
   {
    "id": "shuaisha",
    "name": "أبو العنين شعيشع",
-   "region": "مصر",
+   "region": "",
+   "file": "071--.mp3",
    "url": "https://archive.org/download/AdhaN_M_up-by-muslem/071--.mp3",
    "seconds": 236,
-   "fajr": false
+   "fajr": false,
+   "bundled": true
   },
   {
    "id": "aqsa",
    "name": "المسجد الأقصى · ناجي قزاز",
-   "region": "القدس",
+   "region": "",
+   "file": "045--.mp3",
    "url": "https://archive.org/download/AdhaN_M_up-by-muslem/045--.mp3",
    "seconds": 185,
-   "fajr": false
+   "fajr": false,
+   "bundled": true
   },
   {
    "id": "qatar",
-   "name": "أحمد العمادي",
-   "region": "قطر",
+   "name": "أحمد العمادي · قطر",
+   "region": "",
+   "file": "002--.mp3",
    "url": "https://archive.org/download/AdhaN_M_up-by-muslem/002--.mp3",
    "seconds": 190,
-   "fajr": false
+   "fajr": false,
+   "bundled": true
   },
   {
    "id": "halabiya",
    "name": "حمزة الحلبية",
-   "region": "سوريا",
+   "region": "",
+   "file": "001-.mp3",
    "url": "https://archive.org/download/AdhaN_M_up-by-muslem/001-.mp3",
    "seconds": 241,
-   "fajr": false
+   "fajr": false,
+   "bundled": true
+  },
+  {
+   "id": "003",
+   "name": "الكــويت",
+   "region": "",
+   "file": "003--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/003--.mp3",
+   "seconds": 142,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "004-1",
+   "name": "بروني دار السلام 1",
+   "region": "",
+   "file": "004----1.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/004----1.mp3",
+   "seconds": 205,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "006",
+   "name": "حسين ايرك",
+   "region": "",
+   "file": "006--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/006--.mp3",
+   "seconds": 110,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "007",
+   "name": "القـــــدس",
+   "region": "",
+   "file": "007--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/007--.mp3",
+   "seconds": 182,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "008",
+   "name": "الهنـــد",
+   "region": "",
+   "file": "008--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/008--.mp3",
+   "seconds": 108,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "009",
+   "name": "اندونيسيا",
+   "region": "",
+   "file": "009--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/009--.mp3",
+   "seconds": 197,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "010",
+   "name": "باكستان",
+   "region": "",
+   "file": "010--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/010--.mp3",
+   "seconds": 182,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "011-1",
+   "name": "تركيا 1",
+   "region": "",
+   "file": "011---1.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/011---1.mp3",
+   "seconds": 178,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "013",
+   "name": "جـــــورجيــــأ",
+   "region": "",
+   "file": "013--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/013--.mp3",
+   "seconds": 315,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "014",
+   "name": "زهير محمد طارش",
+   "region": "",
+   "file": "014-.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/014-.mp3",
+   "seconds": 184,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "015",
+   "name": "عجمـــــان الأمارات",
+   "region": "",
+   "file": "015---.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/015---.mp3",
+   "seconds": 139,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "016-2",
+   "name": "مكه المكرمة 2",
+   "region": "",
+   "file": "016---2.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/016---2.mp3",
+   "seconds": 202,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "017",
+   "name": "الشيخ عبدالباسط عبدالصمـد",
+   "region": "",
+   "file": "017-_-.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/017-_-.mp3",
+   "seconds": 188,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "021",
+   "name": "الحرم المكي محمد رمل",
+   "region": "",
+   "file": "021--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/021--.mp3",
+   "seconds": 191,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "025-1",
+   "name": "الشيخ البهلول أبوعرقوب1",
+   "region": "",
+   "file": "025-1.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/025-1.mp3",
+   "seconds": 208,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "027",
+   "name": "العشاء الشيخ عبدالباسط عبدالصمـد",
+   "region": "",
+   "file": "027-_-.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/027-_-.mp3",
+   "seconds": 187,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "028-1",
+   "name": "الفجــر الكويت 1",
+   "region": "",
+   "file": "028---1.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/028---1.mp3",
+   "seconds": 209,
+   "fajr": true,
+   "bundled": false
+  },
+  {
+   "id": "030",
+   "name": "الفجر بروني دار السلام",
+   "region": "",
+   "file": "030---.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/030---.mp3",
+   "seconds": 208,
+   "fajr": true,
+   "bundled": false
+  },
+  {
+   "id": "031",
+   "name": "الفجــر جـــزائـر",
+   "region": "",
+   "file": "031--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/031--.mp3",
+   "seconds": 177,
+   "fajr": true,
+   "bundled": false
+  },
+  {
+   "id": "032",
+   "name": "الفجر ماليزيا",
+   "region": "",
+   "file": "032--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/032--.mp3",
+   "seconds": 198,
+   "fajr": true,
+   "bundled": false
+  },
+  {
+   "id": "035",
+   "name": "الفجر بصوت أحمد نعينع",
+   "region": "",
+   "file": "035-.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/035-.mp3",
+   "seconds": 204,
+   "fajr": true,
+   "bundled": false
+  },
+  {
+   "id": "036",
+   "name": "الفجر مصــــر",
+   "region": "",
+   "file": "036--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/036--.mp3",
+   "seconds": 245,
+   "fajr": true,
+   "bundled": false
+  },
+  {
+   "id": "037",
+   "name": "الفجر، بصوت الأخ أحمد نواف المجلاد",
+   "region": "",
+   "file": "037-.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/037-.mp3",
+   "seconds": 221,
+   "fajr": true,
+   "bundled": false
+  },
+  {
+   "id": "041",
+   "name": "القاهرة عبدالباسط عبدالصمد",
+   "region": "",
+   "file": "041--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/041--.mp3",
+   "seconds": 200,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "046",
+   "name": "المسجد الأقصى ناجي قزا",
+   "region": "",
+   "file": "046--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/046--.mp3",
+   "seconds": 226,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "050",
+   "name": "بصوت الشيخ المنشاوي",
+   "region": "",
+   "file": "050-.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/050-.mp3",
+   "seconds": 251,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "051",
+   "name": "أأذان بصوت حاج سليمان مختار الجزائر",
+   "region": "",
+   "file": "051--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/051--.mp3",
+   "seconds": 194,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "052",
+   "name": "أأذان بصوت عبدالباسط عبد الصمد",
+   "region": "",
+   "file": "052-.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/052-.mp3",
+   "seconds": 244,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "053",
+   "name": "عبدالكريم جباري",
+   "region": "",
+   "file": "053-.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/053-.mp3",
+   "seconds": 81,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "054",
+   "name": "من فلسطين بصوت صهيب هاني",
+   "region": "",
+   "file": "054--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/054--.mp3",
+   "seconds": 183,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "055",
+   "name": "من مسجد الملك فهد بنجران بصوت حمـــدان المالكي",
+   "region": "",
+   "file": "055-.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/055-.mp3",
+   "seconds": 266,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "057",
+   "name": "جزر المالديف",
+   "region": "",
+   "file": "057--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/057--.mp3",
+   "seconds": 185,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "058",
+   "name": "دبــي الأمارات",
+   "region": "",
+   "file": "058---.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/058---.mp3",
+   "seconds": 235,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "059",
+   "name": "ماليزيا",
+   "region": "",
+   "file": "059--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/059--.mp3",
+   "seconds": 198,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "060",
+   "name": "مسقط عمان",
+   "region": "",
+   "file": "060--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/060--.mp3",
+   "seconds": 151,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "061",
+   "name": "السيد متولي العال لبنان",
+   "region": "",
+   "file": "061---.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/061---.mp3",
+   "seconds": 169,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "062",
+   "name": "المدينة المنورة",
+   "region": "",
+   "file": "062--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/062--.mp3",
+   "seconds": 235,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "063",
+   "name": "تونــس",
+   "region": "",
+   "file": "063--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/063--.mp3",
+   "seconds": 143,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "064",
+   "name": "جــزائــر",
+   "region": "",
+   "file": "064--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/064--.mp3",
+   "seconds": 162,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "065",
+   "name": "سوريا",
+   "region": "",
+   "file": "065--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/065--.mp3",
+   "seconds": 221,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "066",
+   "name": "عبدالرزاق صالح لبنان",
+   "region": "",
+   "file": "066---.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/066---.mp3",
+   "seconds": 248,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "067",
+   "name": "مهدي البيشي",
+   "region": "",
+   "file": "067--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/067--.mp3",
+   "seconds": 221,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "069",
+   "name": "الفجر القــدس",
+   "region": "",
+   "file": "069--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/069--.mp3",
+   "seconds": 151,
+   "fajr": true,
+   "bundled": false
+  },
+  {
+   "id": "070",
+   "name": "الفجر أم القــوين",
+   "region": "",
+   "file": "070--.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/070--.mp3",
+   "seconds": 190,
+   "fajr": true,
+   "bundled": false
+  },
+  {
+   "id": "072",
+   "name": "الأأذان بصوت الأخ أحمد نواف المجلاد",
+   "region": "",
+   "file": "072-.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/072-.mp3",
+   "seconds": 196,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "073",
+   "name": "الأذان",
+   "region": "",
+   "file": "073-.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/073-.mp3",
+   "seconds": 120,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "087-2",
+   "name": "الحرم المدني 2",
+   "region": "",
+   "file": "087--2.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/087--2.mp3",
+   "seconds": 189,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "088",
+   "name": "تكبير العيد",
+   "region": "",
+   "file": "088-.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/088-.mp3",
+   "seconds": 68,
+   "fajr": false,
+   "bundled": false
+  },
+  {
+   "id": "090-2",
+   "name": "مؤذن جامع الراجحي بالرياض (2)",
+   "region": "",
+   "file": "090-2.mp3",
+   "url": "https://archive.org/download/AdhaN_M_up-by-muslem/090-2.mp3",
+   "seconds": 149,
+   "fajr": false,
+   "bundled": false
   }
  ]
 }

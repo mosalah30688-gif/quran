@@ -18,6 +18,11 @@ cp \
   www/fonts/
 cp LICENSE LICENSE.ar.md NOTICE.md www/legal/
 cp LICENSES/MIT-HISTORICAL.txt www/legal/
+# الأذان المحلي: يُنسخ داخل الحزمة ليعمل بلا إنترنت
+if compgen -G 'audio/adhans/*.mp3' >/dev/null; then
+  mkdir -p www/audio/adhans
+  cp audio/adhans/*.mp3 www/audio/adhans/
+fi
 if compgen -G 'tajweed-curricula/*.json' >/dev/null; then
   mkdir -p www/tajweed-curricula
   cp tajweed-curricula/*.json www/tajweed-curricula/

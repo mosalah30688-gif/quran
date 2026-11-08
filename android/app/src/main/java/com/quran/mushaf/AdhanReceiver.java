@@ -22,6 +22,7 @@ public class AdhanReceiver extends BroadcastReceiver {
 
     public static final String ACTION_ADHAN = "com.quran.mushaf.adhan.ADHAN";
     public static final String ACTION_IQAMA = "com.quran.mushaf.adhan.IQAMA";
+    public static final String ACTION_PRE_ADHAN = "com.quran.mushaf.adhan.PRE";
 
     static final String CHANNEL_IQAMA = "adhan_iqama";
 
@@ -39,6 +40,8 @@ public class AdhanReceiver extends BroadcastReceiver {
             startAdhan(context, event);
         } else if (ACTION_IQAMA.equals(action)) {
             notifyIqama(context, event);
+        } else if (ACTION_PRE_ADHAN.equals(action)) {
+            notifyPreAdhan(context, event);
         }
     }
 
@@ -66,12 +69,24 @@ public class AdhanReceiver extends BroadcastReceiver {
         }
     }
 
+    /** الإقامة صارت تنبيهًا نصيًا فقط، بلا أي صوت إقامة. */
     private static void notifyIqama(Context context, JSONObject event) {
         String label = event.optString("label", "");
         if (label.isEmpty()) label = event.optString("prayer", "");
         post(context, CHANNEL_IQAMA, 4822,
-                "إقامة صلاة " + label,
-                "حان الآن وقت الإقامة، أقيمت الصلاة تقبّل الله منك.",
+                "قم إلى صلاتك",
+                "حان وقت إقامة صلاة " + label + " — قم إلى صلاتك.",
+                event.optString("prayer", ""));
+    }
+
+    /** تنبيه ما قبل الأذان: إشعار صوتي يذكر الصلاة والوقت المتبقي. */
+    private static void notifyPreAdhan(Context context, JSONObject event) {
+        String label = event.optString("label", "");
+        if (label.isEmpty()) label = event.optString("prayer", "");
+        int minutes = event.optInt("preMinutes", 10);
+        post(context, CHANNEL_IQAMA, 4824,
+                "أذان " + label + " بعد " + minutes + " دقائق",
+                "استعد للصلاة: أذان " + label + " بعد " + minutes + " دقائق.",
                 event.optString("prayer", ""));
     }
 
