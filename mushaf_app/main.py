@@ -118,6 +118,10 @@ OTHER_RIWAYAT = [
     ('warsh', 'ورش عن نافع'),
     ('qalun', 'قالون عن نافع'),
     ('duri', 'الدوري عن أبي عمرو'),
+    ('shubah', 'شعبة عن عاصم'),
+    ('susi', 'السوسي عن أبي عمرو'),
+    ('bazzi', 'البزي عن ابن كثير'),
+    ('qunbul', 'قنبل عن ابن كثير'),
 ]
 RIWAYA_NAMES = dict(HAFS_EDITIONS + OTHER_RIWAYAT)
 
@@ -154,6 +158,21 @@ RIW_RECITERS = {
     ],
     'duri': [
         ('duri_husary', 'محمود خليل الحصري', 'surah', 'https://cdn.mp3quran.net/audio/mahmoud-husary/r4/'),
+    ],
+    'shubah': [
+        ('shubah_deeban', 'أحمد ديبان', 'surah', 'https://cdn.mp3quran.net/audio/ahmad-deeban/r2/'),
+        ('shubah_saber', 'صابر عبدالحكم', 'surah', 'https://cdn.mp3quran.net/audio/saber-abdulhakam/r7/'),
+        ('shubah_hudhaify', 'علي الحذيفي', 'surah', 'https://cdn.mp3quran.net/audio/ali-hudhaifi/r3/'),
+    ],
+    'susi': [
+        ('susi_sufi', 'عبدالرشيد صوفي', 'surah', 'https://cdn.mp3quran.net/audio/abdulrasheed-sufi/r2/'),
+    ],
+    'bazzi': [
+        ('bazzi_deeban', 'أحمد ديبان', 'surah', 'https://cdn.mp3quran.net/audio/ahmad-deeban/r4/'),
+        ('bazzi_kameny', 'عكاشة كميني', 'surah', 'https://cdn.mp3quran.net/audio/okasha-kameny/r2/'),
+    ],
+    'qunbul': [
+        ('qunbul_deeban', 'أحمد ديبان', 'surah', 'https://cdn.mp3quran.net/audio/ahmad-deeban/r3/'),
     ],
 }
 AUDIO_BITRATE = {rid: bitrate for rid, _name, bitrate in HAFS_RECITERS}

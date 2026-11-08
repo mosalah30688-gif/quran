@@ -34,12 +34,20 @@ EXPECTED_SETTINGS = {
     "warsh",
     "qalun",
     "duri",
+    "shubah",
+    "susi",
+    "bazzi",
+    "qunbul",
 }
 EXPECTED_RIWAYAT = {
     "hafs-an-asim",
     "warsh-an-nafi",
     "qalun-an-nafi",
     "al-duri-an-abi-amr",
+    "shubah-an-asim",
+    "as-susi-an-abi-amr",
+    "al-bazzi-an-ibn-kathir",
+    "qunbul-an-ibn-kathir",
 }
 REQUIRED_BLOCKERS = {
     "tariq",
@@ -208,8 +216,8 @@ def verify_registry(registry: Any, catalog: Any) -> tuple[dict[str, dict[str, An
             "machine inference must never be marked scholarly-approved")
 
     settings = registry.get("settings")
-    require(isinstance(settings, list) and len(settings) == 4,
-            "registry must contain exactly the four supported riwayah groups")
+    require(isinstance(settings, list) and len(settings) == len(EXPECTED_RIWAYAT),
+            "registry must contain exactly one group per supported riwayah")
     by_setting: dict[str, dict[str, Any]] = {}
     riwayat: set[str] = set()
     blocked = 0
@@ -270,7 +278,8 @@ def verify_registry(registry: Any, catalog: Any) -> tuple[dict[str, dict[str, An
             f"registry setting coverage mismatch: {sorted(set(by_setting) ^ EXPECTED_SETTINGS)}")
     require(riwayat == EXPECTED_RIWAYAT,
             f"registry riwayah coverage mismatch: {sorted(riwayat ^ EXPECTED_RIWAYAT)}")
-    require(blocked == 3, "Warsh, Qalun and Duri must remain fail-closed without corpora")
+    require(blocked == len(EXPECTED_RIWAYAT) - 1,
+            "every non-Hafs riwayah must remain fail-closed without an approved corpus")
 
     curricula = catalog.get("curricula")
     require(isinstance(curricula, list) and len(curricula) == 1,

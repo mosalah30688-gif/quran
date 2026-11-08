@@ -32,9 +32,45 @@
       "built_at": "2026-10-27T03:31:31+00:00"
     }
   },
+  "additional_files": {
+    "mushafs-5.json.gz": {
+      "url": "https://quranpedia.net/dumps/mushafs-5.json.gz",
+      "bytes": 414289,
+      "sha256": "c8256fbdfe9b17eb2b01b5396eb8d0dc324424c2c287b85daba6d0a2a827a382",
+      "built_at": "2026-11-08T05:35:46+00:00",
+      "manifest_version": "2026-11-08"
+    },
+    "mushafs-8.json.gz": {
+      "url": "https://quranpedia.net/dumps/mushafs-8.json.gz",
+      "bytes": 413392,
+      "sha256": "03a075c94a4b154314ffa3828a6ca014843ddad79d934a155e5b378170f922ce",
+      "built_at": "2026-11-08T05:36:31+00:00",
+      "manifest_version": "2026-11-08"
+    },
+    "mushafs-9.json.gz": {
+      "url": "https://quranpedia.net/dumps/mushafs-9.json.gz",
+      "bytes": 415539,
+      "sha256": "9cd5a28329e12fbbe6543dc518148d6c7ff3d97c25303bb7d568b4808843ba78",
+      "built_at": "2026-11-08T05:36:42+00:00",
+      "manifest_version": "2026-11-08"
+    },
+    "mushafs-10.json.gz": {
+      "url": "https://quranpedia.net/dumps/mushafs-10.json.gz",
+      "bytes": 421838,
+      "sha256": "b7e27b1357f7bdf98faeaffa4f1cc3f32ea14ee56d76ad629cff3e895cfcf48e",
+      "built_at": "2026-11-08T05:34:23+00:00",
+      "manifest_version": "2026-11-08"
+    }
+  },
+  "additional_manifest": {
+    "url": "https://quranpedia.net/dumps/manifest.json",
+    "version": "2026-11-08",
+    "bytes": 104416,
+    "sha256": "68f6dc2f600600e57046be9d5d060c10e1e4eaa5c4e1519d20c08cf610fd8cde"
+  },
   "transformation": {
     "script": "scripts/generate_quranpedia_data.py",
-    "description": "Select word/book pairs from the official meanings service dump and flatten official mushafs 4 (Warsh), 7 (Qalun), and 6 (Duri) while preserving their numbering, page, and text."
+    "description": "Select word/book pairs from the official meanings service dump and flatten official mushafs 4 (Warsh), 7 (Qalun), and 6 (Duri) while preserving their numbering, page, and text; the added riwayat (5 Bazzi, 8 Qunbul, 9 Shubah, 10 Susi) come from the later 2026-11-08 dump without altering the three pinned riwayat."
   },
   "outputs": {
     "quran-meanings.json": {
@@ -42,8 +78,8 @@
       "sha256": "d9cf1c2e5c27d25c213c84b046df1b2af07cdbefa72eb0be1d2e9014166c03c3"
     },
     "quran-riwayat.json": {
-      "bytes": 4404077,
-      "sha256": "4424377bf32f609bf1f10b595bd17695add15f4b1cc241012f6fef00df4bd640"
+      "bytes": 10143149,
+      "sha256": "c3ee2bf7f19c83c1f99740fb92043f4f8ca951ea41a6981e2c05b9daf38f7622"
     }
   }
 }

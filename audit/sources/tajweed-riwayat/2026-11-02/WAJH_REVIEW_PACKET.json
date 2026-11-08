@@ -49,7 +49,7 @@
       ],
       "textBindingCandidate": {
         "runtimeAsset": "quran-riwayat.json",
-        "runtimeAssetSha256": "a3a7ef91c036f2ff4f62df3dba12c0c2f9d50211792a5b6cf574f4cf85b9938c",
+        "runtimeAssetSha256": "c3ee2bf7f19c83c1f99740fb92043f4f8ca951ea41a6981e2c05b9daf38f7622",
         "dataset": "warsh",
         "verseRecords": 6214,
         "quranpediaSnapshot": "audit/sources/quranpedia/2026-11-02/mushafs-4.json.gz",
@@ -369,7 +369,7 @@
       ],
       "textBindingCandidate": {
         "runtimeAsset": "quran-riwayat.json",
-        "runtimeAssetSha256": "a3a7ef91c036f2ff4f62df3dba12c0c2f9d50211792a5b6cf574f4cf85b9938c",
+        "runtimeAssetSha256": "c3ee2bf7f19c83c1f99740fb92043f4f8ca951ea41a6981e2c05b9daf38f7622",
         "dataset": "qalun",
         "verseRecords": 6214,
         "quranpediaSnapshot": "audit/sources/quranpedia/2026-11-02/mushafs-7.json.gz",
@@ -650,7 +650,7 @@
       ],
       "textBindingCandidate": {
         "runtimeAsset": "quran-riwayat.json",
-        "runtimeAssetSha256": "a3a7ef91c036f2ff4f62df3dba12c0c2f9d50211792a5b6cf574f4cf85b9938c",
+        "runtimeAssetSha256": "c3ee2bf7f19c83c1f99740fb92043f4f8ca951ea41a6981e2c05b9daf38f7622",
         "dataset": "duri",
         "verseRecords": 6218,
         "quranpediaSnapshot": "audit/sources/quranpedia/2026-11-02/mushafs-6.json.gz",

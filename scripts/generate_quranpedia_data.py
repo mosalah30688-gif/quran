@@ -14,6 +14,11 @@ BASE_URL = "https://quranpedia.net/dumps"
 SOURCE_DIR = ROOT / "audit" / "sources" / "quranpedia" / "2026-10-27"
 FILES = ("meanings.json.gz", "mushafs-4.json.gz", "mushafs-7.json.gz", "mushafs-6.json.gz")
 MUSHAFS = {"warsh": 4, "qalun": 7, "duri": 6}
+# لقطة لاحقة للروايات الأربع المضافة (البزي، قنبل، شعبة، السوسي): النسخة الأصلية
+# لا تحتوي عليها، ونصوص الروايات الثلاث المعتمدة تبقى كما هي بلا أي تغيير.
+EXTRA_SOURCE_DIR = ROOT / "audit" / "sources" / "quranpedia" / "2026-11-08"
+EXTRA_FILES = ("mushafs-5.json.gz", "mushafs-8.json.gz", "mushafs-9.json.gz", "mushafs-10.json.gz")
+EXTRA_MUSHAFS = {"bazzi": 5, "qunbul": 8, "shubah": 9, "susi": 10}
 
 
 def sha256(data: bytes) -> str:
@@ -116,7 +121,53 @@ def build(source_dir: Path) -> tuple[dict[str, bytes], dict]:
             raise ValueError(f"invalid pages or no ayahs in {name}")
         riwayat[key] = rows
 
-    expected_counts = {"warsh": 6214, "qalun": 6214, "duri": 6218}
+    extra_evidence = {}
+    extra_riwayat = {}
+    extra_versions = set()
+    extra_manifest_raw = (EXTRA_SOURCE_DIR / "manifest.json").read_bytes()
+    extra_manifest = json.loads(extra_manifest_raw)
+    if extra_manifest.get("source") != "https://quranpedia.net" or not extra_manifest.get("version"):
+        raise ValueError("invalid Quranpedia extra dump manifest")
+    extra_index = {item["name"]: item for item in extra_manifest.get("files", [])}
+    for key, mushaf_id in EXTRA_MUSHAFS.items():
+        name = f"mushafs-{mushaf_id}.json.gz"
+        raw = (EXTRA_SOURCE_DIR / name).read_bytes()
+        listed = extra_index.get(name)
+        if not listed or listed.get("sha256") != sha256(raw) or listed.get("bytes") != len(raw):
+            raise ValueError(f"official extra manifest hash/size mismatch: {name}")
+        envelope = read_gzip_json(EXTRA_SOURCE_DIR / name)
+        license_data = validate_license(envelope, f"/v1/mushafs/{mushaf_id}")
+        extra_versions.add(license_data["version"])
+        data = envelope.get("data", {})
+        if data.get("id") != mushaf_id or len(data.get("surahs", [])) != 114:
+            raise ValueError(f"incomplete or wrong Quranpedia extra mushaf: {name}")
+        rows = []
+        seen = set()
+        for surah in data["surahs"]:
+            surah_number = int(surah["id"])
+            for ayah in surah.get("ayahs", []):
+                ref = (surah_number, int(ayah["number"]))
+                if ref in seen:
+                    raise ValueError(f"duplicate {key} ayah reference: {ref}")
+                seen.add(ref)
+                rows.append([ref[0], ref[1], int(ayah["page_number"]), ayah["text"]])
+        if not rows or any(page < 1 or page > 604 for _s, _a, page, _text in rows):
+            raise ValueError(f"invalid pages or no ayahs in {name}")
+        extra_riwayat[key] = rows
+        extra_evidence[name] = {
+            "url": f"{BASE_URL}/{name}",
+            "bytes": len(raw),
+            "sha256": sha256(raw),
+            "built_at": listed.get("built_at"),
+            "manifest_version": extra_manifest["version"],
+        }
+    if len(extra_versions) != 1:
+        raise ValueError("Quranpedia extra mushaf dump versions are inconsistent")
+    extra_version = extra_versions.pop()
+    riwayat.update(extra_riwayat)
+
+    expected_counts = {"warsh": 6214, "qalun": 6214, "duri": 6218,
+                       "bazzi": 6220, "qunbul": 6221, "shubah": 6236, "susi": 6218}
     if {key: len(value) for key, value in riwayat.items()} != expected_counts:
         raise ValueError("Quranpedia riwayat ayah counts changed unexpectedly")
     versions = {item["version"] for item in riwayat_licenses}
@@ -149,9 +200,13 @@ def build(source_dir: Path) -> tuple[dict[str, bytes], dict]:
                 "source": "الموسوعة القرآنية quranpedia.net",
                 "source_url": "https://quranpedia.net",
                 "version": riwayat_version,
+                "additional_source_version": extra_version,
                 "license": license_notice,
                 "source_files": {
                     name: evidence[name]["sha256"] for name in FILES if name.startswith("mushafs-")
+                },
+                "additional_source_files": {
+                    name: item["sha256"] for name, item in extra_evidence.items()
                 },
                 "generated_by": "scripts/generate_quranpedia_data.py",
                 "riwayat": riwayat,
@@ -167,9 +222,16 @@ def build(source_dir: Path) -> tuple[dict[str, bytes], dict]:
         "manifest_sha256": sha256(manifest_raw),
         "license_url": f"{BASE_URL}/LICENSE.md",
         "files": evidence,
+        "additional_files": extra_evidence,
+        "additional_manifest": {
+            "url": f"{BASE_URL}/manifest.json",
+            "version": extra_manifest["version"],
+            "bytes": len(extra_manifest_raw),
+            "sha256": sha256(extra_manifest_raw),
+        },
         "transformation": {
             "script": "scripts/generate_quranpedia_data.py",
-            "description": "Select word/book pairs from the official meanings service dump and flatten official mushafs 4 (Warsh), 7 (Qalun), and 6 (Duri) while preserving their numbering, page, and text.",
+            "description": "Select word/book pairs from the official meanings service dump and flatten official mushafs 4 (Warsh), 7 (Qalun), and 6 (Duri) while preserving their numbering, page, and text; the added riwayat (5 Bazzi, 8 Qunbul, 9 Shubah, 10 Susi) come from the later 2026-11-08 dump without altering the three pinned riwayat.",
         },
         "outputs": {
             name: {"bytes": len(content), "sha256": sha256(content)}
@@ -220,7 +282,7 @@ def main() -> int:
         raise SystemExit("generated data mismatch: " + ", ".join(mismatches))
     if not args.verify:
         source_path.write_text(json.dumps(source_record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print("Verified official Quranpedia meanings and three riwayat dumps")
+    print("Verified official Quranpedia meanings and seven riwayat dumps")
     print(source_path)
     return 0
 

@@ -28,15 +28,21 @@ def main() -> int:
     if hafs_report.get("all_ok") is not True or len(audited_hafs) != 17:
         raise SystemExit("Hafs evidence does not contain 17 successful audited reciters")
 
-    report = json.loads(
-        (ROOT / "audit/riwayat-audio-mp3quran-2026-10-28.json").read_text(encoding="utf-8")
-    )
-    audited_servers = {item["server"] for item in report.get("records", [])}
-    if len(audited_servers) != 5 or ABDULBASIT not in audited_servers:
-        raise SystemExit("MP3Quran evidence does not contain the five configured sources")
-    for item in report["records"]:
+    reports = [
+        json.loads((ROOT / name).read_text(encoding="utf-8"))
+        for name in (
+            "audit/riwayat-audio-mp3quran-2026-10-28.json",
+            "audit/riwayat-audio-mp3quran-2026-11-05.json",
+        )
+    ]
+    records = [item for report in reports for item in report.get("records", [])]
+    audited_servers = {item["server"] for item in records}
+    if len(audited_servers) != 12 or ABDULBASIT not in audited_servers:
+        raise SystemExit("MP3Quran evidence does not contain the twelve configured sources")
+    for item in records:
         if item["surah_total"] != 114 or len(item.get("probes", [])) != 3:
             raise SystemExit(f"incomplete MP3Quran evidence for {item['server']}")
+    report = reports[0]
     abdulbasit = next(item for item in report["records"] if item["server"] == ABDULBASIT)
     if abdulbasit["moshaf_id"] != 52 or abdulbasit["rewaya_id"] != 2 or "ورش" not in abdulbasit["name"]:
         raise SystemExit("Abdulbasit r2 is not explicitly evidenced as Warsh moshaf 52")

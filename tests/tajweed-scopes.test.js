@@ -19,7 +19,7 @@ const schema = readJson('tajweed-curriculum.schema.json');
 test('scope registry covers every selectable mushaf once and forbids fallback', () => {
   const expected = new Set([
     'quran-uthmani', 'quran-simple', 'quran-uthmani-min', 'quran-tajweed',
-    'warsh', 'qalun', 'duri',
+    'warsh', 'qalun', 'duri', 'shubah', 'susi', 'bazzi', 'qunbul',
   ]);
   const seen = new Set();
   assert.equal(registry.scopeKey, 'riwayah/tariq/wajh/edition');
@@ -33,8 +33,8 @@ test('scope registry covers every selectable mushaf once and forbids fallback', 
   assert.deepEqual(seen, expected);
 });
 
-test('Warsh, Qalun and Duri fail closed without Hafs curricula', () => {
-  for (const settingId of ['warsh', 'qalun', 'duri']) {
+test('كل رواية غير حفص تُغلق بلا منهج معتمد ولا تُستعار لها بيانات حفص', () => {
+  for (const settingId of ['warsh', 'qalun', 'duri', 'shubah', 'susi', 'bazzi', 'qunbul']) {
     const entry = registry.settings.find((item) => item.settingIds.includes(settingId));
     assert.ok(entry);
     assert.equal(entry.status, 'BLOCKED_NO_APPROVED_CORPUS');

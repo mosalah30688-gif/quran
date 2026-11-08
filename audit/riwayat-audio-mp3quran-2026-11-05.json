@@ -1,0 +1,260 @@
+{
+  "schema": 1,
+  "fetched_at": "2026-11-05",
+  "api_url": "https://www.mp3quran.net/api/v3/reciters?language=ar",
+  "note": "سبر مباشر لثلاث سور (١، ٥٠، ١١٤) لكل مصدر صوتي جديد أُضيف مع روايات شعبة والسوسي والبزي وقنبل.",
+  "records": [
+    {
+      "server": "https://cdn.mp3quran.net/audio/ahmad-deeban/r2/",
+      "reciter_id": 265,
+      "reciter": "أحمد ديبان",
+      "moshaf_id": 276,
+      "name": "شعبة  عن عاصم - مرتل",
+      "rewaya_id": 15,
+      "surah_total": 114,
+      "surah_list": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114",
+      "probes": [
+        {
+          "url": "https://cdn.mp3quran.net/audio/ahmad-deeban/r2/001.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/609039",
+          "sample_bytes": 1024,
+          "sample_sha256": "569db145e36fd265943c7b902e8a0e443eef8752daaec417d9e622aaffba501d",
+          "surah": 1
+        },
+        {
+          "url": "https://cdn.mp3quran.net/audio/ahmad-deeban/r2/050.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/7533571",
+          "sample_bytes": 1024,
+          "sample_sha256": "5417176ebfe2dd9d7afaa0b6322bf9e36f7625ad6e02f81017a0e7dc0c75d841",
+          "surah": 50
+        },
+        {
+          "url": "https://cdn.mp3quran.net/audio/ahmad-deeban/r2/114.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/621810",
+          "sample_bytes": 1024,
+          "sample_sha256": "274f44c401d7aa85314a0af78fe69f953083d26800963178450cb0ee25aa7079",
+          "surah": 114
+        }
+      ]
+    },
+    {
+      "server": "https://cdn.mp3quran.net/audio/saber-abdulhakam/r7/",
+      "reciter_id": 39,
+      "reciter": "صابر عبدالحكم",
+      "moshaf_id": 327,
+      "name": "شعبة عن عاصم - المصحف المجود",
+      "rewaya_id": 15,
+      "surah_total": 114,
+      "surah_list": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114",
+      "probes": [
+        {
+          "url": "https://cdn.mp3quran.net/audio/saber-abdulhakam/r7/001.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/2112723",
+          "sample_bytes": 1024,
+          "sample_sha256": "9c87ae28f6870b1a673dea398f2ff6904eb46bffbaac4ddb2b192eca8efe4ee6",
+          "surah": 1
+        },
+        {
+          "url": "https://cdn.mp3quran.net/audio/saber-abdulhakam/r7/050.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/24956067",
+          "sample_bytes": 1024,
+          "sample_sha256": "dd4d3dacc6b7b2dc185b65319c3498762b6601320c334dd9bb2eff73addff507",
+          "surah": 50
+        },
+        {
+          "url": "https://cdn.mp3quran.net/audio/saber-abdulhakam/r7/114.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/2408244",
+          "sample_bytes": 1024,
+          "sample_sha256": "9dd0df8577ba7a6020b8a9e5346ad7d251281eb5c491be93ab028454515e59b9",
+          "surah": 114
+        }
+      ]
+    },
+    {
+      "server": "https://cdn.mp3quran.net/audio/ali-hudhaifi/r3/",
+      "reciter_id": 74,
+      "reciter": "علي بن عبدالرحمن الحذيفي",
+      "moshaf_id": 305,
+      "name": "شعبة  عن عاصم - مرتل",
+      "rewaya_id": 15,
+      "surah_total": 114,
+      "surah_list": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114",
+      "probes": [
+        {
+          "url": "https://cdn.mp3quran.net/audio/ali-hudhaifi/r3/001.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/765336",
+          "sample_bytes": 1024,
+          "sample_sha256": "002b8eb97c0795c7bcdf8e0386a1811801a82c25157047a5c6d37feb2f465948",
+          "surah": 1
+        },
+        {
+          "url": "https://cdn.mp3quran.net/audio/ali-hudhaifi/r3/050.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/6058411",
+          "sample_bytes": 1024,
+          "sample_sha256": "6d72e4a7cb8ca2b5ed6f94e877eb95162e47c787eb45c7e5006381f95db57636",
+          "surah": 50
+        },
+        {
+          "url": "https://cdn.mp3quran.net/audio/ali-hudhaifi/r3/114.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/536687",
+          "sample_bytes": 1024,
+          "sample_sha256": "07a20bf682c17fc445feda171beca67459d2d9a4804a5e8f6434beac19ea1763",
+          "surah": 114
+        }
+      ]
+    },
+    {
+      "server": "https://cdn.mp3quran.net/audio/abdulrasheed-sufi/r2/",
+      "reciter_id": 64,
+      "reciter": "عبدالرشيد صوفي",
+      "moshaf_id": 65,
+      "name": "السوسي عن أبي عمرو - مرتل",
+      "rewaya_id": 7,
+      "surah_total": 114,
+      "surah_list": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114",
+      "probes": [
+        {
+          "url": "https://cdn.mp3quran.net/audio/abdulrasheed-sufi/r2/001.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/584087",
+          "sample_bytes": 1024,
+          "sample_sha256": "b70ddcfe965b08416233613d68e8f896ab3b10400ea8aa462d1165aee194b60b",
+          "surah": 1
+        },
+        {
+          "url": "https://cdn.mp3quran.net/audio/abdulrasheed-sufi/r2/050.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/6840093",
+          "sample_bytes": 1024,
+          "sample_sha256": "fc45d162ca5c5cbacd843fc1d65e939758ea045780215f75eef0a90bef1e47db",
+          "surah": 50
+        },
+        {
+          "url": "https://cdn.mp3quran.net/audio/abdulrasheed-sufi/r2/114.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/536018",
+          "sample_bytes": 1024,
+          "sample_sha256": "15180f1f421f53e7451309168f1882b190db3f58f3ac944664e2adf70ba001dc",
+          "surah": 114
+        }
+      ]
+    },
+    {
+      "server": "https://cdn.mp3quran.net/audio/ahmad-deeban/r4/",
+      "reciter_id": 265,
+      "reciter": "أحمد ديبان",
+      "moshaf_id": 279,
+      "name": "البزي عن ابن كثير - مرتل",
+      "rewaya_id": 4,
+      "surah_total": 114,
+      "surah_list": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114",
+      "probes": [
+        {
+          "url": "https://cdn.mp3quran.net/audio/ahmad-deeban/r4/001.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/1802947",
+          "sample_bytes": 1024,
+          "sample_sha256": "cde23fe896e943ec2798c188eca283271a45dd3411b49f96547e9c0bfdb90c1c",
+          "surah": 1
+        },
+        {
+          "url": "https://cdn.mp3quran.net/audio/ahmad-deeban/r4/050.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/16443692",
+          "sample_bytes": 1024,
+          "sample_sha256": "73a2b0879f64933fb442815959188453823a50f2647886e792f61549946f6a02",
+          "surah": 50
+        },
+        {
+          "url": "https://cdn.mp3quran.net/audio/ahmad-deeban/r4/114.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/1851722",
+          "sample_bytes": 1024,
+          "sample_sha256": "159f9c858dbaaa0940d1b4cc8c4075a7a39cf15332f556d1b83eba052412cea1",
+          "surah": 114
+        }
+      ]
+    },
+    {
+      "server": "https://cdn.mp3quran.net/audio/okasha-kameny/r2/",
+      "reciter_id": 272,
+      "reciter": "عكاشة كميني",
+      "moshaf_id": 296,
+      "name": "البزي عن ابن كثير - مرتل",
+      "rewaya_id": 4,
+      "surah_total": 114,
+      "surah_list": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114",
+      "probes": [
+        {
+          "url": "https://cdn.mp3quran.net/audio/okasha-kameny/r2/001.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/830755",
+          "sample_bytes": 1024,
+          "sample_sha256": "36032d702770a1efa8804c409ba4b5a4fd5c843c3f03bd0d7ee52b77bf784b3d",
+          "surah": 1
+        },
+        {
+          "url": "https://cdn.mp3quran.net/audio/okasha-kameny/r2/050.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/6961629",
+          "sample_bytes": 1024,
+          "sample_sha256": "1b3dfe02bb78f6c64d080494325e2ef8e670a59825421f655af0b75d6a104b97",
+          "surah": 50
+        },
+        {
+          "url": "https://cdn.mp3quran.net/audio/okasha-kameny/r2/114.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/655501",
+          "sample_bytes": 1024,
+          "sample_sha256": "ea0e0595ee58b074f8041e43f6f4036e5359833eb3b92809bece7de6c4025be3",
+          "surah": 114
+        }
+      ]
+    },
+    {
+      "server": "https://cdn.mp3quran.net/audio/ahmad-deeban/r3/",
+      "reciter_id": 265,
+      "reciter": "أحمد ديبان",
+      "moshaf_id": 278,
+      "name": "قنبل عن ابن كثير - مرتل",
+      "rewaya_id": 6,
+      "surah_total": 114,
+      "surah_list": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114",
+      "probes": [
+        {
+          "url": "https://cdn.mp3quran.net/audio/ahmad-deeban/r3/001.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/2093831",
+          "sample_bytes": 1024,
+          "sample_sha256": "b90c78662727f47c827eb1009d4ce5173dda8971e9baf670a95c5ed896fdf324",
+          "surah": 1
+        },
+        {
+          "url": "https://cdn.mp3quran.net/audio/ahmad-deeban/r3/050.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/16443696",
+          "sample_bytes": 1024,
+          "sample_sha256": "70da3e16d67fa03e75fd12769dd20247fd5975733cc6add4dd9e64ab7a466f73",
+          "surah": 50
+        },
+        {
+          "url": "https://cdn.mp3quran.net/audio/ahmad-deeban/r3/114.mp3",
+          "content_type": "audio/mpeg",
+          "content_range": "bytes 0-1023/1685646",
+          "sample_bytes": 1024,
+          "sample_sha256": "327b438d8d1eeac93446c4e4d6c617728f0e9e6cb24d159ba8519de8e6e4d034",
+          "surah": 114
+        }
+      ]
+    }
+  ]
+}

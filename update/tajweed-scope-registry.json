@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-11-02",
+  "updatedAt": "2026-11-05",
   "scopeKey": "riwayah/tariq/wajh/edition",
   "fallbackPolicy": "FORBIDDEN_BETWEEN_SCOPES",
   "approvalPolicy": {
@@ -62,7 +62,7 @@
       },
       "textEdition": {
         "asset": "quran-riwayat.json",
-        "sha256": "a3a7ef91c036f2ff4f62df3dba12c0c2f9d50211792a5b6cf574f4cf85b9938c",
+        "sha256": "c3ee2bf7f19c83c1f99740fb92043f4f8ca951ea41a6981e2c05b9daf38f7622",
         "verseRecords": 6214,
         "sourceNoteAr": "نص رواية من dump المصحف 4 في Quranpedia؛ بيانات المصدر الحالية لا تكفي وحدها لإثبات طريق ووجه طبقة تجويد تعليمية مستقلة.",
         "dataset": "warsh"
@@ -89,7 +89,7 @@
       },
       "textEdition": {
         "asset": "quran-riwayat.json",
-        "sha256": "a3a7ef91c036f2ff4f62df3dba12c0c2f9d50211792a5b6cf574f4cf85b9938c",
+        "sha256": "c3ee2bf7f19c83c1f99740fb92043f4f8ca951ea41a6981e2c05b9daf38f7622",
         "verseRecords": 6214,
         "sourceNoteAr": "نص رواية من dump المصحف 7 في Quranpedia؛ بيانات المصدر الحالية لا تكفي وحدها لإثبات طريق ووجه طبقة تجويد تعليمية مستقلة.",
         "dataset": "qalun"
@@ -116,10 +116,118 @@
       },
       "textEdition": {
         "asset": "quran-riwayat.json",
-        "sha256": "a3a7ef91c036f2ff4f62df3dba12c0c2f9d50211792a5b6cf574f4cf85b9938c",
+        "sha256": "c3ee2bf7f19c83c1f99740fb92043f4f8ca951ea41a6981e2c05b9daf38f7622",
         "verseRecords": 6218,
         "sourceNoteAr": "نص رواية من dump المصحف 6 في Quranpedia؛ بيانات المصدر الحالية لا تكفي وحدها لإثبات طريق ووجه طبقة تجويد تعليمية مستقلة.",
         "dataset": "duri"
+      },
+      "status": "BLOCKED_NO_APPROVED_CORPUS",
+      "unresolvedFields": [
+        "tariq",
+        "wajh",
+        "edition",
+        "rule-corpus",
+        "annotation-corpus",
+        "qualified-review"
+      ],
+      "blockedReasonAr": "لا توجد حزمة أحكام وأمثلة وعلامات مستقلة موثقة الطريق والوجه والطبعة ومجازة للمشروع. لا تُستخدم بيانات حفص بديلًا عنها.",
+      "curricula": []
+    },
+    {
+      "settingIds": [
+        "shubah"
+      ],
+      "riwayah": {
+        "id": "shubah-an-asim",
+        "labelAr": "شعبة عن عاصم"
+      },
+      "textEdition": {
+        "asset": "quran-riwayat.json",
+        "sha256": "c3ee2bf7f19c83c1f99740fb92043f4f8ca951ea41a6981e2c05b9daf38f7622",
+        "verseRecords": 6236,
+        "sourceNoteAr": "نص رواية من dump المصحف 9 في Quranpedia؛ بيانات المصدر الحالية لا تكفي وحدها لإثبات طريق ووجه طبقة تجويد تعليمية مستقلة.",
+        "dataset": "shubah"
+      },
+      "status": "BLOCKED_NO_APPROVED_CORPUS",
+      "unresolvedFields": [
+        "tariq",
+        "wajh",
+        "edition",
+        "rule-corpus",
+        "annotation-corpus",
+        "qualified-review"
+      ],
+      "blockedReasonAr": "لا توجد حزمة أحكام وأمثلة وعلامات مستقلة موثقة الطريق والوجه والطبعة ومجازة للمشروع. لا تُستخدم بيانات حفص بديلًا عنها.",
+      "curricula": []
+    },
+    {
+      "settingIds": [
+        "susi"
+      ],
+      "riwayah": {
+        "id": "as-susi-an-abi-amr",
+        "labelAr": "السوسي عن أبي عمرو"
+      },
+      "textEdition": {
+        "asset": "quran-riwayat.json",
+        "sha256": "c3ee2bf7f19c83c1f99740fb92043f4f8ca951ea41a6981e2c05b9daf38f7622",
+        "verseRecords": 6218,
+        "sourceNoteAr": "نص رواية من dump المصحف 10 في Quranpedia؛ بيانات المصدر الحالية لا تكفي وحدها لإثبات طريق ووجه طبقة تجويد تعليمية مستقلة.",
+        "dataset": "susi"
+      },
+      "status": "BLOCKED_NO_APPROVED_CORPUS",
+      "unresolvedFields": [
+        "tariq",
+        "wajh",
+        "edition",
+        "rule-corpus",
+        "annotation-corpus",
+        "qualified-review"
+      ],
+      "blockedReasonAr": "لا توجد حزمة أحكام وأمثلة وعلامات مستقلة موثقة الطريق والوجه والطبعة ومجازة للمشروع. لا تُستخدم بيانات حفص بديلًا عنها.",
+      "curricula": []
+    },
+    {
+      "settingIds": [
+        "bazzi"
+      ],
+      "riwayah": {
+        "id": "al-bazzi-an-ibn-kathir",
+        "labelAr": "البزي عن ابن كثير"
+      },
+      "textEdition": {
+        "asset": "quran-riwayat.json",
+        "sha256": "c3ee2bf7f19c83c1f99740fb92043f4f8ca951ea41a6981e2c05b9daf38f7622",
+        "verseRecords": 6220,
+        "sourceNoteAr": "نص رواية من dump المصحف 5 في Quranpedia؛ بيانات المصدر الحالية لا تكفي وحدها لإثبات طريق ووجه طبقة تجويد تعليمية مستقلة.",
+        "dataset": "bazzi"
+      },
+      "status": "BLOCKED_NO_APPROVED_CORPUS",
+      "unresolvedFields": [
+        "tariq",
+        "wajh",
+        "edition",
+        "rule-corpus",
+        "annotation-corpus",
+        "qualified-review"
+      ],
+      "blockedReasonAr": "لا توجد حزمة أحكام وأمثلة وعلامات مستقلة موثقة الطريق والوجه والطبعة ومجازة للمشروع. لا تُستخدم بيانات حفص بديلًا عنها.",
+      "curricula": []
+    },
+    {
+      "settingIds": [
+        "qunbul"
+      ],
+      "riwayah": {
+        "id": "qunbul-an-ibn-kathir",
+        "labelAr": "قنبل عن ابن كثير"
+      },
+      "textEdition": {
+        "asset": "quran-riwayat.json",
+        "sha256": "c3ee2bf7f19c83c1f99740fb92043f4f8ca951ea41a6981e2c05b9daf38f7622",
+        "verseRecords": 6221,
+        "sourceNoteAr": "نص رواية من dump المصحف 8 في Quranpedia؛ بيانات المصدر الحالية لا تكفي وحدها لإثبات طريق ووجه طبقة تجويد تعليمية مستقلة.",
+        "dataset": "qunbul"
       },
       "status": "BLOCKED_NO_APPROVED_CORPUS",
       "unresolvedFields": [

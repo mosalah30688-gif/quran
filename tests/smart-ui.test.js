@@ -279,3 +279,23 @@ test('مصحف أوضح: خط معرّض وخانة صفحة صغيرة وأزر
   assert.match(app, /const FLIP_VELOCITY = 0\.11;/);
   assert.match(app, /rotateY\(\$\{tilt\.toFixed\(2\)\}deg\)/);
 });
+
+test('سبع روايات للقراءة والاستماع مع قرّاء موثّقين', () => {
+  const riwayat = JSON.parse(read('quran-riwayat.json')).riwayat;
+  assert.deepEqual(Object.keys(riwayat).sort(),
+    ['bazzi', 'duri', 'qalun', 'qunbul', 'shubah', 'susi', 'warsh']);
+  for (const [id, rows] of Object.entries(riwayat)) {
+    assert.ok(rows.length > 6000, `${id} rows missing`);
+    assert.ok(rows.every((row) => row[2] >= 1 && row[2] <= 604), `${id} page out of range`);
+  }
+  assert.match(app, /const RIW_IDS = \['warsh', 'qalun', 'duri', 'shubah', 'susi', 'bazzi', 'qunbul'\]/);
+  for (const id of ['shubah', 'susi', 'bazzi', 'qunbul']) {
+    assert.match(app, new RegExp(`\\b${id}: \\[`));
+    assert.match(html, new RegExp(`<option value="${id}">`));
+  }
+  // القرّاء المستخدمون لكل رواية جديدة
+  for (const reciter of ['shubah_deeban', 'shubah_saber', 'shubah_hudhaify',
+    'susi_sufi', 'bazzi_deeban', 'bazzi_kameny', 'qunbul_deeban']) {
+    assert.match(app, new RegExp(`'${reciter}'`));
+  }
+});
