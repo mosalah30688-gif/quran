@@ -1,5 +1,5 @@
 // غلاف سراج وبيانات القراءة الأساسية مخزّنة مسبقًا ليعمل المصحف دون اتصال.
-const CACHE = 'siraj-shell-v32';
+const CACHE = 'siraj-shell-v33';
 const SHELL = [
   './', './index.html', './smart-context.js', './smart-services.js', './tajweed-learning.js',
   './tajweed-curriculum-loader.js', './prayer-times.js', './prayer-data.js', './prayer-ui.js', './app.js',
@@ -10,6 +10,7 @@ const SHELL = [
   './fonts/AmiriQuran-arabic.woff2', './fonts/Amiri-Regular.ttf',
   './fonts/AmiriQuran-Regular.ttf', './fonts/NotoNaskhArabic-Variable.ttf',
   './fonts/ScheherazadeNew-Regular.ttf',
+  './media/adhan/mosque-adhan.mp4', './media/adhan/mosque-adhan-poster.jpg',
 ];
 
 function curriculumArtifacts(registry) {
