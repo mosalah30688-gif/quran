@@ -1149,14 +1149,13 @@
     .adhan-body { position: relative; margin-top: auto; padding: 0 18px 6px; text-align: center; }
     .adhan-kicker { margin: 0 0 6px; font-size: 13px; letter-spacing: .08em; opacity: .85; }
     .adhan-prayer { margin: 0; font-size: 34px; line-height: 1.25; text-shadow: 0 3px 18px rgba(0,0,0,.6); }
-    .adhan-muezzin { margin: 8px 0 0; font-size: 15px; opacity: .9; }
     .adhan-progress { position: relative; height: 6px; margin: 22px 0 6px; border-radius: 99px; background: rgba(255,255,255,.25); overflow: hidden; }
     .adhan-progress i { display: block; height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, #f6d98a, #e8b552); transition: width .25s linear; }
     .adhan-times { display: flex; justify-content: space-between; font-size: 12px; direction: ltr; opacity: .85; }
     .adhan-player { position: relative; margin: 14px 18px 26px; padding: 14px; border-radius: 20px; background: rgba(6,26,23,.62); border: 1px solid rgba(255,255,255,.16); backdrop-filter: blur(14px); }
     .adhan-controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-    .adhan-ctl { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 10px 4px; border-radius: 14px; border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.08); color: #fff; font: inherit; font-size: 12px; cursor: pointer; }
-    .adhan-ctl svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .adhan-ctl { display: flex; align-items: center; justify-content: center; padding: 0; height: 56px; border-radius: 16px; border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.08); color: #fff; cursor: pointer; }
+    .adhan-ctl svg { width: 26px; height: 26px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     .adhan-ctl svg rect { fill: currentColor; stroke: none; }
     .adhan-ctl[data-adhan-ctl="lower"] svg path:first-child,
     .adhan-ctl[data-adhan-ctl="raise"] svg path:first-child { fill: currentColor; stroke: none; }
@@ -1165,7 +1164,6 @@
     .adhan-vol { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
     .adhan-vol input { flex: 1 1 auto; min-width: 0; accent-color: #e8b552; direction: ltr; }
     .adhan-vol span { flex: 0 0 auto; font-size: 12px; min-width: 64px; text-align: left; direction: ltr; }
-    .adhan-hint { margin: 10px 0 0; font-size: 11px; opacity: .7; text-align: center; }
 </style>
 </head>
 <body>
@@ -1929,7 +1927,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.6.0</div>
+              <div class="muted">الإصدار 1.6.1</div>
             </div>
           </div>
 
@@ -2006,30 +2004,28 @@
     <div class="adhan-body">
       <p class="adhan-kicker" id="adhanKicker">حان الآن وقت</p>
       <h2 class="adhan-prayer" id="adhanPrayer">—</h2>
-      <p class="adhan-muezzin" id="adhanMuezzin">—</p>
       <div class="adhan-progress"><i id="adhanProgress"></i></div>
       <div class="adhan-times"><span id="adhanElapsed">0:00</span><span id="adhanTotal">—</span></div>
     </div>
     <div class="adhan-player">
       <div class="adhan-controls">
         <button class="adhan-ctl" type="button" data-adhan-ctl="lower" aria-label="تخفيض الصوت">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.6v12.8L7.2 14.5H4z"/><path d="M16 9.5h5"/></svg>تخفيض
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.6v12.8L7.2 14.5H4z"/><path d="M16 9.5h5"/></svg>
         </button>
         <button class="adhan-ctl primary" type="button" data-adhan-ctl="pause" id="adhanPause" aria-label="إيقاف مؤقت">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="5.5" width="3.6" height="13" rx="1.2"/><rect x="13.4" y="5.5" width="3.6" height="13" rx="1.2"/></svg>إيقاف مؤقت
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="5.5" width="3.6" height="13" rx="1.2"/><rect x="13.4" y="5.5" width="3.6" height="13" rx="1.2"/></svg>
         </button>
         <button class="adhan-ctl" type="button" data-adhan-ctl="stop" aria-label="إيقاف الأذان">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/></svg>إيقاف
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/></svg>
         </button>
         <button class="adhan-ctl" type="button" data-adhan-ctl="raise" aria-label="تعلية الصوت">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.6v12.8L7.2 14.5H4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18 6.6a7.5 7.5 0 0 1 0 10.8"/></svg>تعلية
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.6v12.8L7.2 14.5H4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18 6.6a7.5 7.5 0 0 1 0 10.8"/></svg>
         </button>
       </div>
       <div class="adhan-vol">
         <input id="adhanVolume" type="range" min="0" max="100" step="5" dir="ltr" aria-label="مستوى صوت الأذان" />
         <span id="adhanVolumeLine">100%</span>
       </div>
-      <p class="adhan-hint">الإيقاف المؤقت يوقف الأذان مؤقتًا، و«إيقاف» يُنهيه. الإغلاق ✕ يخفي الشاشة والأذان يكمل.</p>
     </div>
   </div>
 
@@ -2042,10 +2038,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.6.0';
+    window.APP_BUNDLE_VERSION = '1.6.1';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 172;
+    window.APP_BUILD_NUMBER = 173;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {
