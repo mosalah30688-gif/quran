@@ -80,7 +80,7 @@
 
   const DEFAULTS = {
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
-    surahReciter: 0, surahAudio: true, syncPlay: true,
+    surahReciter: 0, surahAudio: true, syncPlay: true, paperSound: true,
     translation: '', font: 'Scheherazade New', size: 26, tajweed: false, dark: false,
     tajweedScopes: {},
   };
@@ -608,6 +608,13 @@
       setWirdGoal(Number(btn.dataset.goal) || 0);
       toast(Number(btn.dataset.goal) > 0 ? `هدفك اليومي: ${toArabicDigits(btn.dataset.goal)} صفحة` : 'بلا هدف يومي ملزم');
     });
+  });
+  const paperBox = $('#setPaperSound');
+  paperBox && paperBox.addEventListener('change', () => {
+    settings.paperSound = paperBox.checked;
+    saveSettings();
+    if (paperBox.checked) playPaperSound(true);
+    toast(paperBox.checked ? 'صوت تقليب الورق مفعّل.' : 'صوت الورق متوقف.');
   });
   const shareBtn = $('#wdShare');
   shareBtn && shareBtn.addEventListener('click', shareWirdProgress);
@@ -1240,26 +1247,83 @@
     document.body.appendChild(ghost);
     return ghost;
   }
+  // ===== صوت تقليب الورق (ملفات صغيرة داخل الحزمة تعمل دون إنترنت) =====
+  const paperSfx = { fwd: null, back: null, ready: false };
+  function initPaperSfx() {
+    if (paperSfx.ready) return;
+    paperSfx.ready = true;
+    try {
+      paperSfx.fwd = new Audio('media/sfx/page-turn-fwd.mp3');
+      paperSfx.back = new Audio('media/sfx/page-turn-back.mp3');
+      [paperSfx.fwd, paperSfx.back].forEach((el) => { el.preload = 'auto'; el.volume = 0.45; });
+    } catch { /* بلا صوت */ }
+  }
+  function playPaperSound(goNext) {
+    if (settings.paperSound === false) return;
+    initPaperSfx();
+    const el = goNext ? paperSfx.fwd : paperSfx.back;
+    if (!el) return;
+    try {
+      el.currentTime = 0;
+      const playing = el.play();
+      if (playing && typeof playing.catch === 'function') playing.catch(() => { /* يسمح المتصفح بالصوت بعد أول لمس */ });
+    } catch { /* تجاهل */ }
+    // اهتزاز خفيف على الهواتف التي تدعمه
+    try { navigator.vibrate && navigator.vibrate(8); } catch { /* تجاهل */ }
+  }
+
+  // ===== دوران ثلاثي الأبعاد حقيقي: رفع الورقة + ظل انحناء متحرك =====
   function runTurn(ghost, fromDeg, toDeg, origin, ms = TURN_MS) {
     return new Promise((resolve) => {
+      const rect = ghost.getBoundingClientRect();
       const shade = document.createElement('i');
       shade.className = 'page-ghost-shade';
       shade.style.zIndex = String(Number(ghost.style.zIndex) + 1);
-      const rect = ghost.getBoundingClientRect();
       Object.assign(shade.style, {
         position: 'fixed', left: `${rect.left}px`, top: `${rect.top}px`,
         width: `${rect.width}px`, height: `${rect.height}px`, pointerEvents: 'none',
       });
+      // ظل الانحناء: شريط ضوء يتحرك مع حرف الورقة
+      const curl = document.createElement('i');
+      curl.className = 'page-curl';
+      Object.assign(curl.style, {
+        position: 'fixed', left: `${rect.left}px`, top: `${rect.top}px`,
+        width: `${rect.width}px`, height: `${rect.height}px`, pointerEvents: 'none',
+        zIndex: String(Number(ghost.style.zIndex) + 2),
+      });
       document.body.appendChild(shade);
+      document.body.appendChild(curl);
       ghost.style.transformOrigin = origin;
-      ghost.style.transform = `perspective(1300px) rotateY(${fromDeg}deg)`;
-      ghost.getBoundingClientRect();
-      ghost.style.transition = `transform ${ms}ms cubic-bezier(.22,.61,.36,1), opacity ${ms}ms linear`;
-      shade.style.transition = `opacity ${ms}ms linear`;
-      ghost.style.transform = `perspective(1300px) rotateY(${toDeg}deg)`;
-      ghost.style.opacity = Math.abs(toDeg) > 60 ? '0' : '1';
-      shade.style.opacity = Math.abs(toDeg) > 60 ? '0.42' : '0';
-      setTimeout(() => { ghost.remove(); shade.remove(); resolve(); }, ms + 20);
+      ghost.style.transformStyle = 'preserve-3d';
+      ghost.style.backfaceVisibility = 'hidden';
+
+      const dir = Math.sign(toDeg - fromDeg) || 1;
+      const mid = (fromDeg + toDeg) / 2;
+      const fadeOut = Math.abs(toDeg) > 60;
+      const frames = (lift) => [
+        { transform: `perspective(1300px) rotateY(${fromDeg}deg) translate3d(0,0,0)`, offset: 0 },
+        { transform: `perspective(1300px) rotateY(${mid}deg) translate3d(${(fromDeg - toDeg) * 0.12}px,0,${lift}px)`, offset: 0.55 },
+        { transform: `perspective(1300px) rotateY(${toDeg}deg) translate3d(0,0,0)`, offset: 1 },
+      ];
+      const opts = { duration: ms, easing: 'cubic-bezier(.22,.61,.36,1)', fill: 'forwards' };
+      const anims = [];
+      try {
+        anims.push(ghost.animate(frames(34), opts));
+        anims.push(shade.animate([{ opacity: 0 }, { opacity: 0.30, offset: 0.5 }, { opacity: fadeOut ? 0 : 0.42 }], opts));
+        anims.push(curl.animate([
+          { opacity: 0, background: 'linear-gradient(270deg, rgba(0,0,0,.42), rgba(255,255,255,.16) 18%, rgba(0,0,0,0) 46%)' },
+          { opacity: .85, offset: 0.5, background: 'linear-gradient(270deg, rgba(0,0,0,0), rgba(0,0,0,.28) 40%, rgba(255,255,255,.22) 58%, rgba(0,0,0,0))' },
+          { opacity: 0, background: 'linear-gradient(90deg, rgba(0,0,0,.35), rgba(255,255,255,.14) 20%, rgba(0,0,0,0) 52%)' },
+        ], opts));
+      } catch {
+        // احتياط: انتقال CSS لو لم يدعم المتصفح Web Animations
+        ghost.style.transition = `transform ${ms}ms cubic-bezier(.22,.61,.36,1)`;
+        ghost.style.transform = `perspective(1300px) rotateY(${toDeg}deg)`;
+      }
+      if (fadeOut) ghost.animate([{ opacity: 1 }, { opacity: 1, offset: 0.62 }, { opacity: 0 }], opts);
+      const done = () => { ghost.remove(); shade.remove(); curl.remove(); resolve(); };
+      if (anims.length) Promise.all(anims.map((a) => a.finished.catch(() => {}))).then(done, done);
+      else setTimeout(done, ms + 20);
     });
   }
   let turning = false;
@@ -1267,6 +1331,7 @@
     if (turning || target < 1 || target > TOTAL_PAGES) return;
     turning = true;
     document.body.classList.add('page-turning');
+    playPaperSound(goNext);
     const oldGhost = pageGhost(pageEl, 41);
     try {
       await showPage(target, { scroll: true });
@@ -2858,6 +2923,7 @@
     $('#setFont').value = settings.font;
     $('#setSize').value = settings.size;
     if ($('#setSyncPlay')) $('#setSyncPlay').checked = settings.syncPlay !== false;
+    if ($('#setPaperSound')) $('#setPaperSound').checked = settings.paperSound !== false;
     $('#sizeVal').textContent = settings.size + 'px';
     if ($('#setTajweed')) $('#setTajweed').checked = !!settings.tajweed;
     fillSmartSettings();

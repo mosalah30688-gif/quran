@@ -92,3 +92,10 @@ python3 scripts/build_hafs_text.py --check
 - الصورة الأصلية المولّدة داخل المشروع `assets-source/mosque-adhan.png`، SHA-256: `5dc9eca92fef5246c5bff76632136ec02e0b2b478532ccd21a68b62f828e7b33` — لا حقوق طرف ثالث، ولا وجوه أشخاص، ولا موسيقى.
 - الفيديو **زخرفة صامتة** (muted + loop + playsinline، بلا عناصر تحكم صوتية)؛ صوت الأذان يبقى في مشغّل منفصل حتى يعمل زرّا التخفيض والتعلية والإيقاف المؤقت على الصوت فقط.
 - يُنسخ إلى `www/media/adhan/` في `scripts/build-www.sh` ويُخزَّن مسبقًا في `sw.js`، فيعمل دون إنترنت من أول تشغيل.
+
+## مؤثرات صوت التقليب (1.9.0)
+
+- `media/sfx/page-turn-fwd.mp3` — SHA-256: `f2856562b35da7d118163a1d04073ef52a2a1ccb8c4b0305ba5db6b8af735240`
+- `media/sfx/page-turn-back.mp3` — SHA-256: `d1582e4f1e337127fe64cbee8ef6b045f0cb0195ea3627e885e0d629422d41e6`
+- مولّدة داخل المشروع بضجيج وردي مُرشَّح (highpass/lowpass) بمغلّف هجوم/تلاشٍ عبر ffmpeg؛ لا حقوق طرف ثالث، ولا موسيقى، ولا أصوات بشرية.
+- تُنسخ إلى `www/media/sfx/` في `scripts/build-www.sh` وتُخزَّن مسبقًا في `sw.js`، فتعمل دون إنترنت.

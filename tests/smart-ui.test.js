@@ -348,3 +348,33 @@ test('الورد والختمة: هدف اختياري وحلقة تقدّم و�
   // صياغة عربية سليمة
   assert.ok(src.includes("'صفحة واحدة'") && src.includes("'صفحتان'"));
 });
+
+test('تقليب الورق 3D: رفع وظل انحناء وصوت ورق داخل الحزمة', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const src = read('app.js');
+  const html = read('index.html');
+  // دوران ثلاثي الأبعاد حقيقي + ظل الانحناء
+  assert.match(src, /function runTurn/);
+  assert.match(src, /preserve-3d/);
+  assert.match(src, /rotateY\(\$\{mid\}deg\) translate3d/);
+  assert.ok(src.includes('page-curl'), 'طبقة ظل الانحناء مفقودة');
+  assert.match(src, /ghost\.animate\(/);
+  // الصوت
+  assert.match(src, /paperSound: true/);
+  assert.ok(html.includes('id="setPaperSound"'), 'مفتاح صوت الورق مفقود');
+  assert.ok(html.includes('صوت تقليب الورق'), 'عنوان المفتاح مفقود');
+  assert.match(src, /function playPaperSound/);
+  assert.match(src, /paper-turn|page-turn-fwd\.mp3/);
+  assert.match(src, /navigator\.vibrate && navigator\.vibrate\(8\)/);
+  // الملفات مبنية وداخل الحزمة
+  for (const f of ['www/media/sfx/page-turn-fwd.mp3', 'www/media/sfx/page-turn-back.mp3']) {
+    const full = path.join(root, f);
+    assert.ok(fs.existsSync(full), `ملف مفقود: ${f}`);
+    assert.ok(fs.statSync(full).size > 2000, `ملف صغير جدًا: ${f}`);
+  }
+  assert.ok(read('sw.js').includes("./media/sfx/page-turn-fwd.mp3"), 'الصوت غير مخزّن للتشغيل دون إنترنت');
+  assert.ok(read('scripts/build-www.sh').includes("media/sfx"), 'البناء لا ينسخ أصوات التقليب');
+  // لا تعطيل للسحب
+  assert.match(src, /async function flipBySwipe/);
+});

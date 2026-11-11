@@ -1189,6 +1189,12 @@
     .badge-mark { font-size: 22px; line-height: 1; color: #c6922e; }
     .badge-card strong { font-size: 13px; }
     .badge-card small { font-size: 10px; opacity: .75; }
+
+    /* ---------- تقليب الورق 3D ---------- */
+    .page-ghost { backface-visibility: hidden; transform-style: preserve-3d; will-change: transform, opacity; border-radius: 10px; box-shadow: 0 26px 60px rgba(0,0,0,.28), 0 2px 6px rgba(0,0,0,.18); }
+    .page-curl { border-radius: 10px; opacity: 0; mix-blend-mode: multiply; }
+    .page-ghost-shade { border-radius: 10px; background: rgba(0,0,0,.55); opacity: 0; }
+    #pageBody.is-dragging { box-shadow: 0 18px 40px rgba(0,0,0,.22); }
 </style>
 </head>
 <body>
@@ -1904,6 +1910,10 @@
 
             <label class="lbl">الشاشة والصوت</label>
             <label class="sync-toggle">
+              <input type="checkbox" id="setPaperSound" checked />
+              <span><strong>صوت تقليب الورق</strong><br /><span class="muted">صوت ورقي خفيف مع كل قلب صفحة، مع اهتزاز صغير على الهواتف التي تدعمه.</span></span>
+            </label>
+            <label class="sync-toggle">
               <input type="checkbox" id="setSyncPlay" checked />
               <span><strong>تلاوة متزامنة آية بآية</strong><br /><span class="muted">تضيء الآية التي تُتلى الآن وتُمرَّر إليها الشاشة تلقائيًا، ولمس أي آية ينقل التلاوة إليها. تعمل دون إنترنت مع التلاوات المحفوظة.</span></span>
             </label>
@@ -1989,7 +1999,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.8.0</div>
+              <div class="muted">الإصدار 1.9.0</div>
             </div>
           </div>
 
@@ -2100,10 +2110,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.8.0';
+    window.APP_BUNDLE_VERSION = '1.9.0';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 175;
+    window.APP_BUILD_NUMBER = 176;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {
