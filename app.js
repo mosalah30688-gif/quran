@@ -1218,8 +1218,8 @@
     if (!x) {
       pageEl.style.transform = '';
     } else {
-      const tilt = Math.max(-14, Math.min(14, (x / Math.max(200, stage.clientWidth)) * 26));
-      pageEl.style.transform = `perspective(1400px) translate3d(${x}px,0,0) rotateY(${tilt.toFixed(2)}deg)`;
+      const tilt = Math.max(-9, Math.min(9, (x / Math.max(200, stage.clientWidth)) * 16));
+      pageEl.style.transform = `translate3d(${x}px,0,0) rotateY(${tilt.toFixed(2)}deg)`;
     }
     pageEl.classList.toggle('is-dragging', !!x);
   }
@@ -1232,7 +1232,7 @@
   // ---------- تقليب ثلاثي الأبعاد كما في الكتاب ----------
   // عند تغيير الصفحة نُبقي صورة الصفحة القديمة (أو الجديدة عند الرجوع) فوق الصفحة
   // الحقيقية ونديرها حول كعب الورقة بمنظور ثلاثي الأبعاد مع ظل متحرك.
-  const TURN_MS = 330;
+  const TURN_MS = 200;
   function pageGhost(node, zIndex) {
     const rect = node.getBoundingClientRect();
     const ghost = node.cloneNode(true);
@@ -1272,57 +1272,26 @@
     try { navigator.vibrate && navigator.vibrate(8); } catch { /* تجاهل */ }
   }
 
-  // ===== دوران ثلاثي الأبعاد حقيقي: رفع الورقة + ظل انحناء متحرك =====
+  // ===== تقليب ورقي بسيط وخفيف: لفة واحدة بلا طبقات ولا ظلال ثقيلة =====
+  // نسخة خفيفة على أندرويد: عنصر واحد يلفّ حول كعبه بتأثير ورقة، وتحته الصفحة الجديدة،
+  // بلا نسخ ظلال ولا mix-blend ولا translateZ — حركة واحدة على خاصية transform فقط.
   function runTurn(ghost, fromDeg, toDeg, origin, ms = TURN_MS) {
+    ghost.style.transformOrigin = origin;
+    ghost.style.transform = `perspective(1100px) rotateY(${fromDeg}deg)`;
+    ghost.classList.toggle('is-back', fromDeg > toDeg);
+    let anim = null;
+    try {
+      anim = ghost.animate([
+        { transform: `perspective(1100px) rotateY(${fromDeg}deg)` },
+        { transform: `perspective(1100px) rotateY(${toDeg}deg)` },
+      ], { duration: ms, easing: 'cubic-bezier(.32,.72,.36,1)', fill: 'forwards' });
+    } catch {
+      ghost.style.transition = `transform ${ms}ms ease-out`;
+      ghost.style.transform = `perspective(1100px) rotateY(${toDeg}deg)`;
+    }
     return new Promise((resolve) => {
-      const rect = ghost.getBoundingClientRect();
-      const shade = document.createElement('i');
-      shade.className = 'page-ghost-shade';
-      shade.style.zIndex = String(Number(ghost.style.zIndex) + 1);
-      Object.assign(shade.style, {
-        position: 'fixed', left: `${rect.left}px`, top: `${rect.top}px`,
-        width: `${rect.width}px`, height: `${rect.height}px`, pointerEvents: 'none',
-      });
-      // ظل الانحناء: شريط ضوء يتحرك مع حرف الورقة
-      const curl = document.createElement('i');
-      curl.className = 'page-curl';
-      Object.assign(curl.style, {
-        position: 'fixed', left: `${rect.left}px`, top: `${rect.top}px`,
-        width: `${rect.width}px`, height: `${rect.height}px`, pointerEvents: 'none',
-        zIndex: String(Number(ghost.style.zIndex) + 2),
-      });
-      document.body.appendChild(shade);
-      document.body.appendChild(curl);
-      ghost.style.transformOrigin = origin;
-      ghost.style.transformStyle = 'preserve-3d';
-      ghost.style.backfaceVisibility = 'hidden';
-
-      const dir = Math.sign(toDeg - fromDeg) || 1;
-      const mid = (fromDeg + toDeg) / 2;
-      const fadeOut = Math.abs(toDeg) > 60;
-      const frames = (lift) => [
-        { transform: `perspective(1300px) rotateY(${fromDeg}deg) translate3d(0,0,0)`, offset: 0 },
-        { transform: `perspective(1300px) rotateY(${mid}deg) translate3d(${(fromDeg - toDeg) * 0.12}px,0,${lift}px)`, offset: 0.55 },
-        { transform: `perspective(1300px) rotateY(${toDeg}deg) translate3d(0,0,0)`, offset: 1 },
-      ];
-      const opts = { duration: ms, easing: 'cubic-bezier(.22,.61,.36,1)', fill: 'forwards' };
-      const anims = [];
-      try {
-        anims.push(ghost.animate(frames(34), opts));
-        anims.push(shade.animate([{ opacity: 0 }, { opacity: 0.30, offset: 0.5 }, { opacity: fadeOut ? 0 : 0.42 }], opts));
-        anims.push(curl.animate([
-          { opacity: 0, background: 'linear-gradient(270deg, rgba(0,0,0,.42), rgba(255,255,255,.16) 18%, rgba(0,0,0,0) 46%)' },
-          { opacity: .85, offset: 0.5, background: 'linear-gradient(270deg, rgba(0,0,0,0), rgba(0,0,0,.28) 40%, rgba(255,255,255,.22) 58%, rgba(0,0,0,0))' },
-          { opacity: 0, background: 'linear-gradient(90deg, rgba(0,0,0,.35), rgba(255,255,255,.14) 20%, rgba(0,0,0,0) 52%)' },
-        ], opts));
-      } catch {
-        // احتياط: انتقال CSS لو لم يدعم المتصفح Web Animations
-        ghost.style.transition = `transform ${ms}ms cubic-bezier(.22,.61,.36,1)`;
-        ghost.style.transform = `perspective(1300px) rotateY(${toDeg}deg)`;
-      }
-      if (fadeOut) ghost.animate([{ opacity: 1 }, { opacity: 1, offset: 0.62 }, { opacity: 0 }], opts);
-      const done = () => { ghost.remove(); shade.remove(); curl.remove(); resolve(); };
-      if (anims.length) Promise.all(anims.map((a) => a.finished.catch(() => {}))).then(done, done);
+      const done = () => { ghost.remove(); resolve(); };
+      if (anim) anim.finished.then(done, done);
       else setTimeout(done, ms + 20);
     });
   }

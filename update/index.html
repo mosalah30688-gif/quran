@@ -1190,11 +1190,18 @@
     .badge-card strong { font-size: 13px; }
     .badge-card small { font-size: 10px; opacity: .75; }
 
-    /* ---------- تقليب الورق 3D ---------- */
-    .page-ghost { backface-visibility: hidden; transform-style: preserve-3d; will-change: transform, opacity; border-radius: 10px; box-shadow: 0 26px 60px rgba(0,0,0,.28), 0 2px 6px rgba(0,0,0,.18); }
-    .page-curl { border-radius: 10px; opacity: 0; mix-blend-mode: multiply; }
-    .page-ghost-shade { border-radius: 10px; background: rgba(0,0,0,.55); opacity: 0; }
-    #pageBody.is-dragging { box-shadow: 0 18px 40px rgba(0,0,0,.22); }
+    /* ---------- تقليب الورق: نسخة خفيفة على أندرويد ---------- */
+    /* طبقة واحدة فقط تلفّ حول الكعب، بلا ظل صندوقي ولا blend ولا translateZ */
+    .page-ghost { backface-visibility: hidden; will-change: transform; contain: layout paint; border-radius: 8px; }
+    /* ظل ثابت خفيف على حرف الورقة يعطي إحساس الورق بلا أي حركة إضافية */
+    .page-ghost::after {
+      content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: 8px;
+      background: linear-gradient(to left, rgba(0,0,0,.16), rgba(0,0,0,.04) 22%, rgba(0,0,0,0) 45%);
+    }
+    .page-ghost.is-back::after {
+      background: linear-gradient(to right, rgba(0,0,0,.16), rgba(0,0,0,.04) 22%, rgba(0,0,0,0) 45%);
+    }
+    #pageBody.is-dragging { box-shadow: 0 10px 22px rgba(0,0,0,.14); }
 </style>
 </head>
 <body>
@@ -1999,7 +2006,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.9.0</div>
+              <div class="muted">الإصدار 1.9.1</div>
             </div>
           </div>
 
@@ -2110,10 +2117,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.9.0';
+    window.APP_BUNDLE_VERSION = '1.9.1';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 176;
+    window.APP_BUILD_NUMBER = 177;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {
