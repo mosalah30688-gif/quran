@@ -1,5 +1,5 @@
 {
-  "version": "1.9.1",
+  "version": "1.9.2",
   "files": [
     "index.html",
     "smart-context.js",
@@ -28,11 +28,12 @@
     "linux": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-linux-test-v4.1.1/Siraj-Quran-4.1.1-linux-x86_64.AppImage"
   },
   "features": [
-    "التقليب بقى ورقة بسيطة وخفيفة: لفة واحدة بلا ظلال ولا طبقات تقيلة، أسرع على أندرويد",
-    "مدة التقليب ٢٠٠ مللي ثانية فقط مع بقاء صوت الورق والاهتزاز الخفيف"
+    "التقليب بقى انتقال فوري: الصفحة بتتبدل في لحظة بلا أي حركة زي تطبيقات المصاحف",
+    "تقدر ترجع حركة الورقة في أي وقت من مفتاح «انتقال فوري بين الصفحات» في الإعدادات",
+    "صوت الورق الخفيف باقي زي ما هو وممكن إيقافه"
   ],
   "sha256": {
-    "index.html": "a3db566a598ca9fe29e3fc207224f8a49ad5aae9ae880df8b5000ea2df4f56c5",
+    "index.html": "bf3041b0462cadf52d39deef2f02a2d917194887896b2888adf754648485ee1b",
     "smart-context.js": "d7f1995b9164255b5273da80a070a6f2bedd0f2abcbe7a108b20700567f00440",
     "smart-services.js": "bf98b6f1e10a771435cbf8dea41578b3e148c53901e601de28b5b4085352c10c",
     "tajweed-learning.js": "0ea4b4cde8f34591f79745275c87559f0f050692fb87d52a8bbb0200bb51e534",
@@ -43,7 +44,7 @@
     "prayer-data.js": "9d8a75f31d7c80272924250ff5fc42c0a5d551178147db87551323b6bb9fbcec",
     "prayer-ui.js": "ce598c627afb9b216809a83557e85bc3b0a106913ae93702360de65af2fdcc59",
     "quran-reciters.json": "0d63b30bd85b7147cd070709b0313e1debe63da12004a14c8f5092ff97591baf",
-    "app.js": "c8d7758ce2dd8529707aa6c7bb560e584c6012139927b7864e8956884119224b",
+    "app.js": "1b7c658c278afcb20e63d288841a268e56f07f4057a80847dcc7019c84b2a34d",
     "quran-hafs.json": "caa2d0d091a0e6f8758b2852bc36895d579d362558b778bfd4dcb973483bd9ec",
     "quran-madani-lines.json": "856bee7c3b06200182361b235ac4114d013d2275611ce585960014bd175f606e"
   },
@@ -51,5 +52,5 @@
     "policy": "OTA_FIRST",
     "note_ar": "التحديث يُسلَّم داخل التطبيق (IndexedDB) لكل من نسخته >= 1.4.7؛ مؤشر APK يبقى على 1.4.7 حتى لا يُجبَر المستخدم على تنزيل ملف، ويُرفع فقط عند طلب صريح (APK_UPDATE=true)."
   },
-  "build": 177
+  "build": 178
 }

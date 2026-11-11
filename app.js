@@ -80,7 +80,7 @@
 
   const DEFAULTS = {
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
-    surahReciter: 0, surahAudio: true, syncPlay: true, paperSound: true,
+    surahReciter: 0, surahAudio: true, syncPlay: true, paperSound: true, instantFlip: true,
     translation: '', font: 'Scheherazade New', size: 26, tajweed: false, dark: false,
     tajweedScopes: {},
   };
@@ -608,6 +608,12 @@
       setWirdGoal(Number(btn.dataset.goal) || 0);
       toast(Number(btn.dataset.goal) > 0 ? `هدفك اليومي: ${toArabicDigits(btn.dataset.goal)} صفحة` : 'بلا هدف يومي ملزم');
     });
+  });
+  const instantBox = $('#setInstantFlip');
+  instantBox && instantBox.addEventListener('change', () => {
+    settings.instantFlip = instantBox.checked;
+    saveSettings();
+    toast(instantBox.checked ? 'انتقال فوري بين الصفحات.' : 'رجعت حركة تقليب الورقة.');
   });
   const paperBox = $('#setPaperSound');
   paperBox && paperBox.addEventListener('change', () => {
@@ -1214,6 +1220,12 @@
   const FLIP_VELOCITY = 0.11; // سحب سريع (بكسل/مللي ثانية)
   // الورقة تتبع الإصبع مع ميل بسيط حول الكعب لتعطي إحساس كتاب حقيقي بسرعة استجابة عالية.
   function setPageTransform(x, animate) {
+    // في الانتقال الفوري لا نحرك الصفحة مع الإصبع إطلاقًا
+    if (settings.instantFlip !== false) {
+      pageEl.style.transition = 'none';
+      pageEl.style.transform = '';
+      return;
+    }
     pageEl.style.transition = animate ? `transform .17s ${SWIPE_EASE}` : 'none';
     if (!x) {
       pageEl.style.transform = '';
@@ -1301,6 +1313,18 @@
     turning = true;
     document.body.classList.add('page-turning');
     playPaperSound(goNext);
+    // الانتقال الفوري (الافتراضي): تبديل الصفحة في نفس الإطار بلا أي حركة أو تفريغ للطبقات
+    if (settings.instantFlip !== false) {
+      try {
+        pageEl.style.transition = 'none';
+        pageEl.style.transform = '';
+        await showPage(target, { scroll: true });
+      } finally {
+        document.body.classList.remove('page-turning');
+        turning = false;
+      }
+      return;
+    }
     const oldGhost = pageGhost(pageEl, 41);
     try {
       await showPage(target, { scroll: true });
@@ -2893,6 +2917,7 @@
     $('#setSize').value = settings.size;
     if ($('#setSyncPlay')) $('#setSyncPlay').checked = settings.syncPlay !== false;
     if ($('#setPaperSound')) $('#setPaperSound').checked = settings.paperSound !== false;
+    if ($('#setInstantFlip')) $('#setInstantFlip').checked = settings.instantFlip !== false;
     $('#sizeVal').textContent = settings.size + 'px';
     if ($('#setTajweed')) $('#setTajweed').checked = !!settings.tajweed;
     fillSmartSettings();

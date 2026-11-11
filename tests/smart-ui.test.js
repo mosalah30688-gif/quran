@@ -369,6 +369,12 @@ test('تقليب الورق: نسخة خفيفة كالورق الحقيقي ت�
   assert.ok(html.includes('id="setPaperSound"'));
   // السحب يعمل ويظل سريعًا
   assert.match(src, /async function flipBySwipe/);
+  // الانتقال الفوري (الافتراضي): بلا حركة وبلا طبقات
+  assert.match(src, /instantFlip: true/);
+  assert.match(src, /if \(settings\.instantFlip !== false\) \{/);
+  assert.match(src, /settings\.instantFlip !== false\) \{\s*pageEl\.style\.transition = 'none';/);
+  assert.ok(html.includes('id="setInstantFlip"'), 'مفتاح الانتقال الفوري مفقود');
+  assert.ok(html.includes('انتقال فوري بين الصفحات'), 'عنوان مفتاح الانتقال الفوري مفقود');
   assert.match(src, /const tilt = Math\.max\(-9/);
   for (const f of ['www/media/sfx/page-turn-fwd.mp3', 'www/media/sfx/page-turn-back.mp3']) {
     const full = path.join(root, f);
