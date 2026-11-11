@@ -23,6 +23,11 @@ if compgen -G 'audio/adhans/*.mp3' >/dev/null; then
   mkdir -p www/audio/adhans
   cp audio/adhans/*.mp3 www/audio/adhans/
 fi
+# فيديو شاشة الأذان: داخل الحزمة ليعمل دون إنترنت
+if compgen -G 'media/adhan/*' >/dev/null; then
+  mkdir -p www/media/adhan
+  cp media/adhan/* www/media/adhan/
+fi
 if compgen -G 'tajweed-curricula/*.json' >/dev/null; then
   mkdir -p www/tajweed-curricula
   cp tajweed-curricula/*.json www/tajweed-curricula/

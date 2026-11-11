@@ -49,6 +49,7 @@
     playingId: null,
     adhanCache: new Map(),
     adhanFilter: '',
+    adhanScreenOpen: false,
     downloaded: new Set(),
     iqamaTimers: [],
     lastFired: '',
@@ -224,17 +225,163 @@
     audio.volume = Math.min(1, Math.max(0, num(state.config.adhanVolume, 1)));
     state.playingId = item.id;
     renderAdhanState();
+    audio.ontimeupdate = renderAdhanScreenProgress;
+    audio.onloadedmetadata = renderAdhanScreenProgress;
+    openAdhanScreen({
+      muezzinId: item.id,
+      prayerName: options.prayerName || (state.next ? PT.describe(state.next.key) : 'الصلاة'),
+      kicker: 'حان الآن وقت',
+    });
+    renderAdhanScreenProgress();
     try {
       await audio.play();
       if (!options.silent) toast(`أذان ${item.name}`);
     } catch {
       toast('تعذّر تشغيل الأذان؛ تحقّق من الصوت أو نزّل الأذان للاستخدام دون إنترنت.');
     }
+    renderAdhanScreenProgress();
     audio.onended = () => {
       state.playingId = null;
       renderAdhanState();
+      closeAdhanScreen();
     };
     return true;
+  }
+
+
+  // ---------- شاشة الأذان: فيديو مسجد + مشغل عادي (إيقاف مؤقت/إيقاف/تخفيض/تعلية) ----------
+  const adhanScreenEls = {};
+  function adhanScreenRefs() {
+    if (adhanScreenEls.root) return adhanScreenEls;
+    const q = (id) => document.getElementById(id);
+    adhanScreenEls.root = q('adhanScreen');
+    adhanScreenEls.video = q('adhanVideo');
+    adhanScreenEls.prayer = q('adhanPrayer');
+    adhanScreenEls.muezzin = q('adhanMuezzin');
+    adhanScreenEls.kicker = q('adhanKicker');
+    adhanScreenEls.progress = q('adhanProgress');
+    adhanScreenEls.elapsed = q('adhanElapsed');
+    adhanScreenEls.total = q('adhanTotal');
+    adhanScreenEls.pause = q('adhanPause');
+    adhanScreenEls.volume = q('adhanVolume');
+    adhanScreenEls.volumeLine = q('adhanVolumeLine');
+    return adhanScreenEls;
+  }
+
+  function clockText(seconds) {
+    const value = Math.max(0, Math.round(Number(seconds) || 0));
+    return `${Math.floor(value / 60)}:${String(value % 60).padStart(2, '0')}`;
+  }
+
+  function adhanVolumeValue() {
+    return Math.min(1, Math.max(0, num(state.config && state.config.adhanVolume, 1)));
+  }
+
+  function renderAdhanVolume() {
+    const refs = adhanScreenRefs();
+    const percent = Math.round(adhanVolumeValue() * 100);
+    if (refs.volume && refs.volume.value !== String(percent)) refs.volume.value = String(percent);
+    if (refs.volumeLine) refs.volumeLine.textContent = `${percent}%`;
+    if (els.volumeRange) els.volumeRange.value = String(percent);
+  }
+
+  function setAdhanVolume(value) {
+    const next = Math.min(1, Math.max(0, value));
+    if (!state.config) return;
+    state.config.adhanVolume = next;
+    if (state.audio) {
+      try { state.audio.volume = next; } catch { /* لا شيء يُشغّل الآن */ }
+    }
+    renderAdhanVolume();
+    saveConfig();
+  }
+
+  function renderAdhanScreenProgress() {
+    const refs = adhanScreenRefs();
+    const audio = state.audio;
+    if (!refs.progress || !audio) return;
+    const total = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 0;
+    const done = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+    refs.progress.style.width = total ? `${Math.min(100, (done / total) * 100).toFixed(1)}%` : '0%';
+    if (refs.elapsed) refs.elapsed.textContent = clockText(done);
+    if (refs.total) refs.total.textContent = total ? clockText(total) : '—';
+    if (refs.pause) {
+      const paused = audio.paused && Boolean(state.playingId);
+      refs.pause.innerHTML = paused
+        ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg>متابعة'
+        : '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="5.5" width="3.6" height="13" rx="1.2"/><rect x="13.4" y="5.5" width="3.6" height="13" rx="1.2"/></svg>إيقاف مؤقت';
+      refs.pause.classList.toggle('primary', !paused);
+    }
+  }
+
+  function openAdhanScreen(info = {}) {
+    const refs = adhanScreenRefs();
+    if (!refs.root) return;
+    const item = info.muezzinId ? adhanById(info.muezzinId) : null;
+    const prayerName = info.prayerName || (state.next ? PT.describe(state.next.key) : 'الصلاة');
+    if (refs.kicker && info.kicker) refs.kicker.textContent = info.kicker;
+    if (refs.prayer) refs.prayer.textContent = prayerName;
+    if (refs.muezzin) refs.muezzin.textContent = item ? item.name : 'أذان';
+    refs.root.classList.add('open');
+    refs.root.setAttribute('aria-hidden', 'false');
+    state.adhanScreenOpen = true;
+    renderAdhanVolume();
+    renderAdhanScreenProgress();
+    if (refs.video) {
+      try {
+        refs.video.muted = true;
+        const playing = refs.video.play();
+        if (playing && typeof playing.catch === 'function') playing.catch(() => { /* الفيديو زخرفة فقط */ });
+      } catch { /* بعض الأجهزة تمنع التشغيل التلقائي */ }
+    }
+  }
+
+  function closeAdhanScreen() {
+    const refs = adhanScreenRefs();
+    if (!refs.root) return;
+    refs.root.classList.remove('open');
+    refs.root.setAttribute('aria-hidden', 'true');
+    state.adhanScreenOpen = false;
+    if (refs.video) {
+      try { refs.video.pause(); } catch { /* لا شيء */ }
+    }
+  }
+
+  function toggleAdhanPause() {
+    const audio = state.audio;
+    if (!audio) return;
+    if (audio.paused) {
+      const playing = audio.play();
+      if (playing && typeof playing.catch === 'function') playing.catch(() => { /* المتصفح منع */ });
+      toast('متابعة الأذان.');
+    } else {
+      try { audio.pause(); } catch { /* لا شيء */ }
+      toast('أُوقف الأذان مؤقتًا.');
+    }
+    renderAdhanScreenProgress();
+  }
+
+  function wireAdhanScreen() {
+    const refs = adhanScreenRefs();
+    if (!refs.root || refs.root.dataset.wired === '1') return;
+    refs.root.dataset.wired = '1';
+    refs.root.querySelectorAll('[data-adhan-ctl]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const act = btn.dataset.adhanCtl;
+        if (act === 'pause') toggleAdhanPause();
+        if (act === 'stop') { stopAdhan(); toast('أُوقف الأذان.'); }
+        if (act === 'lower') setAdhanVolume(adhanVolumeValue() - 0.1);
+        if (act === 'raise') setAdhanVolume(adhanVolumeValue() + 0.1);
+      });
+    });
+    const closeBtn = document.getElementById('adhanClose');
+    if (closeBtn) closeBtn.addEventListener('click', closeAdhanScreen);
+    if (refs.volume) {
+      refs.volume.addEventListener('input', () => setAdhanVolume(Number(refs.volume.value) / 100));
+    }
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && state.adhanScreenOpen) closeAdhanScreen();
+    });
   }
 
   function stopAdhan() {
@@ -242,6 +389,7 @@
     try { audio.pause(); audio.currentTime = 0; } catch { /* لا شيء يعمل */ }
     state.playingId = null;
     renderAdhanState();
+    closeAdhanScreen();
   }
 
   // نغمة الإقامة: قصيرة ومولّدة محليًا حتى لا تحتاج ملفًا
@@ -268,7 +416,7 @@
     const handledBySystem = hasBackgroundBridge() && bgState.scheduled > 0;
     if (config.adhanEnabled && !handledBySystem) {
       const id = key === 'fajr' ? config.fajrAdhanId : config.adhanId;
-      playAdhan(id);
+      playAdhan(id, { prayerName: `صلاة ${PT.describe(key)}` });
     } else if (!config.adhanEnabled) {
       toast(`حان الآن وقت صلاة ${PT.describe(key)}`);
     }
@@ -1117,8 +1265,7 @@
       state.config.preMinutes = Number(e.target.value); saveConfig();
     });
     els.volumeRange && els.volumeRange.addEventListener('input', (e) => {
-      state.config.adhanVolume = Number(e.target.value) / 100; saveConfig();
-      if (state.audio) state.audio.volume = state.config.adhanVolume;
+      setAdhanVolume(Number(e.target.value) / 100);
     });
     PRAYER_KEYS.forEach((key) => {
       const field = el(`ptIqama-${key}`);
@@ -1133,6 +1280,14 @@
       });
     });
     els.stopAdhan && els.stopAdhan.addEventListener('click', stopAdhan);
+    wireAdhanScreen();
+    const screenBtn = el('ptAdhanScreen');
+    screenBtn && screenBtn.addEventListener('click', () => {
+      if (state.playingId) { openAdhanScreen({ muezzinId: state.playingId, kicker: 'شاشة الأذان' }); return; }
+      const key = state.next ? state.next.key : 'dhuhr';
+      const id = key === 'fajr' ? state.config.fajrAdhanId : state.config.adhanId;
+      playAdhan(id, { prayerName: `صلاة ${PT.describe(key)}` });
+    });
     els.playNextAdhan && els.playNextAdhan.addEventListener('click', () => {
       const key = state.next ? state.next.key : 'dhuhr';
       playAdhan(key === 'fajr' ? state.config.fajrAdhanId : state.config.adhanId);

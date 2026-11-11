@@ -83,8 +83,8 @@ test('الأذان في الخلفية: أرقام الإصدار والبناء
   assert.ok(match, 'versionCode موجود في gradle');
   assert.ok(Number(match[1]) >= Number(build), 'versionCode لا يسبق BUILD_NUMBER');
   assert.match(html, new RegExp(`APP_BUILD_NUMBER = ${build}`));
-  assert.match(gradle, /versionName "1\.5\.\d+"/);
-  assert.match(gradle, /versionCode 171/);
+  assert.match(gradle, /versionName "1\.[56]\.\d+"/);
+  assert.match(gradle, /versionCode 172/);
 });
 
 test('ترقية الـAPK تُقارن برقم بناء الملف المثبَّت لا برقم بناء الواجهة', () => {
@@ -257,4 +257,39 @@ test('كل المؤذنين الـ٦٧ ظاهرين في القائمة مع ب�
   const html = read('index.html');
   assert.match(html, /\.pt-adhan-list \{[^}]*grid-template-columns: minmax\(0, 1fr\)/, 'القائمة يجب أن تكون عمودًا واحدًا بلا قص');
   assert.doesNotMatch(html, /\.pt-adhan-list \{[^}]*max-height/, 'لا نُخفي المؤذنين داخل صندوق تمرير');
+});
+
+test('شاشة الأذان: فيديو مسجد + مشغل عادي (إيقاف مؤقت/إيقاف/تخفيض/تعلية)', () => {
+  const html = read('index.html');
+  const ui = read('prayer-ui.js');
+  const fs = require('fs');
+  const path = require('path');
+  // عناصر الشاشة
+  for (const id of ['adhanScreen', 'adhanVideo', 'adhanPrayer', 'adhanMuezzin', 'adhanProgress',
+    'adhanElapsed', 'adhanTotal', 'adhanPause', 'adhanVolume', 'adhanVolumeLine', 'adhanClose']) {
+    assert.ok(html.includes(`id="${id}"`), `عنصر مفقود: ${id}`);
+  }
+  // الفيديو: محلي، صامت، متكرر، ولا يشغّل صوتًا
+  assert.match(html, /id="adhanVideo" src="media\/adhan\/mosque-adhan\.mp4"/);
+  assert.match(html, /id="adhanVideo"[^>]*poster="media\/adhan\/mosque-adhan-poster\.jpg"/);
+  const videoTag = html.match(/<video class="adhan-video"[^>]*>/)[0];
+  for (const attr of ['muted', 'loop', 'playsinline']) assert.ok(videoTag.includes(attr), `الفيديو يحتاج ${attr}`);
+  assert.ok(!/controls/.test(videoTag), 'الفيديو زخرفة لا مشغّل صوت');
+  // أزرار المشغل الأربعة
+  for (const ctl of ['pause', 'stop', 'lower', 'raise']) {
+    assert.ok(html.includes(`data-adhan-ctl="${ctl}"`), `زر مفقود: ${ctl}`);
+  }
+  assert.ok(ui.includes('function toggleAdhanPause'), 'منطق الإيقاف المؤقت مفقود');
+  assert.match(ui, /setAdhanVolume\(adhanVolumeValue\(\) - 0\.1\)/);
+  assert.match(ui, /setAdhanVolume\(adhanVolumeValue\(\) \+ 0\.1\)/);
+  // الربط الفعلي
+  assert.match(ui, /openAdhanScreen\(\{/);
+  assert.match(ui, /audio\.ontimeupdate = renderAdhanScreenProgress/);
+  // الملفات مبنية داخل الحزمة وتعمل دون إنترنت
+  const mp4 = path.join(ROOT, 'www/media/adhan/mosque-adhan.mp4');
+  assert.ok(fs.existsSync(mp4), 'الفيديو غير مبني داخل www');
+  assert.ok(fs.statSync(mp4).size > 500000, 'الفيديو صغير بشكل غير طبيعي');
+  assert.ok(fs.existsSync(path.join(ROOT, 'www/media/adhan/mosque-adhan-poster.jpg')), 'الملصق مفقود');
+  assert.ok(read('sw.js').includes("./media/adhan/mosque-adhan.mp4"), 'الفيديو غير مخزّن للتشغيل دون إنترنت');
+  assert.ok(read('scripts/build-www.sh').includes("media/adhan"), 'البناء لا ينسخ فيديو الأذان');
 });

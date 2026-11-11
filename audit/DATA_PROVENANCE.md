@@ -84,3 +84,11 @@ python3 scripts/build_hafs_text.py --check
 - الروايات الأربع المضافة — شعبة (mushaf 9)، السوسي (10)، البزي (5)، قنبل (8) — مسحوبة من لقطة `audit/sources/quranpedia/2026-11-08/` (manifest موقّع بالبصمات: 414289/421838/414289/413392 بايت) ومسجَّلة في `additional_files` داخل `audit/sources/quranpedia/2026-10-27/SOURCE.json`.
 - صفوف الروايات الثلاث المعتمدة سابقًا (ورش/قالون/الدوري) لم تتغير حرفًا واحدًا؛ ولذلك بقيت بصماتها القانونية (`canonicalPayloadSha256WithoutTopLevelLicense`) كما هي، وأُعيد تثبيت بصمة الملف فقط في سجل `tajweed-scope-registry.json` و`audit/SCHOLARLY_REVIEW.md` و`audit/tajweed-source-candidates.json` وبطاقة مراجعة الوجه.
 - الأصوات الجديدة مثبتة في `audit/riwayat-audio-mp3quran-2026-11-05.json`: سبعة مصادر، لكل مصدر سبر مباشر لثلاث سور (١، ٥٠، ١١٤) مع `content_type` و`content_range` وبصمة مقطع.
+
+## فيديو شاشة الأذان (1.6.0)
+
+- `media/adhan/mosque-adhan.mp4` — ٢٤ ثانية، ٧٢٠×١٢٨٠، H.264 Main@4.0، حلقة سلسة (تقدّم ثم رجوع)، بلا صوت. SHA-256: `46c6ee02f33916d6dd48d0443a613fb1837c532b43fadc048a9f3dad7fda783d`.
+- `media/adhan/mosque-adhan-poster.jpg` (ملصق أول لقطة). SHA-256: `1c41efc74e910d2fcdfb7ad657c496c6421da7e15e6408507d2d6bc842a3e9c5`.
+- الصورة الأصلية المولّدة داخل المشروع `assets-source/mosque-adhan.png`، SHA-256: `5dc9eca92fef5246c5bff76632136ec02e0b2b478532ccd21a68b62f828e7b33` — لا حقوق طرف ثالث، ولا وجوه أشخاص، ولا موسيقى.
+- الفيديو **زخرفة صامتة** (muted + loop + playsinline، بلا عناصر تحكم صوتية)؛ صوت الأذان يبقى في مشغّل منفصل حتى يعمل زرّا التخفيض والتعلية والإيقاف المؤقت على الصوت فقط.
+- يُنسخ إلى `www/media/adhan/` في `scripts/build-www.sh` ويُخزَّن مسبقًا في `sw.js`، فيعمل دون إنترنت من أول تشغيل.
