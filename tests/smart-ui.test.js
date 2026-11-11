@@ -324,3 +324,27 @@ test('التلاوة المتزامنة: الآية الجارية تضيء وت
   // توهج ذهبي للآية الجارية
   assert.match(settings, /#pageBody\.syncing \.ay\.playing \{[^}]*rgba\(232,181,82/);
 });
+
+test('الورد والختمة: هدف اختياري وحلقة تقدّم ودقائق قراءة وشارات ومشاركة', () => {
+  const src = read('app.js');
+  const html = read('index.html');
+  // الهدف: اختياري بالكامل، ولا يغلق شيئًا
+  assert.ok(html.includes('id="wdGoalChoices"'), 'أزرار الهدف اليومي مفقودة');
+  assert.ok(html.includes('id="wdShare"'), 'زر مشاركة التقدم مفقود');
+  assert.ok(html.includes('بلا هدف'), 'خيار «بلا هدف» مطلوب');
+  for (const fn of ['function wirdGoal', 'function setWirdGoal', 'function renderWirdRing',
+    'function wirdBadges', 'function shareWirdProgress', 'function pagesAr', 'function trackReadingMinutes']) {
+    assert.ok(src.includes(fn), `دالة مفقودة: ${fn}`);
+  }
+  // دقائق القراءة تُحتسب داخل القارئ فقط وتُخزَّن في الإحصاءات
+  assert.match(src, /st\.minutes\[todayKey\(\)\]/);
+  assert.match(src, /if \(name === 'reader'\) \{ readerActiveSince = Date\.now\(\); \}/);
+  // الشارات تقدير لا شرط: لا بوابات ولا تعطيل
+  assert.ok(html.includes('تقدير لتقدّمك، وليست شرطًا لأي خدمة'), 'نص الشارات يجب أن ينفي الشروط');
+  assert.doesNotMatch(src, /disabled\s*=\s*true[^\n]*wird/i);
+  // الختمة والورد ما زالا يعملان تلقائيًا
+  assert.match(src, /function recordWirdPage/);
+  assert.match(src, /w\.finished\.push\(\{ start: w\.startDate/);
+  // صياغة عربية سليمة
+  assert.ok(src.includes("'صفحة واحدة'") && src.includes("'صفحتان'"));
+});

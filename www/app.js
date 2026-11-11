@@ -575,6 +575,8 @@
     if (name === 'tafsir') renderTafsirView();
     if (name === 'wird') renderWird();
     if (name === 'stats') renderStats();
+    // عدّاد دقائق القراءة يعمل داخل القارئ فقط
+    if (name === 'reader') { readerActiveSince = Date.now(); } else { readerActiveSince = 0; }
     if (name === 'adhkar') renderAdhkarHome();
     if (name === 'tajweed') renderTajweedView();
     if (name === 'settings') syncIndexSelects();
@@ -593,6 +595,23 @@
     else queueSmartSuggestion(1800);
     $('#content').scrollTop = 0;
   }
+
+  // مؤقّت دقائق القراءة
+  setInterval(trackReadingMinutes, 30000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) readerActiveSince = 0;
+    else if (curView === 'reader') readerActiveSince = Date.now();
+  });
+  // أزرار الهدف اليومي والمشاركة
+  $$('#wdGoalChoices button').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      setWirdGoal(Number(btn.dataset.goal) || 0);
+      toast(Number(btn.dataset.goal) > 0 ? `هدفك اليومي: ${toArabicDigits(btn.dataset.goal)} صفحة` : 'بلا هدف يومي ملزم');
+    });
+  });
+  const shareBtn = $('#wdShare');
+  shareBtn && shareBtn.addEventListener('click', shareWirdProgress);
+
   function popView() { showView(navStack.pop() || 'reader', { back: true }); }
   $('#backBtn').addEventListener('click', () => handleBack());
   $('#settingsBtn').addEventListener('click', () => showView('settings'));
@@ -4254,7 +4273,32 @@
   // كل صفحة يفتحها القارئ تُسجَّل في يوم فتحها، مرة واحدة لكل يوم
   const STATS_KEY = 'stats';
   const dayKeyAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return dateKey(d); };
-  function getStats() { const s = store.get(STATS_KEY, null); return s && s.days ? s : { days: {} }; }
+  function getStats() {
+    const s = store.get(STATS_KEY, null);
+    const out = s && s.days ? s : { days: {} };
+    if (!out.minutes || typeof out.minutes !== 'object') out.minutes = {};
+    return out;
+  }
+  // دقائق القراءة: تُحتسب عند بقاء القارئ نشطًا في صفحة من صفحات المصحف
+  let readerActiveSince = 0;
+  let lastCountedMinute = '';
+  function trackReadingMinutes() {
+    if (curView !== 'reader' || document.hidden) return;
+    // القارئ هو الواجهة الافتراضية عند فتح التطبيق: نبدأ العدّ من أول فحص
+    if (!readerActiveSince) { readerActiveSince = Date.now(); return; }
+    const key = todayKey() + ':' + Math.floor(Date.now() / 60000);
+    if (lastCountedMinute === key) return;
+    lastCountedMinute = key;
+    const st = getStats();
+    st.minutes[todayKey()] = (st.minutes[todayKey()] || 0) + 1;
+    store.set(STATS_KEY, st);
+    if (curView === 'stats' || curView === 'wird') { renderStats(); renderWird(); }
+  }
+  function minutesToday() { return getStats().minutes[todayKey()] || 0; }
+  function minutesTotal() {
+    const m = getStats().minutes;
+    return Object.values(m).reduce((n, v) => n + (Number(v) || 0), 0);
+  }
   function recordRead(p) {
     const st = getStats();
     const k = todayKey();
@@ -4298,6 +4342,16 @@
     $('#stStreak').textContent = toArabicDigits(streak) + ' يوم';
     $('#stUnique').textContent = toArabicDigits(unique.size) + ' من ' + toArabicDigits(TOTAL_PAGES);
 
+    const mToday = $('#stMinutesToday');
+    if (mToday) mToday.textContent = toArabicDigits(minutesToday()) + ' دقيقة';
+    const mTotal = $('#stMinutesTotal');
+    if (mTotal) mTotal.textContent = toArabicDigits(minutesTotal()) + ' دقيقة';
+    const stBadges = $('#stBadges');
+    if (stBadges) {
+      stBadges.innerHTML = wirdBadges().filter((b) => b.done).map((b) => `
+        <div class="badge-card done"><span class="badge-mark">★</span><strong>${esc(b.name)}</strong><small>${esc(b.hint)}</small></div>`).join('')
+        || '<p class="muted">لم تُفتح شارة بعد؛ اقرأ صفحة واحدة وستحصل على أول شارة.</p>';
+    }
     const vals = [];
     for (let j = 6; j >= 0; j--) vals.push({ k: dayKeyAgo(j), n: count(dayKeyAgo(j)), j });
     const max = Math.max(1, ...vals.map((v) => v.n));
@@ -4350,10 +4404,24 @@
     const w = getWird();
     const habit = readingHabit();
     const avg = habit.average;
+    const goal = wirdGoal();
+    const base = goal > 0 ? goal : Math.max(1, avg);
     $('#wdDone').textContent = toArabicDigits(habit.today);
-    $('#wdFill').style.width = habit.today ? Math.min(100, habit.today / Math.max(1, avg) * 100) + '%' : '0%';
+    $('#wdFill').style.width = habit.today ? Math.min(100, habit.today / base * 100) + '%' : '0%';
+    const goalLine = $('#wdGoalLine');
+    if (goalLine) {
+      goalLine.textContent = goal > 0
+        ? (habit.today >= goal
+            ? `أتممت وردك اليوم: ${toArabicDigits(habit.today)} من ${pagesAr(goal)}. تقبّل الله.`
+            : `بقي ${pagesAr(goal - habit.today)} لإتمام وردك اليومي (${pagesAr(goal)}).`)
+        : `بلا هدف ملزم — متوسطك ${toArabicDigits(avg.toFixed(1))} صفحة/يوم، والقراءة تُسجَّل تلقائيًا.`;
+      renderWirdRing(
+        goal > 0 ? Math.min(1, habit.today / goal) : Math.min(1, habit.today / base),
+        goal > 0 ? `${toArabicDigits(habit.today)}/${toArabicDigits(goal)}` : toArabicDigits(habit.today));
+
+    }
     $('#wdMsg').textContent = habit.today
-      ? `قرأت ${toArabicDigits(habit.today)} صفحة اليوم. التسجيل تلقائي ولا يفرض عليك هدفًا.`
+      ? `قرأت ${toArabicDigits(habit.today)} صفحة اليوم في ${toArabicDigits(minutesToday())} دقيقة.`
       : 'تُسجّل القراءة تلقائيًا عند فتح صفحة جديدة، دون هدف يومي إلزامي.';
 
     const readInKhatma = w.pointer - 1;
@@ -4378,9 +4446,94 @@
     $('#wdReminderEnabled').checked = w.reminderEnabled;
     $('#wdReminderTime').value = w.reminderTime;
     $('#wdReminderStatus').textContent = w.reminderEnabled ? `التذكير اليومي عند ${w.reminderTime}.` : 'التذكير متوقف.';
+    $$('#wdGoalChoices button').forEach((btn) => {
+      btn.classList.toggle('on', Number(btn.dataset.goal) === goal);
+    });
+    renderWirdBadges();
+    const stMin = $('#wdMinutes');
+    if (stMin) stMin.textContent = toArabicDigits(minutesToday()) + ' دقيقة اليوم · ' + toArabicDigits(minutesTotal()) + ' دقيقة إجمالًا';
     $('#wdHist').innerHTML = w.finished.length
       ? w.finished.slice().reverse().map((f, i) => `<div class="wird-line"><span>ختمة مكتملة</span><span class="muted">${dateAr(f.start)} — ${dateAr(f.end)}</span></div>`).join('')
       : '<div class="muted">لا توجد ختمات مكتملة بعد.</div>';
+  }
+
+  // صياغة عربية سليمة لعدد الصفحات
+  function pagesAr(n) {
+    const num = Math.abs(Number(n) || 0);
+    if (num === 1) return 'صفحة واحدة';
+    if (num === 2) return 'صفحتان';
+    if (num >= 3 && num <= 10) return `${toArabicDigits(num)} صفحات`;
+    return `${toArabicDigits(num)} صفحة`;
+  }
+  // ---------- الهدف اليومي الاختياري ----------
+  function wirdGoal() {
+    const n = Number(store.get('wird-goal', 0));
+    return Number.isFinite(n) && n > 0 ? Math.min(40, Math.round(n)) : 0;
+  }
+  function setWirdGoal(n) {
+    store.set('wird-goal', Math.max(0, Math.min(40, Math.round(Number(n) || 0))));
+    renderWird();
+  }
+
+  // حلقة تقدّم اليوم (SVG)
+  function renderWirdRing(ratio, label) {
+    const box = $('#wdRing');
+    if (!box) return;
+    const r = 34, c = 2 * Math.PI * r;
+    const pct = Math.max(0, Math.min(1, Number(ratio) || 0));
+    box.innerHTML = `
+      <svg viewBox="0 0 84 84" role="img" aria-label="تقدّم ورد اليوم">
+        <circle cx="42" cy="42" r="${r}" fill="none" stroke="rgba(0,0,0,.08)" stroke-width="8"/>
+        <circle cx="42" cy="42" r="${r}" fill="none" stroke="#c6922e" stroke-width="8" stroke-linecap="round"
+          stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - pct)}" transform="rotate(-90 42 42)"/>
+        <text x="42" y="47" text-anchor="middle" font-size="15" fill="currentColor" font-family="inherit">${label}</text>
+      </svg>`;
+  }
+
+  // ---------- الشارات: تقدير لا شرط ----------
+  function wirdBadges() {
+    const st = getStats();
+    const habit = readingHabit();
+    const unique = new Set();
+    Object.values(st.days).forEach((arr) => arr.forEach((p) => unique.add(p)));
+    const w = getWird();
+    const totalPages = Object.values(st.days).reduce((n, arr) => n + arr.length, 0);
+    const minutes = minutesTotal();
+    return [
+      { id: 'first', name: 'أول صفحة', hint: 'افتح صفحة من المصحف', done: totalPages >= 1 },
+      { id: 'week', name: 'أسبوع متصل', hint: '٧ أيام قراءة متتالية', done: habit.streak >= 7 },
+      { id: 'month', name: 'شهر متصل', hint: '٣٠ يومًا متتالية', done: habit.streak >= 30 },
+      { id: 'hundred', name: 'مئة صفحة', hint: '١٠٠ صفحة مقروءة', done: totalPages >= 100 },
+      { id: 'fivehundred', name: 'خمس مئة', hint: '٥٠٠ صفحة مقروءة', done: totalPages >= 500 },
+      { id: 'khatma', name: 'ختمة كاملة', hint: 'أتمم ختمة واحدة', done: w.finished.length >= 1 },
+      { id: 'two', name: 'ختمتان', hint: 'ختمتان مكتملتان', done: w.finished.length >= 2 },
+      { id: 'pages600', name: 'كل المصحف', hint: 'اقرأ ٦٠٤ صفحات مختلفة', done: unique.size >= TOTAL_PAGES },
+      { id: 'hours', name: 'عشر ساعات', hint: '٦٠٠ دقيقة قراءة', done: minutes >= 600 },
+      { id: 'minutes60', name: 'ساعة قراءة', hint: '٦٠ دقيقة قراءة', done: minutes >= 60 },
+    ];
+  }
+  function renderWirdBadges() {
+    const box = $('#wdBadges');
+    if (!box) return;
+    box.innerHTML = wirdBadges().map((b) => `
+      <div class="badge-card${b.done ? ' done' : ''}" title="${esc(b.hint)}">
+        <span class="badge-mark">${b.done ? '★' : '☆'}</span>
+        <strong>${esc(b.name)}</strong>
+        <small>${esc(b.hint)}</small>
+      </div>`).join('');
+  }
+
+  // مشاركة التقدم
+  async function shareWirdProgress() {
+    const habit = readingHabit();
+    const w = getWird();
+    const text = `تقدّمي في سراج: ${toArabicDigits(habit.today)} صفحة اليوم · ${toArabicDigits(habit.streak)} يومًا متتاليًا · `
+      + `${toArabicDigits(w.pointer - 1)} صفحة في الختمة الحالية · ${toArabicDigits(w.finished.length)} ختمة مكتملة.`;
+    try {
+      if (navigator.share) { await navigator.share({ text }); return; }
+      await navigator.clipboard.writeText(text);
+      toast('تم نسخ تقدّمك');
+    } catch { toast('تعذّرت المشاركة'); }
   }
 
   // لا يتحرك مؤشر الختمة إلا عند فتح الصفحة التالية نفسها؛ فتح صفحة عشوائية لا يفسد التتبع.

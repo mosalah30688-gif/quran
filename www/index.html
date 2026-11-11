@@ -1174,6 +1174,21 @@
     .adhan-vol { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
     .adhan-vol input { flex: 1 1 auto; min-width: 0; accent-color: #e8b552; direction: ltr; }
     .adhan-vol span { flex: 0 0 auto; font-size: 12px; min-width: 64px; text-align: left; direction: ltr; }
+
+    /* ---------- الورد: حلقة تقدّم، هدف، شارات ---------- */
+    .wird-today { display: flex; gap: 16px; align-items: center; }
+    .wird-today-body { flex: 1 1 auto; min-width: 0; }
+    .wird-ring { flex: 0 0 84px; width: 84px; height: 84px; color: var(--ink); }
+    .wird-ring svg { width: 84px; height: 84px; }
+    .goal-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .goal-chips .chip { padding: 8px 14px; border-radius: 99px; border: 1px solid var(--line); background: transparent; color: inherit; font: inherit; font-size: 13px; cursor: pointer; }
+    .goal-chips .chip.on { background: #c6922e; border-color: #c6922e; color: #fff8e6; }
+    .badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; margin-top: 10px; }
+    .badge-card { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; padding: 12px 8px; border-radius: 14px; border: 1px dashed var(--line); opacity: .55; }
+    .badge-card.done { opacity: 1; border-style: solid; border-color: rgba(198,146,46,.55); background: rgba(198,146,46,.10); }
+    .badge-mark { font-size: 22px; line-height: 1; color: #c6922e; }
+    .badge-card strong { font-size: 13px; }
+    .badge-card small { font-size: 10px; opacity: .75; }
 </style>
 </head>
 <body>
@@ -1598,16 +1613,43 @@
           </div>
           <div class="card">
             <div class="wird-line"><span>صفحات مختلفة قرأتها</span><b id="stUnique">0 من 604</b></div>
+            <div class="wird-line"><span>وقت القراءة اليوم</span><b id="stMinutesToday">0 دقيقة</b></div>
+            <div class="wird-line"><span>إجمالي وقت القراءة</span><b id="stMinutesTotal">0 دقيقة</b></div>
+          </div>
+          <div class="card">
+            <h3 style="margin-top:0">شاراتك</h3>
+            <div class="badge-grid" id="stBadges"></div>
           </div>
         </section>
 
         <!-- الورد -->
         <section class="view" id="view-wird">
+          <div class="card wird-today">
+            <div class="wird-ring" id="wdRing" aria-hidden="true"></div>
+            <div class="wird-today-body">
+              <h3 style="margin-top:0">قراءتك اليوم</h3>
+              <div class="wird-big"><span id="wdDone">0</span> صفحة</div>
+              <div class="wbar"><div class="wfill" id="wdFill"></div></div>
+              <div id="wdGoalLine" class="muted" style="margin-top:10px">بلا هدف ملزم — القراءة تُسجَّل تلقائيًا.</div>
+              <div id="wdMsg" class="muted" style="margin-top:6px"></div>
+              <div id="wdMinutes" class="muted" style="margin-top:6px"></div>
+            </div>
+          </div>
+
           <div class="card">
-            <h3 style="margin-top:0">قراءتك اليوم</h3>
-            <div class="wird-big"><span id="wdDone">0</span> صفحة</div>
-            <div class="wbar"><div class="wfill" id="wdFill"></div></div>
-            <div id="wdMsg" class="muted" style="margin-top:10px">تُسجّل القراءة تلقائيًا عند فتح صفحة جديدة.</div>
+            <h3 style="margin-top:0">هدفك اليومي (اختياري)</h3>
+            <p class="muted" style="margin-top:0">بلا هدف ملزم افتراضيًّا؛ اختر ما يناسبك ولا يُغلق شيء في التطبيق.</p>
+            <div class="goal-chips" id="wdGoalChoices">
+              <button class="chip" data-goal="0">بلا هدف</button>
+              <button class="chip" data-goal="1">صفحة</button>
+              <button class="chip" data-goal="2">٢ صفحات</button>
+              <button class="chip" data-goal="4">٤ صفحات</button>
+              <button class="chip" data-goal="8">٨ صفحات</button>
+              <button class="chip" data-goal="20">٢٠ صفحة</button>
+            </div>
+            <div class="row" style="margin-top:12px">
+              <button class="btn small ghost" id="wdShare">شارك تقدّمك</button>
+            </div>
           </div>
 
           <div class="card">
@@ -1642,6 +1684,12 @@
               <button class="btn small ghost" id="wdReminderSave">حفظ التذكير</button>
             </div>
             <div class="muted" id="wdReminderStatus" style="margin-top:6px"></div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-top:0">شاراتك</h3>
+            <p class="muted" style="margin-top:0">تقدير لتقدّمك، وليست شرطًا لأي خدمة في التطبيق.</p>
+            <div class="badge-grid" id="wdBadges"></div>
           </div>
 
           <div class="card">
@@ -1941,7 +1989,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.7.0</div>
+              <div class="muted">الإصدار 1.8.0</div>
             </div>
           </div>
 
@@ -2052,10 +2100,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.7.0';
+    window.APP_BUNDLE_VERSION = '1.8.0';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 174;
+    window.APP_BUILD_NUMBER = 175;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {
