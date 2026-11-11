@@ -50,6 +50,7 @@
     adhanCache: new Map(),
     adhanFilter: '',
     adhanScreenOpen: false,
+    adhanLive: false,
     downloaded: new Set(),
     iqamaTimers: [],
     lastFired: '',
@@ -224,13 +225,14 @@
     audio.src = local || item.url;
     audio.volume = Math.min(1, Math.max(0, num(state.config.adhanVolume, 1)));
     state.playingId = item.id;
+    state.adhanLive = Boolean(options.prayerName);
     renderAdhanState();
     audio.ontimeupdate = renderAdhanScreenProgress;
     audio.onloadedmetadata = renderAdhanScreenProgress;
     openAdhanScreen({
       muezzinId: item.id,
-      prayerName: options.prayerName || (state.next ? PT.describe(state.next.key) : 'الصلاة'),
-      kicker: 'حان الآن وقت',
+      prayerName: options.prayerName || enteredPrayerLabel(),
+      live: Boolean(options.prayerName),
     });
     renderAdhanScreenProgress();
     try {
@@ -257,7 +259,6 @@
     adhanScreenEls.root = q('adhanScreen');
     adhanScreenEls.video = q('adhanVideo');
     adhanScreenEls.prayer = q('adhanPrayer');
-    adhanScreenEls.muezzin = q('adhanMuezzin');
     adhanScreenEls.kicker = q('adhanKicker');
     adhanScreenEls.progress = q('adhanProgress');
     adhanScreenEls.elapsed = q('adhanElapsed');
@@ -308,20 +309,32 @@
     if (refs.pause) {
       const paused = audio.paused && Boolean(state.playingId);
       refs.pause.innerHTML = paused
-        ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg>متابعة'
-        : '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="5.5" width="3.6" height="13" rx="1.2"/><rect x="13.4" y="5.5" width="3.6" height="13" rx="1.2"/></svg>إيقاف مؤقت';
+        ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg>'
+        : '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="5.5" width="3.6" height="13" rx="1.2"/><rect x="13.4" y="5.5" width="3.6" height="13" rx="1.2"/></svg>';
+      refs.pause.setAttribute('aria-label', paused ? 'متابعة الأذان' : 'إيقاف مؤقت');
+      refs.pause.title = paused ? 'متابعة' : 'إيقاف مؤقت';
       refs.pause.classList.toggle('primary', !paused);
     }
+  }
+
+
+  // الصلاة التي دخل وقتها الآن (وإلا القادمة) — لعنوان «حان الآن وقت …»
+  function enteredPrayerLabel() {
+    const table = state.today || computeTimes(new Date());
+    if (table) {
+      const nowHours = PT.minutesNow(new Date()) / 60;
+      const entered = PRAYER_KEYS.filter((k) => Number.isFinite(table[k]) && table[k] <= nowHours).pop();
+      if (entered) return `صلاة ${PT.describe(entered)}`;
+    }
+    return state.next ? `صلاة ${PT.describe(state.next.key)}` : 'الصلاة';
   }
 
   function openAdhanScreen(info = {}) {
     const refs = adhanScreenRefs();
     if (!refs.root) return;
-    const item = info.muezzinId ? adhanById(info.muezzinId) : null;
-    const prayerName = info.prayerName || (state.next ? PT.describe(state.next.key) : 'الصلاة');
-    if (refs.kicker && info.kicker) refs.kicker.textContent = info.kicker;
+    const prayerName = info.prayerName || enteredPrayerLabel();
+    if (refs.kicker) refs.kicker.textContent = info.live ? 'حان الآن وقت' : 'أذان';
     if (refs.prayer) refs.prayer.textContent = prayerName;
-    if (refs.muezzin) refs.muezzin.textContent = item ? item.name : 'أذان';
     refs.root.classList.add('open');
     refs.root.setAttribute('aria-hidden', 'false');
     state.adhanScreenOpen = true;
@@ -416,7 +429,8 @@
     const handledBySystem = hasBackgroundBridge() && bgState.scheduled > 0;
     if (config.adhanEnabled && !handledBySystem) {
       const id = key === 'fajr' ? config.fajrAdhanId : config.adhanId;
-      playAdhan(id, { prayerName: `صلاة ${PT.describe(key)}` });
+      // تجربة يدوية: العنوان يبقى «أذان» إلا إذا دخل وقت الصلاة فعلًا
+      playAdhan(id);
     } else if (!config.adhanEnabled) {
       toast(`حان الآن وقت صلاة ${PT.describe(key)}`);
     }
@@ -1283,10 +1297,11 @@
     wireAdhanScreen();
     const screenBtn = el('ptAdhanScreen');
     screenBtn && screenBtn.addEventListener('click', () => {
-      if (state.playingId) { openAdhanScreen({ muezzinId: state.playingId, kicker: 'شاشة الأذان' }); return; }
+      if (state.playingId) { openAdhanScreen({ muezzinId: state.playingId, live: Boolean(state.adhanLive) }); return; }
       const key = state.next ? state.next.key : 'dhuhr';
       const id = key === 'fajr' ? state.config.fajrAdhanId : state.config.adhanId;
-      playAdhan(id, { prayerName: `صلاة ${PT.describe(key)}` });
+      // تجربة يدوية: العنوان يبقى «أذان» إلا إذا دخل وقت الصلاة فعلًا
+      playAdhan(id);
     });
     els.playNextAdhan && els.playNextAdhan.addEventListener('click', () => {
       const key = state.next ? state.next.key : 'dhuhr';

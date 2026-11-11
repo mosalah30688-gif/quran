@@ -84,7 +84,7 @@ test('الأذان في الخلفية: أرقام الإصدار والبناء
   assert.ok(Number(match[1]) >= Number(build), 'versionCode لا يسبق BUILD_NUMBER');
   assert.match(html, new RegExp(`APP_BUILD_NUMBER = ${build}`));
   assert.match(gradle, /versionName "1\.[56]\.\d+"/);
-  assert.match(gradle, /versionCode 172/);
+  assert.match(gradle, /versionCode 173/);
 });
 
 test('ترقية الـAPK تُقارن برقم بناء الملف المثبَّت لا برقم بناء الواجهة', () => {
@@ -265,10 +265,25 @@ test('شاشة الأذان: فيديو مسجد + مشغل عادي (إيقاف
   const fs = require('fs');
   const path = require('path');
   // عناصر الشاشة
-  for (const id of ['adhanScreen', 'adhanVideo', 'adhanPrayer', 'adhanMuezzin', 'adhanProgress',
+  for (const id of ['adhanScreen', 'adhanVideo', 'adhanPrayer', 'adhanKicker', 'adhanProgress',
     'adhanElapsed', 'adhanTotal', 'adhanPause', 'adhanVolume', 'adhanVolumeLine', 'adhanClose']) {
     assert.ok(html.includes(`id="${id}"`), `عنصر مفقود: ${id}`);
   }
+  // بلا اسم مؤذن وبلا شرح تحت المشغل (طلب صريح من المالك)
+  assert.ok(!html.includes('adhanMuezzin'), 'اسم المؤذن يجب أن يختفي من الشاشة');
+  assert.ok(!html.includes('adhan-hint'), 'لا نصوص شرح تحت المشغل');
+  assert.ok(!/adhan-muezzin/.test(html), 'لا سطر اسم مؤذن');
+  // الأزرار أيقونات فقط بلا كلمات
+  const ctlButtons = html.match(/<button class="adhan-ctl[^>]*>[\s\S]*?<\/button>/g) || [];
+  assert.equal(ctlButtons.length, 4);
+  ctlButtons.forEach((btn) => {
+    assert.ok(btn.includes('<svg'), 'كل زر يجب أن يكون أيقونة');
+    assert.ok(!/[\u0600-\u06FF]/.test(btn.replace(/aria-label="[^"]*"/g, '')), 'لا كلمات داخل الأزرار');
+  });
+  // العنوان الحقيقي يظهر فقط عند دخول الوقت
+  const uiSrc = read('prayer-ui.js');
+  assert.ok(uiSrc.includes('function enteredPrayerLabel'), 'عنوان الصلاة حسب الوقت مفقود');
+  assert.match(uiSrc, /info\.live \? 'حان الآن وقت' : 'أذان'/);
   // الفيديو: محلي، صامت، متكرر، ولا يشغّل صوتًا
   assert.match(html, /id="adhanVideo" src="media\/adhan\/mosque-adhan\.mp4"/);
   assert.match(html, /id="adhanVideo"[^>]*poster="media\/adhan\/mosque-adhan-poster\.jpg"/);
