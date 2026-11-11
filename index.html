@@ -1917,6 +1917,10 @@
 
             <label class="lbl">الشاشة والصوت</label>
             <label class="sync-toggle">
+              <input type="checkbox" id="setInstantFlip" checked />
+              <span><strong>انتقال فوري بين الصفحات</strong><br /><span class="muted">تبديل الصفحة في لحظة بلا حركة تقليب، مثل تطبيقات المصاحف المعروفة. أطفئه لترجع حركة الورقة.</span></span>
+            </label>
+            <label class="sync-toggle">
               <input type="checkbox" id="setPaperSound" checked />
               <span><strong>صوت تقليب الورق</strong><br /><span class="muted">صوت ورقي خفيف مع كل قلب صفحة، مع اهتزاز صغير على الهواتف التي تدعمه.</span></span>
             </label>
@@ -2006,7 +2010,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.9.1</div>
+              <div class="muted">الإصدار 1.9.2</div>
             </div>
           </div>
 
@@ -2117,10 +2121,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.9.1';
+    window.APP_BUNDLE_VERSION = '1.9.2';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 177;
+    window.APP_BUILD_NUMBER = 178;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {
