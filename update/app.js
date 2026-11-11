@@ -80,7 +80,7 @@
 
   const DEFAULTS = {
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
-    surahReciter: 0, surahAudio: true,
+    surahReciter: 0, surahAudio: true, syncPlay: true,
     translation: '', font: 'Scheherazade New', size: 26, tajweed: false, dark: false,
     tajweedScopes: {},
   };
@@ -1476,6 +1476,11 @@
     const a = state.pg && state.pg.ayahs.find((x) => x.g === g);
     if (!a) return;
     selectAyah(a);
+    // في التلاوة المتزامنة: لمس الآية ينقل التشغيل إليها فورًا
+    if (play.active && syncReadingEnabled()) {
+      playAyah(a);
+      return;
+    }
     // التفسير والترجمة يظهران من زر "التفسير" فقط. الكلمة الملونة تعرض قاعدة التجويد
     const independent = !end && e.target.closest('[data-tj-rules]');
     if (independent) {
@@ -2199,6 +2204,8 @@
           ? ` · تكرار ${toArabicDigits(play.repeatCount - play.repeatLeft + 1)} من ${toArabicDigits(play.repeatCount)}`
           : '');
     }
+    const bodyEl = $('#pageBody');
+    if (bodyEl) bodyEl.classList.toggle('syncing', Boolean(play.active && syncReadingEnabled()));
     const paused = audio.paused;
     $('#pToggle').textContent = paused ? '▶' : '⏸';
     $('#pToggle').setAttribute('aria-label', paused ? 'تشغيل التلاوة' : 'إيقاف التلاوة مؤقتًا');
@@ -2292,6 +2299,44 @@
     });
   }
 
+
+  // ---------- التلاوة المتزامنة: آية بآية بلا حاجة لتوقيتات ----------
+  // ملفات الآيات متاحة للقرّاء المعلنين في OFFLINE_SRC (CDN) أو المحمّلين على الجهاز.
+  function ayahSyncAvailable() {
+    return Boolean(OFFLINE_SRC[settings.reciter]);
+  }
+
+  function syncReadingEnabled() {
+    return settings.syncPlay !== false && !isRiw() && ayahSyncAvailable();
+  }
+
+  // تمرير الشاشة إلى الآية الجارية وإبرازها
+  function focusSyncedAyah() {
+    const body = $('#pageBody');
+    if (!body) return;
+    body.classList.toggle('syncing', Boolean(play.active && syncReadingEnabled()));
+    if (!play.active || !syncReadingEnabled()) return;
+    const el = body.querySelector('.ay.playing');
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const stageRect = (stage || body).getBoundingClientRect();
+    const outside = rect.top < stageRect.top + 60 || rect.bottom > stageRect.bottom - 120;
+    if (outside) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+
+  // تحميل مسبق لملف الآية التالية لتفادي الفراغ بين الآيات
+  let preloadEl = null;
+  function preloadAyahAudio(s, n) {
+    if (!OFFLINE_SRC[settings.reciter] || isRiw()) return;
+    const url = ayahAudioUrl(settings.reciter, s, n);
+    if (!url) return;
+    if (!preloadEl) {
+      preloadEl = new Audio();
+      preloadEl.preload = 'auto';
+    }
+    try { preloadEl.src = url; } catch { /* تجاهل */ }
+  }
+
   async function playAyah(a) {
     if (isRiw() && !riwAudioOk()) { toast('اختر قارئاً لهذه الرواية من الإعدادات'); return; }
     if (!a) { stopPlayback(); return; }
@@ -2320,6 +2365,9 @@
         state.sel = a; state.selSurah = a.s; markSelection(); updateChrome();
       }
     }
+    // التلاوة المتزامنة: إبراز الآية الجارية وتمرير الشاشة وتحسين تسلسل الصوت
+    focusSyncedAyah();
+    if (syncReadingEnabled() && !a.fromSurah) preloadAyahAudio(a.s, a.n + 1);
     store.set('last', { p: a.page || state.page, s: a.s, a: a.n, g: a.g });
     renderLast();
     setPlayerUI();
@@ -2328,13 +2376,19 @@
   // بدء تشغيل السورة: ملف واحد كامل ما لم يكن المستخدم يريد آيةً آية
   async function startSurahPlay(s, n) {
     if (isRiw() && !riwAudioOk()) { toast('اختر قارئاً لهذه الرواية من الإعدادات'); return; }
-    if (settings.surahAudio !== false && !isRiw() && SURAH_RECITERS.length) {
+    // التلاوة المتزامنة تتقدّم على ملف السورة الكاملة لأنها تضيء الآية الجارية
+    const syncReady = syncReadingEnabled();
+    if (!syncReady && settings.surahAudio !== false && !isRiw() && SURAH_RECITERS.length) {
       return playSurahFull(s);
+    }
+    if (settings.syncPlay !== false && !syncReady && !isRiw() && !OFFLINE_SRC[settings.reciter]) {
+      toast('هذا القارئ ليس له ملفات آيات؛ اختر قارئًا من قائمة التحميل للتلاوة المتزامنة.');
     }
     const first = isRiw() ? await findRiwAyah(s, n) : await findAyah(s, n);
     if (riwSurahOnly()) toast('تلاوة السورة كاملة (لا يتوفر توقيت للآيات مع هذا القارئ)');
     if (!first) return;
-    const label = `سورة ${surahNameShort(s)}`;
+    const recLabel = (RECITERS.find(([id]) => id === settings.reciter) || [null, ''])[1];
+    const label = `سورة ${surahNameShort(s)}${recLabel ? ' · ' + recLabel : ''}${syncReady ? ' · آية بآية' : ''}`;
     play.label = label;
     play.repeatCount = 1; play.repeatLeft = 1;
     play.follow = true;
@@ -2784,6 +2838,7 @@
     $('#tfTrans').value = settings.translation;
     $('#setFont').value = settings.font;
     $('#setSize').value = settings.size;
+    if ($('#setSyncPlay')) $('#setSyncPlay').checked = settings.syncPlay !== false;
     $('#sizeVal').textContent = settings.size + 'px';
     if ($('#setTajweed')) $('#setTajweed').checked = !!settings.tajweed;
     fillSmartSettings();
@@ -4782,6 +4837,13 @@
     };
   }
 
+  const syncPlayBox = $('#setSyncPlay');
+  syncPlayBox && syncPlayBox.addEventListener('change', () => {
+    settings.syncPlay = syncPlayBox.checked;
+    saveSettings();
+    if ($('#pageBody')) $('#pageBody').classList.toggle('syncing', Boolean(play.active && syncReadingEnabled()));
+    toast(settings.syncPlay ? 'تلاوة متزامنة: الآية الجارية تُضاء وتُتبع تلقائيًا.' : 'التلاوة المتزامنة متوقفة؛ تُشغّل السورة كاملة كالسابق.');
+  });
   $('#setSmartEnabled').addEventListener('change', (event) => {
     if (!smartEngine) return;
     smartEngine.configure({ ...smartConfigFromControls(), enabled: event.target.checked });

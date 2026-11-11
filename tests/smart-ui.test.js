@@ -299,3 +299,28 @@ test('سبع روايات للقراءة والاستماع مع قرّاء مو
     assert.match(app, new RegExp(`'${reciter}'`));
   }
 });
+
+test('التلاوة المتزامنة: الآية الجارية تضيء وتُمرَّر الشاشة إليها دون إنترنت', () => {
+  const src = read('app.js');
+  // الافتراضي مفعّل، ومفتاحه في الإعدادات
+  assert.match(src, /syncPlay: true/);
+  const settings = read('index.html');
+  assert.ok(settings.includes('id="setSyncPlay"'), 'مفتاح التلاوة المتزامنة مفقود');
+  assert.ok(settings.includes('تلاوة متزامنة آية بآية'), 'عنوان المفتاح مفقود');
+  // منطق التزامن
+  for (const fn of ['function syncReadingEnabled', 'function focusSyncedAyah', 'function preloadAyahAudio', 'function ayahSyncAvailable']) {
+    assert.ok(src.includes(fn), `دالة مفقودة: ${fn}`);
+  }
+  // الإبراز والتمرير داخل القراءة
+  assert.match(src, /classList\.toggle\('syncing'/);
+  assert.match(src, /scrollIntoView\(\{ block: 'center', behavior: 'smooth' \}\)/);
+  // لمس الآية ينقل التلاوة إليها في وضع التزامن
+  assert.match(src, /if \(play\.active && syncReadingEnabled\(\)\) \{\s*playAyah\(a\);/);
+  // ملف السورة الكاملة يبقى متاحًا عند إطفاء الخيار
+  assert.match(src, /if \(!syncReady && settings\.surahAudio !== false/);
+  // صوت الآية من الملف المحلي أولاً ثم الشبكة، مع تحميل مسبق للآية التالية
+  assert.match(src, /preloadAyahAudio\(a\.s, a\.n \+ 1\)/);
+  assert.match(src, /const local = a\.fromSurah \? null : await localAudioUrl/);
+  // توهج ذهبي للآية الجارية
+  assert.match(settings, /#pageBody\.syncing \.ay\.playing \{[^}]*rgba\(232,181,82/);
+});

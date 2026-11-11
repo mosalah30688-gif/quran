@@ -176,6 +176,16 @@
     .ay { border-radius: .32em; transition: background-color .25s ease, box-shadow .25s ease; }
     .ay.sel { background: none; box-shadow: none; }
     .ay.playing { background: color-mix(in srgb, var(--ink) 7%, transparent); }
+    /* التلاوة المتزامنة: الآية الجارية تتوهج بإطار ذهبي هادئ */
+    #pageBody.syncing .ay.playing {
+      background: linear-gradient(180deg, rgba(232,181,82,.30), rgba(232,181,82,.16));
+      box-shadow: inset 0 0 0 1px rgba(198,146,46,.55), 0 2px 12px rgba(198,146,46,.20);
+      border-radius: .34em;
+      padding: .04em .12em;
+    }
+    .sync-toggle { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: rgba(198,146,46,.08); margin: 6px 0 10px; }
+    .sync-toggle input { margin-top: 3px; }
+    .sync-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; padding: 3px 8px; border-radius: 99px; background: rgba(198,146,46,.16); color: #8a6412; margin-inline-start: 6px; }
     .page-body ::selection, .page ::selection, #pageBody ::selection {
       background: rgba(40,120,255,.32); color: inherit;
     }
@@ -1845,6 +1855,10 @@
 
 
             <label class="lbl">الشاشة والصوت</label>
+            <label class="sync-toggle">
+              <input type="checkbox" id="setSyncPlay" checked />
+              <span><strong>تلاوة متزامنة آية بآية</strong><br /><span class="muted">تضيء الآية التي تُتلى الآن وتُمرَّر إليها الشاشة تلقائيًا، ولمس أي آية ينقل التلاوة إليها. تعمل دون إنترنت مع التلاوات المحفوظة.</span></span>
+            </label>
             <p class="muted">تبقى الشاشة مضاءة ما دام التطبيق مفتوحًا، وتستمر التلاوة عند مغادرته أو إطفاء الشاشة، وتتوقف عند إغلاق التطبيق.</p>
           </div>
           <details class="card dd">
@@ -1927,7 +1941,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.6.1</div>
+              <div class="muted">الإصدار 1.7.0</div>
             </div>
           </div>
 
@@ -2038,10 +2052,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.6.1';
+    window.APP_BUNDLE_VERSION = '1.7.0';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 173;
+    window.APP_BUILD_NUMBER = 174;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {
