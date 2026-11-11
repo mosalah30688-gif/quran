@@ -202,6 +202,8 @@ jobs:
               'assets/public/legal/LICENSE.ar.md',
               'assets/public/legal/NOTICE.md',
               'assets/public/legal/MIT-HISTORICAL.txt',
+              'assets/public/media/adhan/mosque-adhan.mp4',
+              'assets/public/media/adhan/mosque-adhan-poster.jpg',
           }
           with zipfile.ZipFile(apk) as archive:
               names = set(archive.namelist())
