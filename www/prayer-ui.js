@@ -251,6 +251,27 @@
   }
 
 
+
+  // ---------- فتح شاشة الأذان إجباريًا من منبّه النظام ----------
+  // أندرويد يفتح النشاط من intent ملء الشاشة، ثم نسحب الطلب هنا ونشغّل الأذان ونفتح الشاشة.
+  let pendingCheckAt = 0;
+  async function checkPendingNativeAdhan() {
+    if (!hasBackgroundBridge()) return;
+    const now = Date.now();
+    if (now - pendingCheckAt < 1500) return;
+    pendingCheckAt = now;
+    try {
+      const result = await bgCall('takePendingOpen');
+      if (!result || !result.pending) return;
+      const id = result.adhanId || state.config.adhanId;
+      const label = result.label || PT.describe(result.prayer || 'dhuhr');
+      state.pendingAdhan = { id, label };
+      // نوقف تشغيل الخدمة الأصلية أولًا حتى لا يتكرر الصوت، ثم نتولى التشغيل داخل الشاشة
+      try { await bgCall('stop'); } catch { /* الخدمة غير قائمة */ }
+      playAdhan(id, { prayerName: label, live: true });
+    } catch { /* الجسر غير متاح */ }
+  }
+
   // ---------- شاشة الأذان: فيديو مسجد + مشغل عادي (إيقاف مؤقت/إيقاف/تخفيض/تعلية) ----------
   const adhanScreenEls = {};
   function adhanScreenRefs() {
@@ -1295,6 +1316,8 @@
     });
     els.stopAdhan && els.stopAdhan.addEventListener('click', stopAdhan);
     wireAdhanScreen();
+    checkPendingNativeAdhan();
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) checkPendingNativeAdhan(); });
     const screenBtn = el('ptAdhanScreen');
     screenBtn && screenBtn.addEventListener('click', () => {
       if (state.playingId) { openAdhanScreen({ muezzinId: state.playingId, live: Boolean(state.adhanLive) }); return; }

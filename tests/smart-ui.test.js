@@ -277,7 +277,7 @@ test('مصحف أوضح: خط معرّض وخانة صفحة صغيرة وأزر
   assert.match(html, /font-size: clamp\(12px, 3\.6vw, 14px\); font-weight: 800/);
   assert.match(app, /const FLIP_RATIO = 0\.15;/);
   assert.match(app, /const FLIP_VELOCITY = 0\.11;/);
-  assert.match(app, /rotateY\(\$\{tilt\.toFixed\(2\)\}deg\)/);
+  assert.doesNotMatch(app, /rotateY/);
 });
 
 test('سبع روايات للقراءة والاستماع مع قرّاء موثّقين', () => {
@@ -303,10 +303,10 @@ test('سبع روايات للقراءة والاستماع مع قرّاء مو
 test('التلاوة المتزامنة: الآية الجارية تضيء وتُمرَّر الشاشة إليها دون إنترنت', () => {
   const src = read('app.js');
   // الافتراضي مفعّل، ومفتاحه في الإعدادات
-  assert.match(src, /syncPlay: true/);
+  assert.match(src, /function syncReadingEnabled\(\) \{\s*return !isRiw\(\) && ayahSyncAvailable\(\);/);
   const settings = read('index.html');
-  assert.ok(settings.includes('id="setSyncPlay"'), 'مفتاح التلاوة المتزامنة مفقود');
-  assert.ok(settings.includes('تلاوة متزامنة آية بآية'), 'عنوان المفتاح مفقود');
+  assert.ok(!settings.includes('id="setSyncPlay"'), 'التلاوة المتزامنة إجبارية بلا مفتاح');
+  assert.match(src, /function syncReadingEnabled\(\) \{\s*return !isRiw\(\) && ayahSyncAvailable\(\);/, 'التزامن يجب أن يكون إجباريًا');
   // منطق التزامن
   for (const fn of ['function syncReadingEnabled', 'function focusSyncedAyah', 'function preloadAyahAudio', 'function ayahSyncAvailable']) {
     assert.ok(src.includes(fn), `دالة مفقودة: ${fn}`);
@@ -339,8 +339,8 @@ test('الورد والختمة: هدف اختياري وحلقة تقدّم و�
   // دقائق القراءة تُحتسب داخل القارئ فقط وتُخزَّن في الإحصاءات
   assert.match(src, /st\.minutes\[todayKey\(\)\]/);
   assert.match(src, /if \(name === 'reader'\) \{ readerActiveSince = Date\.now\(\); \}/);
-  // الشارات تقدير لا شرط: لا بوابات ولا تعطيل
-  assert.ok(html.includes('تقدير لتقدّمك، وليست شرطًا لأي خدمة'), 'نص الشارات يجب أن ينفي الشروط');
+  // لا بوابات ولا تعطيل
+  assert.ok(html.includes('id="wdBadges"'), 'شبكة الشارات مفقودة');
   assert.doesNotMatch(src, /disabled\s*=\s*true[^\n]*wird/i);
   // الختمة والورد ما زالا يعملان تلقائيًا
   assert.match(src, /function recordWirdPage/);
@@ -349,36 +349,21 @@ test('الورد والختمة: هدف اختياري وحلقة تقدّم و�
   assert.ok(src.includes("'صفحة واحدة'") && src.includes("'صفحتان'"));
 });
 
-test('تقليب الورق: نسخة خفيفة كالورق الحقيقي تعمل بسلاسة على أندرويد', () => {
-  const fs = require('fs');
-  const path = require('path');
+test('انتقال فوري بين الصفحات بلا حركة ولا صوت ورق', () => {
   const src = read('app.js');
   const html = read('index.html');
-  // حركة واحدة فقط على transform بلا طبقات إضافية (سبب الثقل على أندرويد)
-  assert.match(src, /function runTurn/);
-  assert.doesNotMatch(src, /page-curl/, 'طبقة ظل الانحناء الثقيلة يجب أن تُزال');
-  assert.doesNotMatch(src, /page-ghost-shade/, 'طبقة التظليل الإضافية يجب أن تُزال');
-  assert.doesNotMatch(src, /translateZ\(/, 'الرفع ثلاثي الأبعاد يُثقل الأجهزة الضعيفة');
-  assert.doesNotMatch(html, /mix-blend-mode/, 'مزج الطبقات ثقيل على WebView');
-  assert.match(src, /const TURN_MS = 200;/);
-  assert.match(html, /contain: layout paint/);
-  assert.match(html, /\.page-ghost \{[^}]*backface-visibility: hidden/);
-  // الصوت والإعداد باقيان
-  assert.match(src, /paperSound: true/);
-  assert.match(src, /function playPaperSound/);
-  assert.ok(html.includes('id="setPaperSound"'));
-  // السحب يعمل ويظل سريعًا
+  // لا حركة تقليب ولا طبقات
+  assert.doesNotMatch(src, /function pageGhost/);
+  assert.doesNotMatch(src, /function runTurn/);
+  assert.doesNotMatch(html, /page-ghost/);
+  assert.doesNotMatch(html, /rotateY/);
+  assert.match(src, /async function turnTo\(target, goNext\)/);
+  assert.match(src, /await showPage\(target, \{ scroll: true \}\)/);
+  // ميزة صوت الورق أُلغيت بالكامل
+  assert.doesNotMatch(src, /playPaperSound|paperSfx|paperSound/);
+  assert.ok(!html.includes('setPaperSound'), 'مفتاح صوت الورق يجب أن يُحذف');
+  assert.ok(!require('node:fs').existsSync(path.join(root, 'media/sfx')), 'ملفات صوت الورق يجب أن تُحذف');
+  assert.ok(!read('sw.js').includes('media/sfx'), 'لا تخزين مسبق لأصوات الورق');
+  // السحب يظل يعمل
   assert.match(src, /async function flipBySwipe/);
-  // الانتقال الفوري (الافتراضي): بلا حركة وبلا طبقات
-  assert.match(src, /instantFlip: true/);
-  assert.match(src, /if \(settings\.instantFlip !== false\) \{/);
-  assert.match(src, /settings\.instantFlip !== false\) \{\s*pageEl\.style\.transition = 'none';/);
-  assert.ok(html.includes('id="setInstantFlip"'), 'مفتاح الانتقال الفوري مفقود');
-  assert.ok(html.includes('انتقال فوري بين الصفحات'), 'عنوان مفتاح الانتقال الفوري مفقود');
-  assert.match(src, /const tilt = Math\.max\(-9/);
-  for (const f of ['www/media/sfx/page-turn-fwd.mp3', 'www/media/sfx/page-turn-back.mp3']) {
-    const full = path.join(root, f);
-    assert.ok(fs.existsSync(full), `ملف مفقود: ${f}`);
-  }
-  assert.ok(read('sw.js').includes("./media/sfx/page-turn-fwd.mp3"));
 });

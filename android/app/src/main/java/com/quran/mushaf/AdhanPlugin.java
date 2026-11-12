@@ -113,6 +113,23 @@ public class AdhanPlugin extends Plugin {
         call.resolve();
     }
 
+
+    /** تسحب الواجهة طلب فتح شاشة الأذان بعد وصول المنبّه في الخلفية. */
+    @PluginMethod
+    public void takePendingOpen(PluginCall call) {
+        MainActivity.AdhanOpenRequest request = MainActivity.takePendingAdhan();
+        JSObject result = new JSObject();
+        if (request == null) {
+            result.put("pending", false);
+        } else {
+            result.put("pending", true);
+            result.put("prayer", request.prayer == null ? "" : request.prayer);
+            result.put("label", request.label == null ? "" : request.label);
+            result.put("adhanId", request.adhanId == null ? "" : request.adhanId);
+        }
+        call.resolve(result);
+    }
+
     /** يحذف الجدول بالكامل عند إلغاء المستخدم للأذان. */
     @PluginMethod
     public void clear(PluginCall call) {

@@ -83,8 +83,8 @@ test('الأذان في الخلفية: أرقام الإصدار والبناء
   assert.ok(match, 'versionCode موجود في gradle');
   assert.ok(Number(match[1]) >= Number(build), 'versionCode لا يسبق BUILD_NUMBER');
   assert.match(html, new RegExp(`APP_BUILD_NUMBER = ${build}`));
-  assert.match(gradle, /versionName "1\.[5-9]\.\d+"/);
-  assert.match(gradle, /versionCode 178/);
+  assert.match(gradle, /versionName "1\.[0-9]+\.[0-9]+"/);
+  assert.match(gradle, /versionCode 179/);
 });
 
 test('ترقية الـAPK تُقارن برقم بناء الملف المثبَّت لا برقم بناء الواجهة', () => {
@@ -228,16 +228,12 @@ test('تبويب القبلة مستقل ويُفتح من الإعدادات، 
   assert.match(read('app.js'), /settings-link\[data-view\]/);
 });
 
-test('تقليب الصفحة ورقي خفيف وسريع مع بقاء السحب', () => {
+test('انتقال فوري بين الصفحات مع بقاء السحب', () => {
   const app = read('app.js');
   assert.match(app, /async function turnTo\(target, goNext\)/);
-  assert.match(app, /function pageGhost\(node, zIndex\)/);
-  assert.match(app, /perspective\(1100px\) rotateY/);
   assert.match(app, /await turnTo\(target, goNext\)/);
   assert.match(app, /stage\.addEventListener\('pointerdown'/);
-  assert.match(read('index.html'), /\.page-ghost \{/);
-  // نسخة خفيفة: حركة واحدة بلا رفع ثلاثي الأبعاد
-  assert.doesNotMatch(app, /translateZ\(/);
+  assert.doesNotMatch(app, /function pageGhost|function runTurn/);
 });
 
 test('خدمة الأذان تنسخ الأذان المحزوم من الأصول قبل البث', () => {
@@ -309,4 +305,26 @@ test('شاشة الأذان: فيديو مسجد + مشغل عادي (إيقاف
   assert.ok(fs.existsSync(path.join(ROOT, 'www/media/adhan/mosque-adhan-poster.jpg')), 'الملصق مفقود');
   assert.ok(read('sw.js').includes("./media/adhan/mosque-adhan.mp4"), 'الفيديو غير مخزّن للتشغيل دون إنترنت');
   assert.ok(read('scripts/build-www.sh').includes("media/adhan"), 'البناء لا ينسخ فيديو الأذان');
+});
+
+test('الأذان إجباري: يفتح شاشة الأذان والشاشة مقفلة أو التطبيق مغلق', () => {
+  const manifest = read('android/app/src/main/AndroidManifest.xml');
+  assert.match(manifest, /android\.permission\.USE_FULL_SCREEN_INTENT/);
+  assert.match(manifest, /android:showWhenLocked="true"/);
+  assert.match(manifest, /android:turnScreenOn="true"/);
+  const receiver = read(`${JAVA}/AdhanReceiver.java`);
+  assert.match(receiver, /setFullScreenIntent\(fullScreen, true\)/);
+  assert.match(receiver, /openAdhanScreen\(context, event\)/);
+  assert.match(receiver, /siraj_open_adhan/);
+  const activity = read(`${JAVA}/MainActivity.java`);
+  assert.match(activity, /setShowWhenLocked\(true\)/);
+  assert.match(activity, /setTurnScreenOn\(true\)/);
+  assert.match(activity, /takePendingAdhan\(\)/);
+  const plugin = read(`${JAVA}/AdhanPlugin.java`);
+  assert.match(plugin, /public void takePendingOpen\(PluginCall call\)/);
+  const ui = read('prayer-ui.js');
+  assert.match(ui, /async function checkPendingNativeAdhan/);
+  assert.match(ui, /takePendingOpen/);
+  // صوت واحد فقط: نوقف خدمة النظام قبل تشغيل المشغل داخل الشاشة
+  assert.match(ui, /await bgCall\('stop'\)/);
 });

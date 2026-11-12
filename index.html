@@ -129,18 +129,6 @@
 
     /* ---------- الصفحة (مصحف ورقي) ---------- */
     .stage { touch-action: pan-y; user-select: text; perspective: 1400px; }
-    /* نسخة الصفحة المستخدمة في التقليب ثلاثي الأبعاد */
-    .page-ghost {
-      border-radius: 6px; padding: 30px 26px 16px; overflow: hidden;
-      background: radial-gradient(ellipse at 15% 8%, rgba(255,255,255,.45), transparent 45%),
-                  radial-gradient(ellipse at 85% 95%, rgba(120,80,20,.10), transparent 50%), var(--paper);
-      color: var(--paper-ink); box-shadow: 0 18px 36px rgba(20,10,0,.34);
-      backface-visibility: hidden; transform-style: preserve-3d;
-    }
-    .page-ghost-shade {
-      border-radius: 6px; pointer-events: none; opacity: 0;
-      background: linear-gradient(to left, rgba(20,12,0,.55), rgba(20,12,0,.05) 55%, transparent);
-    }
     body.page-turning .stage { pointer-events: none; }
     .page {
       position: relative; max-width: 640px; margin: 0 auto; min-height: 70vh;
@@ -183,8 +171,6 @@
       border-radius: .34em;
       padding: .04em .12em;
     }
-    .sync-toggle { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: rgba(198,146,46,.08); margin: 6px 0 10px; }
-    .sync-toggle input { margin-top: 3px; }
     .sync-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; padding: 3px 8px; border-radius: 99px; background: rgba(198,146,46,.16); color: #8a6412; margin-inline-start: 6px; }
     .page-body ::selection, .page ::selection, #pageBody ::selection {
       background: rgba(40,120,255,.32); color: inherit;
@@ -1190,18 +1176,7 @@
     .badge-card strong { font-size: 13px; }
     .badge-card small { font-size: 10px; opacity: .75; }
 
-    /* ---------- تقليب الورق: نسخة خفيفة على أندرويد ---------- */
-    /* طبقة واحدة فقط تلفّ حول الكعب، بلا ظل صندوقي ولا blend ولا translateZ */
-    .page-ghost { backface-visibility: hidden; will-change: transform; contain: layout paint; border-radius: 8px; }
-    /* ظل ثابت خفيف على حرف الورقة يعطي إحساس الورق بلا أي حركة إضافية */
-    .page-ghost::after {
-      content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: 8px;
-      background: linear-gradient(to left, rgba(0,0,0,.16), rgba(0,0,0,.04) 22%, rgba(0,0,0,0) 45%);
-    }
-    .page-ghost.is-back::after {
-      background: linear-gradient(to right, rgba(0,0,0,.16), rgba(0,0,0,.04) 22%, rgba(0,0,0,0) 45%);
-    }
-    #pageBody.is-dragging { box-shadow: 0 10px 22px rgba(0,0,0,.14); }
+
 </style>
 </head>
 <body>
@@ -1384,7 +1359,6 @@
                 </select>
               </label>
             </div>
-            <p class="muted">اختر مؤذنًا للأذان العام، وآخر لأذان الفجر (يُستحب فيه التثويب). زر ⤓ ينزّل الأذان على الجهاز ليعمل دون إنترنت، و▶ لتجربته.</p>
             <div class="pt-adhan-list" id="ptAdhanList"></div>
             <p class="pt-bg-status" id="ptBgStatus"></p>
           </div>
@@ -1392,7 +1366,6 @@
           <div class="card">
             <h3 class="pt-title">الإقامة (إشعار «قم إلى صلاتك»)</h3>
             <label class="pt-inline"><input type="checkbox" id="ptIqamaEnabled" checked /> إشعار الإقامة بعد الأذان</label>
-            <p class="muted" style="margin:6px 0 2px">لا يوجد صوت إقامة؛ يُرسل إشعار نصي «قم إلى صلاتك» بعد الأذان بالمدة التي تحددها.</p>
             <div class="pt-grid pt-grid-5">
               <label><span class="lbl">الفجر</span><input id="ptIqama-fajr" type="number" min="0" max="60" step="1" /></label>
               <label><span class="lbl">الظهر</span><input id="ptIqama-dhuhr" type="number" min="0" max="60" step="1" /></label>
@@ -1643,15 +1616,13 @@
               <h3 style="margin-top:0">قراءتك اليوم</h3>
               <div class="wird-big"><span id="wdDone">0</span> صفحة</div>
               <div class="wbar"><div class="wfill" id="wdFill"></div></div>
-              <div id="wdGoalLine" class="muted" style="margin-top:10px">بلا هدف ملزم — القراءة تُسجَّل تلقائيًا.</div>
-              <div id="wdMsg" class="muted" style="margin-top:6px"></div>
+              <div id="wdGoalLine" class="muted" style="margin-top:10px"></div>
               <div id="wdMinutes" class="muted" style="margin-top:6px"></div>
             </div>
           </div>
 
           <div class="card">
-            <h3 style="margin-top:0">هدفك اليومي (اختياري)</h3>
-            <p class="muted" style="margin-top:0">بلا هدف ملزم افتراضيًّا؛ اختر ما يناسبك ولا يُغلق شيء في التطبيق.</p>
+            <h3 style="margin-top:0">الهدف اليومي</h3>
             <div class="goal-chips" id="wdGoalChoices">
               <button class="chip" data-goal="0">بلا هدف</button>
               <button class="chip" data-goal="1">صفحة</button>
@@ -1686,7 +1657,6 @@
 
           <div class="card">
             <h3 style="margin-top:0">متابعة بلا إلزام</h3>
-            <p class="muted">يسجل سراج الصفحات التي تقرؤها تلقائيًا، ويحسب عادتك الفعلية دون فرض هدف يومي.</p>
             <div class="wird-line"><span>متوسط عادتك</span><b id="wdHabit">—</b></div>
             <div class="wird-line"><span>سلسلة أيام القراءة</span><b id="wdStreak">0 يوم</b></div>
             <div class="wird-line"><span>أيام القراءة</span><b id="wdDays">0</b></div>
@@ -1701,7 +1671,6 @@
 
           <div class="card">
             <h3 style="margin-top:0">شاراتك</h3>
-            <p class="muted" style="margin-top:0">تقدير لتقدّمك، وليست شرطًا لأي خدمة في التطبيق.</p>
             <div class="badge-grid" id="wdBadges"></div>
           </div>
 
@@ -1916,18 +1885,6 @@
 
 
             <label class="lbl">الشاشة والصوت</label>
-            <label class="sync-toggle">
-              <input type="checkbox" id="setInstantFlip" checked />
-              <span><strong>انتقال فوري بين الصفحات</strong><br /><span class="muted">تبديل الصفحة في لحظة بلا حركة تقليب، مثل تطبيقات المصاحف المعروفة. أطفئه لترجع حركة الورقة.</span></span>
-            </label>
-            <label class="sync-toggle">
-              <input type="checkbox" id="setPaperSound" checked />
-              <span><strong>صوت تقليب الورق</strong><br /><span class="muted">صوت ورقي خفيف مع كل قلب صفحة، مع اهتزاز صغير على الهواتف التي تدعمه.</span></span>
-            </label>
-            <label class="sync-toggle">
-              <input type="checkbox" id="setSyncPlay" checked />
-              <span><strong>تلاوة متزامنة آية بآية</strong><br /><span class="muted">تضيء الآية التي تُتلى الآن وتُمرَّر إليها الشاشة تلقائيًا، ولمس أي آية ينقل التلاوة إليها. تعمل دون إنترنت مع التلاوات المحفوظة.</span></span>
-            </label>
             <p class="muted">تبقى الشاشة مضاءة ما دام التطبيق مفتوحًا، وتستمر التلاوة عند مغادرته أو إطفاء الشاشة، وتتوقف عند إغلاق التطبيق.</p>
           </div>
           <details class="card dd">
@@ -2010,7 +1967,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.9.2</div>
+              <div class="muted">الإصدار 1.10.0</div>
             </div>
           </div>
 
@@ -2121,10 +2078,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.9.2';
+    window.APP_BUNDLE_VERSION = '1.10.0';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 178;
+    window.APP_BUILD_NUMBER = 179;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {

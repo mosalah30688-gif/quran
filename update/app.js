@@ -80,7 +80,7 @@
 
   const DEFAULTS = {
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
-    surahReciter: 0, surahAudio: true, syncPlay: true, paperSound: true, instantFlip: true,
+    surahReciter: 0, surahAudio: true,
     translation: '', font: 'Scheherazade New', size: 26, tajweed: false, dark: false,
     tajweedScopes: {},
   };
@@ -608,19 +608,6 @@
       setWirdGoal(Number(btn.dataset.goal) || 0);
       toast(Number(btn.dataset.goal) > 0 ? `هدفك اليومي: ${toArabicDigits(btn.dataset.goal)} صفحة` : 'بلا هدف يومي ملزم');
     });
-  });
-  const instantBox = $('#setInstantFlip');
-  instantBox && instantBox.addEventListener('change', () => {
-    settings.instantFlip = instantBox.checked;
-    saveSettings();
-    toast(instantBox.checked ? 'انتقال فوري بين الصفحات.' : 'رجعت حركة تقليب الورقة.');
-  });
-  const paperBox = $('#setPaperSound');
-  paperBox && paperBox.addEventListener('change', () => {
-    settings.paperSound = paperBox.checked;
-    saveSettings();
-    if (paperBox.checked) playPaperSound(true);
-    toast(paperBox.checked ? 'صوت تقليب الورق مفعّل.' : 'صوت الورق متوقف.');
   });
   const shareBtn = $('#wdShare');
   shareBtn && shareBtn.addEventListener('click', shareWirdProgress);
@@ -1219,21 +1206,9 @@
   const FLIP_DISTANCE = 16;   // أو مسافة صغيرة مع سرعة كافية
   const FLIP_VELOCITY = 0.11; // سحب سريع (بكسل/مللي ثانية)
   // الورقة تتبع الإصبع مع ميل بسيط حول الكعب لتعطي إحساس كتاب حقيقي بسرعة استجابة عالية.
-  function setPageTransform(x, animate) {
-    // في الانتقال الفوري لا نحرك الصفحة مع الإصبع إطلاقًا
-    if (settings.instantFlip !== false) {
-      pageEl.style.transition = 'none';
-      pageEl.style.transform = '';
-      return;
-    }
-    pageEl.style.transition = animate ? `transform .17s ${SWIPE_EASE}` : 'none';
-    if (!x) {
-      pageEl.style.transform = '';
-    } else {
-      const tilt = Math.max(-9, Math.min(9, (x / Math.max(200, stage.clientWidth)) * 16));
-      pageEl.style.transform = `translate3d(${x}px,0,0) rotateY(${tilt.toFixed(2)}deg)`;
-    }
-    pageEl.classList.toggle('is-dragging', !!x);
+  function setPageTransform() {
+    pageEl.style.transition = 'none';
+    pageEl.style.transform = '';
   }
   function clampDrag(dx) {
     const atEdge = (dx > 0 && state.page >= TOTAL_PAGES) || (dx < 0 && state.page <= 1);
@@ -1244,100 +1219,16 @@
   // ---------- تقليب ثلاثي الأبعاد كما في الكتاب ----------
   // عند تغيير الصفحة نُبقي صورة الصفحة القديمة (أو الجديدة عند الرجوع) فوق الصفحة
   // الحقيقية ونديرها حول كعب الورقة بمنظور ثلاثي الأبعاد مع ظل متحرك.
-  const TURN_MS = 200;
-  function pageGhost(node, zIndex) {
-    const rect = node.getBoundingClientRect();
-    const ghost = node.cloneNode(true);
-    ghost.classList.add('page-ghost');
-    ghost.removeAttribute('id');
-    ghost.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
-    Object.assign(ghost.style, {
-      position: 'fixed', left: `${rect.left}px`, top: `${rect.top}px`,
-      width: `${rect.width}px`, height: `${rect.height}px`, margin: '0',
-      zIndex: String(zIndex), pointerEvents: 'none', willChange: 'transform',
-    });
-    document.body.appendChild(ghost);
-    return ghost;
-  }
-  // ===== صوت تقليب الورق (ملفات صغيرة داخل الحزمة تعمل دون إنترنت) =====
-  const paperSfx = { fwd: null, back: null, ready: false };
-  function initPaperSfx() {
-    if (paperSfx.ready) return;
-    paperSfx.ready = true;
-    try {
-      paperSfx.fwd = new Audio('media/sfx/page-turn-fwd.mp3');
-      paperSfx.back = new Audio('media/sfx/page-turn-back.mp3');
-      [paperSfx.fwd, paperSfx.back].forEach((el) => { el.preload = 'auto'; el.volume = 0.45; });
-    } catch { /* بلا صوت */ }
-  }
-  function playPaperSound(goNext) {
-    if (settings.paperSound === false) return;
-    initPaperSfx();
-    const el = goNext ? paperSfx.fwd : paperSfx.back;
-    if (!el) return;
-    try {
-      el.currentTime = 0;
-      const playing = el.play();
-      if (playing && typeof playing.catch === 'function') playing.catch(() => { /* يسمح المتصفح بالصوت بعد أول لمس */ });
-    } catch { /* تجاهل */ }
-    // اهتزاز خفيف على الهواتف التي تدعمه
-    try { navigator.vibrate && navigator.vibrate(8); } catch { /* تجاهل */ }
-  }
-
-  // ===== تقليب ورقي بسيط وخفيف: لفة واحدة بلا طبقات ولا ظلال ثقيلة =====
-  // نسخة خفيفة على أندرويد: عنصر واحد يلفّ حول كعبه بتأثير ورقة، وتحته الصفحة الجديدة،
-  // بلا نسخ ظلال ولا mix-blend ولا translateZ — حركة واحدة على خاصية transform فقط.
-  function runTurn(ghost, fromDeg, toDeg, origin, ms = TURN_MS) {
-    ghost.style.transformOrigin = origin;
-    ghost.style.transform = `perspective(1100px) rotateY(${fromDeg}deg)`;
-    ghost.classList.toggle('is-back', fromDeg > toDeg);
-    let anim = null;
-    try {
-      anim = ghost.animate([
-        { transform: `perspective(1100px) rotateY(${fromDeg}deg)` },
-        { transform: `perspective(1100px) rotateY(${toDeg}deg)` },
-      ], { duration: ms, easing: 'cubic-bezier(.32,.72,.36,1)', fill: 'forwards' });
-    } catch {
-      ghost.style.transition = `transform ${ms}ms ease-out`;
-      ghost.style.transform = `perspective(1100px) rotateY(${toDeg}deg)`;
-    }
-    return new Promise((resolve) => {
-      const done = () => { ghost.remove(); resolve(); };
-      if (anim) anim.finished.then(done, done);
-      else setTimeout(done, ms + 20);
-    });
-  }
   let turning = false;
+  // انتقال فوري بين الصفحات: تبديل في نفس الإطار بلا حركة ولا طبقات
   async function turnTo(target, goNext) {
     if (turning || target < 1 || target > TOTAL_PAGES) return;
     turning = true;
     document.body.classList.add('page-turning');
-    playPaperSound(goNext);
-    // الانتقال الفوري (الافتراضي): تبديل الصفحة في نفس الإطار بلا أي حركة أو تفريغ للطبقات
-    if (settings.instantFlip !== false) {
-      try {
-        pageEl.style.transition = 'none';
-        pageEl.style.transform = '';
-        await showPage(target, { scroll: true });
-      } finally {
-        document.body.classList.remove('page-turning');
-        turning = false;
-      }
-      return;
-    }
-    const oldGhost = pageGhost(pageEl, 41);
     try {
+      pageEl.style.transition = 'none';
+      pageEl.style.transform = '';
       await showPage(target, { scroll: true });
-      if (goNext) {
-        // الورقة الحالية تدور إلى اليسار (كعب الورقة على اليمين في المصحف العربي)
-        await runTurn(oldGhost, 0, -86, 'right center');
-      } else {
-        // الصفحة السابقة تنفتح من اليمين فوق الصفحة الحالية
-        oldGhost.style.zIndex = '39';
-        const newGhost = pageGhost(pageEl, 41);
-        await runTurn(newGhost, 82, 0, 'right center');
-        oldGhost.remove();
-      }
     } finally {
       document.body.classList.remove('page-turning');
       turning = false;
@@ -2384,7 +2275,7 @@
   }
 
   function syncReadingEnabled() {
-    return settings.syncPlay !== false && !isRiw() && ayahSyncAvailable();
+    return !isRiw() && ayahSyncAvailable();
   }
 
   // تمرير الشاشة إلى الآية الجارية وإبرازها
@@ -2458,7 +2349,7 @@
     if (!syncReady && settings.surahAudio !== false && !isRiw() && SURAH_RECITERS.length) {
       return playSurahFull(s);
     }
-    if (settings.syncPlay !== false && !syncReady && !isRiw() && !OFFLINE_SRC[settings.reciter]) {
+    if (!syncReady && !isRiw() && !OFFLINE_SRC[settings.reciter]) {
       toast('هذا القارئ ليس له ملفات آيات؛ اختر قارئًا من قائمة التحميل للتلاوة المتزامنة.');
     }
     const first = isRiw() ? await findRiwAyah(s, n) : await findAyah(s, n);
@@ -2915,9 +2806,6 @@
     $('#tfTrans').value = settings.translation;
     $('#setFont').value = settings.font;
     $('#setSize').value = settings.size;
-    if ($('#setSyncPlay')) $('#setSyncPlay').checked = settings.syncPlay !== false;
-    if ($('#setPaperSound')) $('#setPaperSound').checked = settings.paperSound !== false;
-    if ($('#setInstantFlip')) $('#setInstantFlip').checked = settings.instantFlip !== false;
     $('#sizeVal').textContent = settings.size + 'px';
     if ($('#setTajweed')) $('#setTajweed').checked = !!settings.tajweed;
     fillSmartSettings();
@@ -4471,18 +4359,12 @@
     const goalLine = $('#wdGoalLine');
     if (goalLine) {
       goalLine.textContent = goal > 0
-        ? (habit.today >= goal
-            ? `أتممت وردك اليوم: ${toArabicDigits(habit.today)} من ${pagesAr(goal)}. تقبّل الله.`
-            : `بقي ${pagesAr(goal - habit.today)} لإتمام وردك اليومي (${pagesAr(goal)}).`)
-        : `بلا هدف ملزم — متوسطك ${toArabicDigits(avg.toFixed(1))} صفحة/يوم، والقراءة تُسجَّل تلقائيًا.`;
+        ? (habit.today >= goal ? 'أتممت وردك اليوم' : `بقي ${pagesAr(goal - habit.today)}`)
+        : '';
       renderWirdRing(
         goal > 0 ? Math.min(1, habit.today / goal) : Math.min(1, habit.today / base),
         goal > 0 ? `${toArabicDigits(habit.today)}/${toArabicDigits(goal)}` : toArabicDigits(habit.today));
-
     }
-    $('#wdMsg').textContent = habit.today
-      ? `قرأت ${toArabicDigits(habit.today)} صفحة اليوم في ${toArabicDigits(minutesToday())} دقيقة.`
-      : 'تُسجّل القراءة تلقائيًا عند فتح صفحة جديدة، دون هدف يومي إلزامي.';
 
     const readInKhatma = w.pointer - 1;
     const left = TOTAL_PAGES - readInKhatma;
@@ -4511,7 +4393,7 @@
     });
     renderWirdBadges();
     const stMin = $('#wdMinutes');
-    if (stMin) stMin.textContent = toArabicDigits(minutesToday()) + ' دقيقة اليوم · ' + toArabicDigits(minutesTotal()) + ' دقيقة إجمالًا';
+    if (stMin) stMin.textContent = toArabicDigits(minutesToday()) + ' دقيقة اليوم';
     $('#wdHist').innerHTML = w.finished.length
       ? w.finished.slice().reverse().map((f, i) => `<div class="wird-line"><span>ختمة مكتملة</span><span class="muted">${dateAr(f.start)} — ${dateAr(f.end)}</span></div>`).join('')
       : '<div class="muted">لا توجد ختمات مكتملة بعد.</div>';
@@ -5050,13 +4932,6 @@
     };
   }
 
-  const syncPlayBox = $('#setSyncPlay');
-  syncPlayBox && syncPlayBox.addEventListener('change', () => {
-    settings.syncPlay = syncPlayBox.checked;
-    saveSettings();
-    if ($('#pageBody')) $('#pageBody').classList.toggle('syncing', Boolean(play.active && syncReadingEnabled()));
-    toast(settings.syncPlay ? 'تلاوة متزامنة: الآية الجارية تُضاء وتُتبع تلقائيًا.' : 'التلاوة المتزامنة متوقفة؛ تُشغّل السورة كاملة كالسابق.');
-  });
   $('#setSmartEnabled').addEventListener('change', (event) => {
     if (!smartEngine) return;
     smartEngine.configure({ ...smartConfigFromControls(), enabled: event.target.checked });

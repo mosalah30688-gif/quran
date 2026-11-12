@@ -28,11 +28,6 @@ if compgen -G 'media/adhan/*' >/dev/null; then
   mkdir -p www/media/adhan
   cp media/adhan/* www/media/adhan/
 fi
-# مؤثرات الصوت (تقليب الورق): داخل الحزمة لتعمل دون إنترنت
-if compgen -G 'media/sfx/*' >/dev/null; then
-  mkdir -p www/media/sfx
-  cp media/sfx/* www/media/sfx/
-fi
 if compgen -G 'tajweed-curricula/*.json' >/dev/null; then
   mkdir -p www/tajweed-curricula
   cp tajweed-curricula/*.json www/tajweed-curricula/

@@ -67,6 +67,71 @@ public class AdhanReceiver extends BroadcastReceiver {
             // إذا منع النظام بدء الخدمة من الخلفية نرفع تنبيهًا صوتيًا بدلًا منها.
             notifyFallback(context, event);
         }
+        // الأذان إجباري: نفتح شاشة الأذان في الواجهة ولو كان الهاتف مقفلًا
+        openAdhanScreen(context, event);
+    }
+
+    /** يفتح شاشة الأذان إجباريًا عبر intent ملء الشاشة (يعمل والشاشة مقفلة). */
+    private static void openAdhanScreen(Context context, JSONObject event) {
+        String prayer = event.optString("prayer", "");
+        String label = event.optString("label", prayer);
+        String adhanId = event.optString("adhanId", "");
+
+        Intent open = new Intent(context, MainActivity.class);
+        open.setAction(Intent.ACTION_MAIN);
+        open.addCategory(Intent.CATEGORY_LAUNCHER);
+        open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                | Intent.FLAG_ACTIVITY_SINGLE_TOP
+                | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+        open.putExtra("siraj_view", "adhan");
+        open.putExtra("siraj_open_adhan", true);
+        open.putExtra("siraj_prayer", prayer);
+        open.putExtra("siraj_prayer_label", label);
+        open.putExtra("siraj_adhan_id", adhanId);
+        MainActivity.setPendingAdhan(prayer, label, adhanId);
+
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) flags |= PendingIntent.FLAG_IMMUTABLE;
+        PendingIntent fullScreen = PendingIntent.getActivity(context, 4901, open, flags);
+
+        NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (manager != null) {
+            String channelId = "adhan_fullscreen";
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                NotificationChannel channel = new NotificationChannel(
+                        channelId, "شاشة الأذان", NotificationManager.IMPORTANCE_HIGH);
+                channel.setDescription("فتح شاشة الأذان في وقته");
+                channel.setBypassDnd(false);
+                manager.createNotificationChannel(channel);
+            }
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(context, channelId)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentTitle("حان الآن وقت صلاة " + label)
+                    .setContentText("شاشة الأذان")
+                    .setPriority(NotificationCompat.PRIORITY_MAX)
+                    .setCategory(NotificationCompat.CATEGORY_ALARM)
+                    .setOngoing(true)
+                    .setAutoCancel(true)
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                    .setFullScreenIntent(fullScreen, true)
+                    .setContentIntent(fullScreen);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                builder.setTimeoutAfter(10 * 60 * 1000L);
+            }
+            try {
+                manager.notify(4901, builder.build());
+            } catch (SecurityException error) {
+                // تنبيهات التطبيق متوقفة من إعدادات النظام
+            }
+        }
+
+        // محاولة مباشرة إضافية: تعمل على الإصدارات الأقدم أو عند منح صلاحية العرض فوق التطبيقات
+        try {
+            context.startActivity(open);
+        } catch (Exception ignored) {
+            // النظام منع البدء من الخلفية؛ يبقى intent ملء الشاشة هو المسار الرسمي
+        }
     }
 
     /** الإقامة صارت تنبيهًا نصيًا فقط، بلا أي صوت إقامة. */
