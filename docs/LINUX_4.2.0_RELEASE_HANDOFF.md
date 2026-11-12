@@ -3,7 +3,7 @@
 **الحالة:** الكود والاختبارات والبيانات جاهزة ومُثبَّتة محليًا. الناقص خطوتان فقط:
 رفع الـcommit (لا يوجد remote أو بيانات دخول في هذه المساحة)، ثم اعتماد البوابة.
 
-- **HEAD:** `c86f2f4f46f489341c4a6bdbaef2c15644562e90`
+- **HEAD:** يُحدَّث مع آخر commit (كان `2fe1a7b` قبل دفعة فروق أندرويد الثانية)
 - **الترقيعان المحليان:** `9f0ce2c` (الترقيع الكامل) ثم `c86f2f4` (وضوح حلقة الورد).
 - **الإصدار:** `mushaf_app/version.py` = `4.2.0`، وخمس ميزات في `UPDATE_FEATURES`.
 - **الوسم المطلوب:** `siraj-linux-patch-v4.2.0` (شرط السير: `Version(4.2.0) > 4.1.1` ✔).
@@ -31,7 +31,7 @@ audit_alquran_editions      → ok
 generate_hijri_table        → Verified Umm al-Qura table 1400-1500 AH for both desktop apps
 verify_android_bundle       → 6,236 Hafs/tajweed rows, 604 pages, 80 licensed tafsirs, four fonts
 verify_audio_sources        → 17 desktop Hafs reciters + five MP3Quran riwayat sources
-unittest discover           → 82 tests OK (skipped=1)
+unittest discover           → 90 tests OK (skipped=1)
 ui_test                     → كل الفحوص OK ما عدا إخفاقين قديمين بسبب غياب
                               tafsir-offline.sqlite3 محليًا (ينزّلها CI قبل الفحص)
 ```
@@ -68,3 +68,18 @@ python scripts/check_release_gate.py --tag siraj-linux-patch-v4.2.0 --commit <sh
 
 بعد نجاح السير: المخرجات تبقى **ترقيعًا** فقط (`runtime_api: 1`) فوق AppImage 4.1.1،
 بلا تحزيم كامل جديد.
+
+
+## دفعة الإكمال الثانية (فروق أندرويد المتبقية)
+
+أُضيفت بعد سؤال المالك «ف حاجة تاني في أندرويد ومعمَلنهاش على لينكس؟»:
+
+- مواقيت: تعديل دقائق لكل صلاة، خطوط العرض العالية، نظام ٢٤ ساعة، إحداثيات يدوية.
+- قبلة: سطر الشمس والظل (`sun_azimuth` منقول من `prayer-times.js`).
+- مصحف: قائمة آية سياقية (نسخ مع المرجع، تلاوة من هنا، تفسير، معاني، مشاركة صورة).
+- صوت: سرعة التلاوة ٠٫٧٥–١٫٥× بتمدد زمني (OLA) يحفظ طبقة الصوت — `tests/test_playback_rate.py`.
+- ورد: أهداف اختيارية، سجل سبعة أيام، مشاركة ملخص الختمة.
+- إحصاءات: أعمدة أسبوعية + سطر «صفحات مختلفة».
+- تحديثات: «استعادة النسخة الأصلية» يحذف الترقيع ويعيد التشغيل.
+
+المستثنى بقرار: رفيق اليوم الذكي، شاشة الأذان بالفيديو، صوت الإقامة، الترجمة تحت الآية.

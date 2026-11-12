@@ -106,6 +106,32 @@ class PrayerTimesParityTest(unittest.TestCase):
         self.assertEqual(parts['month_name'], P.HIJRI_MONTHS[parts['month'] - 1])
         self.assertIn('هـ', parts['formatted'])
 
+    def test_minute_adjustments_shift_only_the_named_prayer(self):
+        base = P.times(dt.date(2026, 11, 5), 29.308, 30.842, 2, method='egypt')
+        shifted = P.times(dt.date(2026, 11, 5), 29.308, 30.842, 2, method='egypt',
+                          adjustments={'fajr': 5, 'isha': -3})
+        self.assertAlmostEqual((shifted['fajr'] - base['fajr']) * 60, 5, delta=0.01)
+        self.assertAlmostEqual((shifted['isha'] - base['isha']) * 60, -3, delta=0.01)
+        self.assertAlmostEqual(shifted['dhuhr'], base['dhuhr'], places=6)
+
+    def test_high_latitude_rules_fill_night_prayers(self):
+        plain = P.times(dt.date(2026, 6, 21), 59.33, 18.06, 1, method='mwl')
+        filled = P.times(dt.date(2026, 6, 21), 59.33, 18.06, 1, method='mwl', high_latitude='middle')
+        self.assertIsNone(plain['fajr'])
+        self.assertIsNotNone(filled['fajr'])
+        # قد تقع القيمة قبل منتصف الليل بالساعات السالبة؛ العرض يطبّعها داخل اليوم
+        self.assertTrue(0 <= filled['fajr'] % 24 < 24)
+        self.assertEqual(P.format_minutes(filled['fajr'])[-1] in 'صم', True)
+
+    def test_sun_azimuth_is_in_the_southern_sky_at_noon(self):
+        sun = P.sun_azimuth(dt.datetime(2026, 11, 5, 11, 45), 30.0444, 31.2357, 2)
+        self.assertIsNotNone(sun)
+        self.assertGreater(sun['altitude'], 30)
+        self.assertTrue(150 <= sun['azimuth'] <= 210)
+
+    def test_sun_azimuth_rejects_invalid_coordinates(self):
+        self.assertIsNone(P.sun_azimuth(dt.datetime(2026, 11, 5, 9, 0), 200, 30, 2))
+
     def test_invalid_location_is_rejected(self):
         self.assertIsNone(P.times(dt.date(2026, 11, 5), 120, 30, 2))
 

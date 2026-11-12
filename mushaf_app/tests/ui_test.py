@@ -487,6 +487,25 @@ try:
     shot('prayer')
     # النقر على الآية يبدأ التلاوة منها
     check('tap ayah plays by default', win.settings.value('reader/tap_plays', True, type=bool))
+    check('ayah context actions exist', all(hasattr(win, name) for name in
+          ('copy_ayah_text', 'open_ayah_tafsir', 'open_ayah_meanings', 'share_ayah', 'play_from_ayah')))
+    check('playback speed control', win.btn_speed.text().endswith('×') and len(win.PLAY_RATES) == 4)
+    check('speed keeps pitch labels', win.play_rate() in win.PLAY_RATES)
+    # فروق المواقيت مع أندرويد: تعديلات، خطوط عالية، ٢٤ ساعة، إحداثيات يدوية
+    check('prayer minute adjustments exist', len(win.prayer_adjust_spins) == 5)
+    check('prayer high latitude options', win.prayer_high_combo.count() == len(M.prayer_times_api.HIGH_LATITUDE))
+    check('prayer manual coordinates', win.prayer_manual is not None and win.prayer_lat_spin.value() != 0)
+    check('prayer clock format toggle', win.prayer_clock24 is not None)
+    check('qibla mentions the sun', 'الشمس' in win.qibla_label.text())
+    check('wird optional goals', len(win.wird_goal_buttons) == 6)
+    check('wird day history', win.wird_history_label.text() != '')
+    # الإحصاءات: رسم أسبوعي وبطاقة صفحات مختلفة
+    win.show_view('stats')
+    check('stats weekly bars', bool(win.st_bars.values))
+    check('stats distinct pages line', 'صفحات مختلفة' in win.st_unique.text())
+    # استعادة النسخة الأصلية متاحة في الإعدادات
+    win.show_view('settings')
+    check('restore bundled version button', win.btn_restore is not None and win.btn_restore.text().startswith('استعادة'))
     # الإحصائيات
     win.show_view('stats')
     check('stats today', win.st_cards['today'].text() != '')

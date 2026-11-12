@@ -83,6 +83,32 @@ def sun_position(date: dt.date | dt.datetime) -> dict:
     }
 
 
+def sun_azimuth(date: dt.date | dt.datetime, lat: float, lng: float, timezone: float) -> dict | None:
+    """موضع الشمس الآن (زاوية الارتفاع والسمت) — لتحديد القبلة بالظل بلا بوصلة."""
+    if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
+        return None
+    if not isinstance(date, dt.datetime):
+        date = dt.datetime.combine(date, dt.time(12, 0))
+    sun = sun_position(date)
+    minutes = date.hour * 60 + date.minute + date.second / 60.0
+    true_solar_time = minutes + sun["equation_time"] * 60 + 4 * lng - 60 * timezone
+    hour_angle_deg = (true_solar_time / 4) - 180
+    declination = sun["declination"] * DEG
+    latitude = lat * DEG
+    angle = hour_angle_deg * DEG
+    altitude = math.asin(max(-1.0, min(1.0, (math.sin(latitude) * math.sin(declination)
+                                             + math.cos(latitude) * math.cos(declination) * math.cos(angle))))) / DEG
+    azimuth = fix_angle(math.atan2(-math.sin(angle),
+                                   math.tan(declination) * math.cos(latitude)
+                                   - math.sin(latitude) * math.cos(angle)) / DEG) - 180 + 180
+    return {
+        "altitude": altitude,
+        "azimuth": fix_angle(azimuth),
+        "declination": sun["declination"],
+        "hour_angle": hour_angle_deg,
+    }
+
+
 def hour_angle(altitude: float, lat: float, declination: float) -> float | None:
     numerator = math.sin(altitude * DEG) - math.sin(lat * DEG) * math.sin(declination * DEG)
     denominator = math.cos(lat * DEG) * math.cos(declination * DEG)
