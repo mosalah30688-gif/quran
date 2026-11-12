@@ -104,6 +104,9 @@ MEANINGS = load('quran-meanings.json')['ayahs']
 ADHKAR = load('adhkar.json')['categories']
 SEARCH_AYAHS = load('quran-search.json')['ayahs']
 RIW_DATA = load('quran-riwayat.json')['riwayat']
+# مكتبة القرّاء الكاملة (حفص وورش وقالون والدوري…) — نفس مصدر أندرويد الموثّق
+RECITER_LIBRARY = load('quran-reciters.json')['items']
+LIBRARY_BY_ID = {str(item['id']): item for item in RECITER_LIBRARY}
 HAFS = load('hafs.json')
 TAFSIR_CATALOG = load('tafsir-catalog.json')
 AYAH_TEXT = {(s, a): t for s, a, _p, t in HAFS['uthmani']}
@@ -917,6 +920,108 @@ def app_settings():
     return current
 
 
+class VoiceLibraryDialog(QDialog):
+    """مكتبة القرّاء: بحث فوري، مفضلة، واختيار «آية بآية» أو تلاوة سورة كاملة."""
+
+    def __init__(self, parent, items, favorites, mode, current_id, sync_label):
+        super().__init__(parent)
+        self.setWindowTitle('مكتبة القرّاء')
+        self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        self.resize(540, 640)
+        self._items = items
+        self._favorites = [str(x) for x in (favorites or [])]
+        self._mode = 'sync'
+        self._selected_id = str(current_id or '')
+        self._sync_label = sync_label
+
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(16, 14, 16, 14)
+        lay.setSpacing(10)
+        title = QLabel('مكتبة القرّاء')
+        title.setObjectName('pageTitle')
+        lay.addWidget(title)
+        self.search = QLineEdit()
+        self.search.setPlaceholderText('ابحث باسم القارئ أو الرواية…')
+        self.search.setClearButtonEnabled(True)
+        self.search.textChanged.connect(self.refill)
+        lay.addWidget(self.search)
+        self.listw = QListWidget()
+        self.listw.itemDoubleClicked.connect(lambda _item: self.accept())
+        lay.addWidget(self.listw, 1)
+        row = QHBoxLayout()
+        self.btn_fav = QPushButton('★ مفضلة')
+        self.btn_fav.clicked.connect(self.toggle_favorite)
+        self.btn_choose = QPushButton('اختيار')
+        self.btn_choose.setObjectName('primary')
+        self.btn_choose.clicked.connect(self.accept)
+        btn_close = QPushButton('إغلاق')
+        btn_close.clicked.connect(self.reject)
+        row.addWidget(self.btn_fav)
+        row.addStretch(1)
+        row.addWidget(self.btn_choose)
+        row.addWidget(btn_close)
+        lay.addLayout(row)
+        if mode == 'library' and self._selected_id:
+            self._mode = 'library'
+        self.refill()
+
+    def is_favorite(self, rid):
+        return str(rid) in self._favorites
+
+    def refill(self):
+        query = self.search.text().strip()
+        self.listw.clear()
+        sync_row = QListWidgetItem(f'آية بآية — {self._sync_label}')
+        sync_row.setData(Qt.ItemDataRole.UserRole, ('sync', ''))
+        self.listw.addItem(sync_row)
+        rows = []
+        for item in self._items:
+            if query and query not in item.get('name', '') \
+                    and query not in str(item.get('rewaya', '')) \
+                    and query not in str(item.get('family', '')):
+                continue
+            rows.append(item)
+        rows.sort(key=lambda r: (0 if self.is_favorite(r['id']) else 1, r.get('name', '')))
+        for item in rows:
+            star = '★ ' if self.is_favorite(item['id']) else ''
+            row = QListWidgetItem(f'{star}{item["name"]} — {item.get("rewaya", "")}')
+            row.setData(Qt.ItemDataRole.UserRole, ('library', str(item['id'])))
+            self.listw.addItem(row)
+        target = 0
+        for index in range(self.listw.count()):
+            data = self.listw.item(index).data(Qt.ItemDataRole.UserRole)
+            if data and data[0] == self._mode and str(data[1]) == self._selected_id:
+                target = index
+                break
+        self.listw.setCurrentRow(target)
+
+    def toggle_favorite(self):
+        item = self.listw.currentItem()
+        data = item.data(Qt.ItemDataRole.UserRole) if item else None
+        if not data or data[0] != 'library':
+            return
+        rid = str(data[1])
+        if rid in self._favorites:
+            self._favorites.remove(rid)
+        else:
+            self._favorites.append(rid)
+        self._selected_id = rid
+        self._mode = 'library'
+        self.refill()
+
+    def accept(self):
+        item = self.listw.currentItem()
+        data = item.data(Qt.ItemDataRole.UserRole) if item else ('sync', '')
+        self._mode, self._selected_id = data[0], str(data[1])
+        super().accept()
+
+    def selection(self):
+        return self._mode, self._selected_id
+
+    def favorites(self):
+        return list(self._favorites)
+
+
 class Main(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -983,6 +1088,7 @@ class Main(QMainWindow):
         self.dl = {'running': False}
         self.queue = []
         self.queue_index = -1
+        self._library_surah = 0
         self.playing = False
         self.highlight = None
 
@@ -1289,6 +1395,8 @@ class Main(QMainWindow):
         self.reciter_combo = NoWheelComboBox()
         self.reciter_combo.setMinimumWidth(190)
         self.reciter_combo.currentIndexChanged.connect(self.on_reciter_change)
+        self.btn_voice = QPushButton('مكتبة القرّاء')
+        self.btn_voice.clicked.connect(self.open_voice_library)
         self.play_surah = NoWheelComboBox()
         for s in SURAHS:
             self.play_surah.addItem(f'{s["number"]}. {s["name"]}', s['number'])
@@ -1299,7 +1407,7 @@ class Main(QMainWindow):
         self.btn_mark.clicked.connect(self.toggle_bookmark)
         self.btn_tafsir = QPushButton('التفسير')
         self.btn_tafsir.clicked.connect(lambda: self.toggle_tafsir_panel())
-        for wdg in (self.btn_index, self.btn_play, self.btn_stop, self.reciter_combo, self.play_surah, self.play_from):
+        for wdg in (self.btn_index, self.btn_play, self.btn_stop, self.reciter_combo, self.btn_voice, self.play_surah, self.play_from):
             tl.addWidget(wdg)
         self.play_status = QLabel('')
         self.play_status.setObjectName('muted')
@@ -1378,8 +1486,12 @@ class Main(QMainWindow):
         self.tp_frame.hide()
         row.addWidget(self.tp_frame)
 
+        self.settings.setValue('voice/mode', 'sync')
         self.populate_reciters()
+        if hasattr(self, 'btn_voice'):
+            self.refresh_voice_button()
         self.populate_play_from()
+        self.refresh_voice_button()
         return w
 
     def toggle_index_panel(self):
@@ -1540,6 +1652,82 @@ class Main(QMainWindow):
 
     def current_reciter(self):
         return self.reciter_combo.currentData()
+
+    # ---------- مكتبة القرّاء (حفص وورش وقالون والدوري…) ----------
+    def voice_mode(self):
+        return self.settings.value('voice/mode', 'sync', type=str)
+
+    def set_voice_mode(self, mode, library_id=None):
+        self.settings.setValue('voice/mode', 'library' if mode == 'library' else 'sync')
+        if library_id:
+            self.settings.setValue('voice/library_id', str(library_id))
+        self.settings.sync()
+
+    def library_reciter(self):
+        if self.voice_mode() != 'library':
+            return None
+        return LIBRARY_BY_ID.get(self.settings.value('voice/library_id', '', type=str))
+
+    def voice_favorites(self):
+        value = self.settings.value('voice/favorites', [], type=list)
+        return [str(x) for x in (value or [])]
+
+    def set_voice_favorites(self, favorites):
+        self.settings.setValue('voice/favorites', [str(x) for x in (favorites or [])])
+        self.settings.sync()
+
+    def sync_voice_label(self):
+        rid = self.current_reciter()
+        for rec_id, name, _bitrate in HAFS_RECITERS:
+            if rec_id == rid:
+                return name
+        for entry in RIW_RECITERS.get(self.riwaya_id, []):
+            if entry[0] == rid:
+                return entry[1]
+        return 'القارئ المتزامن'
+
+    def refresh_voice_button(self):
+        entry = self.library_reciter()
+        if entry:
+            self.btn_voice.setText(f'{entry["name"]} · سورة كاملة')
+            self.btn_voice.setToolTip(f'{entry.get("rewaya", "")}')
+            self.reciter_combo.setEnabled(False)
+        else:
+            self.btn_voice.setText('مكتبة القرّاء')
+            self.btn_voice.setToolTip('اختر قارئًا من المكتبة أو التلاوة المتزامنة آية بآية')
+            self.reciter_combo.setEnabled(True)
+
+    def open_voice_library(self):
+        entry = self.library_reciter()
+        dialog = VoiceLibraryDialog(
+            self, RECITER_LIBRARY, self.voice_favorites(),
+            'library' if entry else 'sync',
+            entry['id'] if entry else '',
+            self.sync_voice_label(),
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        mode, rid = dialog.selection()
+        self.set_voice_favorites(dialog.favorites())
+        self.set_voice_mode(mode, rid)
+        if self.playing:
+            self.stop_play('')
+        self.refresh_voice_button()
+        if mode == 'library':
+            chosen = LIBRARY_BY_ID.get(str(rid))
+            if chosen:
+                self.play_status.setText(f'{chosen["name"]} · تلاوة سورة كاملة')
+        else:
+            self.play_status.setText('')
+
+    def library_queue(self, surah):
+        entry = self.library_reciter()
+        if not entry:
+            return []
+        number = int(surah)
+        if number < 1 or number > 114:
+            return []
+        return [(f'{entry["server"]}{number:03d}.mp3', (number, None))]
 
     def on_reciter_change(self, _idx):
         rid = self.current_reciter()
@@ -1735,7 +1923,16 @@ class Main(QMainWindow):
         return self.queue_for_items(items)
 
     def queue_for_items(self, items):
-        """ملف لكل آية (حفص) أو لكل سورة (الروايات) للآيات المعطاة."""
+        """ملف لكل آية (حفص) أو لكل سورة (الروايات أو مكتبة القرّاء)."""
+        if self.library_reciter():
+            seen = []
+            for s, _a, _t in items:
+                if s not in seen:
+                    seen.append(s)
+            out = []
+            for s in seen:
+                out.extend(self.library_queue(s))
+            return out
         rid = self.current_reciter()
         if self.riwaya_id in RIW_RECITERS:
             entry = next((e for e in RIW_RECITERS[self.riwaya_id] if e[0] == rid), None)
@@ -1773,7 +1970,12 @@ class Main(QMainWindow):
         if start is not None and self.book.page_of(s, a) != self.page:
             self.go_page(self.book.page_of(s, a))
         self.queue_list = False
-        self.queue = self.audio_queue_for_page(start)
+        if self.library_reciter():
+            surah = self.play_surah.currentData() or s or 1
+            self._library_surah = int(surah)
+            self.queue = self.library_queue(self._library_surah)
+        else:
+            self.queue = self.audio_queue_for_page(start)
         if not self.queue:
             self.play_status.setText('لا توجد تلاوة لهذا القارئ')
             return
@@ -1810,6 +2012,15 @@ class Main(QMainWindow):
 
     def play_index(self, i):
         if i >= len(self.queue):
+            if self.playing and not self.queue_list and self.library_reciter():
+                following = int(getattr(self, '_library_surah', 0)) + 1
+                if 1 <= following <= 114:
+                    self._library_surah = following
+                    self.queue = self.library_queue(following)
+                    if self.queue:
+                        return self.play_index(0)
+                self.stop_play('تمت تلاوة المصحف كاملًا')
+                return
             # نهاية صفحة: ينتقل للصفحة التالية ويكمل التلاوة
             if self.playing and not self.queue_list and self.page < TOTAL_PAGES:
                 self._auto_turn = True
@@ -1837,6 +2048,10 @@ class Main(QMainWindow):
                          lambda msg: self._audio_failed(token, msg))
         if i + 1 < len(self.queue):  # تحميل مسبق للتالي لتشغيل متصل
             self.local_audio(self.queue[i + 1][0], lambda _p: None, lambda _m: None)
+        elif self.library_reciter() and int(getattr(self, '_library_surah', 0)) < 114:
+            ahead = self.library_queue(int(self._library_surah) + 1)
+            if ahead:
+                self.local_audio(ahead[0][0], lambda _p: None, lambda _m: None)
 
     def _start_file(self, path, token, i, title):
         if token != self.play_token or not self.playing:

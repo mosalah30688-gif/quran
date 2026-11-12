@@ -239,6 +239,26 @@ try:
     check('pause toggles', 'متوقفة' in win.play_status.text() or win.play_status.text() != '')
     win.stop_play('أوقفت التلاوة')
     check('stop resets', not win.playing)
+    # مكتبة القرّاء: اختيار قارئ بروايته، مفضلة، وتلاوة سورة كاملة مع استمرار تلقائي
+    check('voice library built from audited catalog', len(M.RECITER_LIBRARY) >= 174)
+    families = {str(item.get('family', '')) for item in M.RECITER_LIBRARY}
+    check('voice library covers warsh and qalun', {'حفص', 'ورش', 'قالون'} <= families)
+    first_lib = M.RECITER_LIBRARY[0]
+    win.set_voice_mode('library', str(first_lib['id']))
+    win.refresh_voice_button()
+    check('library voice selected', win.library_reciter() is not None and win.btn_voice.text() != 'مكتبة القرّاء')
+    library_queue = win.library_queue(2)
+    check(
+        'library queue builds one whole-surah file',
+        len(library_queue) == 1
+        and library_queue[0][0] == f'{first_lib["server"]}002.mp3'
+        and library_queue[0][1] == (2, None),
+    )
+    win.set_voice_favorites([str(first_lib['id'])])
+    check('voice favorites persisted in settings', str(first_lib['id']) in win.voice_favorites())
+    win.set_voice_mode('sync')
+    win.refresh_voice_button()
+    check('sync mode restores reciter list', win.library_reciter() is None and win.reciter_combo.isEnabled())
     # ورش (ملف كامل لكل سورة من مصدر MP3Quran المدقق)
     win.riwaya_combo.setCurrentIndex(win.riwaya_combo.findData('warsh'))
     win.reciter_combo.setCurrentIndex(0)
@@ -267,7 +287,9 @@ try:
     check('Hafs uses compact ayah rosette', '۝١' in page_text)
     raw_baqarah = next(row[3] for row in M.HAFS['uthmani'] if row[0] == 2 and row[1] == 1)
     check('basmala detached from Hafs first ayah', not M.display_ayah_text(2, 1, raw_baqarah, True).startswith('بِسْمِ'))
-    check('non-Hafs display source is untouched', M.display_ayah_text(2, 1, raw_baqarah, False).startswith('بِسْمِ'))
+    # النص المقفول صار يفصل البسملة عن الآية الأولى ويُعرض سطرًا مستقلًا،
+    # فالمطلوب أن مسار الروايات الأخرى لا يغيّر نص المصدر إطلاقًا.
+    check('non-Hafs display source is untouched', M.display_ayah_text(2, 1, raw_baqarah, False) == raw_baqarah.strip())
     all_hafs_firsts = [
         (s, a, text)
         for rows in (M.HAFS['uthmani'], M.HAFS['simple'])

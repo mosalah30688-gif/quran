@@ -23,7 +23,11 @@ def main() -> None:
     assert_same("quran-tajweed.json", "windows_app/data/quran-tajweed.json")
     assert_same("quran-tajweed.json", "mushaf_app/data/quran-tajweed.json")
     assert_same("surahs.json", "mushaf_app/data/surahs.json")
-    assert_same("tafsir-catalog.json", "mushaf_app/data/tafsir-catalog.json")
+    # أندرويد يحمل 75 تفسيرًا (73 كلاسيكيًا + تفسيران معاصران بطلب المالك)،
+    # بينما سطح المكتب يحمل الـ73 الكلاسيكية المطابقة لمخزن التفسير المحلي المحزوم (78 إصدارًا).
+    assert_same("mushaf_app/data/tafsir-catalog.json", "windows_app/data/tafsir-catalog.json")
+    desktop_catalog = load("mushaf_app/data/tafsir-catalog.json")
+    assert len(desktop_catalog["books"]) == 73
     assert_same("quran-reciters.json", "mushaf_app/data/quran-reciters.json")
     assert_same("tajweed-learning-catalog.json", "windows_app/data/tajweed-learning-catalog.json")
     assert_same("tajweed-learning-catalog.json", "mushaf_app/data/tajweed-learning-catalog.json")
