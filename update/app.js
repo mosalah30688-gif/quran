@@ -80,7 +80,7 @@
 
   const DEFAULTS = {
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
-    surahReciter: 0, surahAudio: true,
+    surahReciter: 0, surahMode: 'sync', surahAudio: true,
     translation: '', font: 'Scheherazade New', size: 26, tajweed: false, dark: false,
     tajweedScopes: {},
   };
@@ -2234,9 +2234,138 @@
     select.innerHTML = SURAH_RECITERS
       .map((r) => `<option value="${r.id}">${r.name}</option>`).join('');
     select.value = String(current.id);
+    refreshPickReciterName();
     if ($('#surahReciterCount')) {
-      $('#surahReciterCount').textContent = `${toArabicDigits(SURAH_RECITERS.length)} قارئًا — تلاوة كاملة لكل سورة`;
+      $('#surahReciterCount').textContent = `${toArabicDigits(SURAH_RECITERS.length)} قارئًا برواياتهم — تلاوة كاملة لكل سورة`;
     }
+  }
+
+
+  // ===== مكتبة القرّاء: بحث + مفضلة =====
+  function voiceFavs() {
+    try { return JSON.parse(store.get('voice-favs') || '{}') || {}; } catch { return {}; }
+  }
+  function isFavReciter(id) { return (voiceFavs().reciters || []).includes(String(id)); }
+  function toggleFavReciter(id) {
+    const all = voiceFavs();
+    const list = Array.isArray(all.reciters) ? all.reciters.slice() : [];
+    const key = String(id);
+    const at = list.indexOf(key);
+    if (at >= 0) list.splice(at, 1); else list.push(key);
+    all.reciters = list;
+    store.set('voice-favs', JSON.stringify(all));
+    return at < 0;
+  }
+
+  function syncReciterName() {
+    return (RECITERS.find(([id]) => id === settings.reciter) || [null, ''])[1];
+  }
+  function fullSurahMode() {
+    return settings.surahMode === 'full' && !isRiw();
+  }
+  function refreshPickReciterName() {
+    const label = $('#pickSurahReciterName');
+    if (!label) return;
+    if (fullSurahMode()) {
+      const entry = surahReciterEntry();
+      label.textContent = entry ? entry.name : 'اختر القارئ';
+    } else {
+      label.textContent = `آية بآية · ${syncReciterName() || 'القارئ المتزامن'}`;
+    }
+  }
+  function pickSyncMode() {
+    settings.surahMode = 'sync';
+    saveSettings();
+    closeVoiceSheet();
+    refreshPickReciterName();
+    toast('تلاوة متزامنة آية بآية');
+  }
+
+  function renderVoiceList() {
+    const list = $('#voiceList');
+    if (!list) return;
+    const q = ($('#voiceSearch') && $('#voiceSearch').value || '').trim();
+    const current = surahReciterEntry();
+    const rows = SURAH_RECITERS.filter((r) => !q
+      || r.name.includes(q) || String(r.rewaya || '').includes(q) || String(r.family || '').includes(q));
+    rows.sort((a, b) => {
+      const fa = isFavReciter(a.id) ? 0 : 1;
+      const fb = isFavReciter(b.id) ? 0 : 1;
+      if (fa !== fb) return fa - fb;
+      return 0;
+    });
+    const syncRow = `
+      <div class="voice-row${!fullSurahMode() ? ' is-current' : ''}">
+        <span class="voice-star" aria-hidden="true"></span>
+        <button class="voice-row-main" data-pick-sync="1">
+          <strong>تلاوة متزامنة آية بآية</strong>
+          <span class="muted">${esc(syncReciterName() || 'القارئ المتزامن')}</span>
+        </button>
+      </div>`;
+    list.innerHTML = syncRow + rows.map((r) => `
+      <div class="voice-row${current && String(current.id) === String(r.id) ? ' is-current' : ''}" data-id="${r.id}">
+        <button class="voice-star${isFavReciter(r.id) ? ' on' : ''}" data-star="${r.id}" aria-label="مفضلة" title="مفضلة">★</button>
+        <button class="voice-row-main" data-pick="${r.id}">
+          <strong>${esc(r.name)}</strong>
+          <span class="muted">${esc(r.rewaya || 'حفص عن عاصم')}</span>
+        </button>
+      </div>`).join('');
+    const count = $('#voiceCount');
+    if (count) count.textContent = `${toArabicDigits(rows.length)} من ${toArabicDigits(SURAH_RECITERS.length)}`;
+  }
+
+  function openVoiceSheet() {
+    const sheet = $('#voiceSheet');
+    if (!sheet) return;
+    sheet.hidden = false;
+    const search = $('#voiceSearch');
+    if (search) { search.value = ''; setTimeout(() => search.focus(), 60); }
+    renderVoiceList();
+  }
+  function closeVoiceSheet() {
+    const sheet = $('#voiceSheet');
+    if (sheet) sheet.hidden = true;
+  }
+  function pickReciter(id) {
+    settings.surahReciter = id;
+    settings.surahMode = 'full';
+    saveSettings();
+    syncSurahReciterSelect();
+    refreshPickReciterName();
+    closeVoiceSheet();
+    const entry = surahReciterEntry();
+    if (entry) toast(`القارئ: ${entry.name}`);
+  }
+
+  if ($('#pickSurahReciter')) $('#pickSurahReciter').addEventListener('click', openVoiceSheet);
+  if ($('#voiceSheetClose')) $('#voiceSheetClose').addEventListener('click', closeVoiceSheet);
+  if ($('#voiceSheet')) $('#voiceSheet').addEventListener('click', (e) => { if (e.target.id === 'voiceSheet') closeVoiceSheet(); });
+  if ($('#voiceSearch')) $('#voiceSearch').addEventListener('input', renderVoiceList);
+  if ($('#voiceList')) $('#voiceList').addEventListener('click', (e) => {
+    const star = e.target.closest('[data-star]');
+    if (star) { toggleFavReciter(star.dataset.star); renderVoiceList(); return; }
+    if (e.target.closest('[data-pick-sync]')) { pickSyncMode(); return; }
+    const pick = e.target.closest('[data-pick]');
+    if (pick) pickReciter(pick.dataset.pick);
+  });
+
+  // تحميل مسبق للسورة التالية أثناء التشغيل، فلا تكون هناك فجوة بين السور
+  const preloadPool = new Map();
+  function preloadSurahAudio(url) {
+    if (!url || preloadPool.has(url)) return;
+    try {
+      const probe = new Audio();
+      probe.preload = 'auto';
+      probe.muted = true;
+      probe.src = url;
+      preloadPool.set(url, probe);
+      if (preloadPool.size > 3) {
+        const oldest = preloadPool.keys().next().value;
+        const el = preloadPool.get(oldest);
+        if (el) { el.removeAttribute('src'); el.load(); }
+        preloadPool.delete(oldest);
+      }
+    } catch { /* لا شيء */ }
   }
 
   async function playSurahFull(surah, options = {}) {
@@ -2265,6 +2394,7 @@
       s: surah, n: 1, g: `${surah}:1`, text: '',
       page: first ? first.page : null, audio: url, fromSurah: true,
     });
+    if (surah < 114) preloadSurahAudio(surahAudioUrl(entry, surah + 1));
   }
 
 
@@ -2346,9 +2476,9 @@
     if (isRiw() && !riwAudioOk()) { toast('اختر قارئاً لهذه الرواية من الإعدادات'); return; }
     // التلاوة المتزامنة تتقدّم على ملف السورة الكاملة لأنها تضيء الآية الجارية
     const syncReady = syncReadingEnabled();
-    if (!syncReady && settings.surahAudio !== false && !isRiw() && SURAH_RECITERS.length) {
-      return playSurahFull(s);
-    }
+    const wantFull = settings.surahAudio !== false && !isRiw() && SURAH_RECITERS.length
+      && (fullSurahMode() || !syncReady);
+    if (wantFull) return playSurahFull(s);
     if (!syncReady && !isRiw() && !OFFLINE_SRC[settings.reciter]) {
       toast('هذا القارئ ليس له ملفات آيات؛ اختر قارئًا من قائمة التحميل للتلاوة المتزامنة.');
     }

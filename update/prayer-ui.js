@@ -766,10 +766,31 @@
     renderAdhanList();
   }
 
+
+  // مفضلة الأصوات مشتركة مع مكتبة القرّاء (مفتاح واحد في المتصفح)
+  const FAV_KEY = 'voice-favs';
+  function favState() {
+    try { return JSON.parse(localStorage.getItem(FAV_KEY) || '{}') || {}; } catch { return {}; }
+  }
+  function isFavAdhan(id) {
+    const list = favState().adhans;
+    return Array.isArray(list) && list.includes(String(id));
+  }
+  function toggleFavAdhan(id) {
+    const all = favState();
+    const list = Array.isArray(all.adhans) ? all.adhans.slice() : [];
+    const key = String(id);
+    const at = list.indexOf(key);
+    if (at >= 0) list.splice(at, 1); else list.push(key);
+    all.adhans = list;
+    try { localStorage.setItem(FAV_KEY, JSON.stringify(all)); } catch { /* مساحة ممتلئة */ }
+  }
+
   async function renderAdhanList() {
     if (!els.adhanList) return;
     const config = state.config;
-    const rows = await Promise.all(DATA.adhans.map(async (item) => {
+    const ordered = DATA.adhans.slice().sort((a, b) => (isFavAdhan(b.id) ? 1 : 0) - (isFavAdhan(a.id) ? 1 : 0));
+    const rows = await Promise.all(ordered.map(async (item) => {
       const downloaded = await isAdhanDownloaded(item);
       const selected = config.adhanId === item.id;
       const selectedFajr = config.fajrAdhanId === item.id;
@@ -780,6 +801,7 @@
             <span class="muted">${item.region ? esc(item.region) + ' · ' : ''}${Math.round(item.seconds / 60)} د${item.fajr ? ' · أذان فجر' : ''} · ${item.local ? 'محلي' : (downloaded ? 'منزّل' : 'يحتاج تنزيل')}</span>
           </div>
           <div class="pt-adhan-actions">
+            <button class="pt-mini${isFavAdhan(item.id) ? ' on' : ''}" data-act="fav" data-id="${item.id}" title="مفضلة">★</button>
             <button class="pt-mini" data-act="preview" data-id="${item.id}" title="تجربة">▶</button>
             <button class="pt-mini" data-act="download" data-id="${item.id}" title="${downloaded ? 'محفوظ على الجهاز' : 'تنزيل للاستخدام دون إنترنت'}">${downloaded ? '✓' : '⤓'}</button>
             <button class="pt-mini${selected ? ' on' : ''}" data-act="use" data-id="${item.id}" title="أذان الصلوات">أ</button>
@@ -818,6 +840,7 @@
       btn.addEventListener('click', async () => {
         const item = adhanById(btn.dataset.id);
         const act = btn.dataset.act;
+        if (act === 'fav') { toggleFavAdhan(item.id); renderAdhanList(); return; }
         if (act === 'preview') { playAdhan(item.id); return; }
         if (act === 'use') { state.config.adhanId = item.id; saveConfig(); renderAdhanList(); toast(`أذان الصلوات: ${item.name}`); return; }
         if (act === 'use-fajr') { state.config.fajrAdhanId = item.id; saveConfig(); renderAdhanList(); toast(`أذان الفجر: ${item.name}`); return; }

@@ -316,8 +316,8 @@ test('التلاوة المتزامنة: الآية الجارية تضيء وت
   assert.match(src, /scrollIntoView\(\{ block: 'center', behavior: 'smooth' \}\)/);
   // لمس الآية ينقل التلاوة إليها في وضع التزامن
   assert.match(src, /if \(play\.active && syncReadingEnabled\(\)\) \{\s*playAyah\(a\);/);
-  // ملف السورة الكاملة يبقى متاحًا عند إطفاء الخيار
-  assert.match(src, /if \(!syncReady && settings\.surahAudio !== false/);
+  // تلاوة السورة الكاملة تبقى متاحة كخيار صوتي في مكتبة القرّاء
+  assert.match(src, /const wantFull = settings\.surahAudio !== false/);
   // صوت الآية من الملف المحلي أولاً ثم الشبكة، مع تحميل مسبق للآية التالية
   assert.match(src, /preloadAyahAudio\(a\.s, a\.n \+ 1\)/);
   assert.match(src, /const local = a\.fromSurah \? null : await localAudioUrl/);
@@ -366,4 +366,29 @@ test('انتقال فوري بين الصفحات بلا حركة ولا صوت 
   assert.ok(!read('sw.js').includes('media/sfx'), 'لا تخزين مسبق لأصوات الورق');
   // السحب يظل يعمل
   assert.match(src, /async function flipBySwipe/);
+});
+
+test('مكتبة القرّاء: ١٧٤ قارئًا برواياتهم مع بحث ومفضلة وتحميل مسبق', () => {
+  const lib = JSON.parse(read('quran-reciters.json'));
+  assert.ok(lib.items.length >= 174, 'مكتبة القرّاء يجب أن تتجاوز ١٧٤ قارئًا');
+  const families = new Set(lib.items.map((r) => r.family));
+  for (const fam of ['حفص', 'ورش', 'قالون', 'الدوري']) {
+    assert.ok(families.has(fam), `رواية ${fam} مفقودة من المكتبة`);
+  }
+  assert.ok(lib.items.every((r) => r.surahs === 114 && /^https:\/\//.test(r.server)));
+  const app = read('app.js');
+  // بحث ومفضلة
+  assert.match(app, /function renderVoiceList\(\)/);
+  assert.match(app, /\$\('#voiceSearch'\)\.addEventListener\('input', renderVoiceList\)/);
+  assert.match(app, /store\.set\('voice-favs'/);
+  assert.match(app, /function toggleFavReciter\(id\)/);
+  // تحميل مسبق للسورة التالية: تشغيل متصل بلا فجوة
+  assert.match(app, /function preloadSurahAudio\(url\)/);
+  assert.match(app, /if \(surah < 114\) preloadSurahAudio\(surahAudioUrl\(entry, surah \+ 1\)\)/);
+  // تبديل بين التلاوة المتزامنة وقارئ المكتبة
+  assert.match(app, /surahMode: 'sync'/);
+  assert.match(app, /function pickSyncMode\(\)/);
+  assert.match(app, /const wantFull = /);
+  const html = read('index.html');
+  assert.ok(html.includes('id="voiceSheet"') && html.includes('id="voiceSearch"') && html.includes('id="pickSurahReciter"'));
 });

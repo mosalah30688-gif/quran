@@ -1,5 +1,5 @@
 {
-  "version": "1.10.1",
+  "version": "1.11.0",
   "files": [
     "index.html",
     "smart-context.js",
@@ -28,11 +28,12 @@
     "linux": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-linux-test-v4.1.1/Siraj-Quran-4.1.1-linux-x86_64.AppImage"
   },
   "features": [
-    "شيلنا آخر سطر شرح في الإعدادات وخليّنا الشاشة نظيفة بالكامل",
-    "الأذان الإجباري والتقليب الفوري والتزامن الآيات كله شغال زي تحديث 1.10.0"
+    "مكتبة القرّاء بقت ١٧٤ قارئًا برواياتهم مع بحث فوري",
+    "مفضلة للقرّاء والمؤذنين ترجع في أول القائمة",
+    "تلاوة السورة كاملة من القارئ اللي تختاره مع تحميل مسبق للسورة التالية بلا فجوة"
   ],
   "sha256": {
-    "index.html": "88f5bfe69ecee85d86a6b94c75b0d0081f6580d79a748a12458b12869914148d",
+    "index.html": "6a75dd458e7ca1363a1e254dbc6d47c554ef42888e647dc43bf87c293a5fd14b",
     "smart-context.js": "d7f1995b9164255b5273da80a070a6f2bedd0f2abcbe7a108b20700567f00440",
     "smart-services.js": "bf98b6f1e10a771435cbf8dea41578b3e148c53901e601de28b5b4085352c10c",
     "tajweed-learning.js": "0ea4b4cde8f34591f79745275c87559f0f050692fb87d52a8bbb0200bb51e534",
@@ -41,9 +42,9 @@
     "tajweed-scope-registry.json": "8bf7e78c3e939979d2d8383142e3edf191d0f6d62057c2f73352894d7ab0eb03",
     "prayer-times.js": "1c46557f419a4c6b3ae34b17c50c2c7aa5b842dcb9167d173c9332bc95cad0c4",
     "prayer-data.js": "9d8a75f31d7c80272924250ff5fc42c0a5d551178147db87551323b6bb9fbcec",
-    "prayer-ui.js": "b73837ddbf7b120c9a25660530e27920ad57b34aa88fb1ee3ee96c59ffbb5485",
-    "quran-reciters.json": "0d63b30bd85b7147cd070709b0313e1debe63da12004a14c8f5092ff97591baf",
-    "app.js": "ce4ea3d81a8f1934d95034654ad682c4e5dbc5866ba7e27711838851833eb463",
+    "prayer-ui.js": "392be502c72820bae692294c6317c36700fb5d99c185771db3f5ad1222cb5ed7",
+    "quran-reciters.json": "655f6a6bc66ca46e8e1fe9374ef1edba104d98561390b640b44785c840e6552a",
+    "app.js": "6837d2cd8478b89235c855131ba13a9b266cd9997439152175123ca48d4b46e3",
     "quran-hafs.json": "caa2d0d091a0e6f8758b2852bc36895d579d362558b778bfd4dcb973483bd9ec",
     "quran-madani-lines.json": "856bee7c3b06200182361b235ac4114d013d2275611ce585960014bd175f606e"
   },
@@ -51,5 +52,5 @@
     "policy": "OTA_FIRST",
     "note_ar": "التحديث يُسلَّم داخل التطبيق (IndexedDB) لكل من نسخته >= 1.4.7؛ مؤشر APK يبقى على 1.4.7 حتى لا يُجبَر المستخدم على تنزيل ملف، ويُرفع فقط عند طلب صريح (APK_UPDATE=true)."
   },
-  "build": 180
+  "build": 181
 }
