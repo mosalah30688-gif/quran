@@ -3859,7 +3859,7 @@ class Main(QMainWindow):
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         rect = QRect(10, 10, side - 20, side - 20)
-        painter.setPen(QPen(QColor(0, 0, 0, 22), 10))
+        painter.setPen(QPen(QColor(0, 0, 0, 46), 10))
         painter.drawEllipse(rect)
         span = int(-360 * max(0.0, min(1.0, ratio)) * 16)
         if span:
