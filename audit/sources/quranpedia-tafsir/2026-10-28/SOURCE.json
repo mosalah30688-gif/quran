@@ -40,6 +40,10 @@
       27769,
       27783
     ],
+    "pending_offline_store_ids": [
+      70,
+      321
+    ],
     "excluded_title_prefixes": [
       "جهود ",
       "آراء "

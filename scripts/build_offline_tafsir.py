@@ -37,6 +37,8 @@ ALQURAN_BASE_URL = "https://api.alquran.cloud/v1/quran"
 USER_AGENT = "Siraj-Quran/4.1 offline-tafsir-builder (https://github.com/mosalah30688-gif/quran)"
 CHUNK_SIZE = 16
 SCHEMA_VERSION = 1
+# البناء الكامل يستهلك الكتالوج الكامل (٧٥). الترقيع الحالي يعرض ٧٣ لأن المخزن
+# المقفول بُني قبل التفسيرين المعاصرين ٧٠ و٣٢١، وverify يتحقق من ٧٣ + ٥ = ٧٨ نسخة.
 EXPECTED_QP_BOOKS = 75
 EXPECTED_ALQURAN_BOOKS = 5
 EXPECTED_QURAN_AYAHS = 6236

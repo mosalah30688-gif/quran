@@ -49,7 +49,11 @@ DUPLICATE_EDITION_IDS = {
 EXCLUDED_TITLE_PREFIXES = ("جهود ", "آراء ")
 EXPECTED_AYAH_ROWS = 6236
 EXPECTED_SOURCE_BOOKS = 149
-EXPECTED_SELECTED_BOOKS = 75
+# التفسيران المعاصران ٧٠ و٣٢١ مطلوبان في كتالوج أندرويد، لكن المخزن النصي المحلي
+# المقفول لسطح المكتب بُني قبل إضافتهما؛ فلا يُعرض في لينكس وويندوز كتاب بلا نص.
+# عند إعادة بناء المخزن (scripts/build_offline_tafsir.py) يُحذف هذا الاستثناء ويعود ٧٥.
+DESKTOP_PENDING_STORE_IDS = (70, 321)
+EXPECTED_SELECTED_BOOKS = 73
 # كتابان معاصران بطلب صريح من مالك التطبيق (التفسير الوسيط للزحيلي وطنطاوي).
 REQUESTED_CONTEMPORARY_IDS = (70, 321)
 
@@ -212,6 +216,8 @@ def build(source_dir: Path) -> tuple[bytes, dict]:
             continue
         if title.startswith(EXCLUDED_TITLE_PREFIXES) or book_id in excluded_ids:
             continue
+        if book_id in DESKTOP_PENDING_STORE_IDS:
+            continue
         selected.append(
             {
                 "edition": f"qp:{book_id}",
@@ -280,6 +286,7 @@ def build(source_dir: Path) -> tuple[bytes, dict]:
             "maximum_author_death_hijri": MAX_CLASSICAL_DEATH_YEAR,
             "alquran_equivalent_ids": sorted(ALQURAN_EQUIVALENT_IDS),
             "duplicate_or_compilation_ids": sorted(DUPLICATE_EDITION_IDS),
+            "pending_offline_store_ids": sorted(DESKTOP_PENDING_STORE_IDS),
             "excluded_title_prefixes": list(EXCLUDED_TITLE_PREFIXES),
         },
         "transformation": {

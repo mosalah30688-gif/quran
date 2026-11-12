@@ -471,7 +471,22 @@ try:
     check('khatma pointer advanced', M.khatma_progress(win.settings, win.page)['pointer'] == 41)
     check('khatma has no daily target control', not hasattr(win, 'wird_target'))
     check('khatma reminder controls', win.reminder_enabled is not None and win.reminder_time is not None)
+    check('wird ring and badges rendered', len(win.wird_badges) >= 10 and not win.wird_ring.pixmap().isNull())
+    check('wird shows reading minutes', 'دقيقة' in win.wird_minutes_label.text())
     shot('wird')
+    # مواقيت الصلاة والقبلة والأذان
+    win.show_view('prayer')
+    check('prayer city list is complete', win.prayer_city_combo.count() >= 90)
+    check('prayer methods follow android', win.prayer_method_combo.count() == len(M.prayer_times_api.METHODS))
+    check('prayer times are computed locally', win.prayer_rows['fajr'][1].text() != '—')
+    check('next prayer line', 'الصلاة القادمة' in win.prayer_next_label.text())
+    check('hijri date line', 'هـ' in win.prayer_hijri.text())
+    check('qibla dial bearing', win.qibla_dial.bearing > 0)
+    check('adhan voices catalog', win.adhan_voice_combo.count() == len(M.ADHAN_VOICES))
+    check('adhan toggle defaults off', not win.adhan_toggle.isChecked())
+    shot('prayer')
+    # النقر على الآية يبدأ التلاوة منها
+    check('tap ayah plays by default', win.settings.value('reader/tap_plays', True, type=bool))
     # الإحصائيات
     win.show_view('stats')
     check('stats today', win.st_cards['today'].text() != '')

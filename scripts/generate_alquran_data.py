@@ -113,8 +113,9 @@ def build_outputs(editions: dict[str, dict]) -> dict[str, bytes]:
     if len(juz) != 30 or seen_juz != set(range(1, 31)):
         raise ValueError("source does not contain all 30 ordered juz boundaries")
 
+    # hafs.json يملكه scripts/build_hafs_text.py (نص مصحف المدينة من Quranpedia)؛
+    # هذا السكربت يبني منه فقط ملفات البحث والتجويد والفهرس.
     return {
-        "hafs.json": encode({"uthmani": uthmani, "simple": simple}, compact=False),
         "quran-search.json": encode(
             {
                 "v": 1,
