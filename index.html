@@ -127,6 +127,26 @@
     .toolbar select { width: auto; padding: 4px 8px; font-size: 13px; }
     .toolbar select.tsel { min-width: 96px; max-width: 150px; }
 
+    .voice-pick-btn { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; text-align: start; cursor: pointer; }
+    .voice-pick-caret { opacity: .6; font-size: 11px; }
+    .voice-sheet { position: fixed; inset: 0; z-index: 88; display: flex; background: rgba(8,20,18,.45); backdrop-filter: blur(2px); }
+    .voice-sheet[hidden] { display: none; }
+    .voice-sheet-panel { margin: auto; width: min(560px, 100%); max-height: min(82vh, 720px); display: flex; flex-direction: column; background: var(--card, #fffdf8); border-radius: 18px 18px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,.25); overflow: hidden; }
+    @media (min-width: 620px) { .voice-sheet-panel { border-radius: 18px; } }
+    .voice-sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 6px; }
+    .voice-sheet-head strong { font-size: 16px; }
+    .voice-sheet-close { width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(0,0,0,.12); background: transparent; color: inherit; display: grid; place-items: center; cursor: pointer; }
+    .voice-sheet-search { display: flex; align-items: center; gap: 10px; padding: 0 16px 10px; }
+    .voice-sheet-search input { flex: 1; min-width: 0; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(0,0,0,.14); background: rgba(255,255,255,.75); font: inherit; }
+    .voice-list { overflow-y: auto; padding: 0 8px 18px; -webkit-overflow-scrolling: touch; }
+    .voice-row { display: flex; align-items: center; gap: 10px; padding: 11px 10px; border-radius: 12px; }
+    .voice-row + .voice-row { border-top: 1px solid rgba(0,0,0,.06); }
+    .voice-row.is-current { background: rgba(198,146,46,.12); }
+    .voice-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; background: none; border: 0; padding: 0; text-align: start; color: inherit; font: inherit; cursor: pointer; }
+    .voice-row-main strong { font-size: 14.5px; font-weight: 700; }
+    .voice-row-main .muted { font-size: 12px; }
+    .voice-star { width: 34px; height: 34px; border: 0; background: none; color: rgba(0,0,0,.28); font-size: 17px; cursor: pointer; line-height: 1; }
+    .voice-star.on { color: #c6922e; }
     /* ---------- الصفحة (مصحف ورقي) ---------- */
     .stage { touch-action: pan-y; user-select: text; perspective: 1400px; }
     body.page-turning .stage { pointer-events: none; }
@@ -1498,7 +1518,11 @@
               </label>
               <label class="play-field play-field-reciter">
                 <span>تلاوة السورة كاملة</span>
-                <select id="playSurahReciter" class="tsel" title="قارئ السورة الكاملة" aria-label="اختر قارئ السورة كاملة"></select>
+                <select id="playSurahReciter" class="tsel" title="قارئ السورة الكاملة" aria-label="اختر قارئ السورة كاملة" hidden></select>
+                <button class="tsel voice-pick-btn" id="pickSurahReciter" type="button" aria-haspopup="dialog">
+                  <span id="pickSurahReciterName">…</span>
+                  <span class="voice-pick-caret" aria-hidden="true">▾</span>
+                </button>
               </label>
             </div>
             <p class="muted" id="surahReciterCount" style="margin:6px 2px 0"></p>
@@ -1965,7 +1989,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.10.1</div>
+              <div class="muted">الإصدار 1.11.0</div>
             </div>
           </div>
 
@@ -2032,6 +2056,22 @@
   </div>
 
 
+
+  <div class="voice-sheet" id="voiceSheet" hidden role="dialog" aria-modal="true" aria-label="مكتبة القرّاء">
+    <div class="voice-sheet-panel">
+      <div class="voice-sheet-head">
+        <strong>مكتبة القرّاء</strong>
+        <button class="voice-sheet-close" id="voiceSheetClose" aria-label="إغلاق">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="voice-sheet-search">
+        <input id="voiceSearch" type="search" inputmode="search" placeholder="ابحث باسم القارئ أو الرواية…" aria-label="بحث القرّاء" />
+        <span class="muted" id="voiceCount"></span>
+      </div>
+      <div class="voice-list" id="voiceList"></div>
+    </div>
+  </div>
   <div class="adhan-screen" id="adhanScreen" role="dialog" aria-modal="true" aria-label="شاشة الأذان" aria-hidden="true">
     <video class="adhan-video" id="adhanVideo" src="media/adhan/mosque-adhan.mp4" poster="media/adhan/mosque-adhan-poster.jpg" muted loop playsinline preload="metadata"></video>
     <div class="adhan-scrim"></div>
@@ -2076,10 +2116,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.10.1';
+    window.APP_BUNDLE_VERSION = '1.11.0';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 180;
+    window.APP_BUILD_NUMBER = 181;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {
