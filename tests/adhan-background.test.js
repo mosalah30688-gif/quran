@@ -85,7 +85,7 @@ test('الأذان في الخلفية: أرقام الإصدار والبناء
   assert.ok(Number(match[1]) >= Number(build), 'versionCode لا يسبق BUILD_NUMBER');
   assert.match(html, new RegExp(`APP_BUILD_NUMBER = ${build}`));
   assert.match(gradle, /versionName "1\.[0-9]+\.[0-9]+"/);
-  assert.match(gradle, /versionCode 181/);
+  assert.match(gradle, /versionCode 182/);
 });
 
 test('ترقية الـAPK تُقارن برقم بناء الملف المثبَّت لا برقم بناء الواجهة', () => {
@@ -300,10 +300,14 @@ test('شاشة الأذان: فيديو مسجد + مشغل عادي (إيقاف
   assert.match(ui, /openAdhanScreen\(\{/);
   assert.match(ui, /audio\.ontimeupdate = renderAdhanScreenProgress/);
   // الملفات مبنية داخل الحزمة وتعمل دون إنترنت
-  const mp4 = path.join(ROOT, 'www/media/adhan/mosque-adhan.mp4');
-  assert.ok(fs.existsSync(mp4), 'الفيديو غير مبني داخل www');
+  // www مجلد مبني بـ scripts/build-www.sh ولا يُحفظ في المستودع،
+  // فالمصدر المعتمد هو media/adhan، ونتحقق من www فقط إن كان مبنيًا.
+  const builtWww = path.join(ROOT, 'www/media/adhan');
+  const mediaRoot = fs.existsSync(builtWww) ? builtWww : path.join(ROOT, 'media/adhan');
+  const mp4 = path.join(mediaRoot, 'mosque-adhan.mp4');
+  assert.ok(fs.existsSync(mp4), `فيديو شاشة الأذان مفقود في ${mediaRoot}`);
   assert.ok(fs.statSync(mp4).size > 500000, 'الفيديو صغير بشكل غير طبيعي');
-  assert.ok(fs.existsSync(path.join(ROOT, 'www/media/adhan/mosque-adhan-poster.jpg')), 'الملصق مفقود');
+  assert.ok(fs.existsSync(path.join(mediaRoot, 'mosque-adhan-poster.jpg')), 'الملصق مفقود');
   assert.ok(read('sw.js').includes("./media/adhan/mosque-adhan.mp4"), 'الفيديو غير مخزّن للتشغيل دون إنترنت');
   assert.ok(read('scripts/build-www.sh').includes("media/adhan"), 'البناء لا ينسخ فيديو الأذان');
 });

@@ -97,6 +97,9 @@ jobs:
           npm audit --audit-level=high
           node scripts/patch-capacitor-cli-tar.js
 
+      - name: Build the packaged web bundle before verification
+        run: bash scripts/build-www.sh
+
       - name: Verify JavaScript, licensed data, audio, and owned assets
         run: |
           node --check app.js
