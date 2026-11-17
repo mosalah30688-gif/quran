@@ -25,16 +25,26 @@ public class AdhanReceiver extends BroadcastReceiver {
     public static final String ACTION_PRE_ADHAN = "com.quran.mushaf.adhan.PRE";
 
     static final String CHANNEL_IQAMA = "adhan_iqama";
+    /** أقصى تأخير مقبول لمنبّه (نوم الجهاز العميق): بعده يُعدّ منبّهًا قديمًا فيُهمل. */
+    private static final long GRACE_MS = 10 * 60 * 1000L;
+    /** ذاكرة آخر ما انطلق فعليًا، فلا يتكرر أذان واحد مرتين. */
+    private static final String PREFS_FIRED = "siraj_adhan_fired";
+    private static final String KEY_FIRED = "fired";
 
     @Override
     public void onReceive(Context context, Intent intent) {
         if (intent == null) return;
         String action = intent.getAction();
-        int index = intent.getIntExtra("index", -1);
-        if (index < 0) return;
+        long fireAt = intent.getLongExtra("fireAt", 0L);
+        if (fireAt <= 0L) return;   // منبّه قديم بلا وقت معلن: يُهمل ولا يخمَّن
+        long late = System.currentTimeMillis() - fireAt;
+        // منبّه متأخر جدًا (أكثر من عشر دقائق) يعني جدولًا قديمًا أو ساعة تغيّرت
+        if (late > GRACE_MS || late < -60_000L) return;
+        if (alreadyFired(context, action + ":" + fireAt)) return;
+        markFired(context, action + ":" + fireAt);
 
-        JSONObject event = eventAt(context, index);
-        if (event == null) return;
+        JSONObject event = eventOf(intent);
+        if (event.length() == 0) return;
 
         if (ACTION_ADHAN.equals(action)) {
             startAdhan(context, event);
@@ -45,12 +55,54 @@ public class AdhanReceiver extends BroadcastReceiver {
         }
     }
 
-    private static JSONObject eventAt(Context context, int index) {
-        JSONArray events = AdhanScheduler.events(context);
-        return events.optJSONObject(index);
+    /** المنبّه يحمل بياناته؛ لا نقرأ الجدول وقت الانطلاق حتى لا يشير الرقم لصلاة أخرى. */
+    private static JSONObject eventOf(Intent intent) {
+        JSONObject event = new JSONObject();
+        try {
+            event.put("prayer", intent.getStringExtra("prayer") == null ? "" : intent.getStringExtra("prayer"));
+            event.put("label", intent.getStringExtra("label") == null ? "" : intent.getStringExtra("label"));
+            event.put("adhanId", intent.getStringExtra("adhanId") == null ? "" : intent.getStringExtra("adhanId"));
+            event.put("url", intent.getStringExtra("url") == null ? "" : intent.getStringExtra("url"));
+            event.put("iqamaMinutes", intent.getIntExtra("iqamaMinutes", 0));
+            event.put("preMinutes", intent.getIntExtra("preMinutes", 0));
+            event.put("at", intent.getLongExtra("at", 0L));
+        } catch (Exception error) {
+            return new JSONObject();
+        }
+        return event;
+    }
+
+    private static boolean alreadyFired(Context context, String stamp) {
+        try {
+            return context.getSharedPreferences(PREFS_FIRED, Context.MODE_PRIVATE)
+                    .getStringSet(KEY_FIRED, new java.util.HashSet<>()).contains(stamp);
+        } catch (Exception error) {
+            return false;
+        }
+    }
+
+    private static void markFired(Context context, String stamp) {
+        try {
+            android.content.SharedPreferences prefs =
+                    context.getSharedPreferences(PREFS_FIRED, Context.MODE_PRIVATE);
+            java.util.Set<String> fired = new java.util.HashSet<>(
+                    prefs.getStringSet(KEY_FIRED, new java.util.HashSet<>()));
+            fired.add(stamp);
+            if (fired.size() > 40) {
+                // نُبقي الأحدث فقط: الأقدم من يوم كامل لا يلزم
+                java.util.List<String> sorted = new java.util.ArrayList<>(fired);
+                java.util.Collections.sort(sorted);
+                fired = new java.util.HashSet<>(sorted.subList(sorted.size() - 40, sorted.size()));
+            }
+            prefs.edit().putStringSet(KEY_FIRED, fired).apply();
+        } catch (Exception error) {
+            // لا شيء: التكرار محمي أيضًا داخل الواجهة
+        }
     }
 
     private static void startAdhan(Context context, JSONObject event) {
+        // الشاشة أولًا: إشعار ملء الشاشة يوقظ الجهاز ويفتحها قبل تجهيز الصوت
+        openAdhanScreen(context, event);
         Intent service = new Intent(context, AdhanService.class);
         service.setAction(AdhanService.ACTION_PLAY);
         service.putExtra("prayer", event.optString("prayer", ""));
@@ -67,8 +119,6 @@ public class AdhanReceiver extends BroadcastReceiver {
             // إذا منع النظام بدء الخدمة من الخلفية نرفع تنبيهًا صوتيًا بدلًا منها.
             notifyFallback(context, event);
         }
-        // الأذان إجباري: نفتح شاشة الأذان في الواجهة ولو كان الهاتف مقفلًا
-        openAdhanScreen(context, event);
     }
 
     /** يفتح شاشة الأذان إجباريًا عبر intent ملء الشاشة (يعمل والشاشة مقفلة). */
@@ -103,6 +153,9 @@ public class AdhanReceiver extends BroadcastReceiver {
                         channelId, "شاشة الأذان", NotificationManager.IMPORTANCE_HIGH);
                 channel.setDescription("فتح شاشة الأذان في وقته");
                 channel.setBypassDnd(false);
+                // الصوت يأتي من خدمة الأذان؛ إسكات القناة يمنع نغمة تنبيه فوقه
+                channel.setSound(null, null);
+                channel.enableVibration(false);
                 manager.createNotificationChannel(channel);
             }
             NotificationCompat.Builder builder = new NotificationCompat.Builder(context, channelId)

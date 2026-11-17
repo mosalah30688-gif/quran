@@ -54,6 +54,7 @@
     downloaded: new Set(),
     iqamaTimers: [],
     lastFired: '',
+    firedLoaded: false,
     toast: null,
     compass: { active: false, heading: null, raw: null, mode: '', offset: 0, handler: null, listening: false, fallback: false },
     altMethod: '',
@@ -441,13 +442,46 @@
     return `${mins} دقيقة`;
   }
 
-  function fireFor(key, table) {
-    const stamp = `${new Date().toDateString()}:${key}`;
-    if (state.lastFired === stamp) return;
+  // ذاكرة دائمة (localStorage) لما انطلق فعلًا: إغلاق التطبيق وفتحه لا يعيد الأذان
+  const FIRED_KEY = 'siraj:adhan:fired';
+  const ADHAN_WINDOW_HOURS = 3 / 60; // نافذة ثلاث دقائق فقط بدل خمس عشرة
+
+  function dayKey(now = new Date()) {
+    return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+  }
+
+  function firedSet() {
+    try {
+      const raw = root.localStorage.getItem(FIRED_KEY);
+      const list = raw ? JSON.parse(raw) : [];
+      return new Set(Array.isArray(list) ? list : []);
+    } catch {
+      return new Set();
+    }
+  }
+
+  function wasFiredToday(stamp) {
+    if (state.lastFired === stamp) return true;
+    return firedSet().has(`${dayKey()}:${stamp}`);
+  }
+
+  function markFiredToday(stamp) {
     state.lastFired = stamp;
+    try {
+      const set = firedSet();
+      set.add(`${dayKey()}:${stamp}`);
+      root.localStorage.setItem(FIRED_KEY, JSON.stringify([...set].slice(-40)));
+    } catch { /* التخزين محجوب: تبقى الحماية داخل الجلسة */ }
+  }
+
+  function fireFor(key, table) {
+    if (wasFiredToday(key)) return;
+    if (state.playingId) return; // أذان يعمل الآن: لا نبدأ آخر فوقه
+    markFiredToday(key);
+    const stamp = key;
     const config = state.config;
     // في نسخة أندرويد يتولى النظام تشغيل الأذان والإقامة، فلا نكرر الصوت داخل الواجهة.
-    const handledBySystem = hasBackgroundBridge() && bgState.scheduled > 0;
+    const handledBySystem = hasBackgroundBridge();
     if (config.adhanEnabled && !handledBySystem) {
       const id = key === 'fajr' ? config.fajrAdhanId : config.adhanId;
       // تجربة يدوية: العنوان يبقى «أذان» إلا إذا دخل وقت الصلاة فعلًا
@@ -479,13 +513,13 @@
     PRAYER_KEYS.forEach((key) => {
       if (!Number.isFinite(table[key])) return;
       const diff = hoursNow - table[key];
-      if (diff >= 0 && diff < 0.25) fireFor(key, table);
-      if (config.preMinutes > 0) {
+      if (diff >= 0 && diff < ADHAN_WINDOW_HOURS) fireFor(key, table);
+      if (config.preMinutes > 0 && !hasBackgroundBridge()) {
         const pre = diff + config.preMinutes;
         if (pre >= 0 && pre < 0.25) {
-          const stamp = `${new Date().toDateString()}:pre:${key}`;
-          if (state.lastFired !== stamp) {
-            state.lastFired = stamp;
+          const stamp = `pre:${key}`;
+          if (!wasFiredToday(stamp)) {
+            markFiredToday(stamp);
             speakReminder(`أذان ${PT.describe(key)} بعد ${config.preMinutes} دقيقة`);
             notifyLocal(`أذان ${PT.describe(key)} بعد ${config.preMinutes} دقائق`);
           }
@@ -625,6 +659,7 @@
       }
       const payload = buildBackgroundSchedule();
       const result = await bgCall('configure', payload);
+      ensureAdhanPermissions();
       bgState = {
         native: true,
         scheduled: result && Number.isFinite(Number(result.scheduled)) ? Number(result.scheduled) : payload.events.length,
@@ -636,6 +671,40 @@
     };
     if (immediate) run();
     else bgSyncTimer = setTimeout(run, 700);
+  }
+
+  /**
+   * أذونات أذان الشاشة المقفولة: الإشعارات (وبدونها صوت فقط بلا شاشة)،
+   * وملء الشاشة على أندرويد ١٤+، والمنبّهات الدقيقة. تُطلب مرة واحدة لكل جهاز.
+   */
+  let permissionsAsked = false;
+  async function ensureAdhanPermissions(force = false) {
+    if (!hasBackgroundBridge() || !state.config || !state.config.adhanEnabled) return;
+    if (permissionsAsked && !force) return;
+    permissionsAsked = true;
+    const flags = (await bgCall('permissions')) || {};
+    const askedBefore = (() => {
+      try { return root.localStorage.getItem('siraj:adhan:asked') || ''; } catch { return ''; }
+    })();
+    const once = (key) => {
+      if (askedBefore.includes(key)) return false;
+      try { root.localStorage.setItem('siraj:adhan:asked', `${askedBefore}${key},`); } catch { /* محجوب */ }
+      return true;
+    };
+    let changed = false;
+    if (!flags.notifications) {
+      await bgCall('requestNotifications');
+      changed = true;
+    }
+    if (!flags.fullScreen && (force || once('fullscreen'))) {
+      await bgCall('requestFullScreen');
+      changed = true;
+    }
+    if (!flags.exactAlarms && (force || once('exact'))) {
+      await bgCall('requestExactAlarms');
+      changed = true;
+    }
+    if (changed) syncBackground(true);
   }
 
   function formatUntil(ms) {

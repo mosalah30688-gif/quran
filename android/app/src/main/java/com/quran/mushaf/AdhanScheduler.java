@@ -22,10 +22,14 @@ final class AdhanScheduler {
     static final String KEY_SETTINGS = "settings";
     static final String KEY_AUDIO = "audio";
     static final String KEY_COUNT = "count";
+    /** أكواد المنبّهات المضبوطة حاليًا حتى نلغيها بدقة عند إعادة الجدولة. */
+    static final String KEY_CODES = "codes";
 
-    private static final int REQUEST_ADHAN = 21000;
-    private static final int REQUEST_IQAMA = 31000;
-    private static final int REQUEST_PRE = 41000;
+    /** نوعا المنبّه: 0 أذان · 1 إقامة · 2 تنبيه ما قبل الأذان. */
+    private static final int KIND_ADHAN = 0;
+    private static final int KIND_IQAMA = 1;
+    private static final int KIND_PRE = 2;
+    private static final int REQUEST_BASE = 1000;
 
     private AdhanScheduler() {}
 
@@ -92,17 +96,41 @@ final class AdhanScheduler {
         }
     }
 
+    /**
+     * يلغي كل منبّه مضبوط بدقة (بقائمة الأكواد المحفوظة)، فلا يبقى منبّه يتيم
+     * ينطلق بعد إعادة الجدولة ويشغّل أذان صلاة أخرى في غير وقتها.
+     */
     static void cancelAll(Context context) {
         AlarmManager manager = alarms(context);
-        int count = prefs(context).getInt(KEY_COUNT, 0);
+        JSONArray codes = codes(context);
         if (manager != null) {
-            for (int i = 0; i < count; i++) {
-                manager.cancel(adhanIntent(context, i));
-                manager.cancel(iqamaIntent(context, i));
-                manager.cancel(preIntent(context, i));
+            for (int i = 0; i < codes.length(); i++) {
+                int code = codes.optInt(i, 0);
+                if (code != 0) manager.cancel(alarmIntent(context, code));
             }
         }
-        prefs(context).edit().putInt(KEY_COUNT, 0).apply();
+        prefs(context).edit().putInt(KEY_COUNT, 0).putString(KEY_CODES, "[]").apply();
+    }
+
+    private static JSONArray codes(Context context) {
+        try {
+            return new JSONArray(prefs(context).getString(KEY_CODES, "[]"));
+        } catch (Exception error) {
+            return new JSONArray();
+        }
+    }
+
+    /**
+     * كود ثابت لكل منبّه مشتق من دقيقته المطلقة ونوعه: لا يتكرر ولا يتغيّر
+     * بتغيّر ترتيب الجدول، فلا يصل منبّه إلى موعد صلاة أخرى.
+     */
+    private static int codeFor(long at, int kind) {
+        long minute = Math.max(0L, at / 60_000L);
+        return REQUEST_BASE + (int) ((minute & 0x3FFFFFF) * 4 + kind);
+    }
+
+    private static int kindOf(int code) {
+        return Math.abs(code - REQUEST_BASE) % 4;
     }
 
     /**
@@ -120,6 +148,7 @@ final class AdhanScheduler {
         int preMinutes = settings.optInt("preMinutes", 0);
         long now = System.currentTimeMillis();
         int scheduled = 0;
+        JSONArray codes = new JSONArray();
 
         for (int i = 0; i < events.length(); i++) {
             JSONObject event = events.optJSONObject(i);
@@ -127,25 +156,41 @@ final class AdhanScheduler {
             long at = event.optLong("at", 0L);
             if (at <= now + 3_000L) continue;
             if (adhanEnabled) {
-                setAlarm(manager, exact, at, adhanIntent(context, i));
+                int code = codeFor(at, KIND_ADHAN);
+                setAlarm(manager, exact, at, alarmIntent(context, code,
+                        AdhanReceiver.ACTION_ADHAN, event, at, at));
+                codes.put(code);
                 scheduled++;
             }
             // تنبيه ما قبل الأذان: إشعار صوتي «أذان الظهر بعد ١٠ دقائق»
             if (preMinutes > 0) {
                 long preAt = at - preMinutes * 60_000L;
-                if (preAt > now + 3_000L) setAlarm(manager, exact, preAt, preIntent(context, i));
+                if (preAt > now + 3_000L) {
+                    int code = codeFor(preAt, KIND_PRE);
+                    setAlarm(manager, exact, preAt, alarmIntent(context, code,
+                            AdhanReceiver.ACTION_PRE_ADHAN, event, preAt, at));
+                    codes.put(code);
+                }
             }
             if (iqamaEnabled) {
                 int minutes = event.optInt("iqamaMinutes", 0);
                 if (minutes > 0) {
                     long iqamaAt = at + minutes * 60_000L;
-                    if (iqamaAt > now + 3_000L) setAlarm(manager, exact, iqamaAt, iqamaIntent(context, i));
+                    if (iqamaAt > now + 3_000L) {
+                        int code = codeFor(iqamaAt, KIND_IQAMA);
+                        setAlarm(manager, exact, iqamaAt, alarmIntent(context, code,
+                                AdhanReceiver.ACTION_IQAMA, event, iqamaAt, at));
+                        codes.put(code);
+                    }
                 }
             }
         }
 
-        prefs(context).edit().putInt(KEY_COUNT, events.length()).apply();
-        prefs(context).edit().putString(KEY_SCHEDULE, events.toString()).apply();
+        prefs(context).edit()
+                .putInt(KEY_COUNT, events.length())
+                .putString(KEY_CODES, codes.toString())
+                .putString(KEY_SCHEDULE, events.toString())
+                .apply();
         return scheduled;
     }
 
@@ -181,24 +226,30 @@ final class AdhanScheduler {
         }
     }
 
-    private static PendingIntent adhanIntent(Context context, int index) {
+    /** منبّه يحمل بياناته كاملة (الصلاة والوقت والصوت) فلا يقرأ الجدول وقت الانطلاق. */
+    private static PendingIntent alarmIntent(Context context, int code, String action,
+                                             JSONObject event, long fireAt, long prayerAt) {
         Intent intent = new Intent(context, AdhanReceiver.class);
-        intent.setAction(AdhanReceiver.ACTION_ADHAN);
-        intent.putExtra("index", index);
-        return PendingIntent.getBroadcast(context, REQUEST_ADHAN + index, intent, flags());
+        intent.setAction(action);
+        intent.putExtra("fireAt", fireAt);
+        intent.putExtra("at", prayerAt);
+        intent.putExtra("prayer", event.optString("prayer", ""));
+        intent.putExtra("label", event.optString("label", ""));
+        intent.putExtra("adhanId", event.optString("adhanId", ""));
+        intent.putExtra("url", event.optString("url", ""));
+        intent.putExtra("iqamaMinutes", event.optInt("iqamaMinutes", 0));
+        intent.putExtra("preMinutes", event.optInt("preMinutes", 0));
+        return PendingIntent.getBroadcast(context, code, intent, flags());
     }
 
-    private static PendingIntent preIntent(Context context, int index) {
+    /** نفس الـ PendingIntent بالكود وحده — يكفي للإلغاء (المحتوى لا يدخل في المطابقة). */
+    private static PendingIntent alarmIntent(Context context, int code) {
+        int kind = kindOf(code);
+        String action = kind == KIND_IQAMA ? AdhanReceiver.ACTION_IQAMA
+                : kind == KIND_PRE ? AdhanReceiver.ACTION_PRE_ADHAN
+                : AdhanReceiver.ACTION_ADHAN;
         Intent intent = new Intent(context, AdhanReceiver.class);
-        intent.setAction(AdhanReceiver.ACTION_PRE_ADHAN);
-        intent.putExtra("index", index);
-        return PendingIntent.getBroadcast(context, REQUEST_PRE + index, intent, flags());
-    }
-
-    private static PendingIntent iqamaIntent(Context context, int index) {
-        Intent intent = new Intent(context, AdhanReceiver.class);
-        intent.setAction(AdhanReceiver.ACTION_IQAMA);
-        intent.putExtra("index", index);
-        return PendingIntent.getBroadcast(context, REQUEST_IQAMA + index, intent, flags());
+        intent.setAction(action);
+        return PendingIntent.getBroadcast(context, code, intent, flags());
     }
 }
