@@ -1,13 +1,25 @@
 package com.quran.mushaf;
 
+import android.Manifest;
+import android.app.Activity;
+import android.app.NotificationManager;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
+import android.provider.Settings;
+
+import androidx.core.content.ContextCompat;
 
 import com.getcapacitor.JSObject;
+import com.getcapacitor.PermissionState;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.getcapacitor.annotation.Permission;
+import com.getcapacitor.annotation.PermissionCallback;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -17,8 +29,112 @@ import org.json.JSONObject;
  * الواجهة تحسب المواقيت القادمة (أربعة عشر يومًا) وتمرّرها مرة واحدة،
  * فيتولى أندرويد إيقاظ التطبيق وتشغيل الأذان في وقته ولو كان مغلقًا.
  */
-@CapacitorPlugin(name = "AdhanBackground")
+@CapacitorPlugin(
+        name = "AdhanBackground",
+        permissions = @Permission(alias = "notifications",
+                strings = { "android.permission.POST_NOTIFICATIONS" })
+)
 public class AdhanPlugin extends Plugin {
+
+    /** هل يسمح النظام بشاشة أذان ملء الشاشة والشاشة مقفولة؟ (أندرويد ١٤+ يسأل المستخدم) */
+    private boolean canUseFullScreen() {
+        if (Build.VERSION.SDK_INT < 34) return true;
+        try {
+            NotificationManager manager =
+                    (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
+            return manager != null && manager.canUseFullScreenIntent();
+        } catch (Exception error) {
+            return false;
+        }
+    }
+
+    private boolean canNotify() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true;
+        return ContextCompat.checkSelfPermission(getContext(), Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    /** حالة الأذونات الثلاثة التي يحتاجها أذان الشاشة المقفولة. */
+    @PluginMethod
+    public void permissions(PluginCall call) {
+        JSObject result = new JSObject();
+        result.put("notifications", canNotify()
+                || getPermissionState("notifications") == PermissionState.GRANTED);
+        result.put("exactAlarms", AdhanScheduler.canScheduleExact(getContext()));
+        result.put("fullScreen", canUseFullScreen());
+        call.resolve(result);
+    }
+
+    /** إذن الإشعارات: بدونه لا تظهر شاشة الأذان إطلاقًا (يُسمع الصوت فقط). */
+    @PluginMethod
+    public void requestNotifications(PluginCall call) {
+        if (canNotify()) {
+            JSObject result = new JSObject();
+            result.put("granted", true);
+            call.resolve(result);
+            return;
+        }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            JSObject result = new JSObject();
+            result.put("granted", true);
+            call.resolve(result);
+            return;
+        }
+        requestPermissionForAlias("notifications", call, "notificationsCallback");
+    }
+
+    @PermissionCallback
+    private void notificationsCallback(PluginCall call) {
+        JSObject result = new JSObject();
+        result.put("granted", getPermissionState("notifications") == PermissionState.GRANTED);
+        call.resolve(result);
+    }
+
+    /** إذن المنبّهات الدقيقة: بدونه قد يتأخر الأذان دقائق. */
+    @PluginMethod
+    public void requestExactAlarms(PluginCall call) {
+        JSObject result = new JSObject();
+        result.put("granted", AdhanScheduler.canScheduleExact(getContext()));
+        call.resolve(result);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                && !AdhanScheduler.canScheduleExact(getContext())) {
+            try {
+                Intent open = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                open.setData(Uri.parse("package:" + getContext().getPackageName()));
+                Activity activity = getActivity();
+                if (activity != null) {
+                    activity.startActivity(open);
+                } else {
+                    open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    getContext().startActivity(open);
+                }
+            } catch (Exception ignored) {
+                // بعض الواجهات لا تعرض هذه الشاشة؛ يبقى بديل النظام بلا إذن
+            }
+        }
+    }
+
+    /** إذن شاشة الأذان الملء (أندرويد ١٤+): يفتح إعدادات النظام على التطبيق. */
+    @PluginMethod
+    public void requestFullScreen(PluginCall call) {
+        JSObject result = new JSObject();
+        result.put("granted", canUseFullScreen());
+        call.resolve(result);
+        if (Build.VERSION.SDK_INT < 34 || canUseFullScreen()) return;
+        try {
+            Intent open = new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT);
+            open.setData(Uri.parse("package:" + getContext().getPackageName()));
+            Activity activity = getActivity();
+            if (activity != null) {
+                activity.startActivity(open);
+            } else {
+                open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getContext().startActivity(open);
+            }
+        } catch (Exception ignored) {
+            // إصدارات لا تعرض الإعداد؛ شاشة الأذان تبقى على قدر ما يسمح به النظام
+        }
+    }
 
     @PluginMethod
     public void configure(PluginCall call) {

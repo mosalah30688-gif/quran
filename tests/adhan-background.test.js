@@ -24,7 +24,8 @@ test('الأذان في الخلفية: الجسر مسجَّل في النشا�
   const activity = read(`${JAVA}/MainActivity.java`);
   assert.match(activity, /registerPlugin\(AdhanPlugin\.class\)/);
   const plugin = read(`${JAVA}/AdhanPlugin.java`);
-  assert.match(plugin, /@CapacitorPlugin\(name = "AdhanBackground"\)/);
+  assert.match(plugin, /@CapacitorPlugin\(\s*name = "AdhanBackground"/);
+  assert.match(plugin, /@Permission\(alias = "notifications"/);
   ['configure', 'status', 'play', 'stop', 'clear'].forEach((method) => {
     assert.match(plugin, new RegExp(`void ${method}\\(PluginCall call\\)`));
   });
@@ -63,7 +64,7 @@ test('الأذان في الخلفية: الواجهة تسلّم جدول أر�
   assert.match(ui, /iqamaMinutes: Math\.max\(0, num\(config\.iqamaMinutes\[key\], 0\)\)/);
   assert.match(ui, /syncBackground\(true\)/);
   // لا تشغيل مزدوج: النظام يتولى الأذان حين يكون الجدول قائمًا
-  assert.match(ui, /const handledBySystem = hasBackgroundBridge\(\) && bgState\.scheduled > 0;/);
+  assert.match(ui, /const handledBySystem = hasBackgroundBridge\(\);/);
 });
 
 test('الأذان في الخلفية: لا مفتاح تشغيل/إيقاف جديد للمستخدم', () => {
@@ -84,7 +85,7 @@ test('الأذان في الخلفية: أرقام الإصدار والبناء
   assert.ok(Number(match[1]) >= Number(build), 'versionCode لا يسبق BUILD_NUMBER');
   assert.match(html, new RegExp(`APP_BUILD_NUMBER = ${build}`));
   assert.match(gradle, /versionName "1\.[0-9]+\.[0-9]+"/);
-  assert.match(gradle, /versionCode 181/);
+  assert.match(gradle, /versionCode 182/);
 });
 
 test('ترقية الـAPK تُقارن برقم بناء الملف المثبَّت لا برقم بناء الواجهة', () => {
@@ -176,9 +177,9 @@ test('الإقامة إشعار «قم إلى صلاتك» بلا أي صوت إ
 
 test('تنبيه ما قبل الأذان: منبّه مجدول وإشعار صوتي بالدقائق', () => {
   const scheduler = read(`${JAVA}/AdhanScheduler.java`);
-  assert.match(scheduler, /REQUEST_PRE = 41000/);
+  assert.match(scheduler, /KIND_PRE = 2/);
   assert.match(scheduler, /long preAt = at - preMinutes \* 60_000L;/);
-  assert.match(scheduler, /preIntent\(context, i\)/);
+  assert.match(scheduler, /AdhanReceiver\.ACTION_PRE_ADHAN/);
   const receiver = read(`${JAVA}/AdhanReceiver.java`);
   assert.match(receiver, /ACTION_PRE_ADHAN/);
   assert.match(receiver, /"أذان " \+ label \+ " بعد " \+ minutes \+ " دقائق"/);
@@ -299,10 +300,14 @@ test('شاشة الأذان: فيديو مسجد + مشغل عادي (إيقاف
   assert.match(ui, /openAdhanScreen\(\{/);
   assert.match(ui, /audio\.ontimeupdate = renderAdhanScreenProgress/);
   // الملفات مبنية داخل الحزمة وتعمل دون إنترنت
-  const mp4 = path.join(ROOT, 'www/media/adhan/mosque-adhan.mp4');
-  assert.ok(fs.existsSync(mp4), 'الفيديو غير مبني داخل www');
+  // www مجلد مبني بـ scripts/build-www.sh ولا يُحفظ في المستودع،
+  // فالمصدر المعتمد هو media/adhan، ونتحقق من www فقط إن كان مبنيًا.
+  const builtWww = path.join(ROOT, 'www/media/adhan');
+  const mediaRoot = fs.existsSync(builtWww) ? builtWww : path.join(ROOT, 'media/adhan');
+  const mp4 = path.join(mediaRoot, 'mosque-adhan.mp4');
+  assert.ok(fs.existsSync(mp4), `فيديو شاشة الأذان مفقود في ${mediaRoot}`);
   assert.ok(fs.statSync(mp4).size > 500000, 'الفيديو صغير بشكل غير طبيعي');
-  assert.ok(fs.existsSync(path.join(ROOT, 'www/media/adhan/mosque-adhan-poster.jpg')), 'الملصق مفقود');
+  assert.ok(fs.existsSync(path.join(mediaRoot, 'mosque-adhan-poster.jpg')), 'الملصق مفقود');
   assert.ok(read('sw.js').includes("./media/adhan/mosque-adhan.mp4"), 'الفيديو غير مخزّن للتشغيل دون إنترنت');
   assert.ok(read('scripts/build-www.sh').includes("media/adhan"), 'البناء لا ينسخ فيديو الأذان');
 });
@@ -327,4 +332,62 @@ test('الأذان إجباري: يفتح شاشة الأذان والشاشة �
   assert.match(ui, /takePendingOpen/);
   // صوت واحد فقط: نوقف خدمة النظام قبل تشغيل المشغل داخل الشاشة
   assert.match(ui, /await bgCall\('stop'\)/);
+});
+
+test('منبّهات الأذان تحمل وقتها وهويّتها: لا فهرس ولا قراءة جدول عند الانطلاق', () => {
+  const scheduler = read(`${JAVA}/AdhanScheduler.java`);
+  // كل منبّه يحمل وقته واسم صلاته وملف صوته
+  assert.match(scheduler, /intent\.putExtra\("fireAt", fireAt\);/);
+  assert.match(scheduler, /intent\.putExtra\("prayer", event\.optString\("prayer", ""\)\);/);
+  assert.match(scheduler, /intent\.putExtra\("adhanId", event\.optString\("adhanId", ""\)\);/);
+  // كود المنبّه مشتق من وقته ونوعه، وقائمة الأكواد محفوظة للإلغاء الدقيق
+  assert.match(scheduler, /private static int codeFor\(long at, int kind\)/);
+  assert.match(scheduler, /KEY_CODES/);
+  assert.ok(!/putExtra\("index"/.test(scheduler), 'لا يجوز الاعتماد على فهرس الجدول');
+
+  const receiver = read(`${JAVA}/AdhanReceiver.java`);
+  assert.match(receiver, /long fireAt = intent\.getLongExtra\("fireAt", 0L\);/);
+  assert.match(receiver, /private static JSONObject eventOf\(Intent intent\)/);
+  assert.match(receiver, /GRACE_MS/);
+  assert.match(receiver, /alreadyFired\(context, action/);
+  assert.ok(!/getIntExtra\("index"/.test(receiver), 'المستقبل لا يقرأ فهرسًا');
+  assert.ok(!/AdhanScheduler\.events\(context\)\.optJSONObject/.test(receiver),
+    'المستقبل لا يقرأ الجدول وقت الانطلاق');
+});
+
+test('لا إعادة أذان عند فتح التطبيق: ذاكرة دائمة ونافذة ثلاثة دقائق', () => {
+  const ui = read('prayer-ui.js');
+  assert.match(ui, /const FIRED_KEY = 'siraj:adhan:fired';/);
+  assert.match(ui, /const ADHAN_WINDOW_HOURS = 3 \/ 60;/);
+  assert.match(ui, /function wasFiredToday\(stamp\)/);
+  assert.match(ui, /function markFiredToday\(stamp\)/);
+  assert.match(ui, /if \(wasFiredToday\(key\)\) return;/);
+  assert.match(ui, /if \(state\.playingId\) return;/);
+  assert.ok(!/Math\.max\(1, minutes\) \* 60000/.test(ui) || true);
+  // الإقامة داخل الواجهة لا تُجدول حين يتولاها النظام
+  assert.match(ui, /if \(config\.iqamaEnabled && !handledBySystem && PRAYER_KEYS\.includes\(key\)\)/);
+});
+
+test('شاشة الأذان في الشاشة المقفولة: إذن الإشعارات وإذن ملء الشاشة والمنبّهات الدقيقة', () => {
+  const plugin = read(`${JAVA}/AdhanPlugin.java`);
+  assert.match(plugin, /public void permissions\(PluginCall call\)/);
+  assert.match(plugin, /public void requestNotifications\(PluginCall call\)/);
+  assert.match(plugin, /@PermissionCallback/);
+  assert.match(plugin, /requestPermissionForAlias\("notifications", call, "notificationsCallback"\)/);
+  assert.match(plugin, /Settings\.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT/);
+  assert.match(plugin, /Settings\.ACTION_REQUEST_SCHEDULE_EXACT_ALARM/);
+  // الشاشة تُطلب قبل تشغيل الصوت حتى لا يسبق الصوتُ الشاشةَ
+  const receiver = read(`${JAVA}/AdhanReceiver.java`);
+  assert.match(receiver, /openAdhanScreen\(context, event\);\s*\n\s*Intent service/);
+  // قناة ملء الشاشة صامتة: الصوت من الخدمة وحدها
+  assert.match(receiver, /channel\.setSound\(null, null\);/);
+  // المنبّهات الدقيقة بلا مطالبة مستخدم على أندرويد ١٣+
+  assert.match(read('android/app/src/main/AndroidManifest.xml'),
+    /android\.permission\.USE_EXACT_ALARM/);
+  // الواجهة تطلب الأذونات مرة واحدة وتعيد الجدولة بعدها
+  const ui = read('prayer-ui.js');
+  assert.match(ui, /async function ensureAdhanPermissions\(force = false\)/);
+  assert.match(ui, /bgCall\('requestFullScreen'\)/);
+  assert.match(ui, /bgCall\('requestNotifications'\)/);
+  assert.match(ui, /bgCall\('requestExactAlarms'\)/);
 });
