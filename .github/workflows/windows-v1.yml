@@ -83,6 +83,8 @@ jobs:
       - name: Verify locked content provenance and approved live editions
         shell: pwsh
         run: |
+          # مجلد www مُولَّد وغير متتبَّع، وتقرأه فحوص المصادر والأصول، فيُبنى قبل الفحص.
+          bash scripts/build-www.sh
           python scripts/verify_data_provenance.py
           python scripts/verify_asset_provenance.py
           python scripts/generate_alquran_data.py --verify
