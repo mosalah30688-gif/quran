@@ -4,27 +4,27 @@
   "product": "siraj-quran-linux",
   "channel": "stable",
   "available": true,
-  "version": "4.3.1",
+  "version": "4.3.2",
   "runtime_api": 1,
-  "published_at": "2026-11-20T20:04:44Z",
+  "published_at": "2026-11-20T20:33:29Z",
   "features": [
-    "قائمة قرّاء واحدة لكل رواية: قرّاء التلاوة المتزامنة ومصاحف المكتبة معًا بلا تقسيم آية/سورة، وبحث داخل القائمة نفسها",
-    "٢٢٧ مصحفًا لـ١٨٧ قارئًا بلا خلط روايات — كل رواية تعرض قرّاءها في مصحفها",
-    "تحميل السورة المختارة أو المصحف كاملًا بصوت القارئ المختار من نفس البطاقة، بلا قائمة قارئ ثانية",
+    "إصلاح عدم فتح التطبيق بعد التحديث على لينكس — التطبيق يفتح الآن ويعمل طبيعيًا",
+    "قائمة قرّاء واحدة لكل رواية مع بحث داخلها، بلا تقسيم آية/سورة",
+    "تحميل السورة المختارة أو المصحف كاملًا بصوت القارئ المختار من نفس البطاقة",
     "تمرير نافذة القراءة تلقائيًا إلى الآية الجارية أثناء التلاوة مع الإضاءة",
     "مواقيت الصلاة والقبلة والأذان والتذكير، وحلقة الورد والشارات ودقائق القراءة"
   ],
   "assets": {
     "patch": {
-      "file_name": "Siraj-Quran-4.3.1-linux.sirajpatch",
-      "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-linux-patch-v4.3.1/Siraj-Quran-4.3.1-linux.sirajpatch",
-      "size": 4044725,
-      "sha256": "596342ea42e8e20cbaf5b9326f05d3117a373a67b958e75a40852fe6909bc394"
+      "file_name": "Siraj-Quran-4.3.2-linux.sirajpatch",
+      "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-linux-patch-v4.3.2/Siraj-Quran-4.3.2-linux.sirajpatch",
+      "size": 4057616,
+      "sha256": "d448b8ea749648f81ec659bca9581471070b9c8973edc3c819a4ebf5d30d764f"
     }
   },
   "signature": {
     "algorithm": "ed25519",
     "key_id": "siraj-update-2026-01",
-    "value": "w7MU2c0GgIEmi2C9WIEH4vF5skxOi3DQSe1hD7CZy/PCobIYbUvpdyg3GpA3QKfTuvpdgcQfsSwId83v0ObAAQ=="
+    "value": "l/LZlHhGWn7pGgCcD6XYE3V9Fkpzw/dTKkS2i8aHEpvKkSQEIuBw2JZ4hQ67zQhBzVb1TLz68VWeuT+4bEO5BQ=="
   }
 }
