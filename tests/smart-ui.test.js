@@ -320,8 +320,8 @@ test('التلاوة المتزامنة: الآية الجارية تضيء وت
   assert.match(src, /scrollIntoView\(\{ block: 'center', behavior: 'smooth' \}\)/);
   // لمس الآية ينقل التلاوة إليها في وضع التزامن
   assert.match(src, /if \(play\.active && syncReadingEnabled\(\)\) \{\s*playAyah\(a\);/);
-  // تلاوة السورة الكاملة تبقى متاحة كخيار صوتي في مكتبة القرّاء
-  assert.match(src, /const wantFull = settings\.surahAudio !== false/);
+  // نظام واحد: التزامن (آية بآية مع الإضاءة) يتقدّم كلما توفّرت ملفات الآيات للقارئ
+  assert.match(src, /const wantFull = picksSurahFile\s*\|\| \(!syncReady && settings\.surahAudio !== false/);
   // صوت الآية من الملف المحلي أولاً ثم الشبكة، مع تحميل مسبق للآية التالية
   assert.match(src, /preloadAyahAudio\(a\.s, a\.n \+ 1\)/);
   // ملف السورة الكاملة يُقرأ من التحميل المحلي أولًا (أوفلاين) ثم الشبكة
@@ -412,7 +412,9 @@ test('مكتبة القرّاء: ١٧٤ قارئًا برواياتهم مع ب�
   assert.ok(!html.includes('id="dlInline"'), 'لا تبويب تحميل مستقل');
   assert.ok(html.includes('id="btnDlSurah"') && html.includes('id="btnDlFull"'), 'تحميل السورة والمصحف داخل نفس المربع');
   assert.ok(html.indexOf('id="btnDlFull"') < html.indexOf('id="surahReciterCount"'), 'التحميل قبل سطر العدّ داخل نفس البطاقة');
-  assert.match(app, /function unifiedReciterOptions\(\)/);
+  assert.ok(!/optgroup/.test(app), 'لا تصنيف آية/سورة في قائمة القرّاء');
+  assert.match(app, /function reciterEntriesForScope\(\)/);
+  assert.ok(html.includes('id="readerReciter"') && html.includes('id="readerPlay"'), 'منتقي القارئ في نافذة القراءة');
   assert.match(app, /function applyPlayReciter\(value\)/);
   assert.match(app, /const startDownload = \(scope\) =>/);
 });

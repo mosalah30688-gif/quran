@@ -1477,6 +1477,13 @@
   $('#playReciter').addEventListener('change', (e) => {
     applyPlayReciter(e.target.value);
   });
+  if ($('#readerReciter')) $('#readerReciter').addEventListener('change', (e) => {
+    applyPlayReciter(e.target.value);
+  });
+  if ($('#readerPlay')) $('#readerPlay').addEventListener('click', async () => {
+    const s = Number(state.selSurah) || Number($('#playSurah')?.value) || 1;
+    await startSurahPlay(s, 1);
+  });
 
   $('#btnResume').addEventListener('click', () => {
     const last = getLast();
@@ -2463,8 +2470,9 @@
     if (isRiw() && !riwAudioOk()) { toast('اختر قارئاً لهذه الرواية من الإعدادات'); return; }
     // التلاوة المتزامنة تتقدّم على ملف السورة الكاملة لأنها تضيء الآية الجارية
     const syncReady = syncReadingEnabled();
-    const wantFull = settings.surahAudio !== false && !isRiw() && SURAH_RECITERS.length
-      && (fullSurahMode() || !syncReady);
+    const picksSurahFile = String(settings.playReciter || '').startsWith('v:');
+    const wantFull = picksSurahFile
+      || (!syncReady && settings.surahAudio !== false && !isRiw() && SURAH_RECITERS.length);
     if (wantFull) return playSurahFull(s);
     if (!syncReady && !isRiw() && !OFFLINE_SRC[settings.reciter]) {
       toast('هذا القارئ ليس له ملفات آيات؛ اختر قارئًا من قائمة التحميل للتلاوة المتزامنة.');
@@ -2864,48 +2872,70 @@
 
   // ---------- الإعدادات ----------
   // قائمة القراء تتبع الرواية: ورش تعرض قراء ورش فقط، وحفص تعرض قراء حفص
-  const RIW_FAMILY = { warsh: 'ورش', qalun: 'قالون', duri: 'الدوري', shubah: 'شعبة' };
+  const RIW_FAMILY = {
+    warsh: 'ورش', qalun: 'قالون', duri: 'الدوري', shubah: 'شعبة',
+    susi: 'السوسي', bazzi: 'البزي', qunbul: 'قنبل',
+  };
 
-  // قائمة قرّاء واحدة: قرّاء الآية أولًا ثم كل مصاحف mp3quran (تلاوة السورة كاملة)
-  function unifiedReciterOptions() {
-    const ayahList = isRiw() ? (RIW_RECITERS[settings.riwaya] || []) : RECITERS;
-    const family = RIW_FAMILY[settings.riwaya] || '';
-    const surahList = isRiw()
-      ? SURAH_RECITERS.filter((r) => String(r.family || '') === family)
-      : SURAH_RECITERS;
-    const ayah = ayahList.length
-      ? `<optgroup label="آية بآية (${toArabicDigits(ayahList.length)})">`
-        + ayahList.map(([id, name]) => `<option value="a:${esc(id)}">${esc(name)}</option>`).join('')
-        + '</optgroup>'
-      : '';
-    const seen = new Set();
-    const rows = surahList.filter((r) => {
-      const key = `${r.name}|${r.rewaya}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    }).map((r) => `<option value="v:${esc(r.id)}">${esc(r.name)} — ${esc(String(r.rewaya || 'حفص عن عاصم'))}</option>`).join('');
-    const surah = rows
-      ? `<optgroup label="سورة كاملة (${toArabicDigits(surahList.length)})">${rows}</optgroup>`
-      : '';
-    return ayah + surah;
+  const normName = (name) => String(name || '').replace(/\s+/g, '').trim();
+  const reciterQualifier = (rewaya) => String(rewaya || '')
+    .replace('حفص عن عاصم', '').replace(/[—\-–]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  // قائمة قرّاء واحدة لكل رواية: قرّاء الرواية المختارة فقط، بلا تقسيم آية/سورة.
+  function reciterEntriesForScope() {
+    const riw = isRiw();
+    const family = riw ? (RIW_FAMILY[settings.riwaya] || '') : 'حفص';
+    const out = [];
+    (riw ? (RIW_RECITERS[settings.riwaya] || []) : RECITERS).forEach(([id, name]) => {
+      out.push({ value: `a:${id}`, name });
+    });
+    const known = out.map((r) => normName(r.name)).filter(Boolean);
+    (SURAH_RECITERS || [])
+      .filter((r) => String(r.family || 'حفص') === family)
+      .forEach((r) => {
+        const name = String(r.name || '').trim();
+        if (!name) return;
+        const qualifier = reciterQualifier(r.rewaya);
+        const key = normName(name);
+        const sameVoice = known.some((n) => n.includes(key) || key.includes(n));
+        if (sameVoice && (!qualifier || qualifier === 'مرتل')) return; // نفس القارئ بنفس التلاوة
+        out.push({ value: `v:${r.id}`, name, qualifier });
+      });
+    return out;
+  }
+
+  function reciterOptionsHtml() {
+    return reciterEntriesForScope()
+      .map((r) => `<option value="${esc(r.value)}">${esc(r.name)}${r.qualifier ? ' — ' + esc(r.qualifier) : ''}</option>`)
+      .join('');
   }
 
   function syncPlayReciterValue() {
-    const sel = $('#playReciter');
-    if (!sel) return;
-    const want = settings.playReciter
-      || (settings.surahReciter ? `v:${settings.surahReciter}` : `a:${settings.reciter}`);
-    sel.value = Array.from(sel.options).some((o) => o.value === want)
-      ? want
-      : (sel.options[0] ? sel.options[0].value : '');
+    const want = settings.playReciter || `a:${settings.reciter}`;
+    ['#playReciter', '#readerReciter'].forEach((id) => {
+      const sel = $(id);
+      if (!sel) return;
+      sel.value = Array.from(sel.options).some((o) => o.value === want)
+        ? want
+        : (sel.options[0] ? sel.options[0].value : '');
+    });
   }
 
   function updateReciterCountLine() {
     const line = $('#surahReciterCount');
     const sel = $('#playReciter');
     if (!line || !sel) return;
-    line.textContent = `${toArabicDigits(sel.options.length)} قارئًا في قائمة واحدة — آية بآية أو سورة كاملة، للاستماع والتحميل`;
+    line.textContent = `${toArabicDigits(sel.options.length)} قارئًا لهذه الرواية — استماع وتحميل، سورة كاملة أو مصحف كامل`;
+  }
+
+  function fillReciterSelects() {
+    const html = reciterOptionsHtml();
+    ['#playReciter', '#readerReciter'].forEach((id) => {
+      const sel = $(id);
+      if (sel) sel.innerHTML = html;
+    });
+    syncPlayReciterValue();
+    updateReciterCountLine();
   }
 
   function applyPlayReciter(value) {
@@ -2929,9 +2959,7 @@
     if (!list || !list.some(([id]) => id === settings.reciter)) settings.reciter = list ? list[0][0] : DEFAULTS.reciter;
     $('#setReciter').innerHTML = list.map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
     $('#setReciter').value = settings.reciter;
-    $('#playReciter').innerHTML = unifiedReciterOptions();
-    syncPlayReciterValue();
-    updateReciterCountLine();
+    fillReciterSelects();
   }
 
   function syncTajweedScopeSelector() {
@@ -3638,10 +3666,12 @@
       const name = (RECITERS.find(([rid]) => rid === id) || [null, id])[1];
       out.push({ id, name, mode: 'ayah' });
     });
-    const ayahNames = new Set(out.map((r) => r.name));
+    const ayahNames = new Set(out.map((r) => normName(r.name)));
+    const family = isRiw() ? (RIW_FAMILY[settings.riwaya] || '') : 'حفص';
     (SURAH_RECITERS || []).forEach((r) => {
       if (!r || !r.server) return;
-      if (ayahNames.has(r.name)) return; // متاح آية بآية أصلًا
+      if (String(r.family || 'حفص') !== family) return;
+      if (ayahNames.has(normName(r.name))) return; // متاح آية بآية أصلًا
       out.push({
         id: String(r.id),
         name: `${r.name}${r.rewaya ? ' — ' + String(r.rewaya).replace(' - مرتل', '') : ''}`,
@@ -3657,14 +3687,7 @@
     if (!sel) return;
     const current = sel.value;
     const catalog = dlCatalog();
-    const ayah = catalog.filter((r) => r.mode === 'ayah');
-    const surah = catalog.filter((r) => r.mode === 'surah');
-    const group = (label, rows) => rows.length
-      ? `<optgroup label="${label} (${toArabicDigits(rows.length)})">`
-        + rows.map((r) => `<option value="${esc(r.id)}">${esc(r.name)}</option>`).join('')
-        + '</optgroup>'
-      : '';
-    sel.innerHTML = group('آية بآية — حفص', ayah) + group('سورة كاملة — كل القرّاء', surah);
+    sel.innerHTML = catalog.map((r) => `<option value="${esc(r.id)}">${esc(r.name)}</option>`).join('');
     const keep = catalog.some((r) => r.id === current);
     sel.value = keep ? current : (catalog[0] ? catalog[0].id : '');
     refreshStored();

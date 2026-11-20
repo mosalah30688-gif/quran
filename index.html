@@ -574,6 +574,10 @@
     .dl-row .btn { min-height: 40px; padding: 0 14px; white-space: nowrap; font-weight: 800; }
     #btnCancelDl:disabled { display: none; }
     #dlBar { display: none; width: 100%; margin-top: 10px; }
+    /* منتقي القارئ نفسه داخل نافذة القراءة */
+    .reader-recite { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .reader-recite select { flex: 1 1 auto; min-width: 0; min-height: 40px; border-radius: 12px; }
+    .reader-recite .btn { min-height: 40px; white-space: nowrap; font-weight: 800; }
     .play-field { display: grid; gap: 5px; min-width: 0; }
     .play-field > span { color: var(--muted); font-size: 12px; font-weight: 700; }
     .reader-command.toolbar .play-field select {
@@ -1307,6 +1311,10 @@
           </div>
 
           <div class="reader-dock" id="readerDock">
+            <div class="reader-recite" aria-label="اختيار القارئ من نافذة القراءة">
+              <select id="readerReciter" class="tsel" aria-label="اختر القارئ"></select>
+              <button class="btn small" id="readerPlay" type="button">▶ تشغيل السورة</button>
+            </div>
             <div class="player" id="player" role="region" aria-label="مشغل التلاوة">
               <input id="audioSeek" type="range" min="0" max="0" value="0" step="0.1" dir="ltr" aria-label="موضع التلاوة" />
               <div class="player-row">
@@ -1987,7 +1995,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.12.2</div>
+              <div class="muted">الإصدار 1.12.3</div>
             </div>
           </div>
 
@@ -2114,10 +2122,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.12.2';
+    window.APP_BUNDLE_VERSION = '1.12.3';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 187;
+    window.APP_BUILD_NUMBER = 188;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {
