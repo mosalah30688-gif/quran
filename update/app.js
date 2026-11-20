@@ -2994,6 +2994,10 @@
   // رقم الإصدار الظاهر ثابت (1.0.0) بين التحديثات الصغيرة، والمعيار الفعلي هو رقم البناء.
   const currentVersion = () => window.SIRAJ_UPDATE_VERSION || window.APP_BUNDLE_VERSION || '1.0.0';
   const currentBuild = () => Number(window.APP_BUILD_NUMBER) || 0;
+  // رقم البناء المُطبَّق فعليًا: تحديث الواجهة المنزّل يرفعه، وإلا ظل التطبيق
+  // يقول «يتوفر تحديث» بعد أن يكون قد حدّث نفسه بالفعل.
+  const appliedWebBuild = () => Number((storedUpdate() || {}).build) || 0;
+  const effectiveBuild = () => Math.max(currentBuild(), appliedWebBuild());
 
   // رقم بناء الـAPK المثبَّت (لا رقم بناء الواجهة): التحديث الداخلي قد يرفع رقم الواجهة
   // فوق رقم الـAPK، فيظن التطبيق أنه أحدث من الملف ولا يعرض ترقيته أبدًا.
@@ -3090,8 +3094,8 @@
         }
       }
       // لا نطبّق ترقية واجهة مساوية أو أقدم من النسخة المضمّنة؛ هذا يمنع الرجوع إلى إصدار قديم.
-      if (!(manifestBuild > currentBuild())) {
-        st.textContent = 'أنت على أحدث نسخة (' + window.APP_BUNDLE_VERSION + ' · بناء ' + toArabicDigits(currentBuild()) + ')';
+      if (!(manifestBuild > effectiveBuild())) {
+        st.textContent = 'أنت على أحدث نسخة (' + window.APP_BUNDLE_VERSION + ' · بناء ' + toArabicDigits(effectiveBuild()) + ')';
         btn.disabled = false;
         return;
       }
@@ -3161,7 +3165,7 @@
         await resolveApkCode();
         if (apkCode && apkCode > installedApkCode()) availableVersion = m.apk.version;
       }
-      if (!availableVersion && m.build && Number(m.build) > currentBuild()) {
+      if (!availableVersion && m.build && Number(m.build) > effectiveBuild()) {
         availableVersion = m.version;
       }
       const features = publicUpdateFeatures(m);

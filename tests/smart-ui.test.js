@@ -128,8 +128,12 @@ test('every published update carries a concise what-is-new notification', () => 
   assert.match(app, /function publicUpdateFeatures\(manifest\)/);
   assert.match(app, /\\nالجديد:/);
   assert.match(app, /!availableVersion \|\| !features\.length/);
-  // صار التحديث يُقاس برقم البناء لا برقم الإصدار الظاهر (1.0.0 ثابت بين التحديثات الصغيرة)
-  assert.match(app, /Number\(m\.build\) > currentBuild\(\)/);
+  // التحديث يُقاس برقم البناء الفعلي: المضمَّن في الـAPK أو المُطبَّق من قناة الواجهة،
+  // وإلا ظل التطبيق يقول «يتوفر تحديث» بعد أن حدّث نفسه.
+  assert.match(app, /Number\(m\.build\) > effectiveBuild\(\)/);
+  assert.match(app, /const appliedWebBuild = /);
+  assert.match(app, /const effectiveBuild = \(\) => Math\.max\(currentBuild\(\), appliedWebBuild\(\)\)/);
+  assert.match(app, /if \(!\(manifestBuild > effectiveBuild\(\)\)\)/);
   assert.match(publish, /validate_update_features\(sys\.argv\[2:\]\)/);
   assert.match(publish, /manifest\["features"\] = features/);
   assert.match(publish, /manifest\.get\("features"\) == features/);

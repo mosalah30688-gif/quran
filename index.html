@@ -567,7 +567,14 @@
     }
     .reader-play-icon { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.18); font-family: Arial, sans-serif; font-size: 11px; }
     .reader-play.is-playing { background: var(--brand-2); }
-    .play-pickers { display: grid; grid-template-columns: 1.15fr .75fr 1.35fr; gap: 9px; margin-top: 13px; }
+    .play-pickers { display: grid; grid-template-columns: 1.05fr .65fr 1.2fr 1.2fr; gap: 9px; margin-top: 13px; }
+    /* التحميل جزء من مربع الاستماع نفسه، لا بطاقة مستقلة */
+    .dl-inline { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+    .dl-inline > summary { cursor: pointer; font-weight: 800; color: var(--brand); font-size: 14px; list-style: none; }
+    .dl-inline > summary::-webkit-details-marker { display: none; }
+    .dl-inline > summary::before { content: '⬇ '; }
+    .dl-inline[open] > summary { margin-bottom: 8px; }
+    .dl-inline .row { flex-wrap: wrap; }
     .play-field { display: grid; gap: 5px; min-width: 0; }
     .play-field > span { color: var(--muted); font-size: 12px; font-weight: 700; }
     .reader-command.toolbar .play-field select {
@@ -662,6 +669,7 @@
       .reader-command-title strong { font-size: 14px; }
       .reader-play { min-height: 48px; padding-inline: 13px; }
       .play-pickers { grid-template-columns: minmax(0, 1fr) minmax(104px, .68fr); gap: 8px; }
+      .play-field-reciter { grid-column: 1 / -1; }
       .play-field-reciter { grid-column: 1 / -1; }
       .reader-command.toolbar .play-field select { min-height: 45px; }
       .reader-action { min-height: 44px; padding-inline: 5px; font-size: 12px; }
@@ -1525,6 +1533,33 @@
                 </button>
               </label>
             </div>
+              <details class="dl-inline" id="dlInline">
+              <summary>تحميل التلاوات — مصحف كاملًا أو سورة (بدون إنترنت)</summary>
+              <label class="lbl">القارئ</label>
+              <select id="dlReciter"></select>
+              <label class="lbl">ما الذي تريد تحميله؟</label>
+              <div class="row">
+                <label><input type="radio" name="dlScope" value="full" checked /> المصحف كاملاً</label>
+                <label><input type="radio" name="dlScope" value="surah" /> سورة محددة</label>
+              </div>
+              <select id="dlSurahSel" style="margin-top:8px" disabled></select>
+              <div class="muted" id="dlEstimate" style="margin-top:6px"></div>
+              <label class="lbl">مكان التخزين</label>
+              <select id="dlTarget">
+                <option value="app">داخل التطبيق</option>
+                <option value="folder">مجلد على الجهاز</option>
+              </select>
+              <p class="muted" id="dlNote"></p>
+              <div class="row" style="margin-top:8px">
+                <button class="btn" id="btnDownload">⬇ بدء التحميل</button>
+                <button class="btn ghost" id="btnCancelDl" disabled>إيقاف</button>
+                <button class="btn ghost" id="btnDeleteDl">حذف تحميلات هذا القارئ من التطبيق</button>
+              </div>
+              <progress id="dlBar" value="0" max="1" style="width:100%;margin-top:10px;display:none"></progress>
+              <div class="muted" id="dlProgress" style="margin-top:6px"></div>
+              <div class="muted" id="dlStored" style="margin-top:6px"></div>
+              <p class="muted">تتوفر أصوات حفص السبعة عشر للاستماع المباشر والتحكم الكامل والتنزيل المحلي؛ يعتمد حجم التنزيل على معدل البت الخاص بكل قارئ.</p>
+            </details>
             <p class="muted" id="surahReciterCount" style="margin:6px 2px 0"></p>
             <div class="reader-quick-actions" aria-label="أدوات الآية المحددة">
               <button class="reader-action" id="btnBm">☆ <span>حفظ علامة</span></button>
@@ -1909,33 +1944,6 @@
 
 
           </div>
-          <details class="card dd">
-            <summary>تحميل التلاوات للاستماع بدون إنترنت</summary>
-            <label class="lbl">القارئ</label>
-            <select id="dlReciter"></select>
-            <label class="lbl">ما الذي تريد تحميله؟</label>
-            <div class="row">
-              <label><input type="radio" name="dlScope" value="full" checked /> المصحف كاملاً</label>
-              <label><input type="radio" name="dlScope" value="surah" /> سورة محددة</label>
-            </div>
-            <select id="dlSurahSel" style="margin-top:8px" disabled></select>
-            <div class="muted" id="dlEstimate" style="margin-top:6px"></div>
-            <label class="lbl">مكان التخزين</label>
-            <select id="dlTarget">
-              <option value="app">داخل التطبيق</option>
-              <option value="folder">مجلد على الجهاز</option>
-            </select>
-            <p class="muted" id="dlNote"></p>
-            <div class="row" style="margin-top:8px">
-              <button class="btn" id="btnDownload">⬇ بدء التحميل</button>
-              <button class="btn ghost" id="btnCancelDl" disabled>إيقاف</button>
-              <button class="btn ghost" id="btnDeleteDl">حذف تحميلات هذا القارئ من التطبيق</button>
-            </div>
-            <progress id="dlBar" value="0" max="1" style="width:100%;margin-top:10px;display:none"></progress>
-            <div class="muted" id="dlProgress" style="margin-top:6px"></div>
-            <div class="muted" id="dlStored" style="margin-top:6px"></div>
-            <p class="muted">تتوفر أصوات حفص السبعة عشر للاستماع المباشر والتحكم الكامل والتنزيل المحلي؛ يعتمد حجم التنزيل على معدل البت الخاص بكل قارئ.</p>
-          </details>
           <details class="card dd" id="smartSettingsCard">
             <summary>رفيق اليوم</summary>
             <label style="display:flex;align-items:center;gap:8px">
@@ -2119,7 +2127,7 @@
     window.APP_BUNDLE_VERSION = '1.12.0';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 184;
+    window.APP_BUILD_NUMBER = 185;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {
