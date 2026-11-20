@@ -46,7 +46,9 @@ LINUX_SOURCE_MEMBERS = WINDOWS_SOURCE_MEMBERS | {
 }
 VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[A-Za-z0-9.+-]*)?$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
-SAFE_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+-]*$")
+# وحدات بايثون القياسية تبدأ أحيانًا بشرطة سفلية (__init__.py و_zoneinfo.py)، وهي أسماء
+# آمنة تمامًا داخل مسار نسبي؛ المنع هنا لاجتياز المسارات لا للأسماء نفسها.
+SAFE_NAME_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9._+-]*$")
 
 
 def safe_patch_name(value: object) -> str | None:
