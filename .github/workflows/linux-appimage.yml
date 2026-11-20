@@ -77,6 +77,8 @@ jobs:
 
       - name: Verify locked content provenance and approved live editions
         run: |
+          # مجلد www مُولَّد ويُحصى داخل فحص بصمات الأيقونات، فيُبنى قبل الفحص.
+          bash scripts/build-www.sh
           python scripts/verify_data_provenance.py
           python scripts/verify_asset_provenance.py
           python scripts/generate_alquran_data.py --verify
