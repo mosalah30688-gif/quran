@@ -320,7 +320,8 @@ test('التلاوة المتزامنة: الآية الجارية تضيء وت
   assert.match(src, /const wantFull = settings\.surahAudio !== false/);
   // صوت الآية من الملف المحلي أولاً ثم الشبكة، مع تحميل مسبق للآية التالية
   assert.match(src, /preloadAyahAudio\(a\.s, a\.n \+ 1\)/);
-  assert.match(src, /const local = a\.fromSurah \? null : await localAudioUrl/);
+  // ملف السورة الكاملة يُقرأ من التحميل المحلي أولًا (أوفلاين) ثم الشبكة
+  assert.match(src, /const local = a\.fromSurah\s*\?\s*await localSurahUrl/);
   // توهج ذهبي للآية الجارية
   assert.match(settings, /#pageBody\.syncing \.ay\.playing \{[^}]*rgba\(232,181,82/);
 });
@@ -385,9 +386,14 @@ test('مكتبة القرّاء: ١٧٤ قارئًا برواياتهم مع ب�
   // تحميل مسبق للسورة التالية: تشغيل متصل بلا فجوة
   assert.match(app, /function preloadSurahAudio\(url\)/);
   assert.match(app, /if \(surah < 114\) preloadSurahAudio\(surahAudioUrl\(entry, surah \+ 1\)\)/);
-  // تبديل بين التلاوة المتزامنة وقارئ المكتبة
-  assert.match(app, /surahMode: 'sync'/);
-  assert.match(app, /function pickSyncMode\(\)/);
+  // أُلغي خيار «آية بآية»: التزامن يعمل تلقائيًا، والافتراضي تلاوة السورة كاملة
+  assert.match(app, /surahMode: 'full'/);
+  assert.ok(!app.includes('pickSyncMode'), 'خيار آية بآية يجب أن يُحذف');
+  assert.ok(!app.includes('data-pick-sync'), 'صف آية بآية يجب أن يُحذف');
+  // كل القرّاء متاحون للتحميل: آية بآية أو سورة كاملة
+  assert.match(app, /function dlCatalog\(\)/);
+  assert.match(app, /function runSurahDownload\(entry\)/);
+  assert.match(app, /function localSurahUrl\(reciter, s\)/);
   assert.match(app, /const wantFull = /);
   const html = read('index.html');
   assert.ok(html.includes('id="voiceSheet"') && html.includes('id="voiceSearch"') && html.includes('id="pickSurahReciter"'));

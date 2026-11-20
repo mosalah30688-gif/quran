@@ -80,7 +80,7 @@
 
   const DEFAULTS = {
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
-    surahReciter: 0, surahMode: 'sync', surahAudio: true,
+    surahReciter: 0, surahMode: 'full', surahAudio: true,
     translation: '', font: 'Scheherazade New', size: 26, tajweed: false, dark: false,
     tajweedScopes: {},
   };
@@ -154,6 +154,8 @@
     set(key, value) { try { localStorage.setItem('quran:' + key, JSON.stringify(value)); } catch {} },
   };
   const settings = Object.assign({}, DEFAULTS, store.get('settings', {}));
+  // أُلغي خيار «آية بآية»: من كان عليه ينتقل إلى تلاوة السورة كاملة
+  if (settings.surahMode === 'sync') settings.surahMode = 'full';
   // 1.4.9+: خط Amiri Quran كان يفصل حركات الضبط عن حروفها في المتصفح، فننقل من بقي
   // على هذا الخط الافتراضي القديم إلى الخط الأوضح مرة واحدة، مع احترام أي اختيار لاحق.
   if (!settings.fontFix149) {
@@ -2204,6 +2206,7 @@
     getJSON('quran-reciters.json').then((data) => {
       SURAH_RECITERS = Array.isArray(data?.items) ? data.items : [];
       syncSurahReciterSelect();
+      if (typeof refreshDlReciters === 'function' && $('#dlReciter')) refreshDlReciters();
     }).catch(() => { SURAH_RECITERS = []; syncSurahReciterSelect(); });
   }
 
@@ -2266,21 +2269,9 @@
   function refreshPickReciterName() {
     const label = $('#pickSurahReciterName');
     if (!label) return;
-    if (fullSurahMode()) {
-      const entry = surahReciterEntry();
-      label.textContent = entry ? entry.name : 'اختر القارئ';
-    } else {
-      label.textContent = `آية بآية · ${syncReciterName() || 'القارئ المتزامن'}`;
-    }
+    const entry = surahReciterEntry();
+    label.textContent = entry ? entry.name : 'اختر القارئ';
   }
-  function pickSyncMode() {
-    settings.surahMode = 'sync';
-    saveSettings();
-    closeVoiceSheet();
-    refreshPickReciterName();
-    toast('تلاوة متزامنة آية بآية');
-  }
-
   function renderVoiceList() {
     const list = $('#voiceList');
     if (!list) return;
@@ -2294,15 +2285,7 @@
       if (fa !== fb) return fa - fb;
       return 0;
     });
-    const syncRow = `
-      <div class="voice-row${!fullSurahMode() ? ' is-current' : ''}">
-        <span class="voice-star" aria-hidden="true"></span>
-        <button class="voice-row-main" data-pick-sync="1">
-          <strong>تلاوة متزامنة آية بآية</strong>
-          <span class="muted">${esc(syncReciterName() || 'القارئ المتزامن')}</span>
-        </button>
-      </div>`;
-    list.innerHTML = syncRow + rows.map((r) => `
+    list.innerHTML = rows.map((r) => `
       <div class="voice-row${current && String(current.id) === String(r.id) ? ' is-current' : ''}" data-id="${r.id}">
         <button class="voice-star${isFavReciter(r.id) ? ' on' : ''}" data-star="${r.id}" aria-label="مفضلة" title="مفضلة">★</button>
         <button class="voice-row-main" data-pick="${r.id}">
@@ -2344,7 +2327,6 @@
   if ($('#voiceList')) $('#voiceList').addEventListener('click', (e) => {
     const star = e.target.closest('[data-star]');
     if (star) { toggleFavReciter(star.dataset.star); renderVoiceList(); return; }
-    if (e.target.closest('[data-pick-sync]')) { pickSyncMode(); return; }
     const pick = e.target.closest('[data-pick]');
     if (pick) pickReciter(pick.dataset.pick);
   });
@@ -2440,7 +2422,10 @@
     if (!a) { stopPlayback(); return; }
     play.cur = a;
     // تلاوة السورة كاملة تُقرأ من ملف السورة مباشرة، دون الرجوع لملفات الآيات.
-    const local = a.fromSurah ? null : await localAudioUrl(settings.reciter, a.s, a.n).catch(() => null);
+    const surahRec = (surahReciterEntry() || {}).id;
+    const local = a.fromSurah
+      ? await localSurahUrl(surahRec, a.s).catch(() => null)
+      : await localAudioUrl(settings.reciter, a.s, a.n).catch(() => null);
     if (!local && !a.audio) {
       toast('لا يوجد تسجيل لهذه الآية مع القارئ المختار');
       const nxt = await play.nextFn(a);
@@ -3370,6 +3355,57 @@
     return blob ? URL.createObjectURL(blob) : null;
   }
 
+  // ملف السورة كاملة (سورة/سورتان لكل قارئ من كتالوج mp3quran)
+  const surahKey = (reciter, s) => `${reciter}|surah|${s}`;
+
+  async function localSurahUrl(reciter, s) {
+    if (!reciter || !s) return null;
+    if (hasNativePlugin('FolderPicker')) {
+      const uri = store.get('folderUri', null);
+      if (uri) {
+        try {
+          const r = await nativeCall('FolderPicker', 'readFile', { uri, path: `${reciter}/surah/${pad3(s)}.mp3` });
+          if (r && r.data) return URL.createObjectURL(base64ToBlob(r.data, 'audio/mpeg'));
+        } catch { /* غير موجود في المجلد */ }
+      }
+    }
+    const dir = await getDirHandle();
+    if (dir && (await dir.queryPermission({ mode: 'read' })) === 'granted') {
+      try {
+        const sub = await (await dir.getDirectoryHandle(String(reciter))).getDirectoryHandle('surah');
+        const file = await (await sub.getFileHandle(`${pad3(s)}.mp3`)).getFile();
+        return URL.createObjectURL(file);
+      } catch { /* غير موجود في المجلد */ }
+    }
+    const blob = await idbGet('audio', surahKey(reciter, s));
+    return blob ? URL.createObjectURL(blob) : null;
+  }
+
+  async function hasLocalSurah(target, root, reciter, s) {
+    if (target === 'folder' && root && root.native) {
+      try {
+        const r = await nativeCall('FolderPicker', 'exists', { uri: root.uri, path: `${reciter}/surah/${pad3(s)}.mp3` });
+        return !!(r && r.exists);
+      } catch { return false; }
+    }
+    return !!(await idbGet('audio', surahKey(reciter, s)));
+  }
+
+  async function saveSurahFile(target, root, reciter, s, blob) {
+    if (target === 'folder') {
+      if (root && root.native) {
+        const b64 = bytesToBase64(new Uint8Array(await blob.arrayBuffer()));
+        await nativeCall('FolderPicker', 'writeFile', { uri: root.uri, path: `${reciter}/surah/${pad3(s)}.mp3`, data: b64 });
+      } else {
+        const sub = await (await root.getDirectoryHandle(String(reciter), { create: true })).getDirectoryHandle('surah', { create: true });
+        const fh = await (await sub.getFileHandle(`${pad3(s)}.mp3`, { create: true })).createWritable();
+        await fh.write(blob); await fh.close();
+      }
+    } else {
+      await idbPut('audio', surahKey(reciter, s), blob);
+    }
+  }
+
   async function hasLocal(target, root, reciter, s, n) {
     if (target === 'folder' && root && root.native) {
       try {
@@ -3421,6 +3457,15 @@
   }
 
   function updateEstimate() {
+    const chosen = dlCatalog().find((r) => r.id === ($('#dlReciter') ? $('#dlReciter').value : ''));
+    if (chosen && chosen.mode === 'surah') {
+      const count = selectedScope() === 'full' ? surahs.length : 1;
+      const mb = count * 8;
+      const size = mb >= 1000 ? `${(mb / 1000).toFixed(1)} جيجابايت` : `${Math.round(mb)} ميجابايت`;
+      const scopeTxt = selectedScope() === 'full' ? 'المصحف كاملاً' : `سورة ${surahNameShort(Number($('#dlSurahSel').value))}`;
+      $('#dlEstimate').textContent = `${scopeTxt}: ${toArabicDigits(count)} ملف سورة، حجم تقريبي ${size}.`;
+      return;
+    }
     const refs = refsForScope();
     const mb = refs.length * 0.1;
     const size = mb < 1 ? 'أقل من ميجابايت' : `نحو ${Math.round(mb)} ميجابايت`;
@@ -3428,39 +3473,49 @@
     $('#dlEstimate').textContent = `${scopeTxt}: ${refs.length} آية، حجم تقريبي ${size}.`;
   }
 
+  async function resolveTarget() {
+    const target = $('#dlTarget').value;
+    if (target !== 'folder') {
+      if (navigator.storage?.persist) navigator.storage.persist().catch(() => {});
+      return { target, root: null };
+    }
+    if (!folderSupported()) { toast('مجلد الجهاز غير متاح هنا، اختر داخل التطبيق'); return null; }
+    if (hasNativePlugin('FolderPicker')) {
+      let uri = store.get('folderUri', null);
+      if (!uri) {
+        try { const r = await nativeCall('FolderPicker', 'pickFolder'); uri = r && r.uri; } catch { uri = null; }
+        if (!uri) { toast('لم يتم اختيار مجلد'); return null; }
+        store.set('folderUri', uri);
+      }
+      return { target, root: { native: true, uri } };
+    }
+    let root = await getDirHandle();
+    try {
+      if (!root) {
+        root = await window.showDirectoryPicker({ mode: 'readwrite' });
+        await idbPut('meta', 'dirHandle', root);
+      }
+      if ((await root.requestPermission({ mode: 'readwrite' })) !== 'granted') {
+        toast('لم يُمنح إذن الكتابة في المجلد');
+        return null;
+      }
+    } catch { toast('تم إلغاء اختيار المجلد'); return null; }
+    return { target, root };
+  }
+
   async function runDownload() {
     if (dl.running) return;
     const reciter = $('#dlReciter').value;
+    const entry = dlCatalog().find((r) => r.id === reciter);
+    if (!entry) return toast('هذا القارئ غير متاح للتحميل');
+    if (entry.mode === 'surah') return runSurahDownload(entry);
     const bitrate = OFFLINE_SRC[reciter];
     if (!bitrate) return toast('هذا القارئ غير متاح للتحميل');
-    const target = $('#dlTarget').value;
     const refs = refsForScope();
     if (!refs.length) return;
-
-    let root = null;
-    if (target === 'folder') {
-      if (!folderSupported()) return toast('مجلد الجهاز غير متاح هنا، اختر داخل التطبيق');
-      if (hasNativePlugin('FolderPicker')) {
-        let uri = store.get('folderUri', null);
-        if (!uri) {
-          try { const r = await nativeCall('FolderPicker', 'pickFolder'); uri = r && r.uri; } catch { uri = null; }
-          if (!uri) return toast('لم يتم اختيار مجلد');
-          store.set('folderUri', uri);
-        }
-        root = { native: true, uri };
-      } else {
-        root = await getDirHandle();
-        try {
-          if (!root) {
-            root = await window.showDirectoryPicker({ mode: 'readwrite' });
-            await idbPut('meta', 'dirHandle', root);
-          }
-          if ((await root.requestPermission({ mode: 'readwrite' })) !== 'granted') return toast('لم يُمنح إذن الكتابة في المجلد');
-        } catch { return toast('تم إلغاء اختيار المجلد'); }
-      }
-    } else if (navigator.storage?.persist) {
-      navigator.storage.persist().catch(() => {});
-    }
+    const resolved = await resolveTarget();
+    if (!resolved) return;
+    const { target, root } = resolved;
 
     dl.running = true; dl.cancel = false;
     $('#btnDownload').disabled = true;
@@ -3504,14 +3559,103 @@
     refreshStored();
   }
 
+  // كتالوج موحّد: الحفص السبعة عشر (آية بآية) + كل قرّاء mp3quran (سورة كاملة لكل سورة)
+  function dlCatalog() {
+    const out = [];
+    Object.keys(OFFLINE_SRC).forEach((id) => {
+      const name = (RECITERS.find(([rid]) => rid === id) || [null, id])[1];
+      out.push({ id, name, mode: 'ayah' });
+    });
+    const ayahNames = new Set(out.map((r) => r.name));
+    (SURAH_RECITERS || []).forEach((r) => {
+      if (!r || !r.server) return;
+      if (ayahNames.has(r.name)) return; // متاح آية بآية أصلًا
+      out.push({
+        id: String(r.id),
+        name: `${r.name}${r.rewaya ? ' — ' + String(r.rewaya).replace(' - مرتل', '') : ''}`,
+        mode: 'surah',
+        server: r.server,
+      });
+    });
+    return out;
+  }
+
+  function refreshDlReciters() {
+    const sel = $('#dlReciter');
+    if (!sel) return;
+    const current = sel.value;
+    const catalog = dlCatalog();
+    const ayah = catalog.filter((r) => r.mode === 'ayah');
+    const surah = catalog.filter((r) => r.mode === 'surah');
+    const group = (label, rows) => rows.length
+      ? `<optgroup label="${label} (${toArabicDigits(rows.length)})">`
+        + rows.map((r) => `<option value="${esc(r.id)}">${esc(r.name)}</option>`).join('')
+        + '</optgroup>'
+      : '';
+    sel.innerHTML = group('آية بآية — حفص', ayah) + group('سورة كاملة — كل القرّاء', surah);
+    const keep = catalog.some((r) => r.id === current);
+    sel.value = keep ? current : (catalog[0] ? catalog[0].id : '');
+    refreshStored();
+  }
+
+  async function runSurahDownload(entry) {
+    const resolved = await resolveTarget();
+    if (!resolved) return;
+    const { target, root } = resolved;
+    const nums = selectedScope() === 'full'
+      ? surahs.map((x) => x.number)
+      : [Number($('#dlSurahSel').value)];
+    if (!nums.length) return;
+
+    dl.running = true; dl.cancel = false;
+    $('#btnDownload').disabled = true;
+    $('#btnCancelDl').disabled = false;
+    const bar = $('#dlBar');
+    bar.style.display = 'block'; bar.max = nums.length; bar.value = 0;
+
+    const queue = nums.slice();
+    let done = 0, saved = 0, skipped = 0, failed = 0;
+    const update = () => {
+      bar.value = done;
+      $('#dlProgress').textContent = `${toArabicDigits(done)} من ${toArabicDigits(nums.length)} سورة · محفوظ ${toArabicDigits(saved)} · موجود ${toArabicDigits(skipped)} · فشل ${toArabicDigits(failed)}`;
+    };
+    const worker = async () => {
+      while (queue.length && !dl.cancel) {
+        const s = queue.shift();
+        try {
+          if (await hasLocalSurah(target, root, entry.id, s)) skipped++;
+          else {
+            const res = await fetch(entry.server + pad3(s) + '.mp3');
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            await saveSurahFile(target, root, entry.id, s, await res.blob());
+            saved++;
+          }
+        } catch { failed++; }
+        done++;
+        update();
+      }
+    };
+    update();
+    await Promise.all(Array.from({ length: 3 }, worker));
+
+    dl.running = false;
+    $('#btnDownload').disabled = false;
+    $('#btnCancelDl').disabled = true;
+    toast(dl.cancel ? 'تم إيقاف التحميل' : 'انتهى تحميل السور');
+    refreshStored();
+  }
+
   async function refreshStored() {
     const reciter = $('#dlReciter').value;
     const keys = ((await idbKeys('audio').catch(() => [])) || []).filter((k) => k.startsWith(reciter + '|'));
+    const surahFiles = keys.filter((k) => k.split('|')[1] === 'surah').length;
+    const ayahKeys = keys.filter((k) => k.split('|')[1] !== 'surah');
     const perSurah = {};
-    keys.forEach((k) => { const s = k.split('|')[1]; perSurah[s] = (perSurah[s] || 0) + 1; });
+    ayahKeys.forEach((k) => { const s = k.split('|')[1]; perSurah[s] = (perSurah[s] || 0) + 1; });
     const complete = Object.keys(perSurah).filter((s) => perSurah[s] >= (surahs[Number(s) - 1]?.numberOfAyahs || Infinity)).length;
     const dir = await getDirHandle();
-    $('#dlStored').textContent = `داخل التطبيق: ${keys.length} آية، ${complete} سورة مكتملة لهذا القارئ.` +
+    $('#dlStored').textContent = `داخل التطبيق: ${ayahKeys.length} آية، ${complete} سورة مكتملة`
+      + (surahFiles ? `، ${surahFiles} ملف سورة كاملة` : '') + ' لهذا القارئ.' +
       (dir ? ` المجلد المختار: ${dir.name}` : (store.get('folderUri', null) ? ' المجلد المختار على الجهاز.' : ''));
   }
 
@@ -3524,15 +3668,13 @@
   }
 
   function setupDownloadUI() {
-    const supported = Object.keys(OFFLINE_SRC);
-    $('#dlReciter').innerHTML = RECITERS.filter(([id]) => supported.includes(id))
-      .map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
-    $('#dlReciter').value = supported.includes(settings.reciter) ? settings.reciter : supported[0];
+    refreshDlReciters();
+    if (OFFLINE_SRC[settings.reciter]) $('#dlReciter').value = settings.reciter;
     $('#dlSurahSel').innerHTML = surahs.map((x) => `<option value="${x.number}">${x.number}. ${esc(x.name)}</option>`).join('');
     const folderOpt = $('#dlTarget option[value=folder]');
     if (folderOpt && !folderSupported()) folderOpt.remove();
     $('#dlNote').textContent = folderSupported()
-      ? 'مجلد الجهاز يُختار مرة واحدة ويُحفظ، والملفات تُرتّب داخله: القارئ / رقم السورة / رقم الآية.'
+      ? 'مجلد الجهاز يُختار مرة واحدة ويُحفظ. ملفات الآيات تُرتّب: القارئ / رقم السورة / رقم الآية، وملفات السور: القارئ / surah / ٠٠١.mp3.'
       : '';
     updateEstimate();
     refreshStored();
