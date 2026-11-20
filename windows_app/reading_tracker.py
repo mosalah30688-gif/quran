@@ -12,6 +12,7 @@ from typing import Any
 TOTAL_PAGES = 604
 READING_KEY = "reading_v2"
 KHATMA_KEY = "khatma_v2"
+MINUTES_KEY = "reading_minutes_v1"
 
 
 def _today(value: dt.date | None = None) -> dt.date:
@@ -249,3 +250,78 @@ def clear_tracking(settings) -> None:
     for key in (READING_KEY, KHATMA_KEY, "days", "wird_count", "wird_next", "wird_day", "wird_target"):
         settings.remove(key)
     settings.sync()
+
+def add_reading_minutes(settings, minutes: int, day: dt.date | None = None) -> dict:
+    """يجمع دقائق القراءة اليومية (تقدير شخصي، لا يفرض أي هدف)."""
+    key = _today(day).isoformat()
+    value = _json_value(settings, MINUTES_KEY, None)
+    if not isinstance(value, dict) or value.get("schema") != 1 or not isinstance(value.get("minutes"), dict):
+        value = {"schema": 1, "minutes": {}}
+    try:
+        amount = max(0, int(minutes))
+    except (TypeError, ValueError):
+        amount = 0
+    if amount:
+        try:
+            current = max(0, int(value["minutes"].get(key, 0)))
+        except (TypeError, ValueError):
+            current = 0
+        value["minutes"][key] = current + amount
+        _save_json(settings, MINUTES_KEY, value)
+    return value
+
+
+def minutes_today(settings, day: dt.date | None = None) -> int:
+    key = _today(day).isoformat()
+    value = _json_value(settings, MINUTES_KEY, {})
+    minutes = value.get("minutes", {}) if isinstance(value, dict) else {}
+    try:
+        return max(0, int(minutes.get(key, 0)))
+    except (TypeError, ValueError):
+        return 0
+
+
+def minutes_total(settings) -> int:
+    value = _json_value(settings, MINUTES_KEY, {})
+    minutes = value.get("minutes", {}) if isinstance(value, dict) else {}
+    total = 0
+    for raw in minutes.values():
+        try:
+            total += max(0, int(raw))
+        except (TypeError, ValueError):
+            continue
+    return total
+
+
+def unique_pages(settings) -> int:
+    state = reading_state(settings)
+    seen: set[int] = set()
+    for values in state.get("pages", {}).values():
+        if not isinstance(values, list):
+            continue
+        for value in values:
+            if isinstance(value, int) and 1 <= value <= TOTAL_PAGES:
+                seen.add(value)
+    return len(seen)
+
+
+def badges(settings, today: dt.date | None = None) -> list[dict]:
+    """شارات تقديرية لطيفة: لا تفتح شيئًا ولا تغلق شيئًا."""
+    counts = reading_counts(settings)
+    total_pages = sum(counts.values())
+    streak = reading_streak(settings, today)
+    khatmas = len(khatma_progress(settings)["finished"])
+    minutes = minutes_total(settings)
+    distinct = unique_pages(settings)
+    return [
+        {"key": "first", "name": "أول صفحة", "earned": total_pages >= 1},
+        {"key": "week", "name": "أسبوع متصل", "earned": streak >= 7},
+        {"key": "month", "name": "شهر متصل", "earned": streak >= 30},
+        {"key": "hundred", "name": "مئة صفحة", "earned": total_pages >= 100},
+        {"key": "fivehundred", "name": "خمس مئة", "earned": total_pages >= 500},
+        {"key": "khatma", "name": "ختمة كاملة", "earned": khatmas >= 1},
+        {"key": "two", "name": "ختمتان", "earned": khatmas >= 2},
+        {"key": "pages600", "name": "كل المصحف", "earned": distinct >= TOTAL_PAGES},
+        {"key": "minutes60", "name": "ساعة قراءة", "earned": minutes >= 60},
+        {"key": "hours", "name": "عشر ساعات", "earned": minutes >= 600},
+    ]

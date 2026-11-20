@@ -45,6 +45,14 @@ def default_patch_files(app_dir: Path) -> tuple[str, ...]:
             for path in sorted(tz_dir.glob("*.py"))
             if path.is_file() and not path.is_symlink()
         )
+    # ويندوز لا يملك قاعدة IANA في النظام؛ ملفات TZif تسافر مع الترقيع أيضًا.
+    tzdata_dir = app_dir / "tzdata"
+    if tzdata_dir.is_dir() and not tzdata_dir.is_symlink():
+        files.extend(
+            path.relative_to(app_dir).as_posix()
+            for path in sorted(tzdata_dir.rglob("*"))
+            if path.is_file() and not path.is_symlink()
+        )
     return tuple(files)
 
 

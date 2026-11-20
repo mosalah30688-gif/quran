@@ -55,6 +55,8 @@ Amiri وAmiri Quran وNoto Naskh Arabic وNoto Sans Arabic وScheherazade New م
 
 الحزمة مبنية من PySide6/Qt for Python 6.12.0 وShiboken6 6.12.0 (LGPL-3.0-only)، PyInstaller 6.22.3 (GPL مع استثناء توزيع)، miniaudio 1.71 (MIT)، cffi/pycparser، packaging، وPyNaCl/libsodium. يجمع البناء نصوص رخص **إغلاق التبعيات المثبت فعليًا** في `licenses/` وينتج SBOM.
 
+يُضمَّن مع الحزمة ومع كل ترقيع موقّع نصُّ وحدة `zoneinfo` القياسية من CPython 3.13 (‏Python Software Foundation License 2.0، نفس رخصة المفسّر المضمّن) وملفات قاعدة المناطق الزمنية IANA (‏TZif، ملكية عامة) للمدن المدعومة فقط، لأن ويندوز لا يملك قاعدة مناطق زمنية في النظام، وبدونها يفشل حساب مواقيت الصلاة والتوقيت الصيفي. تُنشأ الملفات بـ`scripts/build_windows_tzdata.py` وتُحفظ في `windows_app/tzdata` مع `ATTRIBUTION.json`.
+
 تبقى مكتبات Qt المشتركة منفصلة وقابلة للاستبدال. يرافق الإصدار الكامل `Siraj-Quran-<version>-windows-corresponding-source.zip` وفيه مصادر PySide/Shiboken وQtBase وQtSvg المطابقة، وبصماتها وتعليمات إعادة البناء/الربط. SBOM أو رابط upstream وحدهما ليسا بديلًا عن الحزمة المرافقة.
 
 ## الأيقونة

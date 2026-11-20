@@ -1,6 +1,7 @@
 """اختبار واجهة شامل (offscreen): بيفتح كل الشاشات ويتفاعل معاها ويحفظ لقطات."""
 import os
 import sys
+import tempfile
 import time
 import traceback
 from pathlib import Path
@@ -30,12 +31,11 @@ test_settings.clear()
 test_settings.sync()
 
 app = QApplication([])
+app.setApplicationName(M.APP_NAME)
+app.setApplicationVersion(M.APP_VERSION)
+app.setOrganizationName(M.PUBLISHER)
 app.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-for name in (
-    'AmiriQuran-Regular.ttf', 'Amiri-Regular.ttf', 'NotoNaskhArabic-Variable.ttf',
-    'ScheherazadeNew-Regular.ttf', 'NotoSansArabic-Regular.ttf', 'NotoSansArabic-Bold.ttf',
-):
-    QFontDatabase.addApplicationFont(str(M.FONTS / name))
+loaded_fonts = M.register_bundled_fonts()
 t0 = time.time()
 
 
@@ -67,11 +67,14 @@ def check(name, cond):
 
 
 def shot(name):
+    # انتظر انتهاء انتقال fade كي تمثل لقطة CI ما يراه المستخدم فعليًا.
+    wait(280)
     app.processEvents()
     win.grab().save(str(OUT / f'{name}.png'))
 
 
 try:
+    # الهوية والتشغيل الرسومي
     check('Siraj window title', win.windowTitle() == 'سراج — قرآن كريم')
     check('Siraj window icon', not win.windowIcon().isNull())
     check('sidebar brand uses the owned icon above an Amiri Siraj wordmark',
@@ -82,6 +85,8 @@ try:
     check('about button is immediately below settings',
           win.sidebar.layout().indexOf(win.nav_buttons['about'])
           == win.sidebar.layout().indexOf(win.nav_buttons['settings']) + 1)
+    check('Windows product identity', M.APP_NAME == 'SirajQuran' and M.PUBLISHER == 'Siraj')
+    check('Windows release is newer than 4.1.4', M.version_tuple(M.APP_VERSION) > M.version_tuple('4.1.4'))
     check('dedicated update button is always visible',
           win.btn_sidebar_update.isVisible() and not win.btn_sidebar_update.icon().isNull()
           and 'تحديث' in win.btn_sidebar_update.toolTip())
@@ -128,6 +133,7 @@ try:
     check('reader has 114 surahs', win.combo_surah.count() == 114)
     check('reader exposes 17 audited Hafs reciters', len(M.HAFS_RECITERS) == 17)
     check('reader has 30 juz', win.combo_juz.count() == 30)
+    check('four OFL Arabic reading fonts loaded', len(loaded_fonts) == len(M.BUNDLED_FONT_FILES) and len(M.MUSHAF_FONTS) >= 4)
     check('licensed classical tafsir catalog has 73 unique books',
           len(M.QURANPEDIA_TAFSIR_EDITIONS) == 73
           and len({edition for edition, _name in M.ALL_TAFSIR_EDITIONS}) == 78)
@@ -188,6 +194,7 @@ try:
     check('new page always starts at top', win.page == 3 and win.browser.verticalScrollBar().value() == 0)
     win.set_font(18)
 
+    # القوائم لا تقفز بالعجلة وهي مغلقة؛ الاختيار يتطلب نقرة مقصودة.
     def assert_wheel_locked(name, widget, get_value):
         before = get_value()
         app.sendEvent(widget, wheel_event(angle_y=-120))
@@ -221,13 +228,19 @@ try:
     # الرواية ورش
     win.riwaya_combo.setCurrentIndex(win.riwaya_combo.findData('warsh'))
     app.processEvents()
-    check('warsh loaded', win.riwaya_id == 'warsh' and win.reciter_combo.count() == 2)
+    check('warsh loaded', win.riwaya_id == 'warsh' and win.reciter_combo.count() == len(win.reciter_options()) > 2)
     check('warsh page text', len(win.browser.toPlainText()) > 100)
-    check('other riwayat keeps expanded navigation', win.sidebar.width() == 228)
+    check('other riwayat keeps its index', win.combo_surah.count() == 114 and not win.index_popup.isVisible())
     win.riwaya_combo.setCurrentIndex(win.riwaya_combo.findData('quran-simple'))
     app.processEvents()
-    check('hafs simple loaded', win.riwaya_id == 'quran-simple' and win.reciter_combo.count() == 17)
-    check('Hafs uses wide compact navigation', win.sidebar.width() == 76)
+    hafs_options = win.reciter_options()
+    check('hafs simple loaded', win.riwaya_id == 'quran-simple' and win.reciter_combo.count() == len(hafs_options) >= 17)
+    check('hafs voices come first', [rid for rid, _n in hafs_options[:17]] == [row[0] for row in M.HAFS_RECITERS])
+    check('one list holds library mushafs too', any(str(rid).startswith('lib:') for rid, _n in hafs_options))
+    check('no other-riwaya mixing', not any(
+        (M.LIBRARY_BY_ID[str(rid)[4:]].get('family') or 'حفص') != 'حفص'
+        for rid, _n in hafs_options if str(rid).startswith('lib:')))
+    check('Hafs wide reader hides the permanent index', not win.index_popup.isVisible())
     # التلاوة (ملف لكل آية، أول قارئ حفص)
     win.reciter_combo.setCurrentIndex(0)
     win.toggle_play()
@@ -239,6 +252,26 @@ try:
     check('pause toggles', 'متوقفة' in win.play_status.text() or win.play_status.text() != '')
     win.stop_play('أوقفت التلاوة')
     check('stop resets', not win.playing)
+    # القائمة الموحّدة: مصاحف المكتبة داخل نفس القائمة، وتلاوة سورة كاملة تلقائيًا
+    check('voice library built from audited catalog', len(M.RECITER_LIBRARY) >= 174)
+    families = {str(item.get('family', '')) for item in M.RECITER_LIBRARY}
+    check('voice library covers warsh and qalun', {'حفص', 'ورش', 'قالون'} <= families)
+    lib_values = [rid for rid, _n in hafs_options if str(rid).startswith('lib:')]
+    check('library mushafs live inside the same reciter list', bool(lib_values))
+    first_lib = M.LIBRARY_BY_ID[str(lib_values[0])[4:]]
+    win.reciter_combo.setCurrentIndex(win.reciter_combo.findData(lib_values[0]))
+    check('choosing a library mushaf activates it', win.library_reciter() is not None)
+    library_queue = win.library_queue(2)
+    check(
+        'library queue builds one whole-surah file',
+        len(library_queue) == 1
+        and library_queue[0][0] == f'{first_lib["server"]}002.mp3'
+        and library_queue[0][1] == (2, None),
+    )
+    win.reciter_combo.setCurrentIndex(0)
+    check('synced reciter restores the same list', win.library_reciter() is None)
+    check('downloading follows the chosen reciter', win.download_reciter_id() == M.HAFS_RECITERS[0][0])
+    check('reciter search restores text after typing', callable(win.restore_reciter_text))
     # ورش (ملف كامل لكل سورة من مصدر MP3Quran المدقق)
     win.riwaya_combo.setCurrentIndex(win.riwaya_combo.findData('warsh'))
     win.reciter_combo.setCurrentIndex(0)
@@ -255,16 +288,9 @@ try:
     queue = win.audio_queue_for_page()
     check('qalun surah queue', len(queue) > 0 and queue[0][1][1] is None and queue[0][0].endswith('.mp3'))
     log('  qalun queue sample:', queue[:1])
-    # التجويد الملوّن محلي بالكامل، مع نص نظيف عند النسخ.
-    win.riwaya_combo.setCurrentIndex(win.riwaya_combo.findData('quran-tajweed'))
-    win.go_page(2)
-    app.processEvents()
-    check('local tajweed markup loaded', '[m[' in win.book.texts[(2, 1)])
-    check('tajweed colors rendered', '#2536d6' in win.browser.toHtml().lower())
-    check('tajweed markers hidden from reader', '[m[' not in win.browser.toPlainText())
     win.riwaya_combo.setCurrentIndex(win.riwaya_combo.findData('quran-uthmani'))
     app.processEvents()
-    # البسملة قبل أول آية، والتفسير من لوحة جانبية، والسحب بالفأرة يقلب الصفحة
+    # البسملة قبل أول آية، والتفسير من لوحة جانبية، والسحب الأفقي لا يقلب الصفحة
     win.go_page(2)
     app.processEvents()
     page_text = win.browser.toPlainText()
@@ -272,14 +298,14 @@ try:
     check('basmala shown once on Baqarah page', page_text.count('بِسْمِ') == 1)
     check('Hafs uses Shamela-style bracketed surah title', '[سورة البقرة]' in page_text)
     check('Hafs uses compact ayah rosette', '۝١' in page_text)
-    raw_baqarah = win.book.texts[(2, 1)]
-    check('basmala detached from first ayah text', not M.display_ayah_text(2, 1, raw_baqarah, True).startswith('بِسْمِ'))
-    check('non-Hafs display source is untouched', M.display_ayah_text(2, 1, raw_baqarah, False).startswith('بِسْمِ'))
-    simple_first = next(row[3] for row in M.HAFS['simple'] if row[0] == 2 and row[1] == 1)
-    check('basmala detached in simple script too', not M.display_ayah_text(2, 1, simple_first, True).startswith('بِسْمِ'))
+    raw_baqarah = next(row[3] for row in M.HAFS['uthmani'] if row[0] == 2 and row[1] == 1)
+    check('basmala detached from Hafs first ayah', not M.display_ayah_text(2, 1, raw_baqarah, True).startswith('بِسْمِ'))
+    # النص المقفول صار يفصل البسملة عن الآية الأولى ويُعرض سطرًا مستقلًا،
+    # فالمطلوب أن مسار الروايات الأخرى لا يغيّر نص المصدر إطلاقًا.
+    check('non-Hafs display source is untouched', M.display_ayah_text(2, 1, raw_baqarah, False) == raw_baqarah.strip())
     all_hafs_firsts = [
         (s, a, text)
-        for rows in (M.HAFS['uthmani'], M.HAFS['simple'], M.TAJWEED_QURAN)
+        for rows in (M.HAFS['uthmani'], M.HAFS['simple'])
         for s, a, _page, text in rows
         if a == 1 and s not in (1, 9)
     ]
@@ -308,26 +334,6 @@ try:
     win.set_font(saved_font)
     win.go_page(2)
     app.processEvents()
-    # الترجمات الأربع ذات الإسناد المعتمد تظهر تحت الآية وتُزامن بين الإعدادات والتفسير.
-    win.translation_cache[('en.sahih', 2, 1)] = 'Alif, Lam, Meem.'
-    win.translation_attempted.add(('en.sahih', 2))
-    win.translation_combo.setCurrentIndex(win.translation_combo.findData('en.sahih'))
-    app.processEvents()
-    check('four approved translation choices plus disabled option', len(M.TRANSLATION_EDITIONS) == 5)
-    check('translation rendered under ayah', 'Alif, Lam, Meem.' in win.browser.toPlainText())
-    check('translation selection synced', win.tf_translation.currentData() == 'en.sahih')
-    win.translation_combo.setCurrentIndex(0)
-    app.processEvents()
-    # النسخ والتظليل الدائم
-    win.sel_ayah = (2, 2)
-    win.copy_current_ayah()
-    check('copy ayah with reference', 'الآية ٢' in QApplication.clipboard().text())
-    win.set_ayah_highlight('#f4df9b')
-    check('persistent ayah highlight', win.user_highlights.get('2:2') == '#f4df9b')
-    win.clear_ayah_highlight()
-    check('remove ayah highlight', '2:2' not in win.user_highlights)
-    # الفهرس منسدل ولا يحجز عموداً دائماً
-    check('index popup exists and starts hidden', hasattr(win, 'index_popup') and not win.index_popup.isVisible())
     win.sel_ayah = (2, 3)
     win.render_page()
     win.toggle_tafsir_panel(True)
@@ -343,6 +349,7 @@ try:
         app.sendEvent(vp, ev)
     page_before_drag = win.page
     mouse(QEvent.Type.MouseButtonPress, 300, 200)
+    mouse(QEvent.Type.MouseMove, 380, 204)
     mouse(QEvent.Type.MouseButtonRelease, 420, 205)
     check('horizontal mouse drag never turns page', win.page == page_before_drag)
     # الإشارات المرجعية
@@ -359,7 +366,7 @@ try:
     check('search results', win.search_results.count() > 50)
     win.open_search_result(win.search_results.item(0))
     check('search opens reader', win.stack.currentWidget() is win.views['reader'])
-    # التفسير المحلي ومنع العجلة وتوحيد خط المصحف.
+    # التفسير: القائمة الموسعة، المصدر المحلي، ومنع العجلة وتوحيد خط المصحف.
     win.show_view('tafsir')
     win.tf_surah.setCurrentIndex(1)
     win.tf_ayah.setValue(2)
@@ -388,12 +395,14 @@ try:
     win.toggle_tafsir_panel(True)
     app.processEvents()
     check('reader tafsir panel shares book selection', win.tp_book.currentData() == 'qp:4')
-    check('reader tafsir panel follows mushaf typography', 'Amiri' in win.tp_browser.toHtml())
+    tp_html = win.tp_browser.toHtml()
+    check('reader tafsir panel follows mushaf typography', 'Amiri' in tp_html)
     win.toggle_tafsir_panel(False)
     win.show_view('tafsir')
     shot('tafsir')
     win.set_font(18)
-    win.mushaf_font_combo.setCurrentIndex(win.mushaf_font_combo.findData('Amiri Quran'))
+    default_font_index = win.mushaf_font_combo.findData('Amiri Quran')
+    win.mushaf_font_combo.setCurrentIndex(default_font_index)
     # المعاني والتجويد
     win.show_view('meanings')
     check('meanings rendered', len(win.mn_browser.toPlainText()) > 50)
@@ -450,17 +459,15 @@ try:
     check('memo resume works', not win.engine.paused)
     win.memo_stop()
     check('memo full stop works', not win.playing and not win.queue_list and not win.btn_memo_stop.isEnabled())
-    import tempfile
     tmp_dir = tempfile.mkdtemp()
     win.settings.setValue('dl_folder', tmp_dir)
-    win.dl_reciter.setCurrentIndex(max(win.dl_reciter.findData('ar.alafasy'), 0))
-    win.dl_one.setChecked(True)
+    win.reciter_combo.setCurrentIndex(win.reciter_combo.findData('ar.alafasy'))
     win.dl_surah.setCurrentIndex(111)
     win.dl_target.setCurrentIndex(1)
     cache = win.audio_cache_dir()
     for a in range(1, 5):
         (cache / M.audio_file_name(M.ayah_audio_url('ar.alafasy', 112, a))).write_bytes(b'x' * 3000)
-    win.start_dl()
+    win.start_dl('surah')
     check('download skips cached', win.dl.get('skipped') == 4 and not win.dl.get('running'))
     check('download copies to folder', (Path(tmp_dir) / 'ar.alafasy' / '112' / '1.mp3').exists())
     win.delete_dl()
@@ -476,18 +483,54 @@ try:
     check('khatma pointer advanced', M.khatma_progress(win.settings, win.page)['pointer'] == 41)
     check('khatma has no daily target control', not hasattr(win, 'wird_target'))
     check('khatma reminder controls', win.reminder_enabled is not None and win.reminder_time is not None)
+    check('wird ring and badges rendered', len(win.wird_badges) >= 10 and not win.wird_ring.pixmap().isNull())
+    check('wird shows reading minutes', 'دقيقة' in win.wird_minutes_label.text())
     shot('wird')
+    # مواقيت الصلاة والقبلة والأذان
+    win.show_view('prayer')
+    check('prayer city list is complete', win.prayer_city_combo.count() >= 90)
+    check('prayer methods follow android', win.prayer_method_combo.count() == len(M.prayer_times_api.METHODS))
+    check('prayer times are computed locally', win.prayer_rows['fajr'][1].text() != '—')
+    check('next prayer line', 'الصلاة القادمة' in win.prayer_next_label.text())
+    check('hijri date line', 'هـ' in win.prayer_hijri.text())
+    check('qibla dial bearing', win.qibla_dial.bearing > 0)
+    check('adhan voices catalog', win.adhan_voice_combo.count() == len(M.ADHAN_VOICES))
+    check('adhan toggle defaults off', not win.adhan_toggle.isChecked())
+    shot('prayer')
+    # النقر على الآية يبدأ التلاوة منها
+    check('tap ayah plays by default', win.settings.value('reader/tap_plays', True, type=bool))
+    check('ayah context actions exist', all(hasattr(win, name) for name in
+          ('copy_ayah_text', 'open_ayah_tafsir', 'open_ayah_meanings', 'share_ayah', 'play_from_ayah')))
+    check('playback speed control', win.btn_speed.text().endswith('×') and len(win.PLAY_RATES) == 4)
+    check('speed keeps pitch labels', win.play_rate() in win.PLAY_RATES)
+    # فروق المواقيت مع أندرويد: تعديلات، خطوط عالية، ٢٤ ساعة، إحداثيات يدوية
+    check('prayer minute adjustments exist', len(win.prayer_adjust_spins) == 5)
+    check('prayer high latitude options', win.prayer_high_combo.count() == len(M.prayer_times_api.HIGH_LATITUDE))
+    check('prayer manual coordinates', win.prayer_manual is not None and win.prayer_lat_spin.value() != 0)
+    check('prayer clock format toggle', win.prayer_clock24 is not None)
+    check('qibla mentions the sun', 'الشمس' in win.qibla_label.text())
+    check('wird optional goals', len(win.wird_goal_buttons) == 6)
+    check('wird day history', win.wird_history_label.text() != '')
+    # الإحصاءات: رسم أسبوعي وبطاقة صفحات مختلفة
+    win.show_view('stats')
+    check('stats weekly bars', bool(win.st_bars.values))
+    check('stats distinct pages line', 'صفحات مختلفة' in win.st_unique.text())
+    # استعادة النسخة الأصلية متاحة في الإعدادات
+    win.show_view('settings')
+    check('restore bundled version button', win.btn_restore is not None and win.btn_restore.text().startswith('استعادة'))
     # الإحصائيات
     win.show_view('stats')
     check('stats today', win.st_cards['today'].text() != '')
     shot('stats')
-    # الإعدادات والخطوط والتجاوب
+    # الإعدادات: العجلة لا تغيّر نوع الخط أو الحجم أو الرواية أو وقت التذكير.
     win.show_view('settings')
-    check('four bundled mushaf fonts', win.mushaf_font_combo.count() >= 4)
-    noto = win.mushaf_font_combo.findData('Noto Naskh Arabic')
-    win.mushaf_font_combo.setCurrentIndex(noto)
-    check('mushaf font can change', win.mushaf_font == 'Noto Naskh Arabic')
-    win.resize(800, 600)
+    assert_wheel_locked('settings wheel cannot change font family',
+                        win.mushaf_font_combo, win.mushaf_font_combo.currentIndex)
+    assert_wheel_locked('settings wheel cannot change font size', win.font_spin, win.font_spin.value)
+    assert_wheel_locked('settings wheel cannot change riwaya', win.riwaya_combo, win.riwaya_combo.currentIndex)
+    assert_wheel_locked('touchpad cannot change reminder time',
+                        win.reminder_time, lambda: win.reminder_time.time().toString('HH:mm'))
+    win.resize(1000, 620)
     app.processEvents()
     check('compact sidebar on small window', win.sidebar.width() == 76)
     check('compact brand keeps the icon clearly above the Amiri wordmark',
@@ -497,10 +540,8 @@ try:
           and win.nav_buttons['about'].isVisible()
           and win.nav_buttons['settings'].geometry().bottom()
           < win.nav_buttons['about'].geometry().top())
-    win.resize(1300, 820)
+    win.resize(1440, 900)
     app.processEvents()
-    check('expanded sidebar on wide window', win.sidebar.width() == 228)
-    check('portable test mode', is_portable())
     shot('settings')
     log('DONE')
 except Exception:

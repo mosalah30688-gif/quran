@@ -1,0 +1,227 @@
+{
+  "source": "IANA Time Zone Database (TZif), as shipped by the operating system",
+  "version": "# version 2026f",
+  "license": "Public domain (IANA tz database), see https://www.iana.org/time-zones",
+  "zones": [
+    {
+      "zone": "Africa/Addis_Ababa",
+      "size": 185
+    },
+    {
+      "zone": "Africa/Algiers",
+      "size": 735
+    },
+    {
+      "zone": "Africa/Banjul",
+      "size": 216
+    },
+    {
+      "zone": "Africa/Cairo",
+      "size": 2399
+    },
+    {
+      "zone": "Africa/Casablanca",
+      "size": 1200
+    },
+    {
+      "zone": "Africa/Djibouti",
+      "size": 149
+    },
+    {
+      "zone": "Africa/Khartoum",
+      "size": 679
+    },
+    {
+      "zone": "Africa/Lagos",
+      "size": 235
+    },
+    {
+      "zone": "Africa/Mogadishu",
+      "size": 213
+    },
+    {
+      "zone": "Africa/Nairobi",
+      "size": 265
+    },
+    {
+      "zone": "Africa/Nouakchott",
+      "size": 208
+    },
+    {
+      "zone": "Africa/Tripoli",
+      "size": 625
+    },
+    {
+      "zone": "Africa/Tunis",
+      "size": 689
+    },
+    {
+      "zone": "America/Chicago",
+      "size": 3592
+    },
+    {
+      "zone": "America/Los_Angeles",
+      "size": 2852
+    },
+    {
+      "zone": "America/New_York",
+      "size": 3552
+    },
+    {
+      "zone": "America/Sao_Paulo",
+      "size": 1430
+    },
+    {
+      "zone": "America/Toronto",
+      "size": 3494
+    },
+    {
+      "zone": "Asia/Aden",
+      "size": 151
+    },
+    {
+      "zone": "Asia/Amman",
+      "size": 1433
+    },
+    {
+      "zone": "Asia/Baghdad",
+      "size": 969
+    },
+    {
+      "zone": "Asia/Bahrain",
+      "size": 223
+    },
+    {
+      "zone": "Asia/Baku",
+      "size": 1213
+    },
+    {
+      "zone": "Asia/Beirut",
+      "size": 2154
+    },
+    {
+      "zone": "Asia/Damascus",
+      "size": 1873
+    },
+    {
+      "zone": "Asia/Dhaka",
+      "size": 323
+    },
+    {
+      "zone": "Asia/Dubai",
+      "size": 151
+    },
+    {
+      "zone": "Asia/Hebron",
+      "size": 3872
+    },
+    {
+      "zone": "Asia/Jakarta",
+      "size": 383
+    },
+    {
+      "zone": "Asia/Kabul",
+      "size": 194
+    },
+    {
+      "zone": "Asia/Karachi",
+      "size": 379
+    },
+    {
+      "zone": "Asia/Kolkata",
+      "size": 285
+    },
+    {
+      "zone": "Asia/Kuala_Lumpur",
+      "size": 401
+    },
+    {
+      "zone": "Asia/Kuwait",
+      "size": 151
+    },
+    {
+      "zone": "Asia/Manila",
+      "size": 422
+    },
+    {
+      "zone": "Asia/Muscat",
+      "size": 151
+    },
+    {
+      "zone": "Asia/Qatar",
+      "size": 185
+    },
+    {
+      "zone": "Asia/Riyadh",
+      "size": 151
+    },
+    {
+      "zone": "Asia/Singapore",
+      "size": 401
+    },
+    {
+      "zone": "Asia/Tashkent",
+      "size": 577
+    },
+    {
+      "zone": "Asia/Tehran",
+      "size": 1248
+    },
+    {
+      "zone": "Australia/Melbourne",
+      "size": 2190
+    },
+    {
+      "zone": "Australia/Sydney",
+      "size": 2190
+    },
+    {
+      "zone": "Europe/Amsterdam",
+      "size": 2910
+    },
+    {
+      "zone": "Europe/Berlin",
+      "size": 2298
+    },
+    {
+      "zone": "Europe/Brussels",
+      "size": 2933
+    },
+    {
+      "zone": "Europe/Istanbul",
+      "size": 1933
+    },
+    {
+      "zone": "Europe/London",
+      "size": 3664
+    },
+    {
+      "zone": "Europe/Madrid",
+      "size": 2614
+    },
+    {
+      "zone": "Europe/Moscow",
+      "size": 1535
+    },
+    {
+      "zone": "Europe/Oslo",
+      "size": 2228
+    },
+    {
+      "zone": "Europe/Paris",
+      "size": 2962
+    },
+    {
+      "zone": "Europe/Rome",
+      "size": 2641
+    },
+    {
+      "zone": "Europe/Stockholm",
+      "size": 1909
+    },
+    {
+      "zone": "Europe/Vienna",
+      "size": 2200
+    }
+  ]
+}

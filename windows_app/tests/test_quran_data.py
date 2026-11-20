@@ -34,7 +34,8 @@ class QuranDataIntegrityTests(unittest.TestCase):
 
     def test_riwaya_numbering_is_unique_within_each_source(self):
         sources = load("quran-riwayat.json")["riwayat"]
-        self.assertEqual(set(sources), {"warsh", "qalun", "duri"})
+        # الروايات الثماني: حفص هو الأساس، والباقي في هذا الملف لكل رواية مصحفها.
+        self.assertEqual(set(sources), {"warsh", "qalun", "duri", "shubah", "susi", "bazzi", "qunbul"})
         for name, rows in sources.items():
             with self.subTest(name=name):
                 self.assertEqual(len(rows), len({(r[0], r[1]) for r in rows}))

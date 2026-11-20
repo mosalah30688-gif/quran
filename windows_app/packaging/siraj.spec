@@ -29,6 +29,8 @@ a = Analysis(
         (str(ROOT / 'data'), 'data'),
         (str(ROOT / 'fonts'), 'fonts'),
         (str(ROOT / 'assets'), 'assets'),
+        # ويندوز لا يملك قاعدة مناطق زمنية؛ ملفات TZif ووحدة zoneinfo تسافران مع الحزمة.
+        (str(ROOT / 'tzdata'), 'tzdata'),
     ],
     hiddenimports=['_cffi_backend', 'main'],
     hookspath=[],
