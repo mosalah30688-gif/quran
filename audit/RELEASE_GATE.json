@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "ready": true,
-  "approved_commit": "a215cdbaef2cb2079b3903b521f28df938e3bdd8",
+  "approved_commit": "7ea39f8ad8770aaecf97f07a4c4f4e2f9104fe3c",
   "approved_tags": [
     "siraj-windows-patch-v4.1.4",
     "siraj-linux-patch-v4.1.3",
@@ -18,7 +18,8 @@
     "Each release workflow must still pass its complete locked-data, UI, packaging, signing, SBOM and provenance gates before publication; desktop promotion independently verifies every Draft asset.",
     "Linux 4.3.0 (source a215cdbaef2cb2079b3903b521f28df938e3bdd8) unifies the reciter picker per riwaya (Hafs 183, Warsh 16, Qalun 16, Duri 11), removes the separate reader-library window, moves downloads onto the chosen reciter, and scrolls the reader to the playing ayah.",
     "92 Linux unit tests pass locally (skipped=1) and ui_test.py passes 76 checks; the only two failures are the pre-existing offline-tafsir store checks that CI resolves by fetching the locked store.",
-    "Desktop layout is untouched: mushaf page rendering, wide-screen composition and the side tab rail with About last remain as approved."
+    "Desktop layout is untouched: mushaf page rendering, wide-screen composition and the side tab rail with About last remain as approved.",
+    "The linux workflow now builds the generated www bundle before icon provenance verification, because www/icon.png is a counted shipped derivative; a clean checkout previously failed that gate."
   ],
   "accepted_risks": [
     "The 728866816-byte locked offline tafsir store was not downloaded into the local workspace; both mandatory desktop workflows fetch, hash and verify it before their full UI suites can pass.",
