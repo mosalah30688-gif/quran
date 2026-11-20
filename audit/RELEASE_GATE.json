@@ -1,15 +1,16 @@
 {
   "schema": 1,
   "ready": true,
-  "approved_commit": "82b72c6b3ad76988a79da3617e5bbc276df8a5ab",
+  "approved_commit": "b2266664b0255c8fe6530ca2ee628e06eb31aa38",
   "approved_tags": [
     "siraj-windows-patch-v4.1.4",
     "siraj-linux-patch-v4.1.3",
     "siraj-linux-patch-v4.3.1",
     "siraj-linux-patch-v4.3.2",
-    "siraj-windows-patch-v4.1.5"
+    "siraj-windows-patch-v4.1.5",
+    "siraj-windows-patch-v4.1.6"
   ],
-  "approved_at": "2026-11-05T22:20:00Z",
+  "approved_at": "2026-11-05T22:45:00Z",
   "approved_by": "repository owner — explicit instruction: bring the whole Linux 4.3.2 feature set to the Windows build and publish it",
   "blockers": [],
   "evidence": [
@@ -30,7 +31,8 @@
     "Prayer data needed a real port: windows_app/adhan_scheduler.py now dispatches to Windows Task Scheduler one-shot tasks (schtasks /SC ONCE) with per-prayer refresh, while systemd stays the Linux path; both platforms share the same module and tests.",
     "Frozen-bundle safety repeats the Linux lesson: the 4.1.4 Windows bundle has no zoneinfo module and Windows has no system tz database, so every Windows patch now ships the CPython 3.13 zoneinfo package plus 55 TZif files under windows_app/tzdata, and a guard test fails if any patchable module imports something absent from the 4.1.4 bundle.",
     "Verified end to end: the signed 4.1.5 patch installs into a simulated 4.1.4 frozen bundle whose interpreter has no zoneinfo, starts, renders the mushaf, and resolves Cairo/London/New York offsets with DST from the bundled database only.",
-    "59 Windows unit tests pass (skipped=1) and ui_test.py completes with only the two offline-tafsir store checks that CI resolves by fetching the locked store; audiotest reports ok true for Hafs and Warsh."
+    "59 Windows unit tests pass (skipped=1) and ui_test.py completes with only the two offline-tafsir store checks that CI resolves by fetching the locked store; audiotest reports ok true for Hafs and Warsh.",
+    "The 4.1.5 tag run failed its provenance gate because the generated www bundle is untracked and the audits read www/app.js; source b226666 builds www before the checks (same fix already applied to the Linux workflow) and is released as windows patch 4.1.6."
   ],
   "accepted_risks": [
     "The 728866816-byte locked offline tafsir store was not downloaded into the local workspace; both mandatory desktop workflows fetch, hash and verify it before their full UI suites can pass.",
