@@ -6,7 +6,6 @@
 اختبار:  python3 main.py --selftest
 """
 import datetime
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import array
 import hashlib
 from collections import deque
@@ -20,6 +19,21 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+
+# الحزمة المجمّدة 4.1.1 لا تحمل وحدة zoneinfo إطلاقًا، والترقيع يضع نسخة بايثون خالصة
+# بجوار main.py. نضبط مسار قاعدة المناطق الزمنية قبل الاستيراد لأن حزمة PyInstaller
+# قد لا تحمل sysconfig كاملًا، والاستيراد محمي حتى لا يمنع فشله فتح التطبيق.
+os.environ.setdefault(
+    'PYTHONTZPATH',
+    '/usr/share/zoneinfo:/usr/lib/zoneinfo:/usr/share/lib/zoneinfo:/etc/zoneinfo',
+)
+try:
+    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+except ImportError:  # pragma: no cover - لا يحدث إلا في حزمة مجمّدة قديمة
+    ZoneInfo = None
+
+    class ZoneInfoNotFoundError(Exception):
+        """بديل محلي عند غياب zoneinfo حتى يفتح التطبيق بالتوقيت الثابت للقاهرة."""
 
 from PySide6.QtCore import QByteArray, QObject, QPoint, QProcess, QPropertyAnimation, QRect, QSettings, QSize, QStandardPaths, Qt, QTime, QTimer, QUrl
 from PySide6.QtSvg import QSvgRenderer
@@ -100,7 +114,7 @@ def city_utc_offset(city, day=None):
     """فرق التوقيت بالساعات عن UTC لتاريخ معيّن (يجمع التوقيت الصيفي تلقائيًا)."""
     zone_name = str(city.get('tz') or '')
     day = day or datetime.date.today()
-    if zone_name:
+    if zone_name and ZoneInfo is not None:
         try:
             zone = ZoneInfo(zone_name)
             noon = datetime.datetime.combine(day, datetime.time(12, 0), tzinfo=zone)

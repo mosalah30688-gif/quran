@@ -55,6 +55,8 @@ Amiri وAmiri Quran وNoto Naskh Arabic وScheherazade New مضمّنة تحت *
 
 الحزمة مبنية من PySide6/Qt for Python 6.12.0 وShiboken6 6.12.0 (LGPL-3.0-only)، PyInstaller 6.22.3 (GPL مع استثناء توزيع)، miniaudio 1.71 (MIT)، cffi/pycparser، packaging، وPyNaCl/libsodium. يجمع البناء نصوص رخص إغلاق التبعيات الفعلي في `usr/share/doc/siraj/licenses/` وينتج SBOM.
 
+يُضمَّن داخل الترقيعات الموقعة كذلك نص وحدة `zoneinfo` القياسية من CPython 3.13 (‏Python Software Foundation License 2.0، نفس رخصة مفسّر بايثون المضمّن في الحزمة) لأن حزمة 4.1.1 المجمّدة لا تحمل هذه الوحدة، وبدونها يفشل حساب المناطق الزمنية والتوقيت الصيفي لمواقيت الصلاة داخل التطبيق المجمّد. الملفات منقولة بلا تعديل من `Lib/zoneinfo`.
+
 تبقى مكتبات Qt المشتركة داخل AppImage قابلة للاستخراج والاستبدال وإعادة الحزم. يرافق الإصدار الكامل `Siraj-Quran-<version>-linux-corresponding-source.zip` وفيه مصادر PySide/Shiboken وQtBase وQtSvg وQtWayland المطابقة، وبصماتها وتعليمات إعادة البناء.
 
 ## AppImage runtime ومكتبات النظام

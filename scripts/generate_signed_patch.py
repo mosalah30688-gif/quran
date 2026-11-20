@@ -36,6 +36,15 @@ def default_patch_files(app_dir: Path) -> tuple[str, ...]:
             for path in sorted(data_dir.glob("*.json"))
             if path.is_file() and not path.is_symlink()
         )
+    # الحزمة المجمّدة 4.1.1 لا تحمل zoneinfo؛ نسخة بايثون الخالصة تسافر مع كل ترقيع
+    # وإلا فشل استيرادها داخل التطبيق المجمّد ولم يُفتح التطبيق بعد التحديث.
+    tz_dir = app_dir / "zoneinfo"
+    if tz_dir.is_dir() and not tz_dir.is_symlink():
+        files.extend(
+            path.relative_to(app_dir).as_posix()
+            for path in sorted(tz_dir.glob("*.py"))
+            if path.is_file() and not path.is_symlink()
+        )
     return tuple(files)
 
 
