@@ -4,23 +4,27 @@
   "product": "siraj-quran-windows",
   "channel": "stable",
   "available": true,
-  "version": "4.1.4",
+  "version": "4.1.6",
   "runtime_api": 1,
-  "published_at": "2026-10-31T19:21:39Z",
+  "published_at": "2026-11-20T21:06:34Z",
   "features": [
-    "هوية أوضح لسراج ووصول منظم إلى «عن التطبيق»."
+    "قائمة قرّاء واحدة لكل رواية مع بحث داخلها، بلا تقسيم آية/سورة",
+    "تحميل السورة المختارة أو المصحف كاملًا بصوت القارئ المختار من نفس البطاقة",
+    "مواقيت الصلاة والقبلة والأذان والتذكير داخل الإعدادات",
+    "تمرير نافذة القراءة تلقائيًا إلى الآية الجارية أثناء التلاوة مع الإضاءة",
+    "حلقة الورد والشارات ودقائق القراءة ومشاركة بطاقة الورد"
   ],
   "assets": {
     "patch": {
-      "file_name": "Siraj-Quran-4.1.4-windows.sirajpatch",
-      "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-windows-patch-v4.1.4/Siraj-Quran-4.1.4-windows.sirajpatch",
-      "size": 2816294,
-      "sha256": "7fd386ba6eaadc2e3e6d3a44230e3596c953bc91763fb497aa01d80d6c1e8170"
+      "file_name": "Siraj-Quran-4.1.6-windows.sirajpatch",
+      "url": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-windows-patch-v4.1.6/Siraj-Quran-4.1.6-windows.sirajpatch",
+      "size": 4110768,
+      "sha256": "8b9bce63f8fde2e1fce82003df6f29440a919d5fb99e00fec157a57eb7928919"
     }
   },
   "signature": {
     "algorithm": "ed25519",
     "key_id": "siraj-update-2026-01",
-    "value": "1uETBMCVWWmXEXd/foQKm2lEuESsrZ+bKBhdV79IsAp9K254y1dvZ4oh5aFTUI5+prIRy/cB+HldNDcu4LG8Aw=="
+    "value": "8rl1qwyQ1Poj4dTQ7pRPLzbsGkOwfSHXa22rIuNNkr0p/0Wnfqj1FnVl8advUITbSBmp6k/cwklCmWDtGvQBDQ=="
   }
 }
