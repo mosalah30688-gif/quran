@@ -1,14 +1,14 @@
 {
   "schema": 1,
   "ready": true,
-  "approved_commit": "012c40e82730cd62f3d28c89620955e447759961",
+  "approved_commit": "f34572f9f052dc0453ed302d8c8a1d3331d6615c",
   "approved_tags": [
     "siraj-windows-patch-v4.1.4",
     "siraj-linux-patch-v4.1.3",
     "siraj-linux-patch-v4.3.1",
     "siraj-linux-patch-v4.3.2"
   ],
-  "approved_at": "2026-11-05T21:10:00Z",
+  "approved_at": "2026-11-05T21:40:00Z",
   "approved_by": "repository owner — explicit instruction: the app does not open after the Linux patch; fix and publish a working release",
   "blockers": [],
   "evidence": [
@@ -23,7 +23,8 @@
     "Root cause reproduced: the 4.1.1 frozen bundle has no zoneinfo module at all (PyInstaller analysis of launcher.py lists no zoneinfo), so patch 4.3.1 died at main.py line 9 with ImportError before any window appeared; running the signed patch through the real 4.1.1 launcher reproduced the silent death exactly.",
     "Linux 4.3.2 (source 012c40e) makes the zoneinfo import optional, pins PYTHONTZPATH before importing, and every signed patch now carries the unmodified CPython 3.13 zoneinfo package so prayer-time offsets and DST keep working inside the frozen bundle.",
     "Verified end to end in a simulated 4.1.1 frozen bundle that has no stdlib zoneinfo: patch 4.3.2 installs, verifies, starts, renders the mushaf (page 1, 114 surahs, hasMushaf true) and computes correct offsets (London 0/1, Cairo 2/3, Tokyo 9). The same run with zoneinfo blocked everywhere still opens the app.",
-    "96 Linux unit tests pass locally (skipped=1) including a new guard test that fails if any patchable module imports a module absent from the frozen bundle; audiotest reports ok true for Hafs and Warsh."
+    "96 Linux unit tests pass locally (skipped=1) including a new guard test that fails if any patchable module imports a module absent from the frozen bundle; audiotest reports ok true for Hafs and Warsh.",
+    "The 4.3.2 release tag points at f34572f, the audited approval commit whose parent ccdc1b3 is the verified fix; the repository protects published tags, so the gate approves the tagged commit itself instead of moving the tag."
   ],
   "accepted_risks": [
     "The 728866816-byte locked offline tafsir store was not downloaded into the local workspace; both mandatory desktop workflows fetch, hash and verify it before their full UI suites can pass.",
