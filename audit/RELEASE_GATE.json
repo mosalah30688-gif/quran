@@ -1,15 +1,16 @@
 {
   "schema": 1,
   "ready": true,
-  "approved_commit": "f34572f9f052dc0453ed302d8c8a1d3331d6615c",
+  "approved_commit": "82b72c6b3ad76988a79da3617e5bbc276df8a5ab",
   "approved_tags": [
     "siraj-windows-patch-v4.1.4",
     "siraj-linux-patch-v4.1.3",
     "siraj-linux-patch-v4.3.1",
-    "siraj-linux-patch-v4.3.2"
+    "siraj-linux-patch-v4.3.2",
+    "siraj-windows-patch-v4.1.5"
   ],
-  "approved_at": "2026-11-05T21:40:00Z",
-  "approved_by": "repository owner — explicit instruction: the app does not open after the Linux patch; fix and publish a working release",
+  "approved_at": "2026-11-05T22:20:00Z",
+  "approved_by": "repository owner — explicit instruction: bring the whole Linux 4.3.2 feature set to the Windows build and publish it",
   "blockers": [],
   "evidence": [
     "Release source 8c2419f4a5dcbb3abb7ad927ccf5758d164f471c applies the owner-approved navigation and Siraj identity changes to Android, Windows and Linux.",
@@ -24,11 +25,16 @@
     "Linux 4.3.2 (source 012c40e) makes the zoneinfo import optional, pins PYTHONTZPATH before importing, and every signed patch now carries the unmodified CPython 3.13 zoneinfo package so prayer-time offsets and DST keep working inside the frozen bundle.",
     "Verified end to end in a simulated 4.1.1 frozen bundle that has no stdlib zoneinfo: patch 4.3.2 installs, verifies, starts, renders the mushaf (page 1, 114 surahs, hasMushaf true) and computes correct offsets (London 0/1, Cairo 2/3, Tokyo 9). The same run with zoneinfo blocked everywhere still opens the app.",
     "96 Linux unit tests pass locally (skipped=1) including a new guard test that fails if any patchable module imports a module absent from the frozen bundle; audiotest reports ok true for Hafs and Warsh.",
-    "The 4.3.2 release tag points at f34572f, the audited approval commit whose parent ccdc1b3 is the verified fix; the repository protects published tags, so the gate approves the tagged commit itself instead of moving the tag."
+    "The 4.3.2 release tag points at f34572f, the audited approval commit whose parent ccdc1b3 is the verified fix; the repository protects published tags, so the gate approves the tagged commit itself instead of moving the tag.",
+    "Windows 4.1.5 (source b7ae224) is a real three-way merge of windows_app/main.py with the Linux 4.3.2 line: one searchable reciter list per riwaya (Hafs 182, Warsh 14, Qalun 14, Duri 9), downloads with the chosen reciter on the same card, auto-scroll to the playing ayah with highlight, prayer times, qibla, adhan and reminders, wird ring and reading minutes, plus share card.",
+    "Prayer data needed a real port: windows_app/adhan_scheduler.py now dispatches to Windows Task Scheduler one-shot tasks (schtasks /SC ONCE) with per-prayer refresh, while systemd stays the Linux path; both platforms share the same module and tests.",
+    "Frozen-bundle safety repeats the Linux lesson: the 4.1.4 Windows bundle has no zoneinfo module and Windows has no system tz database, so every Windows patch now ships the CPython 3.13 zoneinfo package plus 55 TZif files under windows_app/tzdata, and a guard test fails if any patchable module imports something absent from the 4.1.4 bundle.",
+    "Verified end to end: the signed 4.1.5 patch installs into a simulated 4.1.4 frozen bundle whose interpreter has no zoneinfo, starts, renders the mushaf, and resolves Cairo/London/New York offsets with DST from the bundled database only.",
+    "59 Windows unit tests pass (skipped=1) and ui_test.py completes with only the two offline-tafsir store checks that CI resolves by fetching the locked store; audiotest reports ok true for Hafs and Warsh."
   ],
   "accepted_risks": [
     "The 728866816-byte locked offline tafsir store was not downloaded into the local workspace; both mandatory desktop workflows fetch, hash and verify it before their full UI suites can pass.",
     "Windows executables intentionally have no Authenticode signature; patch integrity is provided by Ed25519 signatures and SHA-256 asset digests.",
-    "Users who already installed the broken 4.3.1 patch must delete ~/.local/share/siraj/updates/patches once (or use Restore bundled version) before the app can start and pick up 4.3.2; the frozen 4.1.1 launcher cannot be changed by a patch."
+    "schtasks task creation is exercised only through its command plan and a skip-flag dry run locally; the Windows CI runner executes the build, unit tests and UI test, and any Task Scheduler rejection surfaces in-app as a status message rather than a crash."
   ]
 }
