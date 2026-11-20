@@ -567,14 +567,13 @@
     }
     .reader-play-icon { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.18); font-family: Arial, sans-serif; font-size: 11px; }
     .reader-play.is-playing { background: var(--brand-2); }
-    .play-pickers { display: grid; grid-template-columns: 1.05fr .65fr 1.2fr 1.2fr; gap: 9px; margin-top: 13px; }
-    /* التحميل جزء من مربع الاستماع نفسه، لا بطاقة مستقلة */
-    .dl-inline { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
-    .dl-inline > summary { cursor: pointer; font-weight: 800; color: var(--brand); font-size: 14px; list-style: none; }
-    .dl-inline > summary::-webkit-details-marker { display: none; }
-    .dl-inline > summary::before { content: '⬇ '; }
-    .dl-inline[open] > summary { margin-bottom: 8px; }
-    .dl-inline .row { flex-wrap: wrap; }
+    .play-pickers { display: grid; grid-template-columns: 1.05fr .65fr 2.1fr; gap: 9px; margin-top: 13px; }
+    /* التحميل سطر واحد داخل مربع القرّاء نفسه: بلا تبويب ولا بطاقة مستقلة */
+    .dl-row { display: flex; align-items: end; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .dl-row .play-field { flex: 1 1 240px; min-width: 0; }
+    .dl-row .btn { min-height: 40px; padding: 0 14px; white-space: nowrap; font-weight: 800; }
+    #btnCancelDl:disabled { display: none; }
+    #dlBar { display: none; width: 100%; margin-top: 10px; }
     .play-field { display: grid; gap: 5px; min-width: 0; }
     .play-field > span { color: var(--muted); font-size: 12px; font-weight: 700; }
     .reader-command.toolbar .play-field select {
@@ -833,6 +832,9 @@
     #view-listen .reader-command-head { justify-content: flex-end; }
     #view-listen .reader-play { min-height: 40px; min-width: 40px; padding: 0; width: 40px; border-radius: 50%; }
     #view-listen .play-pickers { margin-top: 8px; gap: 6px; }
+    #view-listen .dl-row { margin-top: 6px; gap: 6px; }
+    #view-listen .dl-row .play-field { flex: 1 1 100%; }
+    #view-listen .dl-row .btn { flex: 1 1 auto; min-height: 36px; font-size: 12.5px; padding: 0 10px; }
     #view-listen .reader-command.toolbar .play-field select { min-height: 36px; font-size: 12.5px; padding: 4px 8px; border-radius: 10px; }
     #view-listen .reader-quick-actions { display: none; }
     .listen-player-slot { margin-top: 8px; }
@@ -1524,42 +1526,30 @@
                 <span>القارئ</span>
                 <select id="playReciter" class="tsel" title="القارئ" aria-label="اختر القارئ"></select>
               </label>
-              <label class="play-field play-field-reciter">
-                <span>تلاوة السورة كاملة</span>
-                <select id="playSurahReciter" class="tsel" title="قارئ السورة الكاملة" aria-label="اختر قارئ السورة كاملة" hidden></select>
-                <button class="tsel voice-pick-btn" id="pickSurahReciter" type="button" aria-haspopup="dialog">
-                  <span id="pickSurahReciterName">…</span>
-                  <span class="voice-pick-caret" aria-hidden="true">▾</span>
-                </button>
-              </label>
             </div>
-              <details class="dl-inline" id="dlInline">
-              <summary>تحميل التلاوات — مصحف كاملًا أو سورة (بدون إنترنت)</summary>
-              <label class="lbl">القارئ</label>
-              <select id="dlReciter"></select>
-              <label class="lbl">ما الذي تريد تحميله؟</label>
-              <div class="row">
-                <label><input type="radio" name="dlScope" value="full" checked /> المصحف كاملاً</label>
-                <label><input type="radio" name="dlScope" value="surah" /> سورة محددة</label>
-              </div>
-              <select id="dlSurahSel" style="margin-top:8px" disabled></select>
-              <div class="muted" id="dlEstimate" style="margin-top:6px"></div>
-              <label class="lbl">مكان التخزين</label>
-              <select id="dlTarget">
+            <div class="dl-row" aria-label="تحميل التلاوات">
+              <button class="btn" id="btnDlSurah" type="button" title="تحميل السورة المختارة بصوت القارئ المختار">⬇ السورة</button>
+              <button class="btn ghost" id="btnDlFull" type="button" title="تحميل المصحف كاملًا بصوت القارئ المختار">⬇ المصحف كاملًا</button>
+              <button class="btn ghost" id="btnCancelDl" type="button" disabled>إيقاف</button>
+              <button class="btn ghost" id="btnDeleteDl" type="button" title="حذف تحميلات هذا القارئ من التطبيق">🗑</button>
+              <span class="muted" id="dlWho"></span>
+            </div>
+            <progress id="dlBar" value="0" max="1"></progress>
+            <div class="muted" id="dlProgress"></div>
+            <div class="muted" id="dlStored"></div>
+            <div hidden aria-hidden="true">
+              <select id="dlReciter" tabindex="-1"></select>
+              <select id="dlSurahSel" tabindex="-1"></select>
+              <select id="dlTarget" tabindex="-1">
                 <option value="app">داخل التطبيق</option>
                 <option value="folder">مجلد على الجهاز</option>
               </select>
-              <p class="muted" id="dlNote"></p>
-              <div class="row" style="margin-top:8px">
-                <button class="btn" id="btnDownload">⬇ بدء التحميل</button>
-                <button class="btn ghost" id="btnCancelDl" disabled>إيقاف</button>
-                <button class="btn ghost" id="btnDeleteDl">حذف تحميلات هذا القارئ من التطبيق</button>
-              </div>
-              <progress id="dlBar" value="0" max="1" style="width:100%;margin-top:10px;display:none"></progress>
-              <div class="muted" id="dlProgress" style="margin-top:6px"></div>
-              <div class="muted" id="dlStored" style="margin-top:6px"></div>
-              <p class="muted">تتوفر أصوات حفص السبعة عشر للاستماع المباشر والتحكم الكامل والتنزيل المحلي؛ يعتمد حجم التنزيل على معدل البت الخاص بكل قارئ.</p>
-            </details>
+              <input type="radio" name="dlScope" value="full" checked tabindex="-1" />
+              <input type="radio" name="dlScope" value="surah" tabindex="-1" />
+              <span id="dlEstimate"></span>
+              <span id="dlNote"></span>
+              <button id="btnDownload" type="button" tabindex="-1"></button>
+            </div>
             <p class="muted" id="surahReciterCount" style="margin:6px 2px 0"></p>
             <div class="reader-quick-actions" aria-label="أدوات الآية المحددة">
               <button class="reader-action" id="btnBm">☆ <span>حفظ علامة</span></button>
@@ -1997,7 +1987,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.12.1</div>
+              <div class="muted">الإصدار 1.12.2</div>
             </div>
           </div>
 
@@ -2124,10 +2114,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.12.1';
+    window.APP_BUNDLE_VERSION = '1.12.2';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 186;
+    window.APP_BUILD_NUMBER = 187;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {

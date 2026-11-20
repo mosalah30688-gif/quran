@@ -405,5 +405,14 @@ test('مكتبة القرّاء: ١٧٤ قارئًا برواياتهم مع ب�
   assert.match(app, /function localSurahUrl\(reciter, s\)/);
   assert.match(app, /const wantFull = /);
   const html = read('index.html');
-  assert.ok(html.includes('id="voiceSheet"') && html.includes('id="voiceSearch"') && html.includes('id="pickSurahReciter"'));
+  // قائمة قرّاء واحدة داخل مربع الاستماع: لا حقل قارئ ثانٍ ولا تبويب تحميل مستقل
+  assert.ok(html.includes('id="playReciter"'), 'قائمة القرّاء في المربع');
+  assert.ok(!html.includes('id="pickSurahReciter"'), 'لا مربع قرّاء ثانٍ');
+  assert.ok(!html.includes('id="playSurahReciter"'), 'لا حقل «تلاوة السورة كاملة» منفصل');
+  assert.ok(!html.includes('id="dlInline"'), 'لا تبويب تحميل مستقل');
+  assert.ok(html.includes('id="btnDlSurah"') && html.includes('id="btnDlFull"'), 'تحميل السورة والمصحف داخل نفس المربع');
+  assert.ok(html.indexOf('id="btnDlFull"') < html.indexOf('id="surahReciterCount"'), 'التحميل قبل سطر العدّ داخل نفس البطاقة');
+  assert.match(app, /function unifiedReciterOptions\(\)/);
+  assert.match(app, /function applyPlayReciter\(value\)/);
+  assert.match(app, /const startDownload = \(scope\) =>/);
 });

@@ -80,7 +80,7 @@
 
   const DEFAULTS = {
     riwaya: 'quran-uthmani', reciter: 'ar.alafasy', tafsir: 'ar.muyassar',
-    surahReciter: 0, surahMode: 'full', surahAudio: true,
+    surahReciter: 0, surahMode: 'full', surahAudio: true, playReciter: '',
     translation: '', font: 'Scheherazade New', size: 26, tajweed: false, dark: false,
     tajweedScopes: {},
   };
@@ -1149,7 +1149,7 @@
       ayahSel.dataset.s = String(s);
     }
     ayahSel.value = String(state.sel && state.sel.s === s ? state.sel.n : 1);
-    $('#playReciter').value = settings.reciter;
+    syncPlayReciterValue();
   }
 
   function saveLast(light) {
@@ -1475,7 +1475,7 @@
     toast('تغيّر قارئ السورة الكاملة.');
   });
   $('#playReciter').addEventListener('change', (e) => {
-    onSettingChange('reciter', e.target.value);
+    applyPlayReciter(e.target.value);
   });
 
   $('#btnResume').addEventListener('click', () => {
@@ -2206,8 +2206,9 @@
     getJSON('quran-reciters.json').then((data) => {
       SURAH_RECITERS = Array.isArray(data?.items) ? data.items : [];
       syncSurahReciterSelect();
+      syncReciters();
       if (typeof refreshDlReciters === 'function' && $('#dlReciter')) refreshDlReciters();
-    }).catch(() => { SURAH_RECITERS = []; syncSurahReciterSelect(); });
+    }).catch(() => { SURAH_RECITERS = []; syncSurahReciterSelect(); syncReciters(); });
   }
 
   function surahReciterEntry() {
@@ -2227,6 +2228,7 @@
   }
 
   function syncSurahReciterSelect() {
+    updateReciterCountLine();
     const select = $('#playSurahReciter');
     if (!select) return;
     if (!SURAH_RECITERS.length) {
@@ -2862,14 +2864,74 @@
 
   // ---------- الإعدادات ----------
   // قائمة القراء تتبع الرواية: ورش تعرض قراء ورش فقط، وحفص تعرض قراء حفص
+  const RIW_FAMILY = { warsh: 'ورش', qalun: 'قالون', duri: 'الدوري', shubah: 'شعبة' };
+
+  // قائمة قرّاء واحدة: قرّاء الآية أولًا ثم كل مصاحف mp3quran (تلاوة السورة كاملة)
+  function unifiedReciterOptions() {
+    const ayahList = isRiw() ? (RIW_RECITERS[settings.riwaya] || []) : RECITERS;
+    const family = RIW_FAMILY[settings.riwaya] || '';
+    const surahList = isRiw()
+      ? SURAH_RECITERS.filter((r) => String(r.family || '') === family)
+      : SURAH_RECITERS;
+    const ayah = ayahList.length
+      ? `<optgroup label="آية بآية (${toArabicDigits(ayahList.length)})">`
+        + ayahList.map(([id, name]) => `<option value="a:${esc(id)}">${esc(name)}</option>`).join('')
+        + '</optgroup>'
+      : '';
+    const seen = new Set();
+    const rows = surahList.filter((r) => {
+      const key = `${r.name}|${r.rewaya}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).map((r) => `<option value="v:${esc(r.id)}">${esc(r.name)} — ${esc(String(r.rewaya || 'حفص عن عاصم'))}</option>`).join('');
+    const surah = rows
+      ? `<optgroup label="سورة كاملة (${toArabicDigits(surahList.length)})">${rows}</optgroup>`
+      : '';
+    return ayah + surah;
+  }
+
+  function syncPlayReciterValue() {
+    const sel = $('#playReciter');
+    if (!sel) return;
+    const want = settings.playReciter
+      || (settings.surahReciter ? `v:${settings.surahReciter}` : `a:${settings.reciter}`);
+    sel.value = Array.from(sel.options).some((o) => o.value === want)
+      ? want
+      : (sel.options[0] ? sel.options[0].value : '');
+  }
+
+  function updateReciterCountLine() {
+    const line = $('#surahReciterCount');
+    const sel = $('#playReciter');
+    if (!line || !sel) return;
+    line.textContent = `${toArabicDigits(sel.options.length)} قارئًا في قائمة واحدة — آية بآية أو سورة كاملة، للاستماع والتحميل`;
+  }
+
+  function applyPlayReciter(value) {
+    const raw = String(value || '');
+    settings.playReciter = raw;
+    if (raw.startsWith('v:')) {
+      settings.surahReciter = Number(raw.slice(2)) || 0;
+      settings.surahMode = 'full';
+      saveSettings();
+      syncSurahReciterSelect();
+      const entry = surahReciterEntry();
+      if (entry) toast(`القارئ: ${entry.name}`);
+      return;
+    }
+    saveSettings();
+    onSettingChange('reciter', raw.slice(2));
+  }
+
   function syncReciters() {
     const list = isRiw() ? RIW_RECITERS[settings.riwaya] : RECITERS;
     if (!list || !list.some(([id]) => id === settings.reciter)) settings.reciter = list ? list[0][0] : DEFAULTS.reciter;
-    const opts = list.map(([id, name]) => `<option value=\"${id}\">${name}</option>`).join('');
-    $('#setReciter').innerHTML = opts;
-    $('#playReciter').innerHTML = opts;
+    $('#setReciter').innerHTML = list.map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
     $('#setReciter').value = settings.reciter;
-    $('#playReciter').value = settings.reciter;
+    $('#playReciter').innerHTML = unifiedReciterOptions();
+    syncPlayReciterValue();
+    updateReciterCountLine();
   }
 
   function syncTajweedScopeSelector() {
@@ -2941,7 +3003,13 @@
     saveSettings();
     document.body.classList.toggle('riw', isRiw());
     syncReaderLayout();
-    if (key === 'reciter') { $('#setReciter').value = value; $('#playReciter').value = value; }
+    if (key === 'reciter') {
+      settings.playReciter = `a:${value}`;
+      saveSettings();
+      $('#setReciter').value = value;
+      syncPlayReciterValue();
+    }
+    if (key === 'riwaya') syncPlayReciterValue();
     if (key === 'tafsir') { $('#setTafsir').value = value; $('#tfBook').value = value; }
     if (key === 'translation') { $('#setTranslation').value = value; $('#tfTrans').value = value; }
     if (key === 'riwaya' && curView === 'tajweed') renderTajweedView();
@@ -3687,6 +3755,7 @@
       : '';
     updateEstimate();
     refreshStored();
+    if (typeof syncDlReciterFromPlay === 'function') syncDlReciterFromPlay();
   }
 
   $('#dlReciter').addEventListener('change', refreshStored);
@@ -3698,6 +3767,35 @@
   $('#btnDownload').addEventListener('click', runDownload);
   $('#btnCancelDl').addEventListener('click', () => { dl.cancel = true; });
   $('#btnDeleteDl').addEventListener('click', deleteAppAudio);
+
+  // التحميل من داخل مربع القرّاء نفسه: نفس السورة المختارة أو المصحف كاملًا
+  function syncDlReciterFromPlay() {
+    const play = $('#playReciter');
+    const dlSel = $('#dlReciter');
+    if (!play || !dlSel) return;
+    const id = String(play.value || '').split(':')[1];
+    if (id && Array.from(dlSel.options).some((o) => o.value === String(id))) dlSel.value = String(id);
+    const who = $('#dlWho');
+    if (who) {
+      const entry = dlCatalog().find((r) => String(r.id) === String(dlSel.value));
+      who.textContent = entry ? `بصوت: ${entry.name}` : '';
+    }
+  }
+
+  const startDownload = (scope) => {
+    if (dl.running) return toast('تحميل جارٍ بالفعل');
+    syncDlReciterFromPlay();
+    const play = $('#playSurah');
+    if (scope === 'surah' && play && play.value) $('#dlSurahSel').value = play.value;
+    const radio = document.querySelector(`input[name="dlScope"][value="${scope}"]`);
+    if (radio) radio.checked = true;
+    $('#dlSurahSel').disabled = scope === 'full';
+    updateEstimate();
+    $('#btnDownload').click();
+  };
+  $('#playReciter')?.addEventListener('change', () => setTimeout(syncDlReciterFromPlay, 0));
+  $('#btnDlSurah')?.addEventListener('click', () => startDownload('surah'));
+  $('#btnDlFull')?.addEventListener('click', () => startDownload('full'));
 
   try {
     const backListenerApp = getCapApp();
