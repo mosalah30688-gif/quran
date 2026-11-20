@@ -30,6 +30,11 @@ public class AdhanService extends Service implements MediaPlayer.OnCompletionLis
 
     public static final String ACTION_PLAY = "com.quran.mushaf.adhan.PLAY";
     public static final String ACTION_STOP = "com.quran.mushaf.adhan.STOP";
+    /**
+     * تحضير بلا صوت: يستدعيها المنبّه لتُبقي الخدمة حيّة وتفتح شاشة الأذان فقط.
+     * الصوت يُشغَّل مرة واحدة من الشاشة، فلا يُسمع الأذان مرتين.
+     */
+    public static final String ACTION_PREPARE = "com.quran.mushaf.adhan.PREPARE";
 
     private static final String CHANNEL_ID = "adhan_playback";
     private static final int NOTIFICATION_ID = 4821;
@@ -70,7 +75,14 @@ public class AdhanService extends Service implements MediaPlayer.OnCompletionLis
         String adhanId = intent == null ? "" : intent.getStringExtra("adhanId");
         String url = intent == null ? "" : intent.getStringExtra("url");
 
-        startForegroundSafely(buildNotification(label.isEmpty() ? "الأذان" : "أذان " + label));
+        String title = label.isEmpty() ? "الأذان" : "أذان " + label;
+        if (ACTION_PREPARE.equals(action)) {
+            // بلا صوت: الشاشة وحدها تشغّل الأذان، فيبقى أذان واحد.
+            startForegroundSafely(buildNotification(title, "حان وقت الصلاة — تُفتح شاشة الأذان"));
+            handler.postDelayed(timeout, 90 * 1000L);
+            return START_NOT_STICKY;
+        }
+        startForegroundSafely(buildNotification(title, "الأذان يعمل الآن"));
         play(label, adhanId, url);
         return START_NOT_STICKY;
     }
@@ -174,7 +186,7 @@ public class AdhanService extends Service implements MediaPlayer.OnCompletionLis
         }
     }
 
-    private Notification buildNotification(String title) {
+    private Notification buildNotification(String title, String text) {
         Intent open = new Intent(this, MainActivity.class);
         open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         open.putExtra("siraj_view", "prayer");
@@ -192,7 +204,7 @@ public class AdhanService extends Service implements MediaPlayer.OnCompletionLis
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(title)
-                .setContentText("الأذان يعمل الآن")
+                .setContentText(text)
                 .setContentIntent(content)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setCategory(NotificationCompat.CATEGORY_SERVICE)

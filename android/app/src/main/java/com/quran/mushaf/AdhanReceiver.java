@@ -104,7 +104,8 @@ public class AdhanReceiver extends BroadcastReceiver {
         // الشاشة أولًا: إشعار ملء الشاشة يوقظ الجهاز ويفتحها قبل تجهيز الصوت
         openAdhanScreen(context, event);
         Intent service = new Intent(context, AdhanService.class);
-        service.setAction(AdhanService.ACTION_PLAY);
+        // تحضير بلا صوت: الصوت يأتي من شاشة الأذان وحدها، فلا أذان مسبق يتكرر.
+        service.setAction(AdhanService.ACTION_PREPARE);
         service.putExtra("prayer", event.optString("prayer", ""));
         service.putExtra("label", event.optString("label", ""));
         service.putExtra("adhanId", event.optString("adhanId", ""));

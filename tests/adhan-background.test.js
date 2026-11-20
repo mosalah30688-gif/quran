@@ -85,7 +85,7 @@ test('الأذان في الخلفية: أرقام الإصدار والبناء
   assert.ok(Number(match[1]) >= Number(build), 'versionCode لا يسبق BUILD_NUMBER');
   assert.match(html, new RegExp(`APP_BUILD_NUMBER = ${build}`));
   assert.match(gradle, /versionName "1\.[0-9]+\.[0-9]+"/);
-  assert.match(gradle, /versionCode 183/);
+  assert.match(gradle, /versionCode 184/);
 });
 
 test('ترقية الـAPK تُقارن برقم بناء الملف المثبَّت لا برقم بناء الواجهة', () => {
@@ -256,6 +256,27 @@ test('كل المؤذنين الـ٦٧ ظاهرين في القائمة مع ب�
   const html = read('index.html');
   assert.match(html, /\.pt-adhan-list \{[^}]*grid-template-columns: minmax\(0, 1fr\)/, 'القائمة يجب أن تكون عمودًا واحدًا بلا قص');
   assert.doesNotMatch(html, /\.pt-adhan-list \{[^}]*max-height/, 'لا نُخفي المؤذنين داخل صندوق تمرير');
+});
+
+test('الأذان مرة واحدة: المنبّه يحضّر بلا صوت والشاشة وحدها تشغّل', () => {
+  const receiver = read(`${JAVA}/AdhanReceiver.java`);
+  const service = read(`${JAVA}/AdhanService.java`);
+  const ui = read('prayer-ui.js');
+  // المنبّه لا يبدأ تشغيل الأذان قبل الشاشة
+  assert.match(receiver, /service\.setAction\(AdhanService\.ACTION_PREPARE\)/,
+    'المنبّه يجب أن يحضّر بلا تشغيل صوت');
+  assert.doesNotMatch(receiver, /service\.setAction\(AdhanService\.ACTION_PLAY\)/,
+    'لا تشغيل مسبق للأذان قبل فتح الشاشة');
+  // وضع التحضير: يبقى أماميًا بلا صوت
+  assert.match(service, /public static final String ACTION_PREPARE/);
+  const start = service.indexOf('if (ACTION_PREPARE.equals(action))');
+  assert.ok(start > -1, 'فرع التحضير موجود');
+  const branch = service.slice(start, service.indexOf('return START_NOT_STICKY;', start));
+  assert.ok(branch.includes('startForegroundSafely'), 'التحضير يبقي الخدمة حيّة');
+  assert.ok(!branch.includes('play('), 'التحضير لا يشغّل صوتًا');
+  // الشاشة توقف الخدمة أولًا ثم تشغّل الأذان وحده
+  assert.match(ui, /await bgCall\('stop'\)[\s\S]{0,240}?playAdhan\(/,
+    'الشاشة توقف الخدمة قبل التشغيل حتى لا يتكرر الصوت');
 });
 
 test('شاشة الأذان: فيديو مسجد + مشغل عادي (إيقاف مؤقت/إيقاف/تخفيض/تعلية)', () => {
