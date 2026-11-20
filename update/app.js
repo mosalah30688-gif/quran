@@ -3606,9 +3606,14 @@
     const resolved = await resolveTarget();
     if (!resolved) return;
     const { target, root } = resolved;
+    const available = Number(entry.surahs) || 114;
     const nums = selectedScope() === 'full'
-      ? surahs.map((x) => x.number)
+      ? surahs.map((x) => x.number).filter((n) => n <= available)
       : [Number($('#dlSurahSel').value)];
+    if (selectedScope() !== 'full' && nums[0] > available) {
+      toast('هذه السورة غير متوفرة في هذا المصحف');
+      return;
+    }
     if (!nums.length) return;
 
     dl.running = true; dl.cancel = false;

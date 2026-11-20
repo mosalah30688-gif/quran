@@ -85,7 +85,7 @@ test('الأذان في الخلفية: أرقام الإصدار والبناء
   assert.ok(Number(match[1]) >= Number(build), 'versionCode لا يسبق BUILD_NUMBER');
   assert.match(html, new RegExp(`APP_BUILD_NUMBER = ${build}`));
   assert.match(gradle, /versionName "1\.[0-9]+\.[0-9]+"/);
-  assert.match(gradle, /versionCode 185/);
+  assert.match(gradle, /versionCode 186/);
 });
 
 test('ترقية الـAPK تُقارن برقم بناء الملف المثبَّت لا برقم بناء الواجهة', () => {
@@ -122,7 +122,7 @@ test('التلاوة حسب السورة: كتالوج قراء كامل ومل�
   assert.ok(Array.isArray(catalog.items) && catalog.items.length >= 100, 'عدد القراء');
   catalog.items.forEach((item) => {
     assert.match(item.server, /^https:\/\/[a-z0-9.-]*mp3quran\.net\/[A-Za-z0-9._\/-]+\/$/);
-    assert.equal(item.surahs, 114);
+    assert.ok(item.surahs >= 100 && item.surahs <= 114, 'عدد السور المتاحة');
   });
   const app = read('app.js');
   assert.match(app, /function playSurahFull\(surah, options = \{\}\)/);

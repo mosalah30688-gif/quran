@@ -376,11 +376,16 @@ test('انتقال فوري بين الصفحات بلا حركة ولا صوت 
 test('مكتبة القرّاء: ١٧٤ قارئًا برواياتهم مع بحث ومفضلة وتحميل مسبق', () => {
   const lib = JSON.parse(read('quran-reciters.json'));
   assert.ok(lib.items.length >= 174, 'مكتبة القرّاء يجب أن تتجاوز ١٧٤ قارئًا');
+  // المنشاوي: الجديد (تسجيل ١٣٨٧هـ/١٩٦٧م) + المرتل العادي + المجود + المعلم
+  const minshawi = lib.items.filter((r) => r.name.includes('المنشاوي'));
+  assert.ok(minshawi.length >= 4, 'مصاحف المنشاوي الأربعة');
+  assert.ok(minshawi.some((r) => r.rewaya.includes('مرتل')), 'المنشاوي المرتل');
+  assert.ok(minshawi.some((r) => r.rewaya.includes('1387')), 'مصحف المنشاوي الجديد');
   const families = new Set(lib.items.map((r) => r.family));
   for (const fam of ['حفص', 'ورش', 'قالون', 'الدوري']) {
     assert.ok(families.has(fam), `رواية ${fam} مفقودة من المكتبة`);
   }
-  assert.ok(lib.items.every((r) => r.surahs === 114 && /^https:\/\//.test(r.server)));
+  assert.ok(lib.items.every((r) => r.surahs >= 100 && r.surahs <= 114 && /^https:\/\//.test(r.server)));
   const app = read('app.js');
   // بحث ومفضلة
   assert.match(app, /function renderVoiceList\(\)/);
