@@ -221,12 +221,18 @@ try:
     # الرواية ورش
     win.riwaya_combo.setCurrentIndex(win.riwaya_combo.findData('warsh'))
     app.processEvents()
-    check('warsh loaded', win.riwaya_id == 'warsh' and win.reciter_combo.count() == 2)
+    check('warsh loaded', win.riwaya_id == 'warsh' and win.reciter_combo.count() == len(win.reciter_options()) > 2)
     check('warsh page text', len(win.browser.toPlainText()) > 100)
     check('other riwayat keeps its index panel', win.index_card.isVisible())
     win.riwaya_combo.setCurrentIndex(win.riwaya_combo.findData('quran-simple'))
     app.processEvents()
-    check('hafs simple loaded', win.riwaya_id == 'quran-simple' and win.reciter_combo.count() == 17)
+    hafs_options = win.reciter_options()
+    check('hafs simple loaded', win.riwaya_id == 'quran-simple' and win.reciter_combo.count() == len(hafs_options) >= 17)
+    check('hafs voices come first', [rid for rid, _n in hafs_options[:17]] == [row[0] for row in M.HAFS_RECITERS])
+    check('one list holds library mushafs too', any(str(rid).startswith('lib:') for rid, _n in hafs_options))
+    check('no other-riwaya mixing', not any(
+        (M.LIBRARY_BY_ID[str(rid)[4:]].get('family') or 'حفص') != 'حفص'
+        for rid, _n in hafs_options if str(rid).startswith('lib:')))
     check('Hafs wide reader hides the permanent index', not win.index_card.isVisible())
     # التلاوة (ملف لكل آية، أول قارئ حفص)
     win.reciter_combo.setCurrentIndex(0)
@@ -239,14 +245,15 @@ try:
     check('pause toggles', 'متوقفة' in win.play_status.text() or win.play_status.text() != '')
     win.stop_play('أوقفت التلاوة')
     check('stop resets', not win.playing)
-    # مكتبة القرّاء: اختيار قارئ بروايته، مفضلة، وتلاوة سورة كاملة مع استمرار تلقائي
+    # القائمة الموحّدة: مصاحف المكتبة داخل نفس القائمة، وتلاوة سورة كاملة تلقائيًا
     check('voice library built from audited catalog', len(M.RECITER_LIBRARY) >= 174)
     families = {str(item.get('family', '')) for item in M.RECITER_LIBRARY}
     check('voice library covers warsh and qalun', {'حفص', 'ورش', 'قالون'} <= families)
-    first_lib = M.RECITER_LIBRARY[0]
-    win.set_voice_mode('library', str(first_lib['id']))
-    win.refresh_voice_button()
-    check('library voice selected', win.library_reciter() is not None and win.btn_voice.text() != 'مكتبة القرّاء')
+    lib_values = [rid for rid, _n in hafs_options if str(rid).startswith('lib:')]
+    check('library mushafs live inside the same reciter list', bool(lib_values))
+    first_lib = M.LIBRARY_BY_ID[str(lib_values[0])[4:]]
+    win.reciter_combo.setCurrentIndex(win.reciter_combo.findData(lib_values[0]))
+    check('choosing a library mushaf activates it', win.library_reciter() is not None)
     library_queue = win.library_queue(2)
     check(
         'library queue builds one whole-surah file',
@@ -254,11 +261,10 @@ try:
         and library_queue[0][0] == f'{first_lib["server"]}002.mp3'
         and library_queue[0][1] == (2, None),
     )
-    win.set_voice_favorites([str(first_lib['id'])])
-    check('voice favorites persisted in settings', str(first_lib['id']) in win.voice_favorites())
-    win.set_voice_mode('sync')
-    win.refresh_voice_button()
-    check('sync mode restores reciter list', win.library_reciter() is None and win.reciter_combo.isEnabled())
+    win.reciter_combo.setCurrentIndex(0)
+    check('synced reciter restores the same list', win.library_reciter() is None)
+    check('downloading follows the chosen reciter', win.download_reciter_id() == M.HAFS_RECITERS[0][0])
+    check('reciter search restores text after typing', callable(win.restore_reciter_text))
     # ورش (ملف كامل لكل سورة من مصدر MP3Quran المدقق)
     win.riwaya_combo.setCurrentIndex(win.riwaya_combo.findData('warsh'))
     win.reciter_combo.setCurrentIndex(0)
@@ -448,14 +454,13 @@ try:
     check('memo full stop works', not win.playing and not win.queue_list and not win.btn_memo_stop.isEnabled())
     tmp_dir = tempfile.mkdtemp()
     win.settings.setValue('dl_folder', tmp_dir)
-    win.dl_reciter.setCurrentIndex(max(win.dl_reciter.findData('ar.alafasy'), 0))
-    win.dl_one.setChecked(True)
+    win.reciter_combo.setCurrentIndex(win.reciter_combo.findData('ar.alafasy'))
     win.dl_surah.setCurrentIndex(111)
     win.dl_target.setCurrentIndex(1)
     cache = win.audio_cache_dir()
     for a in range(1, 5):
         (cache / M.audio_file_name(M.ayah_audio_url('ar.alafasy', 112, a))).write_bytes(b'x' * 3000)
-    win.start_dl()
+    win.start_dl('surah')
     check('download skips cached', win.dl.get('skipped') == 4 and not win.dl.get('running'))
     check('download copies to folder', (Path(tmp_dir) / 'ar.alafasy' / '112' / '1.mp3').exists())
     win.delete_dl()

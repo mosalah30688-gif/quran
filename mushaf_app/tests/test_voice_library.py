@@ -1,21 +1,29 @@
-"""اختبارات مكتبة القرّاء في نسخة لينكس (بحث، مفضلة، اختيار، بناء قائمة السورة)."""
-import os
+"""اختبارات قائمة القرّاء الموحّدة في نسخة لينكس.
+
+قائمة واحدة لكل رواية: قرّاء التلاوة المتزامنة أولًا ثم مصاحف المكتبة (mp3quran)
+التابعة لنفس الرواية، بلا تقسيم «آية بآية / سورة كاملة» وبلا خلط روايات.
+"""
+import json
 import sys
 import unittest
 from pathlib import Path
 
-os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 HERE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(HERE))
 
-from PySide6.QtWidgets import QApplication  # noqa: E402
-
 import main as M  # noqa: E402
 
-app = QApplication.instance() or QApplication([])
+
+class _Scope:
+    """كائن خفيف يجرّب reciter_options() دون بناء نافذة Qt."""
+
+    reciter_options = M.Main.reciter_options
+
+    def __init__(self, riwaya_id):
+        self.riwaya_id = riwaya_id
 
 
-class VoiceLibraryDataTest(unittest.TestCase):
+class CatalogTest(unittest.TestCase):
     def test_catalog_is_complete(self):
         self.assertGreaterEqual(len(M.RECITER_LIBRARY), 174)
         for item in M.RECITER_LIBRARY:
@@ -34,55 +42,49 @@ class VoiceLibraryDataTest(unittest.TestCase):
         self.assertEqual(len(ids), len(set(ids)))
         self.assertEqual(len(M.LIBRARY_BY_ID), len(ids))
 
+    def test_qualifier_drops_riwaya_name(self):
+        self.assertEqual(M.library_qualifier('حفص عن عاصم - مرتل'), 'مرتل')
+        self.assertEqual(M.library_qualifier('حفص عن عاصم - المصحف المجود'), 'المصحف المجود')
+        self.assertEqual(M.library_qualifier('ورش عن نافع من طريق الأزرق مرتل', 'ورش'), 'مرتل')
+        self.assertEqual(M.library_qualifier('حفص عن عاصم - مرتل', 'حفص'), 'مرتل')
 
-class VoiceLibraryDialogTest(unittest.TestCase):
-    def make(self, mode='sync', current_id='', favorites=None):
-        return M.VoiceLibraryDialog(
-            None, M.RECITER_LIBRARY, favorites or [], mode, current_id, 'مشاري العفاسي',
-        )
 
-    def test_sync_row_is_first(self):
-        dialog = self.make()
-        first = dialog.listw.item(0).data(M.Qt.ItemDataRole.UserRole)
-        self.assertEqual(first, ('sync', ''))
+class UnifiedListTest(unittest.TestCase):
+    def test_hafs_list_starts_with_audited_sync_voices(self):
+        options = _Scope('quran-uthmani').reciter_options()
+        self.assertEqual([rid for rid, _n in options[:17]], [row[0] for row in M.HAFS_RECITERS])
+        self.assertEqual(len(options), len({rid for rid, _n in options}))
 
-    def test_search_filters_by_rewaya(self):
-        dialog = self.make()
-        everything = dialog.listw.count()
-        dialog.search.setText('ورش')
-        self.assertLess(dialog.listw.count(), everything)
-        self.assertGreaterEqual(dialog.listw.count(), 2)
+    def test_each_riwaya_only_shows_its_own_mushafs(self):
+        for riwaya, family in M.RIW_FAMILY.items():
+            options = _Scope(riwaya).reciter_options()
+            for rid, _name in options:
+                if str(rid).startswith('lib:'):
+                    item = M.LIBRARY_BY_ID[str(rid)[4:]]
+                    self.assertEqual((item.get('family') or 'حفص'), family, riwaya)
 
-    def test_favorite_pins_reciter_to_top(self):
-        target = M.RECITER_LIBRARY[-1]
-        dialog = self.make()
-        for row in range(dialog.listw.count()):
-            item = dialog.listw.item(row)
-            data = item.data(M.Qt.ItemDataRole.UserRole)
-            if data and data[0] == 'library' and str(data[1]) == str(target['id']):
-                dialog.listw.setCurrentRow(row)
-                break
-        dialog.toggle_favorite()
-        self.assertIn(str(target['id']), dialog.favorites())
-        top = dialog.listw.item(1).data(M.Qt.ItemDataRole.UserRole)
-        self.assertEqual(top, ('library', str(target['id'])))
+    def test_hafs_list_never_mixes_other_riwayat(self):
+        for rid, _name in _Scope('quran-simple').reciter_options():
+            if str(rid).startswith('lib:'):
+                item = M.LIBRARY_BY_ID[str(rid)[4:]]
+                self.assertEqual((item.get('family') or 'حفص'), 'حفص')
 
-    def test_selection_returns_library_mode(self):
-        target = M.RECITER_LIBRARY[3]
-        dialog = self.make()
-        for row in range(dialog.listw.count()):
-            data = dialog.listw.item(row).data(M.Qt.ItemDataRole.UserRole)
-            if data and data[0] == 'library' and str(data[1]) == str(target['id']):
-                dialog.listw.setCurrentRow(row)
-                break
-        dialog.accept()
-        self.assertEqual(dialog.selection(), ('library', str(target['id'])))
+    def test_library_mushafs_are_present_for_every_riwaya(self):
+        for riwaya in ('quran-uthmani', 'warsh', 'qalun', 'duri'):
+            options = _Scope(riwaya).reciter_options()
+            self.assertTrue(
+                any(str(rid).startswith('lib:') for rid, _n in options),
+                f'لا مصاحف مكتبة في {riwaya}',
+            )
 
-    def test_accepting_sync_row_restores_sync(self):
-        dialog = self.make(mode='library', current_id=str(M.RECITER_LIBRARY[0]['id']))
-        dialog.listw.setCurrentRow(0)
-        dialog.accept()
-        self.assertEqual(dialog.selection(), ('sync', ''))
+    def test_no_duplicate_voice_with_default_murattal(self):
+        names = [n for _rid, n in _Scope('quran-uthmani').reciter_options()]
+        self.assertEqual(len(names), len(set(names)))
+
+    def test_minshawi_variants_are_available(self):
+        labels = ' | '.join(n for _rid, n in _Scope('quran-uthmani').reciter_options())
+        self.assertIn('المنشاوي', labels)
+        self.assertIn('1387', labels)
 
 
 if __name__ == '__main__':
