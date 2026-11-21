@@ -85,7 +85,8 @@ test('الأذان في الخلفية: أرقام الإصدار والبناء
   assert.ok(Number(match[1]) >= Number(build), 'versionCode لا يسبق BUILD_NUMBER');
   assert.match(html, new RegExp(`APP_BUILD_NUMBER = ${build}`));
   assert.match(gradle, /versionName "1\.[0-9]+\.[0-9]+"/);
-  assert.match(gradle, /versionCode 188/);
+  // رقم البناء في gradle يطابق BUILD_NUMBER في القناة (لا رقم مثبَّت يدويًا)
+  assert.match(gradle, new RegExp(`versionCode ${build}\\b`));
 });
 
 test('ترقية الـAPK تُقارن برقم بناء الملف المثبَّت لا برقم بناء الواجهة', () => {

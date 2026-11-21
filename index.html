@@ -1060,9 +1060,15 @@
     .pt-chip { border: 1px solid var(--line); background: var(--card); color: var(--brand); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700; cursor: pointer; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .pt-chip:hover { background: var(--hl); }
     /* ===== فهرس أعلى المصحف (مكان شريحة الصلاة القادمة): زر يفتح قائمة السورة/الجزء/الآية ===== */
-    .idx-top-btn { display: inline-flex; align-items: center; gap: 6px; max-width: 46vw; font-variant-numeric: normal; overflow: hidden; }
-    .idx-top-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    @media (max-width: 380px) { .idx-top-btn { max-width: 40vw; font-size: 12px; padding: 5px 10px; } }
+    .idx-top-btn { display: inline-flex; align-items: center; gap: 5px; max-width: 52vw; font-variant-numeric: normal; overflow: hidden; }
+    .idx-top-title { flex: 0 0 auto; }
+    .idx-top-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-weight: 700; }
+    /* على العرض الضيق جدًا يبقى الزر واضحًا بكلمة «الفهرس» وحدها */
+    @media (max-width: 340px) {
+      .idx-top-btn { max-width: 44vw; font-size: 12px; padding: 5px 9px; }
+      .idx-top-name { display: none; }
+    }
+    @media (max-width: 460px) { .topbar .title { font-size: 13px; } }
     .idx-top-btn .idx-caret {
       flex: 0 0 auto; width: 0; height: 0; opacity: .7;
       border-inline-start: 4px solid transparent; border-inline-end: 4px solid transparent;
@@ -1252,7 +1258,8 @@
             <span>سراج</span>
           </div>
           <button class="pt-chip idx-top-btn" id="idxTopBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="idxTopPanel" aria-label="فهرس السورة والجزء والآية" title="الفهرس: السورة والجزء والآية">
-            <span class="idx-top-name" id="idxTopName">الفهرس</span>
+            <span class="idx-top-title">الفهرس</span>
+            <span class="idx-top-name" id="idxTopName"></span>
             <i class="idx-caret" aria-hidden="true"></i>
           </button>
           <div class="title" id="topTitle">المصحف</div>
@@ -2030,7 +2037,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.12.3</div>
+              <div class="muted">الإصدار 1.12.4</div>
             </div>
           </div>
 
@@ -2157,10 +2164,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.12.3';
+    window.APP_BUNDLE_VERSION = '1.12.4';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 188;
+    window.APP_BUILD_NUMBER = 189;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {
