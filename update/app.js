@@ -570,7 +570,9 @@
     $('#tabs button.active')?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
     $$('section.view').forEach((s) => s.classList.toggle('active', s.id === 'view-' + name));
     placePlayer(name);
-    if (name === 'reader') updateChrome(); else $('#topTitle').textContent = VIEW_TITLES[name] || '';
+    // عنوان القسم في الشريط العلوي فقط — اسم السورة والجزء يظهران في الفهرس والعداد فلا تكرار
+    if (name === 'reader') { updateChrome(); $('#topTitle').textContent = VIEW_TITLES.reader; }
+    else $('#topTitle').textContent = VIEW_TITLES[name] || '';
     // زر الرجوع يظهر في كل الأقسام ما عدا المصحف
     $('#backBtn').hidden = name === 'reader';
     if (name === 'bookmarks') renderBookmarks();
@@ -990,15 +992,21 @@
 
   // عرض أطول سطر عند مقاس خط معيّن (بلا أي التفاف)، ثم بحث ثنائي على المقاس
   // الذي يملأ عرض الصفحة تمامًا. كل الأسطر تأخذ المقاس النهائي نفسه.
-  function fitMadaniLines() {
+  function fitMadaniLines(retry = 0) {
     const body = $('#pageBody');
     if (!body) return;
     requestAnimationFrame(() => {
       if (!body.classList.contains('madani-lines')) return;
       const lines = [...body.querySelectorAll('.mline')];
       if (!lines.length) return;
+      // الصفحة قد تكون غير مرئية لحظة عودة التطبيق من الخلفية (عرض صفر):
+      // القياس حينها يعطي مقاسًا ضخمًا كاذبًا، فنؤجل القياس بدل تثبيته.
+      if (document.hidden || body.clientWidth < 120) {
+        if (retry < 6) window.setTimeout(() => fitMadaniLines(retry + 1), 250);
+        return;
+      }
       body.classList.remove('zoomed');
-      const avail = Math.max(180, (body.clientWidth || 320) - 6);
+      const avail = Math.max(180, body.clientWidth - 6);
       const widthAt = (size) => {
         body.style.setProperty('--quran-size', `${size}px`);
         body.classList.add('measuring');
@@ -1016,7 +1024,14 @@
         const mid = (lo + hi) / 2;
         if (widthAt(mid) > avail) hi = mid; else lo = mid;
       }
-      const fitSize = lo;
+      // لا نص مقروء (خط لم يُحمّل بعد مثلًا): لا نثبّت مقاسًا كاذبًا، نعيد المحاولة.
+      const probe = widthAt(26);
+      if (probe < 20) {
+        // نُبقي المقاس السابق كما هو (بلا قفزة إلى مقاس الإعدادات) ونعيد المحاولة
+        if (retry < 6) window.setTimeout(() => fitMadaniLines(retry + 1), 250);
+        return;
+      }
+      let fitSize = lo;
       // نسبة عرض الصفحة في المصحف الأصلي: صفحة كاملة = 1، وصفحة قصيرة (أوائل السور)
       // = نسبة أطول سطر فيها. نضرب فيها المقاس حتى يبقى الخط بالمقاس نفسه في كل الصفحات.
       let pageRatio = 0;
@@ -1024,9 +1039,21 @@
       if (!pageRatio) pageRatio = 1;
       const baseSize = fitSize * Math.min(1, pageRatio);
       const scale = userFontScale();
-      // مقاس خط واحد لكل أسطر الصفحة، بحد أدنى واضح للقراءة عند التصغير.
-      const size = Math.max(16, Math.min(90, baseSize * scale));
+      // مقاس خط واحد لكل أسطر الصفحة، بحد أدنى واضح للقراءة عند التصغير وسقف يمنع الكذب.
+      const rawSize = baseSize * scale;
+      let size = Math.max(16, Math.min(60, rawSize));
+      const clampedSize = Math.abs(size - rawSize) > 0.01;
       body.style.setProperty('--quran-size', `${size.toFixed(2)}px`);
+      // تصحيح ذاتي: أطول سطر عند المقاس المختار يجب أن يساوي عرض النص المتوقع.
+      // لو خالف القياس الواقع (خط بديل لم يُحمّل، أو إعادة رسم لحظة العودة من الخلفية)
+      // نعيد المعايرة مرة واحدة بدل تثبيت مقاس ضخم كاذب.
+      const target = avail * pageRatio * scale;
+      const measured = widthAt(size);
+      if (!clampedSize && measured > 0 && target > 0 && (measured > target * 1.04 || measured < target * 0.9)) {
+        size = Math.max(16, Math.min(60, size * (target / measured)));
+        body.style.setProperty('--quran-size', `${size.toFixed(2)}px`);
+        fitSize = Math.max(8, size / Math.max(0.05, pageRatio * scale));
+      }
       // التكبير لا يمدّ الصفحة عرضيًا أبدًا: عند تجاوز مقاس الملاءمة نسمح للسطر
       // بالالتفاف بمقاس خط واحد لكل الصفحة، فتمتد الصفحة طوليًا فقط
       // وتبقى الكلمات داخل هوامش الورقة.
@@ -1043,6 +1070,17 @@
       const lineCount = Math.max(1, lines.length);
       const lh = wrapping ? 1.9 : Math.min(1.95, Math.max(1.62, visibleH / (lineCount * size)));
       body.style.setProperty('--mline-h', `${(size * lh).toFixed(2)}px`);
+      // محاذاة الطرفين: كل سطر قريب من عرض النص يمتد إلى عرض الصفحة الكامل فتكون
+      // بدايات الأسطر ونهاياتها على خط واحد؛ والأسطر القصيرة فعلًا (آخر سطر في
+      // الصفحة أو السورة) تبقى موسّطة كما في المصحف المطبوع.
+      lines.forEach((el) => el.classList.remove('fill'));
+      if (!wrapping) {
+        const natural = lines.map((el) => el.getBoundingClientRect().width);
+        const widest = Math.max(...natural);
+        if (widest > 0) {
+          lines.forEach((el, i) => { if (natural[i] >= widest * 0.72) el.classList.add('fill'); });
+        }
+      }
       if (typeof applyTajweedScale === 'function') applyTajweedScale();
     });
   }
@@ -1067,6 +1105,14 @@
     if (document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', () => fitMadaniLines());
   }
   window.addEventListener('resize', () => fitMadaniLines());
+  // العودة من الخلفية أو إعادة إظهار الصفحة: نعيد القياس بعد استقرار التخطيط،
+  // فلا يبقى الخط على مقاس أكبر مما يجب.
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) window.setTimeout(() => fitMadaniLines(), 200);
+  });
+  window.addEventListener('pageshow', () => window.setTimeout(() => fitMadaniLines(), 200));
+  window.addEventListener('focus', () => window.setTimeout(() => fitMadaniLines(), 200));
+  window.addEventListener('orientationchange', () => window.setTimeout(() => fitMadaniLines(), 300));
 
   // رقم الصفحة لأي آية (من بيانات السورة)
   async function pageOfAyah(s, a) {
@@ -1196,7 +1242,6 @@
     $('#pagerContext').textContent = `${surahNameShort(state.sel.s)} · الجزء ${toArabicDigits(state.sel.juz || juz)}`;
     $('#pPrevS').disabled = pg.p <= 1;
     $('#pNextS').disabled = pg.p >= TOTAL_PAGES;
-    $('#topTitle').textContent = `${surahName(state.sel.s)} · الجزء ${toArabicDigits(state.sel.juz || juz)} · ص ${toArabicDigits(pg.p)}`;
 
     // قائمة اختيار الآية تتبع السورة المحددة
     syncPlayControls();
@@ -1961,7 +2006,6 @@
   function refreshSelectionUI(surahChanged) {
     if (!state.pg || !state.sel) return;
     const pg = state.pg;
-    $('#topTitle').textContent = `${surahName(state.sel.s)} · الجزء ${toArabicDigits(state.sel.juz || pg.ayahs[0].juz)} · ص ${toArabicDigits(pg.p)}`;
     $('#pagerContext').textContent = `${surahNameShort(state.sel.s)} · الجزء ${toArabicDigits(state.sel.juz || pg.ayahs[0].juz)}`;
     const bookmarked = isBookmarked(state.sel.s, state.sel.n);
     $('#btnBm').innerHTML = `${bookmarked ? '★' : '☆'} <span>${bookmarked ? 'محفوظة' : 'حفظ علامة'}</span>`;

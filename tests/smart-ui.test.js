@@ -104,8 +104,20 @@ test('madani page fitting: مقاس واحد لكل الصفحة وتمدد طو
   assert.match(app, /let pageRatio = 0;/);
   assert.match(app, /if \(!pageRatio\) pageRatio = 1;/);
   assert.match(app, /const baseSize = fitSize \* Math\.min\(1, pageRatio\)/);
-  // مقاس واحد لكل الأسطر مع حد أدنى واضح للقراءة عند التصغير
-  assert.match(app, /const size = Math\.max\(16, Math\.min\(90, baseSize \* scale\)\)/);
+  // مقاس واحد لكل الأسطر مع حد أدنى واضح للقراءة عند التصغير وسقف يمنع المقاسات الكاذبة
+  assert.match(app, /const rawSize = baseSize \* scale;/);
+  assert.match(app, /let size = Math\.max\(16, Math\.min\(60, rawSize\)\)/);
+  // تصحيح ذاتي: القياس الواقع يجب أن يطابق عرض النص المتوقع (يمنع تضخّم الخط عند العودة للتطبيق)
+  assert.match(app, /const target = avail \* pageRatio \* scale;/);
+  assert.match(app, /const measured = widthAt\(size\)/);
+  assert.match(app, /size = Math\.max\(16, Math\.min\(60, size \* \(target \/ measured\)\)\)/);
+  assert.match(app, /if \(document\.hidden \|\| body\.clientWidth < 120\)/);
+  assert.match(app, /window\.addEventListener\('pageshow'/);
+  assert.match(app, /visibilitychange/);
+  // محاذاة الطرفين: الأسطر الممتلئة تُمدّ إلى عرض الصفحة، والقصيرة تبقى موسّطة
+  assert.match(app, /lines\.forEach\(\(el\) => el\.classList\.remove\('fill'\)\)/);
+  assert.match(app, /el\.classList\.add\('fill'\)/);
+  assert.match(html, /#pageBody\.madani-lines \.mline\.fill \{[^}]*text-align-last: justify/);
   // لا تُفرض نسب عرض على الأسطر (سبب «سطر صغير وسطر كبير») بل تُحفظ كبيانات للقياس
   assert.match(app, /const wAttr = ln\.w \? ` data-w=/);
   assert.doesNotMatch(app, /style="width:\$\{/);
@@ -113,7 +125,7 @@ test('madani page fitting: مقاس واحد لكل الصفحة وتمدد طو
   assert.match(app, /const wrapping = size > fitSize \* 1\.001;/);
   assert.match(app, /body\.classList\.toggle\('wrapping', wrapping\)/);
   assert.match(app, /--mushaf-w', wrapping \? '100%'/);
-  // أسطر المصحف بعرضها الطبيعي موسّطة بلا مطّ للحروف
+  // أسطر المصحف بعرضها الطبيعي موسّطة، والممتلئ منها فقط يُمتدّ بمحاذاة الطرفين
   assert.match(html, /#pageBody\.madani-lines \.mline \{[^}]*width: max-content/);
   assert.match(html, /#pageBody\.madani-lines \.mline \{[^}]*text-align-last: center/);
   assert.match(html, /#pageBody\.madani-lines\.wrapping \.mline \{[^}]*text-align-last: right/);

@@ -1164,11 +1164,16 @@
       line-height: var(--mline-h, calc(var(--quran-size) * 1.9));
       width: max-content; max-width: 100%; margin: 0 auto; padding: 0;
     }
+    /* السطر الممتلئ: يمدّ الكلمات على عرض الصفحة فتتساوى بدايات الأسطر ونهاياتها */
+    #pageBody.madani-lines .mline.fill {
+      width: var(--mushaf-w, 100%); max-width: 100%;
+      text-align: justify; text-align-last: justify;
+    }
     #pageBody.madani-lines .surah-banner, #pageBody.madani-lines .bism { line-height: 1.5; }
     /* عند التكبير: السطر يلتف داخل هوامش الورقة بمقاس خط واحد، والصفحة تطول فقط
        (محاذاة يمين للسطر الأخير حتى لا تُمدّ الكلمات وتظهر كلمة صغيرة وكلمة كبيرة). */
     #pageBody.madani-lines.wrapping .mline {
-      white-space: normal; overflow-wrap: break-word; text-align: right; text-align-last: right;
+      white-space: normal; overflow-wrap: break-word; text-align: justify; text-align-last: right;
       width: 100%; max-width: 100%; margin-inline: 0;
     }
     #pageBody.madani-lines .surah-banner, #pageBody.madani-lines .bism { width: min(100%, var(--mushaf-w, 100%)); margin-inline: auto; }
@@ -2037,7 +2042,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.12.4</div>
+              <div class="muted">الإصدار 1.12.5</div>
             </div>
           </div>
 
@@ -2164,10 +2169,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.12.4';
+    window.APP_BUNDLE_VERSION = '1.12.5';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 189;
+    window.APP_BUILD_NUMBER = 190;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {
