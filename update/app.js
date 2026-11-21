@@ -571,7 +571,12 @@
     $$('section.view').forEach((s) => s.classList.toggle('active', s.id === 'view-' + name));
     placePlayer(name);
     // عنوان القسم في الشريط العلوي فقط — اسم السورة والجزء يظهران في الفهرس والعداد فلا تكرار
-    if (name === 'reader') { updateChrome(); $('#topTitle').textContent = VIEW_TITLES.reader; }
+    if (name === 'reader') {
+      updateChrome();
+      $('#topTitle').textContent = VIEW_TITLES.reader;
+      // العودة لقسم المصحف: إعادة ضبط القياس والتكبير بعد ظهور الصفحة
+      window.setTimeout(() => fitMadaniLines(), 0);
+    }
     else $('#topTitle').textContent = VIEW_TITLES[name] || '';
     // زر الرجوع يظهر في كل الأقسام ما عدا المصحف
     $('#backBtn').hidden = name === 'reader';
@@ -1005,6 +1010,9 @@
         if (retry < 6) window.setTimeout(() => fitMadaniLines(retry + 1), 250);
         return;
       }
+      // القياس يجب أن يجري على التخطيط الأصلي بلا تكبير: أي scale() سابق يضاعف
+      // نتائج getBoundingClientRect فيكسر حساب المقاس.
+      resetMushafZoom();
       body.classList.remove('zoomed');
       const avail = Math.max(180, body.clientWidth - 6);
       const widthAt = (size) => {
@@ -1038,51 +1046,99 @@
       lines.forEach((el) => { const w = Number(el.dataset.w) || 0; if (w > pageRatio) pageRatio = w; });
       if (!pageRatio) pageRatio = 1;
       const baseSize = fitSize * Math.min(1, pageRatio);
-      const scale = userFontScale();
-      // مقاس خط واحد لكل أسطر الصفحة، بحد أدنى واضح للقراءة عند التصغير وسقف يمنع الكذب.
-      const rawSize = baseSize * scale;
-      let size = Math.max(16, Math.min(60, rawSize));
-      const clampedSize = Math.abs(size - rawSize) > 0.01;
+      // مقاس الصفحة ثابت دائمًا على «ملء العرض» — لا يدخل فيه مقاس المستخدم إطلاقًا.
+      // مقاس المستخدم يكبّر الصفحة كلها كنسبة واحدة بعد رسمها (applyMushafZoom)،
+      // فلا يتغيّر تنسيق الأسطر ولا مواضع علامات نهايات الآيات مهما كبّر أو صغّر.
+      let size = Math.max(16, Math.min(60, baseSize));
       body.style.setProperty('--quran-size', `${size.toFixed(2)}px`);
       // تصحيح ذاتي: أطول سطر عند المقاس المختار يجب أن يساوي عرض النص المتوقع.
       // لو خالف القياس الواقع (خط بديل لم يُحمّل، أو إعادة رسم لحظة العودة من الخلفية)
       // نعيد المعايرة مرة واحدة بدل تثبيت مقاس ضخم كاذب.
-      const target = avail * pageRatio * scale;
+      const target = avail * Math.min(1, pageRatio);
       const measured = widthAt(size);
-      if (!clampedSize && measured > 0 && target > 0 && (measured > target * 1.04 || measured < target * 0.9)) {
+      if (measured > 0 && target > 0 && (measured > target * 1.04 || measured < target * 0.9)) {
         size = Math.max(16, Math.min(60, size * (target / measured)));
         body.style.setProperty('--quran-size', `${size.toFixed(2)}px`);
-        fitSize = Math.max(8, size / Math.max(0.05, pageRatio * scale));
       }
-      // التكبير لا يمدّ الصفحة عرضيًا أبدًا: عند تجاوز مقاس الملاءمة نسمح للسطر
-      // بالالتفاف بمقاس خط واحد لكل الصفحة، فتمتد الصفحة طوليًا فقط
-      // وتبقى الكلمات داخل هوامش الورقة.
-      const wrapping = size > fitSize * 1.001;
-      body.classList.toggle('wrapping', wrapping);
-      body.style.setProperty('--mushaf-w', wrapping ? '100%' : `${Math.ceil(widthAt(size))}px`);
+      body.classList.remove('wrapping');
+      body.style.setProperty('--mushaf-w', `${Math.ceil(widthAt(size))}px`);
       const pageBox = body.closest('.page') || body.parentElement;
       const navBar = document.querySelector('.navbar');
       const navTop = navBar ? navBar.getBoundingClientRect().top : (window.innerHeight || 640);
       const pageTop = pageBox ? pageBox.getBoundingClientRect().top : 0;
       const visibleH = Math.max(160, navTop - pageTop);
       // تباعد ثابت نسبيًا: لا يقلّ عن 1.62 ولا يزيد على 1.95 من مقاس الخط،
-      // فتبقى الأسطر متساوية المظهر في كل الصفحات والأحجام.
+      // فتبقى الأسطر متساوية المظهر في كل الصفحات.
       const lineCount = Math.max(1, lines.length);
-      const lh = wrapping ? 1.9 : Math.min(1.95, Math.max(1.62, visibleH / (lineCount * size)));
+      const lh = Math.min(1.95, Math.max(1.62, visibleH / (lineCount * size)));
       body.style.setProperty('--mline-h', `${(size * lh).toFixed(2)}px`);
       // محاذاة الطرفين: كل سطر قريب من عرض النص يمتد إلى عرض الصفحة الكامل فتكون
       // بدايات الأسطر ونهاياتها على خط واحد؛ والأسطر القصيرة فعلًا (آخر سطر في
       // الصفحة أو السورة) تبقى موسّطة كما في المصحف المطبوع.
       lines.forEach((el) => el.classList.remove('fill'));
-      if (!wrapping) {
-        const natural = lines.map((el) => el.getBoundingClientRect().width);
-        const widest = Math.max(...natural);
-        if (widest > 0) {
-          lines.forEach((el, i) => { if (natural[i] >= widest * 0.72) el.classList.add('fill'); });
-        }
+      const natural = lines.map((el) => el.getBoundingClientRect().width);
+      const widest = Math.max(...natural);
+      if (widest > 0) {
+        lines.forEach((el, i) => { if (natural[i] >= widest * 0.72) el.classList.add('fill'); });
       }
       if (typeof applyTajweedScale === 'function') applyTajweedScale();
+      applyMushafZoom();
     });
+  }
+
+  // التكبير/التصغير = تكبير الصفحة المرسومة كنسبة واحدة (مثل تكبير صورة الصفحة):
+  // لا يُعاد ترتيب الأسطر ولا تتحرك علامات نهايات الآيات، ويزداد حجم القراءة فقط.
+  const MUSHAF_ZOOM_MIN = 0.7;
+  const MUSHAF_ZOOM_MAX = 1.6;
+  const mushafZoom = () => Math.min(MUSHAF_ZOOM_MAX, Math.max(MUSHAF_ZOOM_MIN, userFontScale()));
+  function resetMushafZoom() {
+    const stage = $('#stage');
+    const zoom = $('#pageZoom');
+    const scaleEl = $('#pageScale');
+    if (scaleEl) {
+      scaleEl.style.transform = '';
+      scaleEl.style.width = '';
+      scaleEl.style.marginInline = '';
+    }
+    if (zoom) { zoom.style.width = ''; zoom.style.height = ''; }
+    if (stage) stage.classList.remove('mushaf-zoomed');
+  }
+  function applyMushafZoom() {
+    const stage = $('#stage');
+    const zoom = $('#pageZoom');
+    const scaleEl = $('#pageScale');
+    const page = $('#page');
+    if (!stage || !zoom || !scaleEl || !page) return;
+    const k = mushafZoom();
+    // القياس على التخطيط الأصلي: نُفرغ أي تكبير سابق قبل قياس الصفحة
+    resetMushafZoom();
+    const baseW = page.offsetWidth;
+    const baseH = page.offsetHeight;
+    if (!baseW || !baseH) return;
+    if (Math.abs(k - 1) < 0.005) {
+      scaleEl.style.transformOrigin = 'top center';
+      return;
+    }
+    // عرض الصفحة في التخطيط يبقى كما هو؛ التكبير تحويل بصري فقط (بلا إعادة تنسيق)
+    scaleEl.style.width = `${baseW}px`;
+    scaleEl.style.transform = `scale(${k.toFixed(4)})`;
+    if (k > 1) {
+      // صفحة أكبر من الشاشة: تُقرأ بالتمرير الأفقي، وتنسيقها كما هو تمامًا.
+      scaleEl.style.transformOrigin = 'top right';
+      scaleEl.style.marginInline = '0';
+      zoom.style.marginInline = '0';
+      zoom.style.width = `${Math.ceil(baseW * k)}px`;
+      zoom.style.height = `${Math.ceil(baseH * k)}px`;
+      stage.classList.add('mushaf-zoomed');
+    } else {
+      // صفحة أصغر: تبقى موسّطةً في الشاشة بلا فراغ زائد أسفلها.
+      scaleEl.style.transformOrigin = 'top center';
+      scaleEl.style.marginInline = 'auto';
+      zoom.style.marginInline = 'auto';
+      zoom.style.width = `${baseW}px`;
+      zoom.style.height = `${Math.ceil(baseH * k)}px`;
+      stage.classList.remove('mushaf-zoomed');
+    }
   }
 
   // ربط شريط حجم الخط في المصحف (يُستخدم نفس مفتاح الإعدادات size).
@@ -1184,6 +1240,8 @@
       fitMadaniLines();
     } else {
       $('#pageBody').classList.remove('madani-lines');
+      // عرض الروايات الأخرى نصّ متصل بلا أسطر صفحة: لا تكبير للصفحة هنا
+      resetMushafZoom();
       renderFlowPage(pg);
     }
     const page = $('#page');
@@ -1368,6 +1426,8 @@
   stage.addEventListener('pointerdown', (e) => {
     // الفأرة للتحديد الحر للنص؛ التقليب بالسحب خاص باللمس (والقلم)
     if (e.pointerType === 'mouse' || e.button > 0 || e.target.closest('button, select, input')) return;
+    // عند التكبير: السحب للتمرير داخل الصفحة المكبَّرة، لا لتقليب الصفحات
+    if (stage.classList.contains('mushaf-zoomed')) return;
     drag = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), dragging: false,
       hadSel: hasSelection(), lastX: e.clientX, lastT: performance.now(), v: 0 };
   });

@@ -149,6 +149,10 @@
     .voice-star.on { color: #c6922e; }
     /* ---------- الصفحة (مصحف ورقي) ---------- */
     .stage { touch-action: pan-y; user-select: text; perspective: 1400px; }
+    /* التكبير والتصغير: الصفحة كلها تُقاس مرة واحدة، والمقاس يكبّرها كنسبة واحدة
+       (مثل تكبير صورة الصفحة) فلا يتغيّر تنسيق الأسطر ولا مواضع علامات الآيات. */
+    .page-zoom { position: relative; }
+    .page-scale { transform-origin: top right; will-change: transform; }
     body.page-turning .stage { pointer-events: none; }
     .page {
       position: relative; max-width: 640px; margin: 0 auto; min-height: 70vh;
@@ -1170,12 +1174,8 @@
       text-align: justify; text-align-last: justify;
     }
     #pageBody.madani-lines .surah-banner, #pageBody.madani-lines .bism { line-height: 1.5; }
-    /* عند التكبير: السطر يلتف داخل هوامش الورقة بمقاس خط واحد، والصفحة تطول فقط
-       (محاذاة يمين للسطر الأخير حتى لا تُمدّ الكلمات وتظهر كلمة صغيرة وكلمة كبيرة). */
-    #pageBody.madani-lines.wrapping .mline {
-      white-space: normal; overflow-wrap: break-word; text-align: justify; text-align-last: right;
-      width: 100%; max-width: 100%; margin-inline: 0;
-    }
+    /* لا التفاف عند التكبير: الصفحة تُكبَّر كنسبة واحدة، فيبقى كل سطر كما هو. */
+    #stage.mushaf-zoomed { overflow-x: auto; overflow-y: hidden; touch-action: pan-x pan-y; }
     #pageBody.madani-lines .surah-banner, #pageBody.madani-lines .bism { width: min(100%, var(--mushaf-w, 100%)); margin-inline: auto; }
 
     /* شريط حجم الخط في المصحف: كلمة صغيرة + مقبض + أزرار متناسبة مع عرض الهاتف */
@@ -1348,12 +1348,16 @@
         <!-- المصحف: صفحة بصفحة -->
         <section class="view active" id="view-reader">
           <div class="stage" id="stage">
-            <div class="page" id="page">
-              <span class="corner c1">❁</span><span class="corner c2">❁</span>
-              <span class="corner c3">❁</span><span class="corner c4">❁</span>
-              <div class="page-head"><span id="pgJuz"></span><span id="pgSurah"></span></div>
-              <div class="page-body" id="pageBody"></div>
-              <div class="page-foot" id="pgFoot"></div>
+            <div class="page-zoom" id="pageZoom">
+              <div class="page-scale" id="pageScale">
+              <div class="page" id="page">
+                <span class="corner c1">❁</span><span class="corner c2">❁</span>
+                <span class="corner c3">❁</span><span class="corner c4">❁</span>
+                <div class="page-head"><span id="pgJuz"></span><span id="pgSurah"></span></div>
+                <div class="page-body" id="pageBody"></div>
+                <div class="page-foot" id="pgFoot"></div>
+              </div>
+              </div>
             </div>
           </div>
 
@@ -2042,7 +2046,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.12.5</div>
+              <div class="muted">الإصدار 1.12.6</div>
             </div>
           </div>
 
@@ -2169,10 +2173,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.12.5';
+    window.APP_BUNDLE_VERSION = '1.12.6';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 190;
+    window.APP_BUILD_NUMBER = 191;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {

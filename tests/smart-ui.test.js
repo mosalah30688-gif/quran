@@ -96,7 +96,7 @@ test('smart and tajweed engines are included in offline and update channels', ()
   assert.match(sw, /siraj-shell-v\d+/);
 });
 
-test('madani page fitting: مقاس واحد لكل الصفحة وتمدد طولي فقط بلا خروج عن الهوامش', () => {
+test('madani page fitting: مقاس واحد لكل الصفحة، والتكبير تكبير للصفحة لا إعادة تنسيق', () => {
   assert.match(app, /querySelectorAll\('\.mline'\)/);
   assert.match(app, /const widthAt = \(size\) =>/);
   assert.match(app, /for \(let i = 0; i < 14; i \+= 1\)/);
@@ -104,13 +104,31 @@ test('madani page fitting: مقاس واحد لكل الصفحة وتمدد طو
   assert.match(app, /let pageRatio = 0;/);
   assert.match(app, /if \(!pageRatio\) pageRatio = 1;/);
   assert.match(app, /const baseSize = fitSize \* Math\.min\(1, pageRatio\)/);
-  // مقاس واحد لكل الأسطر مع حد أدنى واضح للقراءة عند التصغير وسقف يمنع المقاسات الكاذبة
-  assert.match(app, /const rawSize = baseSize \* scale;/);
-  assert.match(app, /let size = Math\.max\(16, Math\.min\(60, rawSize\)\)/);
+  // مقاس الخط لا يعتمد على مقاس المستخدم إطلاقًا: الصفحة تُرسم دائمًا بملء العرض
+  assert.match(app, /let size = Math\.max\(16, Math\.min\(60, baseSize\)\)/);
+  assert.doesNotMatch(app, /const baseSize = fitSize \* Math\.min\(1, pageRatio\);[\s\S]{0,80}userFontScale\(\)/);
+  // لا التفاف ولا إعادة تنسيق عند التكبير
+  assert.doesNotMatch(app, /const wrapping = size > fitSize/);
+  assert.match(app, /body\.classList\.remove\('wrapping'\)/);
+  assert.doesNotMatch(html, /madani-lines\.wrapping \.mline/);
+  // التكبير تحويل بصري على الصفحة كلها، وعلامات الآيات تبقى في مواضعها
+  assert.match(app, /function applyMushafZoom\(\)/);
+  assert.match(app, /function resetMushafZoom\(\)/);
+  assert.match(app, /const mushafZoom = \(\) => Math\.min\(MUSHAF_ZOOM_MAX, Math\.max\(MUSHAF_ZOOM_MIN, userFontScale\(\)\)\)/);
+  assert.match(app, /scaleEl\.style\.transform = `scale\(\$\{k\.toFixed\(4\)\}\)`/);
+  assert.match(app, /scaleEl\.style\.width = `\$\{baseW\}px`/);
+  // طبقة تكبير مستقلة عن طبقة التقليب حتى لا يمحو تغيير الصفحة التكبير
+  assert.match(html, /id="pageZoom"/);
+  assert.match(html, /id="pageScale"/);
+  assert.match(html, /\.page-scale \{[^}]*transform-origin/);
+  assert.match(html, /#stage\.mushaf-zoomed \{[^}]*overflow-x: auto/);
+  // السحب للتمرير لا للتقليب عند التكبير
+  assert.match(app, /if \(stage\.classList\.contains\('mushaf-zoomed'\)\) return;/);
+  // القياس يجب أن يُعاد ضبطه قبل أي قياس (transform يضاعف getBoundingClientRect)
+  assert.match(app, /resetMushafZoom\(\);[\s\S]{0,200}const avail = Math\.max\(180, body\.clientWidth - 6\)/);
   // تصحيح ذاتي: القياس الواقع يجب أن يطابق عرض النص المتوقع (يمنع تضخّم الخط عند العودة للتطبيق)
-  assert.match(app, /const target = avail \* pageRatio \* scale;/);
+  assert.match(app, /const target = avail \* Math\.min\(1, pageRatio\)/);
   assert.match(app, /const measured = widthAt\(size\)/);
-  assert.match(app, /size = Math\.max\(16, Math\.min\(60, size \* \(target \/ measured\)\)\)/);
   assert.match(app, /if \(document\.hidden \|\| body\.clientWidth < 120\)/);
   assert.match(app, /window\.addEventListener\('pageshow'/);
   assert.match(app, /visibilitychange/);
@@ -118,17 +136,9 @@ test('madani page fitting: مقاس واحد لكل الصفحة وتمدد طو
   assert.match(app, /lines\.forEach\(\(el\) => el\.classList\.remove\('fill'\)\)/);
   assert.match(app, /el\.classList\.add\('fill'\)/);
   assert.match(html, /#pageBody\.madani-lines \.mline\.fill \{[^}]*text-align-last: justify/);
-  // لا تُفرض نسب عرض على الأسطر (سبب «سطر صغير وسطر كبير») بل تُحفظ كبيانات للقياس
-  assert.match(app, /const wAttr = ln\.w \? ` data-w=/);
-  assert.doesNotMatch(app, /style="width:\$\{/);
-  // التكبير يفعّل الالتفاف بمقاس موحّد بدل مدّ الصفحة أفقيًا
-  assert.match(app, /const wrapping = size > fitSize \* 1\.001;/);
-  assert.match(app, /body\.classList\.toggle\('wrapping', wrapping\)/);
-  assert.match(app, /--mushaf-w', wrapping \? '100%'/);
   // أسطر المصحف بعرضها الطبيعي موسّطة، والممتلئ منها فقط يُمتدّ بمحاذاة الطرفين
   assert.match(html, /#pageBody\.madani-lines \.mline \{[^}]*width: max-content/);
   assert.match(html, /#pageBody\.madani-lines \.mline \{[^}]*text-align-last: center/);
-  assert.match(html, /#pageBody\.madani-lines\.wrapping \.mline \{[^}]*text-align-last: right/);
   // حجم الخط داخل الإعدادات فقط (لا شريط في رأس المصحف)
   assert.match(html, /id="setSize"/);
   assert.doesNotMatch(html, /id="fontRange"/);
