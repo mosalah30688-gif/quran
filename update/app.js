@@ -574,8 +574,6 @@
     if (name === 'reader') {
       updateChrome();
       $('#topTitle').textContent = VIEW_TITLES.reader;
-      // العودة لقسم المصحف: إعادة ضبط القياس والتكبير بعد ظهور الصفحة
-      window.setTimeout(() => fitMadaniLines(), 0);
     }
     else $('#topTitle').textContent = VIEW_TITLES[name] || '';
     // زر الرجوع يظهر في كل الأقسام ما عدا المصحف
@@ -902,243 +900,19 @@
         tr: settings.translation ? (translated[i]?.text || '') : '',
       };
     });
+    // الصفحة تُعرض نصًّا متصلًا مضبوطًا على عرض الصفحة (ضبط كامل للسطر) بمقاس الخط
+    // الحقيقي الذي يختاره القارئ — كما في مستند Word مضبوط، بلا تثبيت أسطر ولا تكبير.
     const obj = { p, ayahs, linesHtml: null };
-    if (kind === 'uthmani') {
-      const madani = await loadMadaniLines();
-      obj.linesHtml = madani ? madaniLinesHtml(p, madani, showTajweed) : null;
-    }
     pageCache.set(key, obj);
     return obj;
   }
 
-  // ---------- تخطيط المصحف بأسطر ثابتة (رواية حفص فقط) ----------
-  let madaniPromise = null;
-  function loadMadaniLines() {
-    if (!madaniPromise) madaniPromise = getJSON('quran-madani-lines.json').catch(() => { madaniPromise = null; return null; });
-    return madaniPromise;
-  }
-
-  function tajweedWordsOf(item) {
-    const src = tajweedByRef.get(refKey(item.s, item.n));
-    if (!src) return null;
-    const words = displayHafsSource(item.s, item.n, src).split(/\s+/).filter(Boolean);
-    const plainCount = item.text.split(/\s+/).filter(Boolean).length;
-    return words.length === plainCount ? words : null;
-  }
-
-  // كلمات السطر من بداية الآية (s:n:t) إلى نهايتها (s1:n1:t1)، والعلامة ۝ بعد آخر كلمة
-  function madaniLineParts(fromRef, toRef, showTajweed) {
-    let [s, n, t] = fromRef.split(':').map(Number);
-    const [s1, n1, t1] = toRef.split(':').map(Number);
-    const out = [];
-    for (let guard = 0; guard < 400; guard++) {
-      const item = hafsByRef.uthmani.get(refKey(s, n));
-      if (!item) break;
-      const words = item.text.split(/\s+/).filter(Boolean);
-      const N = words.length;
-      const tj = showTajweed ? tajweedWordsOf(item) : null;
-      const last = (s === s1 && n === n1) ? t1 : N + 1;
-      const pieces = [];
-      for (let k = t; k <= last; k++) {
-        if (k <= N) {
-          const raw = words[k - 1];
-          if (!tj && raw.startsWith('\u06de')) {
-            pieces.push(`<span class="rub">\u06de</span>${esc(raw.slice(1))}`);
-          } else {
-            pieces.push(tj ? renderTajweed(tj[k - 1]) : esc(raw));
-          }
-        }
-        else pieces.push(`<span class="end hafs-end" data-act="tafsir" data-g="${item.g}" title="الآية">۝${toArabicDigits(n)}</span>`);
-      }
-      if (pieces.length) out.push(`<span class="ay" data-g="${item.g}">${pieces.join(' ')}</span>`);
-      if (s === s1 && n === n1) break;
-      n += 1; t = 1;
-      if (!hafsByRef.uthmani.get(refKey(s, n))) { s += 1; n = 1; }
-    }
-    return out.join(' ');
-  }
-
-  function madaniLinesHtml(p, data, showTajweed) {
-    const lines = data.pages && data.pages[p - 1];
-    if (!lines) return null;
-    const surahOfNext = (i) => {
-      for (let j = i; j < lines.length; j++) if (lines[j].k === 'text') return Number(lines[j].a.split(':')[0]);
-      return 0;
-    };
-    const out = [];
-    lines.forEach((ln, i) => {
-      if (ln.k === 'sura') { out.push(`<div class="surah-banner">${esc(surahName(surahOfNext(i + 1)))}</div>`); return; }
-      if (ln.k === 'bism') { out.push(`<div class="bism">${esc(bismText())}</div>`); return; }
-      const parts = madaniLineParts(ln.a, ln.b, showTajweed);
-      // نسبة عرض السطر في المصحف الأصلي: تُستعمل لضبط مقاس الخط مرة واحدة لكل صفحة
-      // (لا لعرض الصندوق)، حتى لا تُمدّ الأسطر القصيرة ويختلف مقاس كلمة عن أخرى.
-      const wAttr = ln.w ? ` data-w="${(Number(ln.w) || 0).toFixed(3)}"` : '';
-      out.push(`<div class="mline${ln.w ? ' short' : ''}"${wAttr}>${parts}</div>`);
-    });
-    return out.join('');
-  }
-
-  // معامل تكبير خط مصحف حفص: الصفحة مضبوطة على عرض الشاشة، فحجم السطر محسوم هندسيًا؛
-  // ولذلك يضرب المنطق حجم كل سطر في معامل التكبير المختار، فيكبر الخط فعليًا ويلتف
-  // السطر الطويل إلى سطرين بدل أن يُعاد إلى حجمه الأول.
+  // مقاس خط المصحف الحقيقي: يأتي من إعدادات القارئ مباشرة بلا قياس ولا تلاؤم،
+  // فيبقى النص مضبوطًا على عرض الصفحة (حواف متساوية) أيًّا كان المقاس.
   const HAFS_BASE_SIZE = 26;
-  const hafsZoom = () => {
-    const size = Number(settings.size) || HAFS_BASE_SIZE;
-    return Math.min(1.8, Math.max(1, size / HAFS_BASE_SIZE));
-  };
-  // قياس المصحف الموحّد: مقاس خط واحد لكل أسطر الصفحة (كما في مصحف المدينة/الشاملة).
-  // نقيس أطول سطر عند مقاس مرجعي، ثم نستنتج المقاس الذي يملأ عرض الصفحة تمامًا،
-  // ثم نضرب في معامل اختيار المستخدم — فيكبر الخط كله معًا بلا «جمل صغيرة وجمل كبيرة».
-  const HAFS_REF_SIZE = 100;
-  function userFontScale() {
-    const size = Number(settings.size) || HAFS_BASE_SIZE;
-    return Math.min(2.4, Math.max(0.72, size / HAFS_BASE_SIZE));
-  }
-
-  // عرض أطول سطر عند مقاس خط معيّن (بلا أي التفاف)، ثم بحث ثنائي على المقاس
-  // الذي يملأ عرض الصفحة تمامًا. كل الأسطر تأخذ المقاس النهائي نفسه.
-  function fitMadaniLines(retry = 0) {
-    const body = $('#pageBody');
-    if (!body) return;
-    requestAnimationFrame(() => {
-      if (!body.classList.contains('madani-lines')) return;
-      const lines = [...body.querySelectorAll('.mline')];
-      if (!lines.length) return;
-      // الصفحة قد تكون غير مرئية لحظة عودة التطبيق من الخلفية (عرض صفر):
-      // القياس حينها يعطي مقاسًا ضخمًا كاذبًا، فنؤجل القياس بدل تثبيته.
-      if (document.hidden || body.clientWidth < 120) {
-        if (retry < 6) window.setTimeout(() => fitMadaniLines(retry + 1), 250);
-        return;
-      }
-      // القياس يجب أن يجري على التخطيط الأصلي بلا تكبير: أي scale() سابق يضاعف
-      // نتائج getBoundingClientRect فيكسر حساب المقاس.
-      resetMushafZoom();
-      body.classList.remove('zoomed');
-      const avail = Math.max(180, body.clientWidth - 6);
-      const widthAt = (size) => {
-        body.style.setProperty('--quran-size', `${size}px`);
-        body.classList.add('measuring');
-        let max = 0;
-        lines.forEach((el) => {
-          const w = el.getBoundingClientRect().width;
-          if (w > max) max = w;
-        });
-        body.classList.remove('measuring');
-        return max;
-      };
-      let lo = 8;
-      let hi = 80;
-      for (let i = 0; i < 14; i += 1) {
-        const mid = (lo + hi) / 2;
-        if (widthAt(mid) > avail) hi = mid; else lo = mid;
-      }
-      // لا نص مقروء (خط لم يُحمّل بعد مثلًا): لا نثبّت مقاسًا كاذبًا، نعيد المحاولة.
-      const probe = widthAt(26);
-      if (probe < 20) {
-        // نُبقي المقاس السابق كما هو (بلا قفزة إلى مقاس الإعدادات) ونعيد المحاولة
-        if (retry < 6) window.setTimeout(() => fitMadaniLines(retry + 1), 250);
-        return;
-      }
-      let fitSize = lo;
-      // نسبة عرض الصفحة في المصحف الأصلي: صفحة كاملة = 1، وصفحة قصيرة (أوائل السور)
-      // = نسبة أطول سطر فيها. نضرب فيها المقاس حتى يبقى الخط بالمقاس نفسه في كل الصفحات.
-      let pageRatio = 0;
-      lines.forEach((el) => { const w = Number(el.dataset.w) || 0; if (w > pageRatio) pageRatio = w; });
-      if (!pageRatio) pageRatio = 1;
-      const baseSize = fitSize * Math.min(1, pageRatio);
-      // مقاس الصفحة ثابت دائمًا على «ملء العرض» — لا يدخل فيه مقاس المستخدم إطلاقًا.
-      // مقاس المستخدم يكبّر الصفحة كلها كنسبة واحدة بعد رسمها (applyMushafZoom)،
-      // فلا يتغيّر تنسيق الأسطر ولا مواضع علامات نهايات الآيات مهما كبّر أو صغّر.
-      let size = Math.max(16, Math.min(60, baseSize));
-      body.style.setProperty('--quran-size', `${size.toFixed(2)}px`);
-      // تصحيح ذاتي: أطول سطر عند المقاس المختار يجب أن يساوي عرض النص المتوقع.
-      // لو خالف القياس الواقع (خط بديل لم يُحمّل، أو إعادة رسم لحظة العودة من الخلفية)
-      // نعيد المعايرة مرة واحدة بدل تثبيت مقاس ضخم كاذب.
-      const target = avail * Math.min(1, pageRatio);
-      const measured = widthAt(size);
-      if (measured > 0 && target > 0 && (measured > target * 1.04 || measured < target * 0.9)) {
-        size = Math.max(16, Math.min(60, size * (target / measured)));
-        body.style.setProperty('--quran-size', `${size.toFixed(2)}px`);
-      }
-      body.classList.remove('wrapping');
-      body.style.setProperty('--mushaf-w', `${Math.ceil(widthAt(size))}px`);
-      const pageBox = body.closest('.page') || body.parentElement;
-      const navBar = document.querySelector('.navbar');
-      const navTop = navBar ? navBar.getBoundingClientRect().top : (window.innerHeight || 640);
-      const pageTop = pageBox ? pageBox.getBoundingClientRect().top : 0;
-      const visibleH = Math.max(160, navTop - pageTop);
-      // تباعد ثابت نسبيًا: لا يقلّ عن 1.62 ولا يزيد على 1.95 من مقاس الخط،
-      // فتبقى الأسطر متساوية المظهر في كل الصفحات.
-      const lineCount = Math.max(1, lines.length);
-      const lh = Math.min(1.95, Math.max(1.62, visibleH / (lineCount * size)));
-      body.style.setProperty('--mline-h', `${(size * lh).toFixed(2)}px`);
-      // محاذاة الطرفين: كل سطر قريب من عرض النص يمتد إلى عرض الصفحة الكامل فتكون
-      // بدايات الأسطر ونهاياتها على خط واحد؛ والأسطر القصيرة فعلًا (آخر سطر في
-      // الصفحة أو السورة) تبقى موسّطة كما في المصحف المطبوع.
-      lines.forEach((el) => el.classList.remove('fill'));
-      const natural = lines.map((el) => el.getBoundingClientRect().width);
-      const widest = Math.max(...natural);
-      if (widest > 0) {
-        lines.forEach((el, i) => { if (natural[i] >= widest * 0.72) el.classList.add('fill'); });
-      }
-      if (typeof applyTajweedScale === 'function') applyTajweedScale();
-      applyMushafZoom();
-    });
-  }
-
-  // التكبير/التصغير = تكبير الصفحة المرسومة كنسبة واحدة (مثل تكبير صورة الصفحة):
-  // لا يُعاد ترتيب الأسطر ولا تتحرك علامات نهايات الآيات، ويزداد حجم القراءة فقط.
-  const MUSHAF_ZOOM_MIN = 0.7;
-  const MUSHAF_ZOOM_MAX = 1.6;
-  const mushafZoom = () => Math.min(MUSHAF_ZOOM_MAX, Math.max(MUSHAF_ZOOM_MIN, userFontScale()));
-  function resetMushafZoom() {
-    const stage = $('#stage');
-    const zoom = $('#pageZoom');
-    const scaleEl = $('#pageScale');
-    if (scaleEl) {
-      scaleEl.style.transform = '';
-      scaleEl.style.width = '';
-      scaleEl.style.marginInline = '';
-    }
-    if (zoom) { zoom.style.width = ''; zoom.style.height = ''; }
-    if (stage) stage.classList.remove('mushaf-zoomed');
-  }
-  function applyMushafZoom() {
-    const stage = $('#stage');
-    const zoom = $('#pageZoom');
-    const scaleEl = $('#pageScale');
-    const page = $('#page');
-    if (!stage || !zoom || !scaleEl || !page) return;
-    const k = mushafZoom();
-    // القياس على التخطيط الأصلي: نُفرغ أي تكبير سابق قبل قياس الصفحة
-    resetMushafZoom();
-    const baseW = page.offsetWidth;
-    const baseH = page.offsetHeight;
-    if (!baseW || !baseH) return;
-    if (Math.abs(k - 1) < 0.005) {
-      scaleEl.style.transformOrigin = 'top center';
-      return;
-    }
-    // عرض الصفحة في التخطيط يبقى كما هو؛ التكبير تحويل بصري فقط (بلا إعادة تنسيق)
-    scaleEl.style.width = `${baseW}px`;
-    scaleEl.style.transform = `scale(${k.toFixed(4)})`;
-    if (k > 1) {
-      // صفحة أكبر من الشاشة: تُقرأ بالتمرير الأفقي، وتنسيقها كما هو تمامًا.
-      scaleEl.style.transformOrigin = 'top right';
-      scaleEl.style.marginInline = '0';
-      zoom.style.marginInline = '0';
-      zoom.style.width = `${Math.ceil(baseW * k)}px`;
-      zoom.style.height = `${Math.ceil(baseH * k)}px`;
-      stage.classList.add('mushaf-zoomed');
-    } else {
-      // صفحة أصغر: تبقى موسّطةً في الشاشة بلا فراغ زائد أسفلها.
-      scaleEl.style.transformOrigin = 'top center';
-      scaleEl.style.marginInline = 'auto';
-      zoom.style.marginInline = 'auto';
-      zoom.style.width = `${baseW}px`;
-      zoom.style.height = `${Math.ceil(baseH * k)}px`;
-      stage.classList.remove('mushaf-zoomed');
-    }
+  function applyQuranSize() {
+    const size = Math.min(44, Math.max(18, Math.round(Number(settings.size) || HAFS_BASE_SIZE)));
+    document.documentElement.style.setProperty('--quran-size', `${size}px`);
   }
 
   // ربط شريط حجم الخط في المصحف (يُستخدم نفس مفتاح الإعدادات size).
@@ -1152,23 +926,12 @@
     document.documentElement.style.setProperty('--quran-size', `${next}px`);
     saveSettings();
     syncFontControl();
-    fitMadaniLines();
   }
 
-  if (document.fonts && document.fonts.ready) {
-    // الخط يُحمّل بعد أول رسم؛ نعيد القياس بعده ليكون مقاس المصحف مضبوطًا من أول مرة.
-    document.fonts.ready.then(() => fitMadaniLines());
-    if (document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', () => fitMadaniLines());
-  }
-  window.addEventListener('resize', () => fitMadaniLines());
-  // العودة من الخلفية أو إعادة إظهار الصفحة: نعيد القياس بعد استقرار التخطيط،
-  // فلا يبقى الخط على مقاس أكبر مما يجب.
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) window.setTimeout(() => fitMadaniLines(), 200);
-  });
-  window.addEventListener('pageshow', () => window.setTimeout(() => fitMadaniLines(), 200));
-  window.addEventListener('focus', () => window.setTimeout(() => fitMadaniLines(), 200));
-  window.addEventListener('orientationchange', () => window.setTimeout(() => fitMadaniLines(), 300));
+  // الخط لا يُقاس ولا يُلاءم: مقاس واحد ثابت من الإعدادات، فلا يتغيّر عند العودة
+  // للتطبيق ولا عند تدوير الشاشة.
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) applyQuranSize(); });
+  window.addEventListener('pageshow', () => applyQuranSize());
 
   // رقم الصفحة لأي آية (من بيانات السورة)
   async function pageOfAyah(s, a) {
@@ -1234,16 +997,9 @@
 
   function renderPage(dir) {
     const pg = state.pg;
-    if (pg.linesHtml) {
-      $('#pageBody').classList.add('madani-lines');
-      $('#pageBody').innerHTML = pg.linesHtml;
-      fitMadaniLines();
-    } else {
-      $('#pageBody').classList.remove('madani-lines');
-      // عرض الروايات الأخرى نصّ متصل بلا أسطر صفحة: لا تكبير للصفحة هنا
-      resetMushafZoom();
-      renderFlowPage(pg);
-    }
+    $('#pageBody').classList.remove('madani-lines');
+    applyQuranSize();
+    renderFlowPage(pg);
     const page = $('#page');
     page.classList.remove('flip-next', 'flip-prev');
     void page.offsetWidth;

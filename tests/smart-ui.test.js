@@ -96,49 +96,24 @@ test('smart and tajweed engines are included in offline and update channels', ()
   assert.match(sw, /siraj-shell-v\d+/);
 });
 
-test('madani page fitting: مقاس واحد لكل الصفحة، والتكبير تكبير للصفحة لا إعادة تنسيق', () => {
-  assert.match(app, /querySelectorAll\('\.mline'\)/);
-  assert.match(app, /const widthAt = \(size\) =>/);
-  assert.match(app, /for \(let i = 0; i < 14; i \+= 1\)/);
-  // نسبة عرض الصفحة الأصلية تضبط المقاس مرة واحدة، فلا تُكبَّر صفحة قصيرة على غيرها
-  assert.match(app, /let pageRatio = 0;/);
-  assert.match(app, /if \(!pageRatio\) pageRatio = 1;/);
-  assert.match(app, /const baseSize = fitSize \* Math\.min\(1, pageRatio\)/);
-  // مقاس الخط لا يعتمد على مقاس المستخدم إطلاقًا: الصفحة تُرسم دائمًا بملء العرض
-  assert.match(app, /let size = Math\.max\(16, Math\.min\(60, baseSize\)\)/);
-  assert.doesNotMatch(app, /const baseSize = fitSize \* Math\.min\(1, pageRatio\);[\s\S]{0,80}userFontScale\(\)/);
-  // لا التفاف ولا إعادة تنسيق عند التكبير
-  assert.doesNotMatch(app, /const wrapping = size > fitSize/);
-  assert.match(app, /body\.classList\.remove\('wrapping'\)/);
-  assert.doesNotMatch(html, /madani-lines\.wrapping \.mline/);
-  // التكبير تحويل بصري على الصفحة كلها، وعلامات الآيات تبقى في مواضعها
-  assert.match(app, /function applyMushafZoom\(\)/);
-  assert.match(app, /function resetMushafZoom\(\)/);
-  assert.match(app, /const mushafZoom = \(\) => Math\.min\(MUSHAF_ZOOM_MAX, Math\.max\(MUSHAF_ZOOM_MIN, userFontScale\(\)\)\)/);
-  assert.match(app, /scaleEl\.style\.transform = `scale\(\$\{k\.toFixed\(4\)\}\)`/);
-  assert.match(app, /scaleEl\.style\.width = `\$\{baseW\}px`/);
-  // طبقة تكبير مستقلة عن طبقة التقليب حتى لا يمحو تغيير الصفحة التكبير
-  assert.match(html, /id="pageZoom"/);
-  assert.match(html, /id="pageScale"/);
-  assert.match(html, /\.page-scale \{[^}]*transform-origin/);
-  assert.match(html, /#stage\.mushaf-zoomed \{[^}]*overflow-x: auto/);
-  // السحب للتمرير لا للتقليب عند التكبير
-  assert.match(app, /if \(stage\.classList\.contains\('mushaf-zoomed'\)\) return;/);
-  // القياس يجب أن يُعاد ضبطه قبل أي قياس (transform يضاعف getBoundingClientRect)
-  assert.match(app, /resetMushafZoom\(\);[\s\S]{0,200}const avail = Math\.max\(180, body\.clientWidth - 6\)/);
-  // تصحيح ذاتي: القياس الواقع يجب أن يطابق عرض النص المتوقع (يمنع تضخّم الخط عند العودة للتطبيق)
-  assert.match(app, /const target = avail \* Math\.min\(1, pageRatio\)/);
-  assert.match(app, /const measured = widthAt\(size\)/);
-  assert.match(app, /if \(document\.hidden \|\| body\.clientWidth < 120\)/);
-  assert.match(app, /window\.addEventListener\('pageshow'/);
-  assert.match(app, /visibilitychange/);
-  // محاذاة الطرفين: الأسطر الممتلئة تُمدّ إلى عرض الصفحة، والقصيرة تبقى موسّطة
-  assert.match(app, /lines\.forEach\(\(el\) => el\.classList\.remove\('fill'\)\)/);
-  assert.match(app, /el\.classList\.add\('fill'\)/);
-  assert.match(html, /#pageBody\.madani-lines \.mline\.fill \{[^}]*text-align-last: justify/);
-  // أسطر المصحف بعرضها الطبيعي موسّطة، والممتلئ منها فقط يُمتدّ بمحاذاة الطرفين
-  assert.match(html, /#pageBody\.madani-lines \.mline \{[^}]*width: max-content/);
-  assert.match(html, /#pageBody\.madani-lines \.mline \{[^}]*text-align-last: center/);
+test('صفحة المصحف: نص متصل مضبوط على العرض بمقاس الخط الحقيقي بلا قياس ولا تكبير', () => {
+  // المصحف يُرسم نصًّا متصلًا مضبوطًا (ضبط كامل للسطر) كما في مستند معالج نصوص
+  assert.match(app, /renderFlowPage\(pg\);/);
+  assert.doesNotMatch(app, /linesHtml = madaniLinesHtml/);
+  assert.doesNotMatch(app, /madaniLinesHtml|loadMadaniLines|fitMadaniLines|applyMushafZoom|resetMushafZoom/);
+  assert.doesNotMatch(html, /madani-lines/);
+  assert.doesNotMatch(html, /id="pageZoom"|id="pageScale"/);
+  // مقاس الخط هو مقاس الإعدادات نفسه (18..44) بلا تلاؤم ولا قياس
+  assert.match(app, /function applyQuranSize\(\)/);
+  assert.match(app, /const size = Math\.min\(44, Math\.max\(18, Math\.round\(Number\(settings\.size\) \|\| HAFS_BASE_SIZE\)\)\)/);
+  assert.match(app, /document\.documentElement\.style\.setProperty\('--quran-size', `\$\{size\}px`\)/);
+  assert.match(app, /applyQuranSize\(\);[\s\S]{0,80}renderFlowPage\(pg\)/);
+  // ضبط كامل: كل سطر يمتد إلى عرض النص فتتساوى الحواف
+  assert.match(html, /#pageBody \.flow \{[^}]*text-align: justify; text-align-last: right;/);
+  assert.match(html, /body\.hafs-reader \.flow \{[^}]*text-align: justify; text-align-last: right;/);
+  // الصفحة تبقى بعرض الشاشة ولا تُكبَّر ولا تُقصّ
+  assert.doesNotMatch(html, /#stage\.mushaf-zoomed/);
+  assert.match(html, /body\.hafs-reader \.page \{ min-height: 0; \}/);
   // حجم الخط داخل الإعدادات فقط (لا شريط في رأس المصحف)
   assert.match(html, /id="setSize"/);
   assert.doesNotMatch(html, /id="fontRange"/);
