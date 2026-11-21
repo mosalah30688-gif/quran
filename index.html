@@ -77,7 +77,7 @@
 
     main.content { overflow-y: auto; height: 100vh; height: 100dvh; min-width: 0; position: relative; }
     .topbar { position: sticky; top: 0; z-index: 15; background: var(--bg); border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
-    .topbar .title { flex: 1; font-weight: 700; font-size: 16px; }
+    .topbar .title { flex: 1; min-width: 0; font-weight: 700; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .header-brand {
       flex: 0 0 auto; min-width: 58px; display: grid; justify-items: center; gap: 1px;
       color: var(--brand); text-decoration: none;
@@ -413,7 +413,7 @@
     .app { display: block; }
     main.content { height: 100vh; height: 100dvh; }
     .hdr { position: sticky; top: 0; z-index: 15; background: var(--bg); border-bottom: 1px solid var(--line); }
-    .hdr .topbar { position: static; border-bottom: 0; }
+    .hdr .topbar { position: relative; border-bottom: 0; }
     nav.menu { display: flex; flex-direction: row; overflow-x: auto; gap: 6px; padding: 4px 10px 8px; border: 0; scrollbar-width: none; }
     nav.menu::-webkit-scrollbar { display: none; }
     .navbar { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--card); border-bottom: 1px solid var(--line); }
@@ -1059,6 +1059,28 @@
     .settings-link:active { background: var(--hl); }
     .pt-chip { border: 1px solid var(--line); background: var(--card); color: var(--brand); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700; cursor: pointer; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .pt-chip:hover { background: var(--hl); }
+    /* ===== فهرس أعلى المصحف (مكان شريحة الصلاة القادمة): زر يفتح قائمة السورة/الجزء/الآية ===== */
+    .idx-top-btn { display: inline-flex; align-items: center; gap: 6px; max-width: 46vw; font-variant-numeric: normal; overflow: hidden; }
+    .idx-top-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    @media (max-width: 380px) { .idx-top-btn { max-width: 40vw; font-size: 12px; padding: 5px 10px; } }
+    .idx-top-btn .idx-caret {
+      flex: 0 0 auto; width: 0; height: 0; opacity: .7;
+      border-inline-start: 4px solid transparent; border-inline-end: 4px solid transparent;
+      border-top: 5px solid currentColor; transition: transform .15s ease;
+    }
+    .idx-top-btn[aria-expanded="true"] { background: var(--hl); }
+    .idx-top-btn[aria-expanded="true"] .idx-caret { transform: rotate(180deg); }
+    .idx-top-panel {
+      position: absolute; top: calc(100% + 6px); inset-inline-start: 8px; inset-inline-end: auto;
+      width: calc(100% - 16px); max-width: 560px; z-index: 61;
+      background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+      box-shadow: 0 18px 44px rgba(0,0,0,.22); padding: 12px; text-align: right;
+    }
+    .idx-top-panel[hidden] { display: none; }
+    .idx-top-panel .idx-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .idx-top-panel .lbl { display: block; margin-bottom: 3px; font-size: 12px; color: var(--muted); }
+    .idx-top-panel select { width: 100%; box-sizing: border-box; font-size: 15px; padding: 8px 6px; }
+    @media (max-width: 360px) { .idx-top-panel .idx-grid { gap: 6px; } .idx-top-panel select { font-size: 14px; } }
     .pt-hero { display: grid; gap: 10px; }
     .pt-hero-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
     .pt-hero h2 { margin: 2px 0 0; font-size: 24px; color: var(--brand); }
@@ -1120,35 +1142,29 @@
       .pt-hero h2 { font-size: 20px; }
     }
 
-    /* ===== المصحف بأسطر ثابتة لرواية حفص: تباعد 1.5 ومحاذاة كاملة للسطر ===== */
-    #pageBody.madani-lines { text-align: justify; }
+    /* ===== المصحف بأسطر ثابتة لرواية حفص =====
+       قاعدة واحدة: مقاس خط واحد لكل سطر في كل الصفحات (no stretch)، فلا سطر صغير وسطر كبير.
+       السطر يُعرض بعرضه الطبيعي موسّطًا، والمقاس يُحسب مرة واحدة لكل صفحة؛
+       والتكبير/التصغير يضرب هذا المقاس نفسه، فيبقى الشكل متناسقًا في كل الأحجام. */
+    #pageBody.madani-lines { text-align: center; overflow-x: hidden; overflow-y: visible; }
     #pageBody.madani-lines .mline {
-      display: block; white-space: nowrap; text-align: justify; text-align-last: justify;
+      display: block; white-space: nowrap; text-align: center; text-align-last: center;
       /* تعريض الحروف بحدود رقيقة متناسبة مع المقاس: أوضح للقراءة بلا تشويه الحركات */
       -webkit-text-stroke-width: calc(var(--quran-size, 26px) * 0.018);
       -webkit-text-stroke-color: currentColor;
       paint-order: stroke fill;
       font-family: var(--quran-font), "Amiri Quran", Amiri, serif;
       font-size: var(--quran-size);
-      line-height: var(--mline-h, calc(var(--quran-size) * 1.5)); margin: 0; padding: 0;
+      line-height: var(--mline-h, calc(var(--quran-size) * 1.9));
+      width: max-content; max-width: 100%; margin: 0 auto; padding: 0;
     }
-    #pageBody.madani-lines .mline.short { text-align: center; text-align-last: center; margin: 0 auto; }
     #pageBody.madani-lines .surah-banner, #pageBody.madani-lines .bism { line-height: 1.5; }
-    /* قياس موحّد: كل سطر في الصفحة بمقاس خط واحد (مقاس المصحف الحقيقي)،
-       ويُحسب المقاس من أطول سطر حتى تملأ الأسطر عرض الصفحة بلا تفاوت.
-       تكبير المستخدم يكبّر الصفحة كلها معًا فيبقى الشكل متناسقًا. */
-    #pageBody.madani-lines { overflow-x: hidden; overflow-y: visible; }
-    #pageBody.madani-lines .mline { width: var(--mushaf-w, 100%); margin-inline: auto; }
-    #pageBody.madani-lines .mline, #pageBody.madani-lines .mline.short { white-space: nowrap; }
-    /* عند التكبير: السطر يلتف داخل هوامش الورقة بمقاس خط واحد، والصفحة تطول فقط. */
-    #pageBody.madani-lines.wrapping .mline,
-    #pageBody.madani-lines.wrapping .mline.short {
-      white-space: normal; overflow-wrap: break-word; text-align: justify; text-align-last: right;
+    /* عند التكبير: السطر يلتف داخل هوامش الورقة بمقاس خط واحد، والصفحة تطول فقط
+       (محاذاة يمين للسطر الأخير حتى لا تُمدّ الكلمات وتظهر كلمة صغيرة وكلمة كبيرة). */
+    #pageBody.madani-lines.wrapping .mline {
+      white-space: normal; overflow-wrap: break-word; text-align: right; text-align-last: right;
       width: 100%; max-width: 100%; margin-inline: 0;
     }
-    #pageBody.madani-lines.wrapping .mline.short { text-align: center; text-align-last: center; }
-    /* الأسطر القصيرة (أوائل السور وآواخرها) تُعرض بعرضها الطبيعي موسّطةً، فلا تُمدّ ولا تُقصّ. */
-    #pageBody.madani-lines .mline.short { width: max-content; max-width: var(--mushaf-w, 100%); margin-inline: auto; }
     #pageBody.madani-lines .surah-banner, #pageBody.madani-lines .bism { width: min(100%, var(--mushaf-w, 100%)); margin-inline: auto; }
 
     /* شريط حجم الخط في المصحف: كلمة صغيرة + مقبض + أزرار متناسبة مع عرض الهاتف */
@@ -1235,8 +1251,27 @@
             <img src="icon.png" alt="" aria-hidden="true" />
             <span>سراج</span>
           </div>
-          <button class="pt-chip" id="ptChip" hidden type="button" aria-label="مواقيت الصلاة">المواقيت</button>
+          <button class="pt-chip idx-top-btn" id="idxTopBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="idxTopPanel" aria-label="فهرس السورة والجزء والآية" title="الفهرس: السورة والجزء والآية">
+            <span class="idx-top-name" id="idxTopName">الفهرس</span>
+            <i class="idx-caret" aria-hidden="true"></i>
+          </button>
           <div class="title" id="topTitle">المصحف</div>
+          <div class="idx-top-panel" id="idxTopPanel" hidden role="group" aria-label="الفهرس">
+            <div class="idx-grid">
+              <div>
+                <label class="lbl" for="idxTopSurah">السورة</label>
+                <select id="idxTopSurah"></select>
+              </div>
+              <div>
+                <label class="lbl" for="idxTopJuz">الجزء</label>
+                <select id="idxTopJuz"></select>
+              </div>
+              <div>
+                <label class="lbl" for="idxTopAyah">الآية</label>
+                <select id="idxTopAyah"></select>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="hdr-pager" aria-label="التنقل بين صفحات المصحف">
 <div class="pager">

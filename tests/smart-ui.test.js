@@ -100,16 +100,53 @@ test('madani page fitting: مقاس واحد لكل الصفحة وتمدد طو
   assert.match(app, /querySelectorAll\('\.mline'\)/);
   assert.match(app, /const widthAt = \(size\) =>/);
   assert.match(app, /for \(let i = 0; i < 14; i \+= 1\)/);
-  assert.match(app, /const size = Math\.max\(9, Math\.min\(90, fitSize \* scale\)\)/);
+  // نسبة عرض الصفحة الأصلية تضبط المقاس مرة واحدة، فلا تُكبَّر صفحة قصيرة على غيرها
+  assert.match(app, /let pageRatio = 0;/);
+  assert.match(app, /if \(!pageRatio\) pageRatio = 1;/);
+  assert.match(app, /const baseSize = fitSize \* Math\.min\(1, pageRatio\)/);
+  // مقاس واحد لكل الأسطر مع حد أدنى واضح للقراءة عند التصغير
+  assert.match(app, /const size = Math\.max\(16, Math\.min\(90, baseSize \* scale\)\)/);
+  // لا تُفرض نسب عرض على الأسطر (سبب «سطر صغير وسطر كبير») بل تُحفظ كبيانات للقياس
+  assert.match(app, /const wAttr = ln\.w \? ` data-w=/);
+  assert.doesNotMatch(app, /style="width:\$\{/);
   // التكبير يفعّل الالتفاف بمقاس موحّد بدل مدّ الصفحة أفقيًا
-  assert.match(app, /const wrapping = scale > 1\.001;/);
+  assert.match(app, /const wrapping = size > fitSize \* 1\.001;/);
   assert.match(app, /body\.classList\.toggle\('wrapping', wrapping\)/);
   assert.match(app, /--mushaf-w', wrapping \? '100%'/);
-  assert.match(html, /#pageBody\.madani-lines\.wrapping \.mline/);
+  // أسطر المصحف بعرضها الطبيعي موسّطة بلا مطّ للحروف
+  assert.match(html, /#pageBody\.madani-lines \.mline \{[^}]*width: max-content/);
+  assert.match(html, /#pageBody\.madani-lines \.mline \{[^}]*text-align-last: center/);
+  assert.match(html, /#pageBody\.madani-lines\.wrapping \.mline \{[^}]*text-align-last: right/);
   // حجم الخط داخل الإعدادات فقط (لا شريط في رأس المصحف)
   assert.match(html, /id="setSize"/);
   assert.doesNotMatch(html, /id="fontRange"/);
   assert.doesNotMatch(html, /id="fontInc"/);
+});
+
+test('header index: قائمة السورة/الجزء/الآية تحل مكان شريحة الصلاة القادمة', () => {
+  // الشريحة القديمة أُزيلت نهائيًا من الرأس ومن منطق المواقيت
+  assert.doesNotMatch(html, /id="ptChip"/);
+  assert.doesNotMatch(read('prayer-ui.js'), /ptChip|els\.chip/);
+  // الفهرس الجديد في نفس موضع الشريحة أعلى المصحف
+  for (const id of ['idxTopBtn', 'idxTopPanel', 'idxTopSurah', 'idxTopJuz', 'idxTopAyah']) {
+    assert.match(html, new RegExp(`id="${id}"`));
+  }
+  assert.ok(html.indexOf('id="idxTopBtn"') < html.indexOf('id="idxTopPanel"'));
+  assert.match(html, /\.idx-top-panel \{[^}]*position: absolute/);
+  assert.match(html, /#topbar \.title|topbar \.title/);
+  // المنطق: نفس دوال الفهرس في الإعدادات + مزامنة مع الصفحة الحالية
+  assert.match(app, /function syncTopIndex\(\)/);
+  assert.match(app, /function topIdxOpen\(open\)/);
+  assert.match(app, /topIdx\.surah\.addEventListener\('change'/);
+  assert.match(app, /topIdx\.juz\.addEventListener\('change'/);
+  assert.match(app, /topIdx\.ayah\.addEventListener\('change'/);
+  assert.match(app, /goToAyah\(s, 1\)/);
+  assert.match(app, /JUZ_START\[Number\(e\.target\.value\) - 1\]/);
+  assert.match(app, /syncTopIndex\(\);/);
+  // نسخة قناة التحديث تُطابق الأصل
+  for (const name of ['index.html', 'app.js', 'prayer-ui.js']) {
+    assert.equal(read(`update/${name}`), read(name), `${name} must match the update channel copy`);
+  }
 });
 
 test('JSON update overlay is hashed, stored outside localStorage, and fail-closed', () => {

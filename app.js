@@ -712,6 +712,70 @@
     $('#idxJuz').innerHTML = JUZ_START.map((_, i) => `<option value="${i + 1}">الجزء ${toArabicDigits(i + 1)}</option>`).join('');
     syncIndexSelects();
   }
+  // ---------- فهرس أعلى المصحف: نفس قوائم الإعدادات (سورة/جزء/آية) مكان شريحة الصلاة القادمة ----------
+  const topIdx = {
+    btn: $('#idxTopBtn'),
+    panel: $('#idxTopPanel'),
+    name: $('#idxTopName'),
+    surah: $('#idxTopSurah'),
+    juz: $('#idxTopJuz'),
+    ayah: $('#idxTopAyah'),
+    surahNo: 0,
+  };
+  function topIdxOpen(open) {
+    if (!topIdx.panel) return;
+    const willOpen = typeof open === 'boolean' ? open : topIdx.panel.hidden;
+    topIdx.panel.hidden = !willOpen;
+    if (topIdx.btn) topIdx.btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+  }
+  function topIdxFillAyah(surahNo) {
+    if (!topIdx.ayah) return;
+    const count = surahs[surahNo - 1]?.numberOfAyahs || 0;
+    topIdx.ayah.innerHTML = Array.from({ length: count }, (_, i) => `<option value="${i + 1}">${toArabicDigits(i + 1)}</option>`).join('');
+    topIdx.surahNo = surahNo;
+  }
+  function syncTopIndex() {
+    if (!surahs.length || !topIdx.surah) return;
+    const cur = state.sel || { s: 1, n: 1, juz: 1 };
+    if (!topIdx.surah.options.length) {
+      topIdx.surah.innerHTML = surahs.map((x) => `<option value="${x.number}">${x.number}. ${esc(x.name)}</option>`).join('');
+      topIdx.juz.innerHTML = JUZ_START.map((_, i) => `<option value="${i + 1}">الجزء ${toArabicDigits(i + 1)}</option>`).join('');
+    }
+    topIdx.surah.value = String(cur.s);
+    topIdx.juz.value = String(cur.juz || 1);
+    if (topIdx.surahNo !== cur.s) topIdxFillAyah(cur.s);
+    topIdx.ayah.value = String(cur.n);
+    if (topIdx.name) {
+      const plain = surahNameShort(cur.s)
+        .replace(/\u0671/g, 'ا')
+        .replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]/g, '');
+      topIdx.name.textContent = `${plain} · ${toArabicDigits(cur.n)}`;
+    }
+  }
+  if (topIdx.btn) {
+    topIdx.btn.addEventListener('click', (e) => { e.stopPropagation(); topIdxOpen(); });
+    topIdx.surah.addEventListener('change', (e) => {
+      const s = Number(e.target.value);
+      topIdxFillAyah(s);
+      topIdx.ayah.value = '1';
+      topIdxOpen(false);
+      goToAyah(s, 1);
+    });
+    topIdx.juz.addEventListener('change', (e) => {
+      const [s, a] = JUZ_START[Number(e.target.value) - 1] || [1, 1];
+      topIdxOpen(false);
+      goToAyah(s, a);
+    });
+    topIdx.ayah.addEventListener('change', (e) => {
+      topIdxOpen(false);
+      goToAyah(Number(topIdx.surah.value), Number(e.target.value));
+    });
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#idxTopPanel') && !e.target.closest('#idxTopBtn')) topIdxOpen(false);
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') topIdxOpen(false); });
+  }
+
   $('#idxSurah').addEventListener('change', (e) => { fillAyahNums(Number(e.target.value)); goToAyah(Number(e.target.value), 1); closeSide(); });
   $('#idxJuz').addEventListener('change', (e) => {
     const [s, a] = JUZ_START[Number(e.target.value) - 1];
@@ -899,8 +963,10 @@
       if (ln.k === 'sura') { out.push(`<div class="surah-banner">${esc(surahName(surahOfNext(i + 1)))}</div>`); return; }
       if (ln.k === 'bism') { out.push(`<div class="bism">${esc(bismText())}</div>`); return; }
       const parts = madaniLineParts(ln.a, ln.b, showTajweed);
-      const style = ln.w ? ` style="width:${(ln.w * 100).toFixed(2)}%"` : '';
-      out.push(`<div class="mline${ln.w ? ' short' : ''}"${style}>${parts}</div>`);
+      // نسبة عرض السطر في المصحف الأصلي: تُستعمل لضبط مقاس الخط مرة واحدة لكل صفحة
+      // (لا لعرض الصندوق)، حتى لا تُمدّ الأسطر القصيرة ويختلف مقاس كلمة عن أخرى.
+      const wAttr = ln.w ? ` data-w="${(Number(ln.w) || 0).toFixed(3)}"` : '';
+      out.push(`<div class="mline${ln.w ? ' short' : ''}"${wAttr}>${parts}</div>`);
     });
     return out.join('');
   }
@@ -951,13 +1017,20 @@
         if (widthAt(mid) > avail) hi = mid; else lo = mid;
       }
       const fitSize = lo;
+      // نسبة عرض الصفحة في المصحف الأصلي: صفحة كاملة = 1، وصفحة قصيرة (أوائل السور)
+      // = نسبة أطول سطر فيها. نضرب فيها المقاس حتى يبقى الخط بالمقاس نفسه في كل الصفحات.
+      let pageRatio = 0;
+      lines.forEach((el) => { const w = Number(el.dataset.w) || 0; if (w > pageRatio) pageRatio = w; });
+      if (!pageRatio) pageRatio = 1;
+      const baseSize = fitSize * Math.min(1, pageRatio);
       const scale = userFontScale();
-      const size = Math.max(9, Math.min(90, fitSize * scale));
+      // مقاس خط واحد لكل أسطر الصفحة، بحد أدنى واضح للقراءة عند التصغير.
+      const size = Math.max(16, Math.min(90, baseSize * scale));
       body.style.setProperty('--quran-size', `${size.toFixed(2)}px`);
       // التكبير لا يمدّ الصفحة عرضيًا أبدًا: عند تجاوز مقاس الملاءمة نسمح للسطر
       // بالالتفاف بمقاس خط واحد لكل الصفحة، فتمتد الصفحة طوليًا فقط
       // وتبقى الكلمات داخل هوامش الورقة.
-      const wrapping = scale > 1.001;
+      const wrapping = size > fitSize * 1.001;
       body.classList.toggle('wrapping', wrapping);
       body.style.setProperty('--mushaf-w', wrapping ? '100%' : `${Math.ceil(widthAt(size))}px`);
       const pageBox = body.closest('.page') || body.parentElement;
@@ -965,8 +1038,10 @@
       const navTop = navBar ? navBar.getBoundingClientRect().top : (window.innerHeight || 640);
       const pageTop = pageBox ? pageBox.getBoundingClientRect().top : 0;
       const visibleH = Math.max(160, navTop - pageTop);
-      const lineCount = Math.max(1, wrapping ? lines.length * scale : lines.length);
-      const lh = wrapping ? 1.85 : Math.min(2.3, Math.max(1.5, visibleH / (lineCount * size)));
+      // تباعد ثابت نسبيًا: لا يقلّ عن 1.62 ولا يزيد على 1.95 من مقاس الخط،
+      // فتبقى الأسطر متساوية المظهر في كل الصفحات والأحجام.
+      const lineCount = Math.max(1, lines.length);
+      const lh = wrapping ? 1.9 : Math.min(1.95, Math.max(1.62, visibleH / (lineCount * size)));
       body.style.setProperty('--mline-h', `${(size * lh).toFixed(2)}px`);
       if (typeof applyTajweedScale === 'function') applyTajweedScale();
     });
@@ -1129,6 +1204,7 @@
     $('#btnBm').innerHTML = `${bm ? '★' : '☆'} <span>${bm ? 'محفوظة' : 'حفظ علامة'}</span>`;
     updateResumeBtn();
     renderIndex();
+    syncTopIndex();
   }
 
   // أدوات التشغيل: السورة، الآية، الشيخ
@@ -1892,6 +1968,7 @@
     updateResumeBtn();
     syncPlayControls();
     if (surahChanged) renderIndex();
+    syncTopIndex();
   }
 
   // ---------- نافذة التجويد ----------

@@ -760,10 +760,6 @@
       return;
     }
     els.nextName.textContent = `صلاة ${info.name}`;
-    if (els.chip) {
-      const left = Math.max(0, Math.round(info.minutesLeft));
-      els.chip.textContent = `${info.name} · ${left >= 60 ? Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0') : left + ' د'}`;
-    }
     const when = new Date();
     when.setHours(0, 0, 0, 0);
     when.setMinutes(Math.round(info.at));
@@ -1434,16 +1430,9 @@
     loadConfig();
     state.toast = options.toast || null;
     state.onNavigate = options.onNavigate || null;
-    els.chip = el('ptChip');
     els.nextName = el('ptNextName');
     els.nextAt = el('ptNextAt');
     els.countdown = el('ptCountdown');
-    if (els.chip) {
-      els.chip.hidden = false;
-      els.chip.addEventListener('click', () => {
-        if (typeof state.onNavigate === 'function') state.onNavigate('prayer');
-      });
-    }
     els.bar = el('ptBar');
     els.times = el('ptTimes');
     els.cityLine = el('ptCityLine');
