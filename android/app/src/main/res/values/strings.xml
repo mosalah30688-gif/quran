@@ -4,4 +4,7 @@
     <string name="title_activity_main">سراج — قرآن كريم</string>
     <string name="package_name">com.quran.mushaf</string>
     <string name="custom_url_scheme">com.quran.mushaf</string>
+    <string name="siraj_device_admin_label">سراج — إطفاء الشاشة بعد الأذان</string>
+    <string name="siraj_device_admin_explanation">يسمح لسراج بإطفاء الشاشة تلقائيًا بعد انتهاء الأذان حين تترك الهاتف دون استخدام. لا يمنح التطبيق أي صلاحية أخرى: لا محو بيانات ولا تغيير كلمة مرور ولا قفل إجباري للجهاز.</string>
+    <string name="siraj_device_admin_disable_warning">إن أوقفت هذا الإذن، ستبقى الشاشة تعمل بعد الأذان حتى تنطفئ بمهلة الهاتف.</string>
 </resources>

@@ -8,6 +8,87 @@
 (function (root) {
   'use strict';
 
+
+  // ==========================================================================
+  // خوارزمية إطفاء الشاشة بعد انتهاء الأذان
+  // --------------------------------------------------------------------------
+  // المنطق أدناه صرف (بلا DOM وبلا مؤقتات) حتى يُختبر وحده في tests/idle-sleep.test.js،
+  // ثم يستخدمه المُنسّق في نهاية الملف مع إشارات الاستخدام الحقيقية.
+  //
+  // المصطلحات:
+  //  • إشارة استخدام: أي لمسة/ضغطة/تمرير، أو حركة ملموسة للهاتف.
+  //  • نافذة النشاط activeMs: إن وقعت إشارة خلالها فالمستخدم يستخدم الهاتف الآن.
+  //  • السكون stillMs: الهاتف مستقر (لا حركة) ⇒ لا أحد يحمله.
+  //  • المهلة graceMs: تُحسب من لحظة انتهاء الأذان قبل السماح بالإطفاء.
+  // ==========================================================================
+  const SLEEP_DEFAULTS = Object.freeze({ enabled: true, graceMs: 30000, activeMs: 6000, stillMs: 2500 });
+
+  // null و '' ليستا صفرًا هنا: تعنيان «لم يُضبط» فتُستعمل القيمة الافتراضية.
+  function sleepNumber(value, fallback) {
+    if (value === null || value === undefined || value === '') return fallback;
+    return Number.isFinite(Number(value)) ? Number(value) : fallback;
+  }
+
+  function sleepTime(value) {
+    const n = Number(value);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  }
+
+  /** يطبّع إعدادات المستخدم إلى أرقام آمنة. */
+  function sleepConfig(config) {
+    const src = config && typeof config === 'object' ? config : {};
+    return {
+      enabled: src.enabled !== false,
+      graceMs: Math.max(0, sleepNumber(src.graceMs, SLEEP_DEFAULTS.graceMs)),
+      activeMs: Math.max(500, sleepNumber(src.activeMs, SLEEP_DEFAULTS.activeMs)),
+      stillMs: Math.max(0, sleepNumber(src.stillMs, SLEEP_DEFAULTS.stillMs)),
+    };
+  }
+
+  /**
+   * القرار: هل ننتظر أم نطفئ الشاشة الآن؟
+   *
+   * «لحظة الترك» = الأحدث بين انتهاء الأذان وآخر إشارة استخدام؛ فكل لمسة تبدأ
+   * المهلة من جديد، ولا يمكن أن تطفأ الشاشة والمستخدم يلمسها.
+   *
+   * @param {{adhanActive?:boolean, adhanEndedAt?:number, lastInteraction?:number,
+   *          lastMotion?:number, motion?:boolean, screenOn?:boolean}} input إشارات اللحظة
+   * @param {number} now الزمن الحالي بالمللي ثانية
+   * @param {object} config إعدادات المستخدم
+   * @returns {{action:'cancel'|'arm'|'wait'|'sleep', reason:string, waitMs:number, idleMs:number}}
+   */
+  function sleepDecision(input, now, config) {
+    const cfg = sleepConfig(config);
+    const at = sleepNumber(now, Date.now());
+    const signal = input && typeof input === 'object' ? input : {};
+    const endedAt = sleepTime(signal.adhanEndedAt);
+    const lastUse = sleepTime(signal.lastInteraction);
+    const leftAt = Math.max(endedAt, lastUse);
+    const idleMs = endedAt ? Math.max(0, at - leftAt) : 0;
+    const verdict = (action, reason, waitMs) => ({
+      action,
+      reason,
+      waitMs: Math.max(0, Math.round(sleepNumber(waitMs, 0))),
+      idleMs: Math.round(idleMs),
+    });
+
+    if (!cfg.enabled) return verdict('cancel', 'disabled');
+    if (signal.adhanActive) return verdict('arm', 'adhan-playing');
+    if (!endedAt) return verdict('arm', 'waiting-adhan');
+    if (signal.screenOn === false) return verdict('cancel', 'screen-off');
+    if (idleMs < cfg.graceMs) return verdict('wait', 'grace', cfg.graceMs - idleMs);
+    if (signal.motion && cfg.stillMs > 0) {
+      const lastMotion = sleepTime(signal.lastMotion);
+      const sinceMotion = lastMotion ? at - lastMotion : Number.POSITIVE_INFINITY;
+      if (sinceMotion < cfg.stillMs) return verdict('wait', 'moving', cfg.stillMs - sinceMotion);
+    }
+    return verdict('sleep', 'idle-after-adhan');
+  }
+
+  const SleepCore = { defaults: SLEEP_DEFAULTS, config: sleepConfig, decide: sleepDecision };
+  root.SirajIdleSleep = Object.assign(root.SirajIdleSleep || {}, SleepCore);
+  if (typeof module !== 'undefined' && module.exports) module.exports = SleepCore;
+
   const PT = root.SirajPrayerTimes;
   const DATA = root.SirajPrayerData;
   if (!PT || !DATA) return;
@@ -34,6 +115,10 @@
     preMinutes: 10,
     iqamaEnabled: true,
     iqamaMinutes: { fajr: 20, dhuhr: 15, asr: 15, maghrib: 10, isha: 15 },
+    // إطفاء الشاشة بعد انتهاء الأذان حين يترك المستخدم الهاتف
+    sleepAfterAdhan: true,
+    sleepGraceSeconds: 30,
+    sleepStill: true,
   };
 
   const els = {};
@@ -227,6 +312,7 @@
     audio.volume = Math.min(1, Math.max(0, num(state.config.adhanVolume, 1)));
     state.playingId = item.id;
     state.adhanLive = Boolean(options.prayerName);
+    noteAdhanStarted();
     renderAdhanState();
     audio.ontimeupdate = renderAdhanScreenProgress;
     audio.onloadedmetadata = renderAdhanScreenProgress;
@@ -247,7 +333,10 @@
       state.playingId = null;
       renderAdhanState();
       closeAdhanScreen();
+      // خوارزمية الإطفاء تبدأ عدّها من هنا: انتهاء الأذان ثم سكون ثم إطفاء.
+      noteAdhanEnded('ended');
     };
+    audio.onerror = () => noteAdhanEnded('error');
     return true;
   }
 
@@ -425,7 +514,308 @@
     state.playingId = null;
     renderAdhanState();
     closeAdhanScreen();
+    noteAdhanEnded('stopped');
   }
+
+
+  // ---------- مُنسّق إطفاء الشاشة: من الإشارات إلى القرار إلى التنفيذ ----------
+  // الجسر الأصلي: SirajScreenGuard (قدرات + قفل فوري + رفع علم إبقاء الشاشة).
+  const SCREEN_PLUGIN = 'SirajScreenGuard';
+  const MOTION_THRESHOLD = 0.45;   // تغيّر تسارع يُعد حركة يد/رفع للهاتف (م/ث²)
+  const MOTION_STALE_MS = 6000;    // لا إشارات حركة حديثة ⇒ المستشعر غير متاح أو الهاتف ساكن
+
+  const sleepState = {
+    adhanActive: false,
+    endedAt: 0,
+    lastInteraction: Date.now(),
+    lastMotion: 0,
+    motionSeen: false,
+    motion: false,
+    screenOn: true,
+    ticker: null,
+    blocked: false,
+    sleeping: false,
+    last: { action: 'cancel', reason: 'idle', waitMs: 0, idleMs: 0 },
+    admin: false,
+    lockMethod: '',
+    keepAwakeHeld: false,
+    lastRenderAt: 0,
+    wired: false,
+  };
+
+  function hasScreenGuard() {
+    return !!(Cap && Cap.isPluginAvailable && Cap.isPluginAvailable(SCREEN_PLUGIN));
+  }
+
+  function screenCall(method, payload) {
+    if (!hasScreenGuard() || !Cap.nativePromise) return Promise.resolve(null);
+    return Cap.nativePromise(SCREEN_PLUGIN, method, payload || {}).catch(() => null);
+  }
+
+  function sleepConfigFromState() {
+    const config = state.config || {};
+    return {
+      enabled: config.sleepAfterAdhan !== false,
+      graceMs: Math.max(0, num(config.sleepGraceSeconds, 30)) * 1000,
+      activeMs: SLEEP_DEFAULTS.activeMs,
+      stillMs: config.sleepStill !== false ? SLEEP_DEFAULTS.stillMs : 0,
+    };
+  }
+
+  function sleepSnapshot() {
+    // المستشعر قد لا يعمل في بعض الأجهزة/الويب فيُعتمد على اللمس وحده.
+    sleepState.motion = sleepState.motionSeen
+      && (Date.now() - sleepState.lastMotion) < MOTION_STALE_MS;
+    return {
+      adhanActive: sleepState.adhanActive,
+      adhanEndedAt: sleepState.endedAt,
+      lastInteraction: sleepState.lastInteraction,
+      lastMotion: sleepState.lastMotion,
+      motion: sleepState.motion,
+      screenOn: sleepState.screenOn,
+    };
+  }
+
+  function sleepStatusText() {
+    const cfg = sleepConfigFromState();
+    if (!cfg.enabled) return 'إطفاء الشاشة التلقائي متوقف.';
+    if (sleepState.adhanActive) return 'الأذان يعمل الآن؛ الشاشة تبقى مضاءة حتى ينتهي.';
+    if (!sleepState.endedAt) return 'تُطفأ الشاشة تلقائيًا بعد انتهاء الأذان إن لم تُستخدم.';
+    if (sleepState.blocked) {
+      return sleepState.lockMethod === 'admin'
+        ? 'أُطفئت الشاشة تلقائيًا بعد الأذان. المس الشاشة للمتابعة.'
+        : 'أُطلق إبقاء الشاشة بعد الأذان؛ ستقفل بمهلة الهاتف. المس للمتابعة.';
+    }
+    const left = Math.max(0, Math.round((cfg.graceMs - sleepState.last.idleMs) / 1000));
+    if (sleepState.last.action === 'wait' && sleepState.last.reason === 'grace') {
+      return `الشاشة تُطفأ بعد ${left} ثانية إن لم تُستخدم.`;
+    }
+    if (sleepState.last.action === 'wait' && sleepState.last.reason === 'user-active') {
+      return 'المستخدم يستخدم الهاتف الآن؛ الإطفاء مؤجّل.';
+    }
+    if (sleepState.last.action === 'wait' && sleepState.last.reason === 'moving') {
+      return 'الهاتف يتحرك؛ الإطفاء مؤجّل حتى يستقر.';
+    }
+    return hasScreenGuard() && !sleepState.admin
+      ? 'الشاشة تُترك لمهلة الهاتف. فعّل «إذن القفل» لإطفائها فورًا بعد الأذان.'
+      : 'جاهز: تُطفأ الشاشة بعد الأذان إن لم تُستخدم.';
+  }
+
+  function renderSleepLine() {
+    if (!els.sleepStatus) return;
+    els.sleepStatus.textContent = sleepStatusText();
+    if (els.sleepAdminBtn) {
+      els.sleepAdminBtn.textContent = sleepState.admin ? 'إيقاف إذن القفل' : 'تفعيل إذن القفل';
+    }
+  }
+
+  function noteInteraction(extraMs) {
+    const now = Date.now();
+    sleepState.lastInteraction = now + num(extraMs, 0);
+    if (sleepState.blocked || sleepState.sleeping) wakeUpScreen();
+    // رسم سطر الحالة مُخفَّف: لا نكتب في DOM مع كل لمسة.
+    if (now - sleepState.lastRenderAt > 900) {
+      sleepState.lastRenderAt = now;
+      renderSleepLine();
+    }
+  }
+
+  function wakeUpScreen() {
+    sleepState.blocked = false;
+    sleepState.sleeping = false;
+    if (root.SirajWakeControl && root.SirajWakeControl.release) {
+      try { root.SirajWakeControl.release(); } catch { /* لا شيء */ }
+    }
+    if (root.SirajWakeControl && root.SirajWakeControl.block) {
+      try { root.SirajWakeControl.block(false); } catch { /* لا شيء */ }
+    }
+    if (hasScreenGuard() && !sleepState.keepAwakeHeld) {
+      // نُبقي الشاشة مضاءة أثناء الاستخدام الفعلي كما كان التطبيق يفعل.
+      sleepState.keepAwakeHeld = true;
+      screenCall('setKeepAwake', { on: true });
+    }
+  }
+
+  function holdWakeLockForAdhan(on) {
+    sleepState.keepAwakeHeld = !!on;
+    if (hasScreenGuard()) screenCall('setKeepAwake', { on: !!on });
+    if (root.SirajWakeControl && root.SirajWakeControl.block && !on) {
+      try { root.SirajWakeControl.block(false); } catch { /* لا شيء */ }
+    }
+  }
+
+  async function performSleep(reason) {
+    if (sleepState.blocked) return sleepState.last;
+    sleepState.blocked = true;
+    sleepState.last = sleepDecision(sleepSnapshot(), Date.now(), sleepConfigFromState());
+    if (root.SirajWakeControl && root.SirajWakeControl.block) {
+      try { root.SirajWakeControl.block(true); } catch { /* لا شيء */ }
+    }
+    sleepState.keepAwakeHeld = false;
+    const result = await screenCall('lockNow', { reason });
+    sleepState.lockMethod = result && result.method ? String(result.method) : (hasScreenGuard() ? 'no-admin' : 'web');
+    sleepState.sleeping = true;
+    if (result && result.ok) {
+      // الشاشة أُطفئت بالفعل؛ الإشارات التالية ستأتي من مستمع حالة الشاشة.
+      sleepState.screenOn = false;
+    }
+    renderSleepLine();
+    return sleepState.last;
+  }
+
+  function stopSleepTicker() {
+    if (sleepState.ticker) clearInterval(sleepState.ticker);
+    sleepState.ticker = null;
+  }
+
+  function sleepTick() {
+    const decision = sleepDecision(sleepSnapshot(), Date.now(), sleepConfigFromState());
+    sleepState.last = decision;
+    if (decision.action === 'sleep') {
+      stopSleepTicker();
+      performSleep(decision.reason);
+      return;
+    }
+    if (decision.action === 'cancel' || decision.action === 'arm') {
+      stopSleepTicker();
+    }
+    renderSleepLine();
+  }
+
+  function startSleepTicker() {
+    if (sleepState.ticker) return;
+    sleepState.ticker = setInterval(sleepTick, 1000);
+    sleepTick();
+  }
+
+  /** يُنادى عند بدء أي أذان (داخل الشاشة أو من منبّه النظام). */
+  function noteAdhanStarted() {
+    sleepState.adhanActive = true;
+    sleepState.endedAt = 0;
+    sleepState.lastInteraction = Date.now();
+    sleepState.last = sleepDecision(sleepSnapshot(), Date.now(), sleepConfigFromState());
+    holdWakeLockForAdhan(true);
+    renderSleepLine();
+  }
+
+  /** يُنادى عند انتهاء الأذان أو إيقافه: من هنا تبدأ المهلة. */
+  function noteAdhanEnded(reason) {
+    if (!sleepState.adhanActive && !sleepState.endedAt) return;
+    sleepState.adhanActive = false;
+    sleepState.endedAt = Date.now();
+    sleepState.lastInteraction = Date.now();
+    holdWakeLockForAdhan(false);
+    if (sleepState.blocked) { sleepState.blocked = false; }
+    root.SirajIdleSleepLastEnd = { reason: String(reason || 'ended'), at: sleepState.endedAt };
+    renderSleepLine();
+    startSleepTicker();
+  }
+
+  function refreshCapabilities() {
+    return screenCall('capabilities', {}).then((caps) => {
+      if (!caps) return null;
+      sleepState.admin = !!caps.admin;
+      sleepState.screenOn = caps.interactive !== false;
+      renderSleepLine();
+      return caps;
+    });
+  }
+
+  function wireSleepSignals() {
+    if (sleepState.wired || typeof document === 'undefined') return;
+    sleepState.wired = true;
+    const touch = () => noteInteraction(0);
+    ['pointerdown', 'touchstart', 'keydown', 'wheel'].forEach((name) => {
+      document.addEventListener(name, touch, { passive: true });
+    });
+    // أي إشارة استخدام تمدّد المهلة ٦ ثوانٍ إضافية كاملة من لحظة آخر لمسة.
+    document.addEventListener('scroll', () => noteInteraction(0), { passive: true, capture: true });
+    document.addEventListener('visibilitychange', () => {
+      sleepState.screenOn = !document.hidden;
+      if (!document.hidden) {
+        noteInteraction(SLEEP_DEFAULTS.activeMs);
+        // العودة من شاشة إذن القفل أو من إعدادات النظام: نعيد قراءة القدرات.
+        refreshCapabilities();
+      }
+      renderSleepLine();
+    });
+    if (typeof window !== 'undefined' && window.addEventListener) {
+      let previous = null;
+      window.addEventListener('devicemotion', (event) => {
+        const acc = event && (event.accelerationIncludingGravity || event.acceleration);
+        if (!acc) return;
+        const magnitude = Math.sqrt(
+          Math.pow(num(acc.x, 0), 2) + Math.pow(num(acc.y, 0), 2) + Math.pow(num(acc.z, 0), 2));
+        if (!Number.isFinite(magnitude)) return;
+        sleepState.motionSeen = true;
+        const delta = previous === null ? 0 : Math.abs(magnitude - previous);
+        previous = magnitude;
+        if (delta > MOTION_THRESHOLD) {
+          sleepState.lastMotion = Date.now();
+          noteInteraction(0);
+        }
+      }, { passive: true });
+    }
+    if (hasScreenGuard() && Cap.addListener) {
+      try {
+        Cap.addListener(SCREEN_PLUGIN, 'capabilities', (payload) => {
+          sleepState.admin = !!(payload && payload.admin);
+          renderSleepLine();
+        });
+      } catch { /* لا مستمع للجسر */ }
+      try {
+        Cap.addListener(SCREEN_PLUGIN, 'screen', (payload) => {
+          const on = !payload || payload.interactive !== false;
+          sleepState.screenOn = on;
+          if (on) {
+            sleepState.blocked = false;
+            sleepState.sleeping = false;
+            noteInteraction(SLEEP_DEFAULTS.activeMs);
+          }
+          renderSleepLine();
+        });
+      } catch { /* لا مستمع للجسر */ }
+    }
+    refreshCapabilities();
+  }
+
+  async function toggleSleepAdmin() {
+    if (!hasScreenGuard()) {
+      toast('إطفاء الشاشة الفوري يحتاج تطبيق أندرويد مثبّتًا على الجهاز.');
+      return;
+    }
+    if (sleepState.admin) {
+      const result = await screenCall('revokeAdmin', {});
+      sleepState.admin = !!(result && result.admin);
+      toast(sleepState.admin ? 'إذن القفل ما زال مفعّلًا.' : 'أُوقف إذن القفل؛ تُترك الشاشة لمهلة الهاتف.');
+    } else {
+      const result = await screenCall('requestAdmin', {});
+      sleepState.admin = !!(result && result.admin);
+      toast('أكمل تفعيل «إذن القفل» في الشاشة التي ستفتح.');
+    }
+    renderSleepLine();
+  }
+
+  /** للاختبار اليدوي: نفّذ القرار فورًا كما لو انتهى الأذان ومرّت المهلة. */
+  function simulateIdleSleep() {
+    sleepState.adhanActive = false;
+    sleepState.endedAt = Date.now() - Math.max(0, sleepConfigFromState().graceMs) - 1000;
+    sleepState.lastInteraction = Date.now() - SLEEP_DEFAULTS.activeMs - 1000;
+    sleepState.lastMotion = 0;
+    sleepState.screenOn = true;
+    return performSleep('simulated');
+  }
+
+  Object.assign(root.SirajIdleSleep, {
+    start: noteAdhanStarted,
+    end: noteAdhanEnded,
+    touch: noteInteraction,
+    status: () => ({ ...sleepState.last, blocked: sleepState.blocked, admin: sleepState.admin, text: sleepStatusText() }),
+    config: sleepConfigFromState,
+    simulate: simulateIdleSleep,
+    isSleeping: () => sleepState.blocked,
+    admin: toggleSleepAdmin,
+  });
 
   // نغمة الإقامة: قصيرة ومولّدة محليًا حتى لا تحتاج ملفًا
 
@@ -955,6 +1345,9 @@
     if (els.highLat) els.highLat.value = config.highLatitude;
     if (els.adhanToggle) els.adhanToggle.checked = !!config.adhanEnabled;
     if (els.iqamaToggle) els.iqamaToggle.checked = !!config.iqamaEnabled;
+    if (els.sleepToggle) els.sleepToggle.checked = config.sleepAfterAdhan !== false;
+    if (els.sleepStill) els.sleepStill.checked = config.sleepStill !== false;
+    if (els.sleepGrace) els.sleepGrace.value = String(Math.max(0, num(config.sleepGraceSeconds, 30)));
     if (els.preSelect) els.preSelect.value = String(config.preMinutes);
     if (els.clock24) els.clock24.checked = !!config.use24h;
     if (els.volumeRange) els.volumeRange.value = String(Math.round(config.adhanVolume * 100));
@@ -1384,6 +1777,20 @@
     els.iqamaToggle && els.iqamaToggle.addEventListener('change', (e) => {
       state.config.iqamaEnabled = e.target.checked; saveConfig(); renderIqamaLine();
     });
+    els.sleepToggle && els.sleepToggle.addEventListener('change', (e) => {
+      state.config.sleepAfterAdhan = e.target.checked; saveConfig(); renderSleepLine();
+      toast(e.target.checked ? 'إطفاء الشاشة بعد الأذان مفعّل.' : 'إطفاء الشاشة بعد الأذان متوقف.');
+      if (!e.target.checked) { stopSleepTicker(); if (sleepState.blocked) wakeUpScreen(); }
+    });
+    els.sleepStill && els.sleepStill.addEventListener('change', (e) => {
+      state.config.sleepStill = e.target.checked; saveConfig(); renderSleepLine();
+    });
+    els.sleepGrace && els.sleepGrace.addEventListener('change', (e) => {
+      state.config.sleepGraceSeconds = Math.max(0, Math.min(600, num(e.target.value, 30)));
+      e.target.value = String(state.config.sleepGraceSeconds);
+      saveConfig(); renderSleepLine();
+    });
+    els.sleepAdminBtn && els.sleepAdminBtn.addEventListener('click', () => { toggleSleepAdmin(); });
     els.preSelect && els.preSelect.addEventListener('change', (e) => {
       state.config.preMinutes = Number(e.target.value); saveConfig();
     });
@@ -1467,6 +1874,11 @@
     els.coordLng = el('ptLng');
     els.methodNote = el('ptMethodNote');
     els.bgStatus = el('ptBgStatus');
+    els.sleepToggle = el('ptSleepEnabled');
+    els.sleepGrace = el('ptSleepGrace');
+    els.sleepStill = el('ptSleepStill');
+    els.sleepAdminBtn = el('ptSleepAdmin');
+    els.sleepStatus = el('ptSleepStatus');
     if (!els.times) return false;
 
     renderCities();
@@ -1492,6 +1904,8 @@
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) syncBackground(false);
     });
+    wireSleepSignals();
+    renderSleepLine();
     return true;
   }
 
@@ -1516,6 +1930,8 @@
     playAdhan, stopAdhan, next: () => nextPrayer(new Date()),
     config: () => ({ ...state.config }),
     backgroundStatus: () => ({ ...bgState }),
+    sleepStatus: () => root.SirajIdleSleep.status(),
+    sleepSimulate: () => simulateIdleSleep(),
     playBackgroundTest: (key) => { const cfg = state.config; const id = key === 'fajr' ? cfg.fajrAdhanId : cfg.adhanId; const item = adhanById(id) || {}; return bgCall('play', { prayer: key || 'fajr', label: PT.describe(key || 'fajr'), adhanId: id, url: item.url || '' }); },
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

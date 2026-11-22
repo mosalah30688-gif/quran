@@ -1430,6 +1430,19 @@
           </div>
 
           <div class="card">
+            <h3 class="pt-title">الشاشة بعد الأذان</h3>
+            <label class="pt-inline"><input type="checkbox" id="ptSleepEnabled" checked /> إطفاء الشاشة تلقائيًا بعد انتهاء الأذان إن لم يُستخدم الهاتف</label>
+            <div class="pt-grid">
+              <label><span class="lbl">مهلة الانتظار بعد الأذان (ثانية)</span><input id="ptSleepGrace" type="number" min="0" max="600" step="5" inputmode="numeric" dir="ltr" /></label>
+            </div>
+            <label class="pt-inline" style="margin-top:12px"><input type="checkbox" id="ptSleepStill" checked /> لا تُطفئها ما دام الهاتف يتحرك</label>
+            <div style="margin-top:10px">
+              <button class="btn small ghost" id="ptSleepAdmin" type="button">تفعيل إذن القفل</button>
+            </div>
+            <p class="pt-bg-status" id="ptSleepStatus"></p>
+          </div>
+
+          <div class="card">
             <h3 class="pt-title">الإقامة (إشعار «قم إلى صلاتك»)</h3>
             <label class="pt-inline"><input type="checkbox" id="ptIqamaEnabled" checked /> إشعار الإقامة بعد الأذان</label>
             <div class="pt-grid pt-grid-5">
@@ -2023,7 +2036,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.12.7</div>
+              <div class="muted">الإصدار 1.12.8</div>
             </div>
           </div>
 
@@ -2150,10 +2163,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.12.7';
+    window.APP_BUNDLE_VERSION = '1.12.8';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 192;
+    window.APP_BUILD_NUMBER = 193;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {

@@ -2016,11 +2016,21 @@
   // ---------- إبقاء الشاشة مضاءة ----------
   // الشاشة لا تُطفأ أثناء القراءة أو التلاوة، ويُترك ذلك تلقائيًا عند إخفاء الصفحة
   // أو إغلاق التطبيق؛ لا يوجد مفتاح للمستخدم.
-  const wake = { sentinel: null, wanted: false };
+  const wake = { sentinel: null, wanted: false, blocked: false };
   const wakeSupported = () => typeof navigator !== 'undefined' && 'wakeLock' in navigator;
+  // خوارزمية «إطفاء الشاشة بعد الأذان» في prayer-ui.js ترفع هذا الحجب حين يقرّر
+  // أن المستخدم ترك الهاتف؛ فلا يعود التطبيق يطالب بإبقاء الشاشة مضاءة.
+  function wakeBlocked() {
+    if (wake.blocked) return true;
+    try {
+      if (window.SirajIdleSleep && window.SirajIdleSleep.isSleeping && window.SirajIdleSleep.isSleeping()) return true;
+    } catch { /* لا خوارزمية محمّلة */ }
+    return false;
+  }
   // الشاشة تبقى مضاءة ما دام التطبيق مفتوحًا (قراءة أو تلاوة)، وتعود طبيعية عند إغلاقه.
   function wakeWantedNow() {
     if (document.hidden) return false;
+    if (wakeBlocked()) return false;
     const playing = play.active && !audio.paused;
     return playing || curView === 'reader';
   }
@@ -2041,6 +2051,17 @@
       wake.sentinel.addEventListener('release', () => { wake.sentinel = null; });
     } catch { wake.sentinel = null; }
   }
+  // واجهة صغيرة للخوارزمية: حجب/فك حجب الطلب وإطلاق القفل القائم فورًا.
+  window.SirajWakeControl = {
+    block: (on) => {
+      wake.blocked = !!on;
+      if (wake.blocked) releaseWakeLock(); else refreshWakeLock();
+      return wake.blocked;
+    },
+    blocked: () => wake.blocked,
+    release: () => releaseWakeLock(),
+    refresh: () => refreshWakeLock(),
+  };
   let wakeHintShown = false;
   function wakeHintOnce() {
     if (wakeHintShown || wakeSupported()) return;
