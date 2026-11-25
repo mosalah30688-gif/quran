@@ -2040,7 +2040,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.12.9</div>
+              <div class="muted">الإصدار 1.12.10</div>
             </div>
           </div>
 
@@ -2167,10 +2167,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.12.9';
+    window.APP_BUNDLE_VERSION = '1.12.10';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 194;
+    window.APP_BUILD_NUMBER = 195;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {
@@ -2201,6 +2201,11 @@
       window.SIRAJ_UPDATE_FILES = Object.freeze(exposed);
       window.SIRAJ_UPDATE_DATA_FILES = Object.freeze(dataFiles);
       window.SIRAJ_UPDATE_VERSION = String(up.version || '');
+      // الإصدار الظاهر ورقم البناء يتبعان الواجهة المطبَّقة لا ملف الـAPK المثبَّت؛
+      // بدون ذلك يظهر رقم الـAPK القديم بعد التحديث فيبدو كأن التحديث لم يُنزَّل.
+      var overlayBuild = Number(up.build || 0);
+      if (up.version) window.APP_BUNDLE_VERSION = String(up.version);
+      if (overlayBuild > 0) window.APP_BUILD_NUMBER = overlayBuild;
       var doc = new DOMParser().parseFromString(files['index.html'], 'text/html');
       var self = doc.getElementById('boot-loader');
       if (self) self.parentNode.removeChild(self);

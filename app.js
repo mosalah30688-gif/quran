@@ -3056,6 +3056,54 @@
   // ---------- تحديث التطبيق من GitHub (بدون إعادة تحزيم) ----------
   const UPDATE_KEY = 'quran-update';
   const UPDATE_BASE = 'https://raw.githubusercontent.com/mosalah30688-gif/quran/main/update/';
+  // مرايا القناة: إن حجب المزوّد أو تعطّل أحد المضيفين لا يتوقف التحديث.
+  // الأولى هي المصدر، والباقي مضيفون مستقلون يعرضون نفس المحتوى لحظيًا.
+  const UPDATE_MIRRORS = [
+    UPDATE_BASE,
+    'https://raw.githack.com/mosalah30688-gif/quran/main/update/',
+  ];
+  const UPDATE_API = 'https://api.github.com/repos/mosalah30688-gif/quran/contents/update/';
+  const UPDATE_TIMEOUT_MS = 20000;
+
+  async function fetchWithTimeout(url, options) {
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), UPDATE_TIMEOUT_MS) : null;
+    try {
+      return await fetch(url, Object.assign({ cache: 'no-store' }, options || {},
+        controller ? { signal: controller.signal } : {}));
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+
+  // يجلب ملفًا من القناة بالتتابع عبر المرايا، ثم واجهة GitHub كملاذ أخير.
+  async function fetchUpdateFile(name) {
+    const stamp = '?t=' + Date.now();
+    let lastError = null;
+    for (const base of UPDATE_MIRRORS) {
+      try {
+        const res = await fetchWithTimeout(base + name + stamp);
+        if (!res.ok) { lastError = new Error(base + res.status); continue; }
+        const text = await res.text();
+        if (text.trim()) return text;
+        lastError = new Error('empty ' + base);
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    try {
+      const res = await fetchWithTimeout(UPDATE_API + name + '?ref=main', {
+        headers: { Accept: 'application/vnd.github.raw' },
+      });
+      if (res.ok) {
+        const text = await res.text();
+        if (text.trim()) return text;
+      }
+    } catch (error) {
+      lastError = error;
+    }
+    throw lastError || new Error('update fetch failed');
+  }
   const storedUpdate = () => { try { return JSON.parse(localStorage.getItem(UPDATE_KEY) || 'null'); } catch (e) { return null; } };
   // رقم الإصدار الظاهر ثابت (1.0.0) بين التحديثات الصغيرة، والمعيار الفعلي هو رقم البناء.
   const currentVersion = () => window.SIRAJ_UPDATE_VERSION || window.APP_BUNDLE_VERSION || '1.0.0';
@@ -3064,6 +3112,15 @@
   // يقول «يتوفر تحديث» بعد أن يكون قد حدّث نفسه بالفعل.
   const appliedWebBuild = () => Number((storedUpdate() || {}).build) || 0;
   const effectiveBuild = () => Math.max(currentBuild(), appliedWebBuild());
+  // الواجهة المطبَّقة هي المصدر: سكربت الإقلاع يُحذف عند الترقيع ولا يعاد تشغيله،
+  // فبدون هذا يبقى رقم الـAPK القديم ظاهرًا بعد التحديث (يبدو كأن التحديث لم ينزل).
+  const appliedWebVersion = () => String((storedUpdate() || {}).version || '');
+  (function syncAppliedIdentity() {
+    const version = appliedWebVersion();
+    const build = appliedWebBuild();
+    if (version) window.APP_BUNDLE_VERSION = version;
+    if (build > Number(window.APP_BUILD_NUMBER || 0)) window.APP_BUILD_NUMBER = build;
+  })();
 
   // رقم بناء الـAPK المثبَّت (لا رقم بناء الواجهة): التحديث الداخلي قد يرفع رقم الواجهة
   // فوق رقم الـAPK، فيظن التطبيق أنه أحدث من الملف ولا يعرض ترقيته أبدًا.
@@ -3082,8 +3139,9 @@
       .catch(() => apkNativeCode);
   }
   function renderUpdateCard() {
-    $('#verVal').textContent = window.APP_BUNDLE_VERSION || '1.0.0';
-    if ($('#buildVal')) $('#buildVal').textContent = `بناء ${toArabicDigits(currentBuild())}`;
+    // بعد تحديث الواجهة قد يبقى رقم الـAPK المثبَّت أقدم؛ نعرض المطبَّق فعليًا.
+    $('#verVal').textContent = currentVersion();
+    if ($('#buildVal')) $('#buildVal').textContent = `بناء ${toArabicDigits(effectiveBuild())}`;
     $('#btnRestore').hidden = !storedUpdate();
     if (hasNativePlugin('ApkUpdater')) {
       nativeCall('ApkUpdater', 'getVersion').then((r) => {
@@ -3144,9 +3202,7 @@
     btn.disabled = true;
     st.textContent = 'جاري البحث عن تحديث...';
     try {
-      const mres = await fetch(UPDATE_BASE + 'manifest.json?t=' + Date.now(), { cache: 'no-store' });
-      if (!mres.ok) throw new Error('manifest');
-      const manifest = await mres.json();
+      const manifest = JSON.parse(await fetchUpdateFile('manifest.json'));
       if (!manifest.version || !validUpdateManifestFiles(manifest.files)) throw new Error('bad manifest');
       const manifestBuild = Number(manifest.build) || 0;
       // نسخة كاملة أحدث على الهاتف؟ تُثبَّت بدل تحديث الواجهة وحدها
@@ -3161,7 +3217,7 @@
       }
       // لا نطبّق ترقية واجهة مساوية أو أقدم من النسخة المضمّنة؛ هذا يمنع الرجوع إلى إصدار قديم.
       if (!(manifestBuild > effectiveBuild())) {
-        st.textContent = 'أنت على أحدث نسخة (' + window.APP_BUNDLE_VERSION + ' · بناء ' + toArabicDigits(effectiveBuild()) + ')';
+        st.textContent = 'أنت على أحدث نسخة (' + currentVersion() + ' · بناء ' + toArabicDigits(effectiveBuild()) + ')';
         btn.disabled = false;
         return;
       }
@@ -3169,9 +3225,12 @@
       const shellFiles = Object.create(null);
       const dataFiles = Object.create(null);
       for (const f of manifest.files) {
-        const r = await fetch(UPDATE_BASE + f + '?t=' + Date.now(), { cache: 'no-store' });
-        if (!r.ok) throw new Error('file ' + f);
-        const txt = await r.text();
+        let txt = '';
+        try {
+          txt = await fetchUpdateFile(f);
+        } catch (error) {
+          throw new Error('file ' + f);
+        }
         if (!txt.trim()) throw new Error('empty ' + f);
         await verifyDownloadedUpdateFile(f, txt, manifest.sha256);
         if (f.endsWith('.json')) dataFiles[f] = txt;
@@ -3187,7 +3246,8 @@
       st.textContent = 'تم التنزيل والتحقق، جاري تطبيق التحديث...';
       setTimeout(() => location.reload(), 400);
     } catch (e) {
-      st.textContent = 'تعذّر التحديث. تأكد من الاتصال بالإنترنت وحاول مرة أخرى.';
+      st.textContent = 'تعذّر التحديث (' + String((e && e.message) || 'network').slice(0, 40)
+        + '). تأكد من الاتصال ثم أعد المحاولة.';
       btn.disabled = false;
     }
   }
@@ -3222,9 +3282,7 @@
   // فحص هادئ عند فتح التطبيق: يظهر الإصدار ثم الميزات الجديدة فقط، بلا تفاصيل فنية.
   async function silentUpdateCheck() {
     try {
-      const mres = await fetch(UPDATE_BASE + 'manifest.json?t=' + Date.now(), { cache: 'no-store' });
-      if (!mres.ok) return;
-      const m = await mres.json();
+      const m = JSON.parse(await fetchUpdateFile('manifest.json'));
       let availableVersion = '';
       if (m.apk?.url && m.apk?.version && hasNativePlugin('ApkUpdater')) {
         const apkCode = Number(m.apk.code) || 0;
