@@ -97,7 +97,8 @@ test('إطفاء الشاشة: يُربط ببدء الأذان وانتهائه
   // البداية عند تشغيل الأذان، والعدّ يبدأ من حدث الانتهاء أو الإيقاف أو الخطأ
   assert.match(ui, /state\.playingId = item\.id;[\s\S]{0,120}noteAdhanStarted\(\);/);
   assert.match(ui, /audio\.onended = \(\) => \{[\s\S]{0,240}noteAdhanEnded\('ended'\);/);
-  assert.match(ui, /audio\.onerror = \(\) => noteAdhanEnded\('error'\);/);
+  assert.match(ui, /noteAdhanEnded\('error'\)/);
+  assert.doesNotMatch(ui, /onerror = \(\) => noteAdhanEnded/);
   assert.match(ui, /function stopAdhan\(\)[\s\S]{0,320}noteAdhanEnded\('stopped'\);/);
   // إشارات الاستخدام: لمس وتمرير وحركة وحالة الشاشة
   ['pointerdown', 'touchstart', 'keydown', 'wheel'].forEach((name) => {

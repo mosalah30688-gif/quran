@@ -1,5 +1,5 @@
 {
-  "version": "1.12.10",
+  "version": "1.12.11",
   "files": [
     "index.html",
     "smart-context.js",
@@ -28,12 +28,13 @@
     "linux": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-linux-test-v4.1.1/Siraj-Quran-4.1.1-linux-x86_64.AppImage"
   },
   "features": [
-    "التحديث ينزل حتى لو حُجب مضيف واحد: مرايا متعددة للقناة",
-    "رقم الإصدار والبناء يعرضان النسخة المطبقة فعليًا بعد التحديث لا رقم الـAPK القديم",
-    "مهلة تنزيل محددة ورسالة خطأ تذكر السبب بدل نص عام"
+    "أذان العفاسي على تسعة مقامات: الكرد، والكرد المنخفض، والبيات، والصبا، والحجاز، والنهاوند، والرست، والسيكاه، والعجم",
+    "الكرد والكرد المنخفض دون إنترنت من أول تشغيل، وبقية المقامات تُنزَّل بضغطة",
+    "زر «مقامات العفاسي» يعرض المقامات وحدها ويظهر اسم المقام تحت كل أذان",
+    "إصلاح بحث المؤذنين فصار يخفي غير المطابق فعلًا، والأذان يستمر من الشبكة إن غاب ملفه المحلي"
   ],
   "sha256": {
-    "index.html": "18cedcb99e6995947036f20f6872f69dc6ff0253079c39d7930919240e1f9255",
+    "index.html": "cad0a01b93a5fc8347a71e8360ddd7181aea7d0de2ae9d2f62ae7539ecaa1bb8",
     "smart-context.js": "d7f1995b9164255b5273da80a070a6f2bedd0f2abcbe7a108b20700567f00440",
     "smart-services.js": "bf98b6f1e10a771435cbf8dea41578b3e148c53901e601de28b5b4085352c10c",
     "tajweed-learning.js": "0ea4b4cde8f34591f79745275c87559f0f050692fb87d52a8bbb0200bb51e534",
@@ -41,8 +42,8 @@
     "tajweed-learning-catalog.json": "a88ca2f3febcb8b530adc24073a03f30fc4441c3102d9300454b24b8b3e52dee",
     "tajweed-scope-registry.json": "8bf7e78c3e939979d2d8383142e3edf191d0f6d62057c2f73352894d7ab0eb03",
     "prayer-times.js": "1c46557f419a4c6b3ae34b17c50c2c7aa5b842dcb9167d173c9332bc95cad0c4",
-    "prayer-data.js": "9d8a75f31d7c80272924250ff5fc42c0a5d551178147db87551323b6bb9fbcec",
-    "prayer-ui.js": "940ae0e76a47608b3f4f9c1789adbc21324e400fbaf4bd0ac15d54b8b00ac1dc",
+    "prayer-data.js": "0ab80adbf0b44e15f1071f25ed1bc900589b256ea9a6200c28ae4859009eda11",
+    "prayer-ui.js": "9b69962a870f989ed4029acd000833603fbd018cbd0fb18e6ec259339b16f43e",
     "quran-reciters.json": "e2becd36a1c21948c549cdea66b0bd592fcc7f03fc27732dde7c0e11bb971461",
     "app.js": "6016d627f98a620bf30b55b124125d1ba3d85277091ab4acb9780eedbc8c6ed4",
     "quran-hafs.json": "caa2d0d091a0e6f8758b2852bc36895d579d362558b778bfd4dcb973483bd9ec",
@@ -52,5 +53,5 @@
     "policy": "OTA_FIRST",
     "note_ar": "التحديث يُسلَّم داخل التطبيق (IndexedDB) لكل من نسخته >= 1.4.7؛ مؤشر APK يبقى على 1.4.7 حتى لا يُجبَر المستخدم على تنزيل ملف، ويُرفع فقط عند طلب صريح (APK_UPDATE=true)."
   },
-  "build": 195
+  "build": 196
 }

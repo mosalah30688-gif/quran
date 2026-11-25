@@ -245,11 +245,12 @@ test('خدمة الأذان تنسخ الأذان المحزوم من الأصو
   assert.match(service, /"siraj-adhan-prepare"/);
 });
 
-test('كل المؤذنين الـ٦٧ ظاهرين في القائمة مع بحث وعدّاد', () => {
+test('كل المؤذنين ظاهرين في القائمة مع بحث وعدّاد', () => {
   const data = read('prayer-data.js');
   const rows = data.match(/\{"id": "[^"]+", "name":/g) || [];
-  assert.equal(rows.length, 67);
-  assert.equal((data.match(/"bundled": true/g) || []).length, 18);
+  // 67 مؤذنًا أصليًا + 9 مقامات للعفاسي
+  assert.equal(rows.length, 76);
+  assert.equal((data.match(/"bundled": true/g) || []).length, 20);
   const ui = read('prayer-ui.js');
   assert.ok(ui.includes('ptAdhanSearch'), 'بحث المؤذنين مفقود');
   assert.ok(ui.includes('ptAdhanCount'), 'عدّاد المؤذنين مفقود');

@@ -1127,7 +1127,13 @@
     .pt-adhan-filter { display: flex; align-items: center; gap: 8px; margin: 4px 0 2px; min-width: 0; }
     .pt-adhan-filter input { flex: 1 1 auto; min-width: 0; width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(0,0,0,.14); font: inherit; }
     .pt-adhan-filter .muted { flex: 0 0 auto; font-size: 12px; white-space: nowrap; }
+    .pt-adhan-chips { display: flex; gap: 8px; margin: 2px 0 6px; flex-wrap: wrap; }
+    .pt-chip { padding: 7px 12px; border-radius: 99px; border: 1px solid var(--line); background: #fff; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
+    .pt-chip.is-on { background: var(--brand); border-color: var(--brand); color: #fff; }
+    .pt-maqam { font-weight: 700; color: var(--brand); }
     .pt-adhan { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; }
+    /* بدون هذا السطر يتجاوز display:flex سمة hidden فلا يعمل البحث ولا التصفية */
+    .pt-adhan[hidden] { display: none; }
     .pt-adhan.is-selected { border-color: var(--brand); background: var(--hl); }
     .pt-adhan-main { display: grid; gap: 2px; }
     .pt-adhan-main strong { font-size: 15px; }
@@ -2040,7 +2046,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.12.10</div>
+              <div class="muted">الإصدار 1.12.11</div>
             </div>
           </div>
 
@@ -2167,10 +2173,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.12.10';
+    window.APP_BUNDLE_VERSION = '1.12.11';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 195;
+    window.APP_BUILD_NUMBER = 196;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {

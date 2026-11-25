@@ -356,6 +356,7 @@
     // 2) ملف منزّل على الجهاز 3) البث من الشبكة كحل أخير
     const bundled = item.local || '';
     const local = bundled || await cachedAdhanUrl(item);
+    let usingLocal = Boolean(local);
     audio.src = local || item.url;
     audio.volume = Math.min(1, Math.max(0, num(state.config.adhanVolume, 1)));
     state.playingId = item.id;
@@ -384,7 +385,14 @@
       // خوارزمية الإطفاء تبدأ عدّها من هنا: انتهاء الأذان ثم سكون ثم إطفاء.
       noteAdhanEnded('ended');
     };
-    audio.onerror = () => noteAdhanEnded('error');
+    audio.onerror = async () => {
+      // ملف محلي ناقص (نسخة وصلها التحديث السحابي قبل وجود الملف) ⇒ البث من الشبكة بدلًا منه
+      if (usingLocal && item.url) {
+        usingLocal = false;
+        try { audio.src = item.url; await audio.play(); return; } catch { /* الشبكة فشلت أيضًا */ }
+      }
+      noteAdhanEnded('error');
+    };
     return true;
   }
 
@@ -1395,10 +1403,10 @@
       const selected = config.adhanId === item.id;
       const selectedFajr = config.fajrAdhanId === item.id;
       return `
-        <div class="pt-adhan${selected ? ' is-selected' : ''}" data-id="${item.id}" data-name="${esc(item.name)} ${esc(item.region || '')}">
+        <div class="pt-adhan${selected ? ' is-selected' : ''}" data-id="${item.id}" data-name="${esc(item.name)} ${esc(item.region || '')} ${esc(item.maqamLabel || '')} ${esc(item.maqam || '')}">
           <div class="pt-adhan-main">
             <strong>${item.name}</strong>
-            <span class="muted">${item.region ? esc(item.region) + ' · ' : ''}${Math.round(item.seconds / 60)} د${item.fajr ? ' · أذان فجر' : ''} · ${item.local ? 'محلي' : (downloaded ? 'منزّل' : 'يحتاج تنزيل')}</span>
+            <span class="muted">${item.maqamLabel ? `<b class="pt-maqam">${esc(item.maqamLabel)}</b> · ` : ''}${item.region ? esc(item.region) + ' · ' : ''}${Math.round(item.seconds / 60)} د${item.fajr ? ' · أذان فجر' : ''} · ${item.local ? 'محلي' : (downloaded ? 'منزّل' : 'يحتاج تنزيل')}</span>
           </div>
           <div class="pt-adhan-actions">
             <button class="pt-mini${isFavAdhan(item.id) ? ' on' : ''}" data-act="fav" data-id="${item.id}" title="مفضلة">★</button>
@@ -1415,8 +1423,12 @@
         <button class="btn small ghost" id="ptAdhanDownloadAll">تنزيل المتبقي</button>
       </div>
       <div class="pt-adhan-filter">
-        <input id="ptAdhanSearch" type="search" inputmode="search" placeholder="ابحث باسم المؤذن…" value="${esc(state.adhanFilter || '')}" aria-label="بحث المؤذنين" />
+        <input id="ptAdhanSearch" type="search" inputmode="search" placeholder="ابحث باسم المؤذن أو المقام…" value="${esc(state.adhanFilter || '')}" aria-label="بحث المؤذنين والمقامات" />
         <span class="muted" id="ptAdhanCount">${DATA.adhans.length} مؤذنًا</span>
+      </div>
+      <div class="pt-adhan-chips" role="group" aria-label="تصفية المقامات">
+        <button class="pt-chip${state.adhanFilter === 'مقام' ? ' is-on' : ''}" data-adhan-chip="maqam" type="button">مقامات العفاسي</button>
+        <button class="pt-chip${state.adhanFilter === '' ? ' is-on' : ''}" data-adhan-chip="all" type="button">الكل</button>
       </div>` + rows.join('');
     const allBtn = els.adhanList.querySelector('#ptAdhanDownloadAll');
     if (allBtn) allBtn.addEventListener('click', downloadAllAdhans);
@@ -1435,6 +1447,12 @@
     if (searchEl) {
       searchEl.addEventListener('input', () => { state.adhanFilter = searchEl.value; applyFilter(); });
     }
+    els.adhanList.querySelectorAll('[data-adhan-chip]').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        state.adhanFilter = chip.dataset.adhanChip === 'maqam' ? 'مقام' : '';
+        renderAdhanList();
+      });
+    });
     applyFilter();
     els.adhanList.querySelectorAll('[data-act]').forEach((btn) => {
       btn.addEventListener('click', async () => {
