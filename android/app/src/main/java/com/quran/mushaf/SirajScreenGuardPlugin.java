@@ -8,7 +8,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.PowerManager;
+import android.os.Process;
 import android.view.WindowManager;
 
 import com.getcapacitor.JSObject;
@@ -29,6 +32,8 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 public class SirajScreenGuardPlugin extends Plugin {
 
     private BroadcastReceiver screenReceiver;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private Runnable pendingClose;
 
     static ComponentName adminComponent(Context context) {
         return new ComponentName(context, SirajDeviceAdmin.class);
@@ -77,8 +82,11 @@ public class SirajScreenGuardPlugin extends Plugin {
             public void onReceive(Context context, Intent intent) {
                 String action = intent == null ? null : intent.getAction();
                 if (action == null) return;
+                boolean on = Intent.ACTION_SCREEN_ON.equals(action);
+                // عودة الشاشة للعمل (المستخدم فتح الهاتف) تُلغي أي إغلاق مجدول.
+                if (on) cancelPendingClose();
                 JSObject payload = new JSObject();
-                payload.put("interactive", Intent.ACTION_SCREEN_ON.equals(action));
+                payload.put("interactive", on);
                 notifyListeners("screen", payload, true);
             }
         };
@@ -202,6 +210,77 @@ public class SirajScreenGuardPlugin extends Plugin {
     }
 
     /** تشغيل/إيقاف إبقاء الشاشة مضاءة من ناحية النشاط (مستقل عن wakeLock في الويب). */
+    /** يجدول إغلاق التطبيق بعد تأخير؛ يُلغى تلقائيًا إذا استُخدم الهاتف أو أُضيئت الشاشة. */
+    @PluginMethod
+    public void scheduleClose(PluginCall call) {
+        Long delay = call.getLong("delayMs");
+        Boolean killOption = call.getBoolean("kill");
+        boolean kill = killOption == null || Boolean.TRUE.equals(killOption);
+        long ms = delay == null ? 15000L : Math.max(0L, Math.min(delay, 10L * 60L * 1000L));
+        cancelPendingClose();
+        pendingClose = () -> closeApp(kill);
+        handler.postDelayed(pendingClose, ms);
+        JSObject out = new JSObject();
+        out.put("scheduled", true);
+        out.put("delayMs", ms);
+        out.put("at", System.currentTimeMillis() + ms);
+        call.resolve(out);
+    }
+
+    @PluginMethod
+    public void cancelClose(PluginCall call) {
+        boolean cancelled = pendingClose != null;
+        cancelPendingClose();
+        JSObject out = new JSObject();
+        out.put("cancelled", cancelled);
+        call.resolve(out);
+    }
+
+    /** إغلاق التطبيق الآن: إنهاء النشاط وإزالته من المهام، ثم إنهاء العملية إن طُلب. */
+    @PluginMethod
+    public void closeNow(PluginCall call) {
+        Boolean kill = call.getBoolean("kill");
+        cancelPendingClose();
+        JSObject out = new JSObject();
+        out.put("closing", true);
+        out.put("kill", Boolean.TRUE.equals(kill));
+        call.resolve(out);
+        closeApp(Boolean.TRUE.equals(kill));
+    }
+
+    private void cancelPendingClose() {
+        if (pendingClose != null) {
+            handler.removeCallbacks(pendingClose);
+            pendingClose = null;
+        }
+    }
+
+    private void closeApp(boolean kill) {
+        cancelPendingClose();
+        clearKeepAwake();
+        runOnUi(() -> {
+            try {
+                // إزالة التطبيق من قائمة المهام: لا يبقى نشاط في الخلفية يستهلك موارد.
+                getActivity().finishAndRemoveTask();
+            } catch (Exception error) {
+                try {
+                    getActivity().finish();
+                } catch (Exception ignored) {
+                    // النشاط منتهٍ بالفعل
+                }
+            }
+        });
+        if (!kill) return;
+        // إنهاء العملية بعد لحظة يمنع بقاء عملية WebView حيّة بعد إطفاء الشاشة.
+        handler.postDelayed(() -> {
+            try {
+                Process.killProcess(Process.myPid());
+            } catch (Exception error) {
+                // النظام سيتولى إنهاء العملية الخاملة
+            }
+        }, 600);
+    }
+
     @PluginMethod
     public void setKeepAwake(PluginCall call) {
         Boolean on = call.getBoolean("on");

@@ -2127,7 +2127,19 @@
     } catch { /* لا يوجد جسر */ }
   }
 
+  // تُقرأ هذه الحالة من خوارزمية إغلاق التطبيق في prayer-ui.js: لا إغلاق والتلاوة تعمل.
+  function publishPlaybackState() {
+    const playing = Boolean(play.active && (!audio.paused || nativeAudioActive));
+    window.SirajPlaybackState = { playing, at: Date.now() };
+    if (playing && window.SirajIdleSleep && window.SirajIdleSleep.touch) {
+      // تشغيل التلاوة يُلغي أي مؤقت إطفاء أو إغلاق قائم.
+      window.SirajIdleSleep.touch();
+    }
+    return playing;
+  }
+
   function setPlayerUI() {
+    publishPlaybackState();
     $('#player').classList.toggle('show', play.active);
     $('#player').classList.toggle('is-playing', play.active && !audio.paused);
     $('#pSpeed').textContent = `${playRate}×`;

@@ -1439,6 +1439,10 @@
             <div style="margin-top:10px">
               <button class="btn small ghost" id="ptSleepAdmin" type="button">تفعيل إذن القفل</button>
             </div>
+            <label class="pt-inline" style="margin-top:16px"><input type="checkbox" id="ptCloseEnabled" checked /> إغلاق التطبيق بعد الأذان (لا يبقى يعمل والشاشة مطفية)</label>
+            <div class="pt-grid">
+              <label><span class="lbl">تأخير الإغلاق (ثانية)</span><input id="ptCloseDelay" type="number" min="0" max="600" step="5" inputmode="numeric" dir="ltr" /></label>
+            </div>
             <p class="pt-bg-status" id="ptSleepStatus"></p>
           </div>
 
@@ -2036,7 +2040,7 @@
             <div>
               <h2 class="about-title">سراج</h2>
               <div>مصحف قرآن كريم</div>
-              <div class="muted">الإصدار 1.12.8</div>
+              <div class="muted">الإصدار 1.12.9</div>
             </div>
           </div>
 
@@ -2163,10 +2167,10 @@
 
   <script id="boot-loader">
   (function () {
-    window.APP_BUNDLE_VERSION = '1.12.8';
+    window.APP_BUNDLE_VERSION = '1.12.9';
     // رقم البناء يزيد مع كل إصدار (حتى لو بقي رقم الإصدار الظاهر كما هو)،
     // وهو ما تعتمد عليه قناة التحديث الداخلي في معرفة وجود تحديث جديد.
-    window.APP_BUILD_NUMBER = 193;
+    window.APP_BUILD_NUMBER = 194;
     var KEY = 'quran-update', PEND = 'quran-update-pending';
 
     function run(code, src) {

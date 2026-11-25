@@ -154,3 +154,85 @@ test('إطفاء الشاشة: جسر أندرويد ومدير الجهاز م�
   assert.match(plugin, /ACTION_SCREEN_OFF/);
   assert.match(plugin, /FLAG_KEEP_SCREEN_ON/);
 });
+
+// ---------------------------------------------------------------------------
+// المرحلة الثانية: إغلاق التطبيق بعد أن تُطفأ الشاشة ويبقى الهاتف مهجورًا
+// ---------------------------------------------------------------------------
+
+const CLOSE_CFG = { enabled: true, delayMs: 20000 };
+
+test('إغلاق التطبيق: لا إغلاق قبل إطفاء الشاشة', () => {
+  const verdict = Sleep.decideClose({ adhanEndedAt: NOW - 90000, lastInteraction: NOW - 90000 }, NOW, CLOSE_CFG);
+  assert.equal(verdict.action, 'cancel');
+  assert.equal(verdict.reason, 'not-slept');
+});
+
+test('إغلاق التطبيق: لا إغلاق والشاشة مضاءة أو التلاوة تعمل', () => {
+  const on = Sleep.decideClose({ sleptAt: NOW - 60000, lastInteraction: NOW - 60000, screenOn: true }, NOW, CLOSE_CFG);
+  assert.equal(on.reason, 'screen-on');
+  const audio = Sleep.decideClose({
+    sleptAt: NOW - 60000, lastInteraction: NOW - 60000, screenOn: false, audioPlaying: true,
+  }, NOW, CLOSE_CFG);
+  assert.equal(audio.action, 'wait');
+  assert.equal(audio.reason, 'audio-playing');
+});
+
+test('إغلاق التطبيق: التأخير يُحسب من آخر استخدام بعد إطفاء الشاشة', () => {
+  const early = Sleep.decideClose({ sleptAt: NOW - 5000, lastInteraction: NOW - 60000, screenOn: false }, NOW, CLOSE_CFG);
+  assert.equal(early.action, 'wait');
+  assert.equal(early.reason, 'close-delay');
+  assert.equal(early.waitMs, 15000);
+
+  const touched = Sleep.decideClose({ sleptAt: NOW - 60000, lastInteraction: NOW - 1000, screenOn: false }, NOW, CLOSE_CFG);
+  assert.equal(touched.action, 'wait');
+  assert.equal(touched.waitMs, 19000);
+
+  const ready = Sleep.decideClose({ sleptAt: NOW - 60000, lastInteraction: NOW - 25000, screenOn: false }, NOW, CLOSE_CFG);
+  assert.equal(ready.action, 'close');
+  assert.equal(ready.reason, 'app-idle');
+});
+
+test('إغلاق التطبيق: متوقف بالإعداد ⇒ لا إغلاق أبدًا', () => {
+  const verdict = Sleep.decideClose(
+    { sleptAt: NOW - 600000, lastInteraction: NOW - 600000, screenOn: false }, NOW,
+    { ...CLOSE_CFG, enabled: false });
+  assert.equal(verdict.action, 'cancel');
+  assert.equal(verdict.reason, 'close-disabled');
+});
+
+test('إغلاق التطبيق: الإعدادات غير الصالحة تُطبَّع', () => {
+  assert.equal(Sleep.closeConfig({ delayMs: 'abc' }).delayMs, 20000);
+  assert.equal(Sleep.closeConfig({ delayMs: -3 }).delayMs, 0);
+  assert.equal(Sleep.closeConfig({ enabled: false }).enabled, false);
+});
+
+test('إغلاق التطبيق: مربوط بالجسر الأصلي وبإلغاءات اللمس والشاشة والتلاوة', () => {
+  const ui = read('prayer-ui.js');
+  assert.match(ui, /screenCall\('scheduleClose', \{ delayMs: decision\.waitMs, kill: true \}\)/);
+  assert.match(ui, /screenCall\('closeNow', \{ kill: true, reason: decision\.reason \}\)/);
+  assert.match(ui, /screenCall\('cancelClose', \{\}\)/);
+  // الإلغاءات: لمس، بدء أذان، إضاءة الشاشة، تعطيل الإعداد
+  assert.match(ui, /if \(sleepState\.closeScheduled \|\| sleepState\.closeAt\) cancelScheduledClose\(\);/);
+  assert.match(ui, /sleepState\.sleptAt = 0;\s*\n\s*cancelScheduledClose\(\);/);
+  assert.match(ui, /state\.config\.closeAfterAdhan = e\.target\.checked;/);
+  assert.match(ui, /state\.config\.closeDelaySeconds = Math\.max\(0, Math\.min\(600/);
+  // الحالة المنشورة للتلاوة
+  const app = read('app.js');
+  assert.match(app, /window\.SirajPlaybackState = \{ playing, at: Date\.now\(\) \};/);
+  assert.match(app, /function publishPlaybackState\(\)/);
+  // عناصر الواجهة
+  const html = read('index.html');
+  ['ptCloseEnabled', 'ptCloseDelay'].forEach((id) => assert.ok(html.includes(`id="${id}"`), id));
+});
+
+test('إغلاق التطبيق: الجسر الأصلي يجدول ويُلغي ويُغلق وينهي العملية', () => {
+  const plugin = read('android/app/src/main/java/com/quran/mushaf/SirajScreenGuardPlugin.java');
+  ['scheduleClose', 'cancelClose', 'closeNow'].forEach((method) => {
+    assert.match(plugin, new RegExp(`public void ${method}\\(PluginCall call\\)`), method);
+  });
+  assert.match(plugin, /finishAndRemoveTask\(\)/);
+  assert.match(plugin, /Process\.killProcess\(Process\.myPid\(\)\)/);
+  assert.match(plugin, /handler\.postDelayed\(pendingClose, ms\)/);
+  // إضاءة الشاشة تُلغي الإغلاق المجدول
+  assert.match(plugin, /if \(on\) cancelPendingClose\(\);/);
+});

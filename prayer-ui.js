@@ -85,7 +85,52 @@
     return verdict('sleep', 'idle-after-adhan');
   }
 
-  const SleepCore = { defaults: SLEEP_DEFAULTS, config: sleepConfig, decide: sleepDecision };
+  // --------------------------------------------------------------------------
+  // المرحلة الثانية: إغلاق التطبيق بعد أن تُطفأ الشاشة ويبقى الهاتف مهجورًا.
+  // الإغلاق لا يحدث أبدًا والشاشة مضاءة، ولا في وجود تلاوة تعمل، ولا قبل التأخير.
+  // --------------------------------------------------------------------------
+  const CLOSE_DEFAULTS = Object.freeze({ enabled: true, delayMs: 20000 });
+
+  function closeConfig(config) {
+    const src = config && typeof config === 'object' ? config : {};
+    return {
+      enabled: src.enabled !== false,
+      delayMs: Math.max(0, sleepNumber(src.delayMs, CLOSE_DEFAULTS.delayMs)),
+    };
+  }
+
+  /** @returns {{action:'cancel'|'wait'|'close', reason:string, waitMs:number, idleMs:number}} */
+  function closeDecision(input, now, config) {
+    const cfg = closeConfig(config);
+    const at = sleepNumber(now, Date.now());
+    const signal = input && typeof input === 'object' ? input : {};
+    const sleptAt = sleepTime(signal.sleptAt);
+    const lastUse = sleepTime(signal.lastInteraction);
+    const leftAt = Math.max(sleptAt, lastUse);
+    const idleMs = sleptAt ? Math.max(0, at - leftAt) : 0;
+    const verdict = (action, reason, waitMs) => ({
+      action,
+      reason,
+      waitMs: Math.max(0, Math.round(sleepNumber(waitMs, 0))),
+      idleMs: Math.round(idleMs),
+    });
+
+    if (!cfg.enabled) return verdict('cancel', 'close-disabled');
+    if (!sleptAt) return verdict('cancel', 'not-slept');
+    if (signal.screenOn !== false) return verdict('cancel', 'screen-on');
+    if (signal.audioPlaying) return verdict('wait', 'audio-playing');
+    if (idleMs < cfg.delayMs) return verdict('wait', 'close-delay', cfg.delayMs - idleMs);
+    return verdict('close', 'app-idle');
+  }
+
+  const SleepCore = {
+    defaults: SLEEP_DEFAULTS,
+    config: sleepConfig,
+    decide: sleepDecision,
+    closeDefaults: CLOSE_DEFAULTS,
+    closeConfig,
+    decideClose: closeDecision,
+  };
   root.SirajIdleSleep = Object.assign(root.SirajIdleSleep || {}, SleepCore);
   if (typeof module !== 'undefined' && module.exports) module.exports = SleepCore;
 
@@ -119,6 +164,9 @@
     sleepAfterAdhan: true,
     sleepGraceSeconds: 30,
     sleepStill: true,
+    // إغلاق التطبيق بعد أن تُطفأ الشاشة ويبقى الهاتف مهجورًا
+    closeAfterAdhan: true,
+    closeDelaySeconds: 20,
   };
 
   const els = {};
@@ -540,6 +588,12 @@
     lockMethod: '',
     keepAwakeHeld: false,
     lastRenderAt: 0,
+    sleptAt: 0,
+    closeAt: 0,
+    closeScheduled: false,
+    closeWatchdog: null,
+    closeReason: '',
+    lastClose: { action: 'cancel', reason: 'not-slept', waitMs: 0, idleMs: 0 },
     wired: false,
   };
 
@@ -562,6 +616,71 @@
     };
   }
 
+  function closeConfigFromState() {
+    const config = state.config || {};
+    return {
+      enabled: config.closeAfterAdhan !== false,
+      delayMs: Math.max(0, num(config.closeDelaySeconds, 20)) * 1000,
+    };
+  }
+
+  function playbackActive() {
+    const playback = root.SirajPlaybackState;
+    return !!(playback && playback.playing);
+  }
+
+  function closeSnapshot() {
+    return {
+      sleptAt: sleepState.sleptAt,
+      lastInteraction: sleepState.lastInteraction,
+      screenOn: sleepState.screenOn,
+      audioPlaying: playbackActive(),
+    };
+  }
+
+  /** يجدول الإغلاق في الجسر الأصلي، أو يلغيه إن لم تعد الشروط قائمة. */
+  function syncCloseSchedule() {
+    const cfg = closeConfigFromState();
+    const decision = closeDecision(closeSnapshot(), Date.now(), cfg);
+    sleepState.lastClose = decision;
+    if (!hasScreenGuard()) { sleepState.closeScheduled = false; return decision; }
+    if (decision.action === 'close') {
+      sleepState.closeScheduled = false;
+      sleepState.closeReason = decision.reason;
+      screenCall('closeNow', { kill: true, reason: decision.reason });
+      return decision;
+    }
+    if (decision.action === 'wait' && decision.reason === 'close-delay') {
+      sleepState.closeAt = Date.now() + decision.waitMs;
+      if (!sleepState.closeScheduled) {
+        sleepState.closeScheduled = true;
+        screenCall('scheduleClose', { delayMs: decision.waitMs, kill: true });
+        // شبكة أمان ثانية: إن تأخّر مؤقّت الجسر الأصلي (تجميد العملية) يُغلق من الويب.
+        if (sleepState.closeWatchdog) clearTimeout(sleepState.closeWatchdog);
+        sleepState.closeWatchdog = setTimeout(() => {
+          sleepState.closeWatchdog = null;
+          const again = closeDecision(closeSnapshot(), Date.now(), closeConfigFromState());
+          sleepState.lastClose = again;
+          if (again.action === 'close') screenCall('closeNow', { kill: true, reason: 'watchdog' });
+        }, decision.waitMs + 1500);
+      }
+      return decision;
+    }
+    cancelScheduledClose();
+    return decision;
+  }
+
+  function cancelScheduledClose() {
+    sleepState.closeAt = 0;
+    if (sleepState.closeWatchdog) {
+      clearTimeout(sleepState.closeWatchdog);
+      sleepState.closeWatchdog = null;
+    }
+    if (!sleepState.closeScheduled) return;
+    sleepState.closeScheduled = false;
+    if (hasScreenGuard()) screenCall('cancelClose', {});
+  }
+
   function sleepSnapshot() {
     // المستشعر قد لا يعمل في بعض الأجهزة/الويب فيُعتمد على اللمس وحده.
     sleepState.motion = sleepState.motionSeen
@@ -582,9 +701,12 @@
     if (sleepState.adhanActive) return 'الأذان يعمل الآن؛ الشاشة تبقى مضاءة حتى ينتهي.';
     if (!sleepState.endedAt) return 'تُطفأ الشاشة تلقائيًا بعد انتهاء الأذان إن لم تُستخدم.';
     if (sleepState.blocked) {
+      const closeLine = closeConfigFromState().enabled
+        ? ' وسيُغلق التطبيق بعد قليل.'
+        : '';
       return sleepState.lockMethod === 'admin'
-        ? 'أُطفئت الشاشة تلقائيًا بعد الأذان. المس الشاشة للمتابعة.'
-        : 'أُطلق إبقاء الشاشة بعد الأذان؛ ستقفل بمهلة الهاتف. المس للمتابعة.';
+        ? `أُطفئت الشاشة تلقائيًا بعد الأذان.${closeLine} المس الشاشة للمتابعة.`
+        : `أُطلق إبقاء الشاشة بعد الأذان؛ ستقفل بمهلة الهاتف.${closeLine} المس للمتابعة.`;
     }
     const left = Math.max(0, Math.round((cfg.graceMs - sleepState.last.idleMs) / 1000));
     if (sleepState.last.action === 'wait' && sleepState.last.reason === 'grace') {
@@ -612,6 +734,7 @@
   function noteInteraction(extraMs) {
     const now = Date.now();
     sleepState.lastInteraction = now + num(extraMs, 0);
+    if (sleepState.closeScheduled || sleepState.closeAt) cancelScheduledClose();
     if (sleepState.blocked || sleepState.sleeping) wakeUpScreen();
     // رسم سطر الحالة مُخفَّف: لا نكتب في DOM مع كل لمسة.
     if (now - sleepState.lastRenderAt > 900) {
@@ -656,9 +779,12 @@
     sleepState.lockMethod = result && result.method ? String(result.method) : (hasScreenGuard() ? 'no-admin' : 'web');
     sleepState.sleeping = true;
     if (result && result.ok) {
-      // الشاشة أُطفئت بالفعل؛ الإشارات التالية ستأتي من مستمع حالة الشاشة.
+      // الشاشة أُطفئت بالفعل؛ الإشارات التالية ستأتي أيضًا من مستمع حالة الشاشة.
       sleepState.screenOn = false;
     }
+    // المرحلة الثانية: بعد إطفاء الشاشة يبدأ مؤقت الإغلاق (يُلغى بأول لمسة أو إضاءة شاشة).
+    sleepState.sleptAt = Date.now();
+    syncCloseSchedule();
     renderSleepLine();
     return sleepState.last;
   }
@@ -692,6 +818,8 @@
   function noteAdhanStarted() {
     sleepState.adhanActive = true;
     sleepState.endedAt = 0;
+    sleepState.sleptAt = 0;
+    cancelScheduledClose();
     sleepState.lastInteraction = Date.now();
     sleepState.last = sleepDecision(sleepSnapshot(), Date.now(), sleepConfigFromState());
     holdWakeLockForAdhan(true);
@@ -770,7 +898,13 @@
           if (on) {
             sleepState.blocked = false;
             sleepState.sleeping = false;
+            sleepState.sleptAt = 0;
+            cancelScheduledClose();
             noteInteraction(SLEEP_DEFAULTS.activeMs);
+          } else if (sleepState.blocked || sleepState.sleptAt) {
+            // الشاشة أُطفئت فعلًا ⇒ يبدأ عدّاد الإغلاق من هذه اللحظة.
+            if (!sleepState.sleptAt) sleepState.sleptAt = Date.now();
+            syncCloseSchedule();
           }
           renderSleepLine();
         });
@@ -810,7 +944,18 @@
     start: noteAdhanStarted,
     end: noteAdhanEnded,
     touch: noteInteraction,
-    status: () => ({ ...sleepState.last, blocked: sleepState.blocked, admin: sleepState.admin, text: sleepStatusText() }),
+    status: () => ({
+      ...sleepState.last,
+      blocked: sleepState.blocked,
+      admin: sleepState.admin,
+      sleeping: sleepState.sleeping,
+      sleptAt: sleepState.sleptAt,
+      closeAt: sleepState.closeAt,
+      closeScheduled: sleepState.closeScheduled,
+      close: { ...sleepState.lastClose },
+      text: sleepStatusText(),
+    }),
+    closeStatus: () => ({ ...sleepState.lastClose, closeAt: sleepState.closeAt, scheduled: sleepState.closeScheduled }),
     config: sleepConfigFromState,
     simulate: simulateIdleSleep,
     isSleeping: () => sleepState.blocked,
@@ -1348,6 +1493,8 @@
     if (els.sleepToggle) els.sleepToggle.checked = config.sleepAfterAdhan !== false;
     if (els.sleepStill) els.sleepStill.checked = config.sleepStill !== false;
     if (els.sleepGrace) els.sleepGrace.value = String(Math.max(0, num(config.sleepGraceSeconds, 30)));
+    if (els.closeToggle) els.closeToggle.checked = config.closeAfterAdhan !== false;
+    if (els.closeDelay) els.closeDelay.value = String(Math.max(0, num(config.closeDelaySeconds, 20)));
     if (els.preSelect) els.preSelect.value = String(config.preMinutes);
     if (els.clock24) els.clock24.checked = !!config.use24h;
     if (els.volumeRange) els.volumeRange.value = String(Math.round(config.adhanVolume * 100));
@@ -1791,6 +1938,23 @@
       saveConfig(); renderSleepLine();
     });
     els.sleepAdminBtn && els.sleepAdminBtn.addEventListener('click', () => { toggleSleepAdmin(); });
+    els.closeToggle && els.closeToggle.addEventListener('change', (e) => {
+      state.config.closeAfterAdhan = e.target.checked;
+      // الإغلاق فرع عن إطفاء الشاشة: تفعيله يُفعّل الإطفاء معه.
+      if (e.target.checked && state.config.sleepAfterAdhan === false) {
+        state.config.sleepAfterAdhan = true;
+        if (els.sleepToggle) els.sleepToggle.checked = true;
+      }
+      saveConfig();
+      if (!e.target.checked) cancelScheduledClose();
+      renderSleepLine();
+      toast(e.target.checked ? 'إغلاق التطبيق بعد الأذان مفعّل.' : 'إغلاق التطبيق بعد الأذان متوقف.');
+    });
+    els.closeDelay && els.closeDelay.addEventListener('change', (e) => {
+      state.config.closeDelaySeconds = Math.max(0, Math.min(600, num(e.target.value, 20)));
+      e.target.value = String(state.config.closeDelaySeconds);
+      saveConfig(); cancelScheduledClose(); renderSleepLine();
+    });
     els.preSelect && els.preSelect.addEventListener('change', (e) => {
       state.config.preMinutes = Number(e.target.value); saveConfig();
     });
@@ -1879,6 +2043,8 @@
     els.sleepStill = el('ptSleepStill');
     els.sleepAdminBtn = el('ptSleepAdmin');
     els.sleepStatus = el('ptSleepStatus');
+    els.closeToggle = el('ptCloseEnabled');
+    els.closeDelay = el('ptCloseDelay');
     if (!els.times) return false;
 
     renderCities();

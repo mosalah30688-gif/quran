@@ -1,5 +1,5 @@
 {
-  "version": "1.12.8",
+  "version": "1.12.9",
   "files": [
     "index.html",
     "smart-context.js",
@@ -28,13 +28,13 @@
     "linux": "https://github.com/mosalah30688-gif/quran/releases/download/siraj-linux-test-v4.1.1/Siraj-Quran-4.1.1-linux-x86_64.AppImage"
   },
   "features": [
-    "إطفاء الشاشة تلقائيًا بعد انتهاء الأذان عند ترك الهاتف",
-    "خوارزمية استشعار الاستخدام: لمس وتمرير وحركة الهاتف وحالة الشاشة",
-    "مهلة انتظار قابلة للضبط وعدم الإطفاء ما دام الهاتف يتحرك",
-    "إذن قفل اختياري لإطفاء فوري، وبدونه تُترك الشاشة لمهلة النظام"
+    "إغلاق التطبيق تلقائيًا بعد الأذان فلا يبقى يعمل والشاشة مطفية",
+    "إغلاق مؤجَّل قابل للضبط يُلغى بأول لمسة أو إضاءة للشاشة أو تشغيل تلاوة",
+    "إنهاء النشاط وإزالته من قائمة المهام ثم إنهاء العملية وتحرير الذاكرة",
+    "تبقى مواعيد الأذان والإقامة مجدولة في النظام بعد الإغلاق"
   ],
   "sha256": {
-    "index.html": "4491b759f659fb9c8eabef31c4eee76b3534dc05580e4b207386d6393149973c",
+    "index.html": "cea6c11a4710300427b5ea198e46400de8b4c33bfc156521509de97669bcb1f6",
     "smart-context.js": "d7f1995b9164255b5273da80a070a6f2bedd0f2abcbe7a108b20700567f00440",
     "smart-services.js": "bf98b6f1e10a771435cbf8dea41578b3e148c53901e601de28b5b4085352c10c",
     "tajweed-learning.js": "0ea4b4cde8f34591f79745275c87559f0f050692fb87d52a8bbb0200bb51e534",
@@ -43,9 +43,9 @@
     "tajweed-scope-registry.json": "8bf7e78c3e939979d2d8383142e3edf191d0f6d62057c2f73352894d7ab0eb03",
     "prayer-times.js": "1c46557f419a4c6b3ae34b17c50c2c7aa5b842dcb9167d173c9332bc95cad0c4",
     "prayer-data.js": "9d8a75f31d7c80272924250ff5fc42c0a5d551178147db87551323b6bb9fbcec",
-    "prayer-ui.js": "9b8816fa335da082837d6342aeed2706feaa5c7d566d48eb1962b3c7d01cf45c",
+    "prayer-ui.js": "940ae0e76a47608b3f4f9c1789adbc21324e400fbaf4bd0ac15d54b8b00ac1dc",
     "quran-reciters.json": "e2becd36a1c21948c549cdea66b0bd592fcc7f03fc27732dde7c0e11bb971461",
-    "app.js": "94306843b58849997da06dfedd232f9e36bae86ae818fbb04ba7ff75ae8c7780",
+    "app.js": "aa732443dae024f6092621b929750e65c2ba988fb4d7cbae831137bce4df015c",
     "quran-hafs.json": "caa2d0d091a0e6f8758b2852bc36895d579d362558b778bfd4dcb973483bd9ec",
     "quran-madani-lines.json": "856bee7c3b06200182361b235ac4114d013d2275611ce585960014bd175f606e"
   },
@@ -53,5 +53,5 @@
     "policy": "OTA_FIRST",
     "note_ar": "التحديث يُسلَّم داخل التطبيق (IndexedDB) لكل من نسخته >= 1.4.7؛ مؤشر APK يبقى على 1.4.7 حتى لا يُجبَر المستخدم على تنزيل ملف، ويُرفع فقط عند طلب صريح (APK_UPDATE=true)."
   },
-  "build": 193
+  "build": 194
 }
