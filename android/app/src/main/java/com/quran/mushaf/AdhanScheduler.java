@@ -237,6 +237,13 @@ final class AdhanScheduler {
         intent.putExtra("label", event.optString("label", ""));
         intent.putExtra("adhanId", event.optString("adhanId", ""));
         intent.putExtra("url", event.optString("url", ""));
+        // روابط بديلة (مضيف ثانٍ) حتى لا يتوقف تنزيل الأذان إن حُجب المضيف الأول
+        org.json.JSONArray urls = event.optJSONArray("urls");
+        if (urls != null && urls.length() > 0) {
+            String[] mirrorList = new String[urls.length()];
+            for (int i = 0; i < urls.length(); i += 1) mirrorList[i] = urls.optString(i, "");
+            intent.putExtra("urls", mirrorList);
+        }
         intent.putExtra("iqamaMinutes", event.optInt("iqamaMinutes", 0));
         intent.putExtra("preMinutes", event.optInt("preMinutes", 0));
         return PendingIntent.getBroadcast(context, code, intent, flags());

@@ -282,33 +282,83 @@
     return DATA.adhans.find((item) => item.id === id) || DATA.adhans[0];
   }
 
+  // المصادر المحتملة للأذان: الرابط الأساسي ثم مراياه. أي مصدر يعمل يُستخدم،
+  // فلا يتوقف الأذان لأن مضيفًا واحدًا محجوب أو بطيء.
+  function adhanSources(item) {
+    const list = [];
+    if (item && item.url) list.push(item.url);
+    if (item && Array.isArray(item.mirrors)) {
+      item.mirrors.forEach((url) => { if (url && !list.includes(url)) list.push(url); });
+    }
+    return list;
+  }
+
+  // فحص حقيقي لوجود الملف المحلي: نسخة وصلها تحديث الواجهة قبل ملفات الأذان
+  // لا تحتوي الأذان المحزوم، فبدون هذا الفحص يظهر «محلي» ثم لا يعمل الصوت.
+  const localReadyCache = new Map();
+  async function localAdhanReady(item) {
+    if (!item || !item.local) return false;
+    if (localReadyCache.has(item.id)) return localReadyCache.get(item.id);
+    let ok = true;
+    try {
+      // نعتبر الملف موجودًا إلا إن أكّد السيرفر غيابه (404). بعض بيئات WebView
+      // لا تدعم HEAD فترد 405، ولا يصح اعتبار ذلك دليل غياب.
+      const response = await fetch(item.local, { method: 'HEAD' });
+      ok = !response || response.status !== 404;
+    } catch {
+      ok = true;
+    }
+    localReadyCache.set(item.id, ok);
+    if (!ok) console.info('[adhan] الملف المحلي غير موجود، سيُستخدم المصدر الشبكي:', item.id);
+    return ok;
+  }
+
   async function cachedAdhanUrl(item) {
     if (typeof caches === 'undefined') return null;
     try {
       const cache = await caches.open(ADHAN_CACHE);
-      const hit = await cache.match(item.url);
-      if (!hit) return null;
-      const blob = await hit.blob();
-      return URL.createObjectURL(blob);
+      for (const url of adhanSources(item)) {
+        const hit = await cache.match(url);
+        if (!hit) continue;
+        const blob = await hit.blob();
+        if (blob.size > 16384) return URL.createObjectURL(blob);
+      }
+      return null;
     } catch {
       return null;
     }
   }
 
   async function isAdhanDownloaded(item) {
-    if (item && item.local) return true;
+    if (await localAdhanReady(item)) return true;
     if (typeof caches === 'undefined') return false;
     try {
       const cache = await caches.open(ADHAN_CACHE);
-      return !!(await cache.match(item.url));
+      for (const url of adhanSources(item)) {
+        if (await cache.match(url)) return true;
+      }
+      return false;
     } catch {
       return false;
     }
   }
 
   async function downloadAdhan(item, onProgress) {
-    const response = await fetch(item.url, { mode: 'cors' });
-    if (!response.ok) throw new Error('http ' + response.status);
+    const sources = adhanSources(item);
+    if (!sources.length) throw new Error('no source');
+    let response = null;
+    let usedUrl = '';
+    let lastError = null;
+    for (const url of sources) {
+      try {
+        const attempt = await fetch(url, { mode: 'cors', cache: 'no-store' });
+        if (attempt.ok) { response = attempt; usedUrl = url; break; }
+        lastError = new Error('http ' + attempt.status);
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    if (!response) throw lastError || new Error('all sources failed');
     const total = Number(response.headers.get('content-length')) || item.seconds * 16000;
     const reader = response.body && response.body.getReader ? response.body.getReader() : null;
     let received = 0;
@@ -327,7 +377,13 @@
       blob = await response.blob();
     }
     const cache = await caches.open(ADHAN_CACHE);
-    await cache.put(item.url, new Response(blob, { headers: { 'Content-Type': 'audio/mpeg' } }));
+    // نحفظ تحت كل المصادر حتى لا يهم أي رابط استُخدم في التنزيل ولا في التشغيل
+    for (const url of adhanSources(item)) {
+      try {
+        if (url === usedUrl) await cache.put(url, new Response(blob, { headers: { 'Content-Type': 'audio/mpeg' } }));
+        else await cache.put(url, new Response(blob, { headers: { 'Content-Type': 'audio/mpeg' } }));
+      } catch { /* مساحة ممتلئة: يكفي مصدر واحد */ }
+    }
     if (onProgress) onProgress(1);
     return blob.size;
   }
@@ -335,7 +391,7 @@
   async function removeAdhan(item) {
     try {
       const cache = await caches.open(ADHAN_CACHE);
-      await cache.delete(item.url);
+      for (const url of adhanSources(item)) await cache.delete(url);
     } catch { /* لا شيء محفوظ */ }
   }
 
@@ -352,12 +408,14 @@
     const audio = getAudio();
     try { audio.pause(); } catch { /* لم يُشغّل بعد */ }
     audio.src = '';
-    // 1) ملف محزوم داخل التطبيق (يعمل بلا إنترنت من أول تشغيل)
-    // 2) ملف منزّل على الجهاز 3) البث من الشبكة كحل أخير
-    const bundled = item.local || '';
-    const local = bundled || await cachedAdhanUrl(item);
-    let usingLocal = Boolean(local);
-    audio.src = local || item.url;
+    // 1) ملف محزوم داخل التطبيق (يعمل بلا إنترنت من أول تشغيل) — بشرط وجوده فعلًا
+    // 2) ملف منزّل على الجهاز 3) البث من الشبكة عبر الرابط الأساسي ثم مراياه
+    const candidates = [];
+    if (await localAdhanReady(item)) candidates.push(item.local);
+    const cached = await cachedAdhanUrl(item);
+    if (cached) candidates.push(cached);
+    adhanSources(item).forEach((url) => { if (!candidates.includes(url)) candidates.push(url); });
+    audio.src = candidates[0] || '';
     audio.volume = Math.min(1, Math.max(0, num(state.config.adhanVolume, 1)));
     state.playingId = item.id;
     state.adhanLive = Boolean(options.prayerName);
@@ -371,12 +429,34 @@
       live: Boolean(options.prayerName),
     });
     renderAdhanScreenProgress();
-    try {
-      await audio.play();
-      if (!options.silent) toast(`أذان ${item.name}`);
-    } catch {
-      toast('تعذّر تشغيل الأذان؛ تحقّق من الصوت أو نزّل الأذان للاستخدام دون إنترنت.');
-    }
+    // تشغيل متدرّج: كل مصدر يفشل ننتقل إلى الذي بعده بدل الرسالة الصامتة
+    let sourceIndex = 0;
+    let gaveUp = false;
+    const playSource = async () => {
+      if (sourceIndex >= candidates.length) {
+        if (!gaveUp) {
+          gaveUp = true;
+          toast('تعذّر تشغيل الأذان: كل المصادر غير متاحة الآن. جرّب التنزيل (⤓) عند وجود إنترنت.');
+          noteAdhanEnded('error');
+        }
+        return;
+      }
+      const src = candidates[sourceIndex];
+      sourceIndex += 1;
+      audio.src = src;
+      try {
+        await audio.play();
+        if (!options.silent && sourceIndex === 1) toast(`أذان ${item.name}`);
+      } catch {
+        if (sourceIndex < candidates.length) await playSource();
+        else if (!gaveUp) {
+          gaveUp = true;
+          toast('تعذّر تشغيل الأذان: كل المصادر غير متاحة الآن. جرّب التنزيل (⤓) عند وجود إنترنت.');
+          noteAdhanEnded('error');
+        }
+      }
+    };
+    await playSource();
     renderAdhanScreenProgress();
     audio.onended = () => {
       state.playingId = null;
@@ -385,13 +465,9 @@
       // خوارزمية الإطفاء تبدأ عدّها من هنا: انتهاء الأذان ثم سكون ثم إطفاء.
       noteAdhanEnded('ended');
     };
-    audio.onerror = async () => {
-      // ملف محلي ناقص (نسخة وصلها التحديث السحابي قبل وجود الملف) ⇒ البث من الشبكة بدلًا منه
-      if (usingLocal && item.url) {
-        usingLocal = false;
-        try { audio.src = item.url; await audio.play(); return; } catch { /* الشبكة فشلت أيضًا */ }
-      }
-      noteAdhanEnded('error');
+    audio.onerror = () => {
+      // المصدر الحالي سقط (ملف ناقص أو مضيف محجوب) ⇒ التالي في القائمة
+      if (!gaveUp) playSource();
     };
     return true;
   }
@@ -1144,6 +1220,7 @@
           at,
           adhanId,
           url: item.url || '',
+          urls: adhanSources(item).slice(0, 3),
           iqamaMinutes: Math.max(0, num(config.iqamaMinutes[key], 0)),
           preMinutes: Math.max(0, num(config.preMinutes, 0)),
         });
@@ -1397,16 +1474,20 @@
   async function renderAdhanList() {
     if (!els.adhanList) return;
     const config = state.config;
+    // نتحقق مرة واحدة من الأذانات «المحزومة» فعلًا على هذا الجهاز (نسخة تحديث
+    // وصلتها الواجهة قبل ملفات الأذان لا تحتويها) فلا نعرض «محلي» كذبًا.
+    await Promise.all(DATA.adhans.filter((item) => item.local).map((item) => localAdhanReady(item)));
     const ordered = DATA.adhans.slice().sort((a, b) => (isFavAdhan(b.id) ? 1 : 0) - (isFavAdhan(a.id) ? 1 : 0));
     const rows = await Promise.all(ordered.map(async (item) => {
       const downloaded = await isAdhanDownloaded(item);
+      const onDevice = item.local && localReadyCache.get(item.id) ? 'محلي' : (downloaded ? 'منزّل' : 'يحتاج تنزيل');
       const selected = config.adhanId === item.id;
       const selectedFajr = config.fajrAdhanId === item.id;
       return `
         <div class="pt-adhan${selected ? ' is-selected' : ''}" data-id="${item.id}" data-name="${esc(item.name)} ${esc(item.region || '')} ${esc(item.maqamLabel || '')} ${esc(item.maqam || '')}">
           <div class="pt-adhan-main">
             <strong>${item.name}</strong>
-            <span class="muted">${item.maqamLabel ? `<b class="pt-maqam">${esc(item.maqamLabel)}</b> · ` : ''}${item.region ? esc(item.region) + ' · ' : ''}${Math.round(item.seconds / 60)} د${item.fajr ? ' · أذان فجر' : ''} · ${item.local ? 'محلي' : (downloaded ? 'منزّل' : 'يحتاج تنزيل')}</span>
+            <span class="muted">${item.maqamLabel ? `<b class="pt-maqam">${esc(item.maqamLabel)}</b> · ` : ''}${item.region ? esc(item.region) + ' · ' : ''}${Math.round(item.seconds / 60)} د${item.fajr ? ' · أذان فجر' : ''} · ${onDevice}</span>
           </div>
           <div class="pt-adhan-actions">
             <button class="pt-mini${isFavAdhan(item.id) ? ' on' : ''}" data-act="fav" data-id="${item.id}" title="مفضلة">★</button>
@@ -1419,7 +1500,7 @@
       `;
     }));
     els.adhanList.innerHTML = `<div class="pt-adhan-summary">
-        <span class="muted">${DATA.adhans.filter((i) => i.local).length} أذانًا محليًا جاهزًا دون إنترنت · ${DATA.adhans.filter((i) => !i.local).length} يحتاج تنزيلًا</span>
+        <span class="muted">${DATA.adhans.filter((i) => i.local && localReadyCache.get(i.id)).length} أذانًا جاهزًا دون إنترنت · ${DATA.adhans.filter((i) => !(i.local && localReadyCache.get(i.id))).length} يحتاج تنزيلًا</span>
         <button class="btn small ghost" id="ptAdhanDownloadAll">تنزيل المتبقي</button>
       </div>
       <div class="pt-adhan-filter">

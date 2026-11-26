@@ -63,6 +63,12 @@ public class AdhanReceiver extends BroadcastReceiver {
             event.put("label", intent.getStringExtra("label") == null ? "" : intent.getStringExtra("label"));
             event.put("adhanId", intent.getStringExtra("adhanId") == null ? "" : intent.getStringExtra("adhanId"));
             event.put("url", intent.getStringExtra("url") == null ? "" : intent.getStringExtra("url"));
+            String[] mirrorList = intent.getStringArrayExtra("urls");
+            if (mirrorList != null && mirrorList.length > 0) {
+                org.json.JSONArray urls = new org.json.JSONArray();
+                for (String mirror : mirrorList) urls.put(mirror == null ? "" : mirror);
+                event.put("urls", urls);
+            }
             event.put("iqamaMinutes", intent.getIntExtra("iqamaMinutes", 0));
             event.put("preMinutes", intent.getIntExtra("preMinutes", 0));
             event.put("at", intent.getLongExtra("at", 0L));
@@ -110,6 +116,12 @@ public class AdhanReceiver extends BroadcastReceiver {
         service.putExtra("label", event.optString("label", ""));
         service.putExtra("adhanId", event.optString("adhanId", ""));
         service.putExtra("url", event.optString("url", ""));
+        org.json.JSONArray urls = event.optJSONArray("urls");
+        if (urls != null && urls.length() > 0) {
+            String[] mirrorList = new String[urls.length()];
+            for (int i = 0; i < urls.length(); i += 1) mirrorList[i] = urls.optString(i, "");
+            service.putExtra("urls", mirrorList);
+        }
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 ContextCompat.startForegroundService(context, service);

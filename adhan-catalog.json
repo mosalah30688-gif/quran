@@ -90,7 +90,7 @@
       "maqamLabel": "مقام الكرد",
       "artist": "مشاري راشد العفاسي",
       "file": "kurd.mp3",
-      "url": "https://raw.githubusercontent.com/mosalah30688-gif/quran/main/audio/adhans-maqamat/kurd.mp3",
+      "url": "https://cdn.jsdelivr.net/gh/mosalah30688-gif/quran@main/audio/adhans-maqamat/kurd.mp3",
       "seconds": 158,
       "fajr": false,
       "bundled": true,
@@ -100,7 +100,10 @@
         "video": "J-BPqpEeZLE",
         "title": "أذان مشاري راشد العفاسي (كرد)",
         "url": "https://youtu.be/J-BPqpEeZLE"
-      }
+      },
+      "mirrors": [
+        "https://raw.githubusercontent.com/mosalah30688-gif/quran/main/audio/adhans-maqamat/kurd.mp3"
+      ]
     },
     {
       "id": "alafasy-kurd-low",
@@ -110,7 +113,7 @@
       "maqamLabel": "مقام الكرد المنخفض",
       "artist": "مشاري راشد العفاسي",
       "file": "kurd-low.mp3",
-      "url": "https://raw.githubusercontent.com/mosalah30688-gif/quran/main/audio/adhans-maqamat/kurd-low.mp3",
+      "url": "https://cdn.jsdelivr.net/gh/mosalah30688-gif/quran@main/audio/adhans-maqamat/kurd-low.mp3",
       "seconds": 142,
       "fajr": false,
       "bundled": true,
@@ -120,7 +123,10 @@
         "video": "NQ1M7Bjln2E",
         "title": "أذان بمقام الكرد - المنخفض 2010",
         "url": "https://youtu.be/NQ1M7Bjln2E"
-      }
+      },
+      "mirrors": [
+        "https://raw.githubusercontent.com/mosalah30688-gif/quran/main/audio/adhans-maqamat/kurd-low.mp3"
+      ]
     },
     {
       "id": "alafasy-bayat",
@@ -130,7 +136,7 @@
       "maqamLabel": "مقام البيات",
       "artist": "مشاري راشد العفاسي",
       "file": "bayat.mp3",
-      "url": "https://raw.githubusercontent.com/mosalah30688-gif/quran/main/audio/adhans-maqamat/bayat.mp3",
+      "url": "https://cdn.jsdelivr.net/gh/mosalah30688-gif/quran@main/audio/adhans-maqamat/bayat.mp3",
       "seconds": 175,
       "fajr": false,
       "bundled": false,
@@ -140,7 +146,10 @@
         "video": "NSRFh5cDMxQ",
         "title": "آذان مقام البياتي - مشاري راشد العفاسي",
         "url": "https://youtu.be/NSRFh5cDMxQ"
-      }
+      },
+      "mirrors": [
+        "https://raw.githubusercontent.com/mosalah30688-gif/quran/main/audio/adhans-maqamat/bayat.mp3"
+      ]
     },
     {
       "id": "alafasy-saba",
@@ -150,7 +159,7 @@
       "maqamLabel": "مقام الصبا",
       "artist": "مشاري راشد العفاسي",
       "file": "saba.mp3",
-      "url": "https://raw.githubusercontent.com/mosalah30688-gif/quran/main/audio/adhans-maqamat/saba.mp3",
+      "url": "https://cdn.jsdelivr.net/gh/mosalah30688-gif/quran@main/audio/adhans-maqamat/saba.mp3",
       "seconds": 214,
       "fajr": false,
       "bundled": false,
@@ -160,7 +169,10 @@
         "video": "aS-ZSeD5XhI",
         "title": "أذان على مقام الصبا - مشاري راشد العفاسي",
         "url": "https://youtu.be/aS-ZSeD5XhI"
-      }
+      },
+      "mirrors": [
+        "https://raw.githubusercontent.com/mosalah30688-gif/quran/main/audio/adhans-maqamat/saba.mp3"
+      ]
     },
     {
       "id": "alafasy-hijaz",
@@ -170,7 +182,7 @@
       "maqamLabel": "مقام الحجاز",
       "artist": "مشاري راشد العفاسي",
       "file": "hijaz.mp3",
-      "url": "https://raw.githubusercontent.com/mosalah30688-gif/quran/main/audio/adhans-maqamat/hijaz.mp3",
+      "url": "https://cdn.jsdelivr.net/gh/mosalah30688-gif/quran@main/audio/adhans-maqamat/hijaz.mp3",
       "seconds": 223,
       "fajr": false,
       "bundled": false,
@@ -180,7 +192,10 @@
         "video": "i_zib6nvgTo",
         "title": "أذان مشاري العفاسي بمقام حجاز",
         "url": "https://youtu.be/i_zib6nvgTo"
-      }
+      },
+      "mirrors": [
+        "https://raw.githubusercontent.com/mosalah30688-gif/quran/main/audio/adhans-maqamat/hijaz.mp3"
+      ]
     },
     {
       "id": "alafasy-nahawand",
@@ -190,7 +205,7 @@
       "maqamLabel": "مقام النهاوند",
       "artist": "مشاري راشد العفاسي",
       "file": "nahawand.mp3",
-      "url": "https://raw.githubusercontent.com/mosalah30688-gif/quran/main/audio/adhans-maqamat/nahawand.mp3",
+      "url": "https://cdn.jsdelivr.net/gh/mosalah30688-gif/quran@main/audio/adhans-maqamat/nahawand.mp3",
       "seconds": 294,
       "fajr": false,
       "bundled": false,
@@ -200,7 +215,10 @@
         "video": "6lUE31AxTyA",
         "title": "أذان على مقام النهاوند - مشاري راشد العفاسي",
         "url": "https://youtu.be/6lUE31AxTyA"
-      }
+      },
+      "mirrors": [
+        "https://raw.githubusercontent.com/mosalah30688-gif/quran/main/audio/adhans-maqamat/nahawand.mp3"
+      ]
     },
     {
       "id": "alafasy-rast",
@@ -210,7 +228,7 @@
       "maqamLabel": "مقام الرست",
       "artist": "مشاري راشد العفاسي",
       "file": "rast.mp3",
-      "url": "https://raw.githubusercontent.com/mosalah30688-gif/quran/main/audio/adhans-maqamat/rast.mp3",
+      "url": "https://cdn.jsdelivr.net/gh/mosalah30688-gif/quran@main/audio/adhans-maqamat/rast.mp3",
       "seconds": 215,
       "fajr": false,
       "bundled": false,
@@ -220,7 +238,10 @@
         "video": "IuG1wLCBcAE",
         "title": "أذان على مقام الراست - مشاري راشد العفاسي",
         "url": "https://youtu.be/IuG1wLCBcAE"
-      }
+      },
+      "mirrors": [
+        "https://raw.githubusercontent.com/mosalah30688-gif/quran/main/audio/adhans-maqamat/rast.mp3"
+      ]
     },
     {
       "id": "alafasy-sikah",
@@ -230,7 +251,7 @@
       "maqamLabel": "مقام السيكاه",
       "artist": "مشاري راشد العفاسي",
       "file": "sikah.mp3",
-      "url": "https://raw.githubusercontent.com/mosalah30688-gif/quran/main/audio/adhans-maqamat/sikah.mp3",
+      "url": "https://cdn.jsdelivr.net/gh/mosalah30688-gif/quran@main/audio/adhans-maqamat/sikah.mp3",
       "seconds": 208,
       "fajr": false,
       "bundled": false,
@@ -240,7 +261,10 @@
         "video": "o_u0SkBch3w",
         "title": "أذان الفجر (سيكاه) - مشاري العفاسي",
         "url": "https://youtu.be/o_u0SkBch3w"
-      }
+      },
+      "mirrors": [
+        "https://raw.githubusercontent.com/mosalah30688-gif/quran/main/audio/adhans-maqamat/sikah.mp3"
+      ]
     },
     {
       "id": "alafasy-ajam",
@@ -250,7 +274,7 @@
       "maqamLabel": "مقام العجم",
       "artist": "مشاري راشد العفاسي",
       "file": "ajam.mp3",
-      "url": "https://raw.githubusercontent.com/mosalah30688-gif/quran/main/audio/adhans-maqamat/ajam.mp3",
+      "url": "https://cdn.jsdelivr.net/gh/mosalah30688-gif/quran@main/audio/adhans-maqamat/ajam.mp3",
       "seconds": 226,
       "fajr": false,
       "bundled": false,
@@ -260,7 +284,10 @@
         "video": "Dspp4V_y_1s",
         "title": "الأذان بصوت مشاري العفاسي - مقام العجم",
         "url": "https://youtu.be/Dspp4V_y_1s"
-      }
+      },
+      "mirrors": [
+        "https://raw.githubusercontent.com/mosalah30688-gif/quran/main/audio/adhans-maqamat/ajam.mp3"
+      ]
     },
     {
       "id": "rifat",
@@ -854,6 +881,7 @@
     }
   ],
   "sources": {
-    "maqamat": "https://github.com/mosalah30688-gif/quran/tree/main/audio/adhans-maqamat"
+    "maqamat": "https://github.com/mosalah30688-gif/quran/tree/main/audio/adhans-maqamat",
+    "maqamat_mirrors": "jsDelivr + raw.githubusercontent"
   }
 }

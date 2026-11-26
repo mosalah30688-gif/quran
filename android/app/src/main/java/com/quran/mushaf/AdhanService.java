@@ -74,6 +74,7 @@ public class AdhanService extends Service implements MediaPlayer.OnCompletionLis
         String label = intent == null ? "" : intent.getStringExtra("label");
         String adhanId = intent == null ? "" : intent.getStringExtra("adhanId");
         String url = intent == null ? "" : intent.getStringExtra("url");
+        String[] altUrls = intent == null ? null : intent.getStringArrayExtra("urls");
 
         String title = label.isEmpty() ? "الأذان" : "أذان " + label;
         if (ACTION_PREPARE.equals(action)) {
@@ -83,7 +84,7 @@ public class AdhanService extends Service implements MediaPlayer.OnCompletionLis
             return START_NOT_STICKY;
         }
         startForegroundSafely(buildNotification(title, "الأذان يعمل الآن"));
-        play(label, adhanId, url);
+        play(label, adhanId, url, altUrls);
         return START_NOT_STICKY;
     }
 
@@ -122,7 +123,7 @@ public class AdhanService extends Service implements MediaPlayer.OnCompletionLis
         }
     }
 
-    private void play(String label, String adhanId, String url) {
+    private void play(String label, String adhanId, String url, String[] altUrls) {
         stopPlayer();
         String path = AdhanScheduler.audioPath(this, adhanId);
         File file = path.isEmpty() ? null : new File(path);
@@ -134,7 +135,7 @@ public class AdhanService extends Service implements MediaPlayer.OnCompletionLis
             final String remote = url;
             final String labelCopy = label;
             new Thread(() -> {
-                final String resolved = AdhanAudioStore.ensure(getApplicationContext(), id, remote);
+                final String resolved = AdhanAudioStore.ensure(getApplicationContext(), id, remote, altUrls);
                 handler.post(() -> {
                     String playPath = resolved.isEmpty() ? AdhanScheduler.audioPath(this, id) : resolved;
                     File playFile = playPath.isEmpty() ? null : new File(playPath);

@@ -44,7 +44,8 @@ test('المقامات: كل ملف صوتي موجود وحجمه وبصمته 
     assert.ok(bytes.length > 200_000, `${item.id}: ملف صغير جدًا`);
     assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'), entry.sha256,
       `${item.id}: البصمة لا تطابق الكتالوج`);
-    assert.match(entry.url, /^https:\/\/raw\.githubusercontent\.com\/mosalah30688-gif\/quran\/main\/audio\/adhans-maqamat\//);
+    assert.match(entry.url, /^https:\/\/cdn\.jsdelivr\.net\/gh\/mosalah30688-gif\/quran@main\/audio\/adhans-maqamat\//);
+    assert.ok(Array.isArray(entry.mirrors) && entry.mirrors.length >= 1, `${item.id}: بلا مرآة`);
   });
 });
 
@@ -85,9 +86,32 @@ test('المقامات: الواجهة تعرض المقام في السطر و�
   assert.match(html, /\.pt-maqam \{/);
 });
 
-test('المقامات: ملف محلي ناقص يتحول إلى البث من الشبكة بدل الفشل الصامت', () => {
+test('المقامات: ملف محلي ناقص لا يمنع التشغيل — ينتقل إلى الشبكة', () => {
   const ui = read('prayer-ui.js');
-  assert.match(ui, /let usingLocal = Boolean\(local\);/);
-  assert.match(ui, /if \(usingLocal && item\.url\) \{/);
-  assert.match(ui, /audio\.src = item\.url; await audio\.play\(\); return;/);
+  // المصادر تُبنى بترتيب: محلي (إن وُجد) ثم الذاكرة ثم الشبكة والمرايا
+  assert.match(ui, /if \(await localAdhanReady\(item\)\) candidates\.push\(item\.local\);/);
+  assert.match(ui, /adhanSources\(item\)\.forEach\(\(url\) => \{ if \(!candidates\.includes\(url\)\) candidates\.push\(url\); \}\);/);
+  assert.match(ui, /audio\.src = candidates\[0\] \|\| '';/);
+});
+
+test('المقامات: التشغيل يتدرج بين المصادر بدل الفشل عند أول مصدر', () => {
+  const ui = read('prayer-ui.js');
+  // قائمة المصادر: الأساسي ثم المرايا
+  assert.match(ui, /function adhanSources\(item\) \{/);
+  assert.match(ui, /if \(item && Array\.isArray\(item\.mirrors\)\)/);
+  // تنزيل يجرّب كل مصدر ويحفظ تحت كل الروابط
+  assert.match(ui, /for \(const url of sources\) \{/);
+  assert.match(ui, /for \(const url of adhanSources\(item\)\) \{\n      try \{\n        if \(url === usedUrl\)/);
+  // تشغيل متدرج
+  assert.match(ui, /const playSource = async \(\) => \{/);
+  assert.match(ui, /if \(!gaveUp\) playSource\(\);/);
+  assert.match(ui, /كل المصادر غير متاحة الآن/);
+});
+
+test('المقامات: لا نعرض «محلي» لملف غير موجود على الجهاز', () => {
+  const ui = read('prayer-ui.js');
+  assert.match(ui, /async function localAdhanReady\(item\) \{/);
+  assert.match(ui, /response\.status !== 404/);
+  assert.match(ui, /const onDevice = item\.local && localReadyCache\.get\(item\.id\) \? 'محلي'/);
+  assert.match(ui, /await Promise\.all\(DATA\.adhans\.filter\(\(item\) => item\.local\)\.map\(\(item\) => localAdhanReady\(item\)\)\);/);
 });

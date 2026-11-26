@@ -94,7 +94,7 @@ test('بيانات المدن والأذانات سليمة', () => {
     assert.ok(!ids.has(item.id), `معرّف مكرر: ${item.id}`);
     ids.add(item.id);
     // مصدران موثّقان فقط: أرشيف الإنترنت، وقناة المشروع لمقامات العفاسي
-    assert.match(item.url, /^(https:\/\/archive\.org\/download\/[^"]+\.mp3|https:\/\/raw\.githubusercontent\.com\/mosalah30688-gif\/quran\/main\/audio\/adhans-maqamat\/[a-z-]+\.mp3)$/);
+    assert.match(item.url, /^(https:\/\/archive\.org\/download\/[^"]+\.mp3|https:\/\/cdn\.jsdelivr\.net\/gh\/mosalah30688-gif\/quran@main\/audio\/adhans-maqamat\/[a-z-]+\.mp3)$/);
     assert.ok(item.seconds > 30 && item.seconds < 900, item.id);
   });
   assert.ok(DATA.adhans.some((a) => a.fajr), 'يجب توفّر أذان فجر خاص');
@@ -106,7 +106,9 @@ test('بيانات المدن والأذانات سليمة', () => {
     assert.ok(!maqamIds.has(item.maqam), `مقام مكرر: ${item.maqam}`);
     maqamIds.add(item.maqam);
     assert.match(item.maqamLabel, /^مقام /, item.id);
-    assert.match(item.url, /^https:\/\/raw\.githubusercontent\.com\/mosalah30688-gif\/quran\/main\/audio\/adhans-maqamat\//);
+    assert.match(item.url, /^https:\/\/cdn\.jsdelivr\.net\/gh\/mosalah30688-gif\/quran@main\/audio\/adhans-maqamat\//);
+    assert.ok(Array.isArray(item.mirrors) && item.mirrors.length >= 1, `مرآة مفقودة: ${item.id}`);
+    assert.match(item.mirrors[0], /^https:\/\/raw\.githubusercontent\.com\/mosalah30688-gif\/quran\/main\/audio\/adhans-maqamat\//);
   });
   assert.ok(maqamat.some((a) => a.maqam === 'kurd') && maqamat.some((a) => a.maqam === 'kurd-low'),
     'الكرد والكرد المنخفض موجودان');

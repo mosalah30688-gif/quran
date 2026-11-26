@@ -162,7 +162,9 @@ test('الأذان محلي افتراضيًا: ملفات محزومة داخل
   assert.match(store, /static String copyBundled\(/);
   assert.match(store, /getAssets\(\)\.open\("adhans\/"/);
   const ui = read('prayer-ui.js');
-  assert.match(ui, /const bundled = item\.local \|\| '';/);
+  // الملف المحزوم يُستخدم بعد التحقق من وجوده فعلًا، ثم الذاكرة، ثم الشبكة
+  assert.match(ui, /if \(await localAdhanReady\(item\)\) candidates\.push\(item\.local\);/);
+  assert.match(ui, /const cached = await cachedAdhanUrl\(item\);/);
   assert.match(ui, /downloadAllAdhans/);
   assert.match(read('scripts/build-www.sh'), /audio\/adhans/);
   const data = read('prayer-data.js');
@@ -240,7 +242,12 @@ test('انتقال فوري بين الصفحات مع بقاء السحب', () 
 
 test('خدمة الأذان تنسخ الأذان المحزوم من الأصول قبل البث', () => {
   const service = read(`${JAVA}/AdhanService.java`);
-  assert.match(service, /AdhanAudioStore\.ensure\(getApplicationContext\(\), id, remote\)/);
+  assert.match(service, /AdhanAudioStore\.ensure\(getApplicationContext\(\), id, remote, altUrls\)/);
+  // الروابط البديلة تُمرَّر من الواجهة إلى المنبّه إلى الخدمة إلى المخزن
+  assert.match(read('prayer-ui.js'), /urls: adhanSources\(item\)\.slice\(0, 3\),/);
+  assert.match(read(`${JAVA}/AdhanScheduler.java`), /intent\.putExtra\("urls", mirrorList\)/);
+  assert.match(read(`${JAVA}/AdhanReceiver.java`), /service\.putExtra\("urls", mirrorList\)/);
+  assert.match(read(`${JAVA}/AdhanAudioStore.java`), /static String ensure\(Context context, String id, String url, String\[\] altUrls\)/);
   assert.match(service, /private void startPlayback\(String label, File file, String url\)/);
   assert.match(service, /"siraj-adhan-prepare"/);
 });

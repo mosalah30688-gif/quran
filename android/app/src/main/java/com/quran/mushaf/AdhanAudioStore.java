@@ -66,6 +66,22 @@ final class AdhanAudioStore {
 
     /** يعيد المسار المحلي إن كان الملف موجودًا وكاملًا، وإلا ينزّله ويعيد مساره. */
     static String ensure(Context context, String id, String url) {
+        return ensure(context, id, url, null);
+    }
+
+    /** نفس السابق مع روابط بديلة: يجرّبها بالترتيب إن فشل الرابط الأساسي. */
+    static String ensure(Context context, String id, String url, String[] altUrls) {
+        String first = ensureOne(context, id, url);
+        if (!first.isEmpty() || altUrls == null) return first;
+        for (String alt : altUrls) {
+            if (alt == null || alt.isEmpty() || alt.equals(url)) continue;
+            String resolved = ensureOne(context, id, alt);
+            if (!resolved.isEmpty()) return resolved;
+        }
+        return "";
+    }
+
+    private static String ensureOne(Context context, String id, String url) {
         File target = fileFor(context, id);
         if (target == null) return "";
         if (target.exists() && target.length() > 16_384) {
